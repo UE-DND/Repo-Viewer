@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/github",
+      "destination": "/api/github.ts"
+    }
+  ],
+  "headers": [],
+  "buildCommand": "npm run build"
+}

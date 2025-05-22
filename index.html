@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/repo-viewer-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>%VITE_SITE_TITLE%</title>
+    <script type="module">
+      const defaultTitle = 'Repo_Viewer';
+      const envTitle = import.meta.env.VITE_SITE_TITLE;
+      document.title = envTitle ? envTitle : defaultTitle;
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
