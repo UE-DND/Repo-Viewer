@@ -33,6 +33,16 @@ export const fadeAnimation = keyframes`
   }
 `;
 
+// 淡出动画效果 - 用于元素退出时
+export const fadeOutAnimation = keyframes`
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+`;
+
 // 弹跳动画效果 - 可用于提示用户注意
 export const bounceAnimation = keyframes`
   0%, 100% {

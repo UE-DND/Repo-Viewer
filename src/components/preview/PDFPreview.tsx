@@ -7,6 +7,8 @@ import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
 import zh_CN from '@react-pdf-viewer/locales/lib/zh_CN.json';
 import WarningIcon from '@mui/icons-material/Warning';
 import { alpha } from '@mui/material/styles';
+// 导入骨架屏组件
+import { PDFPreviewSkeleton } from '../common/SkeletonComponents';
 
 // 导入核心CSS
 import '@react-pdf-viewer/core/lib/styles/index.css';
@@ -384,14 +386,8 @@ const PDFPreview = memo<PDFPreviewProps>(({
       </Dialog>
       
       {loading ? (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          height: '100%' 
-        }}>
-          <CircularProgress size={40} />
-        </Box>
+        // 使用 PDF 预览骨架屏替代加载指示器
+        <PDFPreviewSkeleton isSmallScreen={isSmallScreen} />
       ) : error ? (
         <Box sx={{ 
           display: 'flex', 

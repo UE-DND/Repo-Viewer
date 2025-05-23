@@ -3,6 +3,10 @@
     {
       "source": "/api/github",
       "destination": "/api/github.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [],

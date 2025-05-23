@@ -20,6 +20,8 @@ import { GitHubService } from '../../services/github';
 import { Components } from 'react-markdown'
 import { logger } from '../../utils';
 import { countLatexElements } from '../../utils/latexOptimizer';
+// 导入骨架屏组件
+import { MarkdownPreviewSkeleton } from '../common/SkeletonComponents';
 
 // LaTeX错误处理函数
 const handleKatexError = (message: string) => {
@@ -165,16 +167,8 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
   
   if (loadingReadme) {
     return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          py: 8 
-        }}
-      >
-        <CircularProgress color="primary" size={isSmallScreen ? 32 : 40} />
-      </Box>
+      // 使用 Markdown 预览骨架屏替代加载指示器
+      <MarkdownPreviewSkeleton isSmallScreen={isSmallScreen} />
     );
   }
 

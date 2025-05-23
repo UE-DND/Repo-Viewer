@@ -18,6 +18,7 @@ import {
   TransformComponent
 } from 'react-zoom-pan-pinch';
 import FullScreenPreview from '../file/FullScreenPreview';
+import { ImagePreviewSkeleton } from '../common/SkeletonComponents';
 
 interface ImagePreviewProps {
   /**
@@ -215,27 +216,23 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
         }}
       >
         {loading && (
-          <Box 
-            sx={{ 
-              position: 'absolute', 
-              top: '50%', 
-              left: '50%', 
-              transform: 'translate(-50%, -50%)',
-              zIndex: 10
-            }}
-          >
-            <CircularProgress color="primary" size={isSmallScreen ? 32 : 40} />
-          </Box>
+          <ImagePreviewSkeleton isSmallScreen={isSmallScreen} />
         )}
         
-        {error ? (
+        {error && (
           <Box 
             sx={{ 
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'center', 
               justifyContent: 'center',
-              p: 4
+              p: 4,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 10
             }}
           >
             <Typography color="error" variant="body1" sx={{ mb: 2 }}>
@@ -254,270 +251,250 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
               <ReplayIcon />
             </IconButton>
           </Box>
-        ) : (
-          <TransformWrapper
-            initialScale={1}
-            minScale={0.1}
-            maxScale={5}
-            centerOnInit
-            wheel={{ disabled: false }}
-            pinch={{ disabled: false }}
-            panning={{ disabled: false }}
-            onTransformed={(ref) => {
-              setScale(ref.state.scale);
-            }}
-          >
-            {({ zoomIn, zoomOut, resetTransform }) => (
-              <>
-                <TransformComponent
-                  wrapperStyle={{ width: '100%', height: '100%' }}
-                  contentStyle={{ 
-                    width: '100%', 
-                    height: 'calc(100% - 60px)',  // 减去底部控制栏的高度
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center',
-                    paddingBottom: '60px'  // 添加底部内边距，避免图片被控制栏遮挡
+        )}
+        
+        <TransformWrapper
+          initialScale={1}
+          minScale={0.1}
+          maxScale={5}
+          centerOnInit
+          wheel={{ disabled: false }}
+          pinch={{ disabled: false }}
+          panning={{ disabled: false }}
+          onTransformed={(ref) => {
+            setScale(ref.state.scale);
+          }}
+        >
+          {({ zoomIn, zoomOut, resetTransform }) => (
+            <>
+              <TransformComponent
+                wrapperStyle={{ width: '100%', height: '100%', visibility: error ? 'hidden' : 'visible' }}
+                contentStyle={{ 
+                  width: '100%', 
+                  height: 'calc(100% - 60px)',  // 减去底部控制栏的高度
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  paddingBottom: '60px'  // 添加底部内边距，避免图片被控制栏遮挡
+                }}
+              >
+                <img
+                  ref={imgRef}
+                  src={shouldLoad ? imageUrl : ''}
+                  alt={fileName}
+                  className={!loading ? 'loaded' : ''}
+                  style={{
+                    maxWidth: '90%',
+                    maxHeight: '80%',  // 减小最大高度，确保不被底部控制栏遮挡
+                    objectFit: 'contain',
+                    transform: `rotate(${rotation}deg)`,
+                    transition: 'transform 0.3s ease',
+                    transformOrigin: 'center center',
                   }}
-                >
-                  <img
-                    ref={imgRef}
-                    src={shouldLoad ? imageUrl : ''}
-                    alt={fileName}
-                    className={!loading ? 'loaded' : ''}
-                    style={{
-                      maxWidth: '90%',
-                      maxHeight: '80%',  // 减小最大高度，确保不被底部控制栏遮挡
-                      objectFit: 'contain',
-                      transform: `rotate(${rotation}deg)`,
-                      transition: 'transform 0.3s ease',
-                      transformOrigin: 'center center',
-                    }}
-                    onLoad={() => setLoading(false)}
-                    onError={() => {
-                      setLoading(false);
-                      setError(true);
-                    }}
-                  />
-                </TransformComponent>
+                  onLoad={() => setLoading(false)}
+                  onError={() => {
+                    setLoading(false);
+                    setError(true);
+                  }}
+                />
+              </TransformComponent>
 
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  gap: 2,
+                  p: 1.5,
+                  bgcolor: theme.palette.mode === 'dark' 
+                    ? alpha(theme.palette.background.paper, 0.7) 
+                    : alpha(theme.palette.background.paper, 0.8),
+                  backdropFilter: 'blur(10px)',
+                  borderTop: '1px solid',
+                  borderColor: alpha(theme.palette.divider, 0.1),
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 15,
+                  height: '72px',
+                  paddingTop: '12px',
+                  paddingBottom: '12px',
+                  boxShadow: theme.palette.mode === 'dark' 
+                    ? '0 -4px 12px rgba(0,0,0,0.2)' 
+                    : '0 -4px 12px rgba(0,0,0,0.1)',
+                  ...(fullScreenMode && {
+                    paddingRight: '120px',
+                    width: 'calc(100% - 48px)',
+                    right: '24px',
+                    left: '24px',
+                    borderRadius: '16px',
+                    bottom: '16px',
+                    border: '1px solid',
+                    borderColor: alpha(theme.palette.divider, 0.1)
+                  })
+                }}
+              >
                 <Box 
                   sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
+                    display: 'flex',
+                    justifyContent: 'center',
                     alignItems: 'center',
                     gap: 2,
-                    p: 1.5,
-                    bgcolor: theme.palette.mode === 'dark' 
-                      ? alpha(theme.palette.background.paper, 0.7) 
-                      : alpha(theme.palette.background.paper, 0.8),
-                    backdropFilter: 'blur(10px)',
-                    borderTop: '1px solid',
-                    borderColor: alpha(theme.palette.divider, 0.1),
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 5,
-                    height: '72px',
-                    paddingTop: '12px',
-                    paddingBottom: '12px',
-                    boxShadow: theme.palette.mode === 'dark' 
-                      ? '0 -4px 12px rgba(0,0,0,0.2)' 
-                      : '0 -4px 12px rgba(0,0,0,0.1)',
-                    ...(fullScreenMode && {
-                      paddingRight: '120px',
-                      width: 'calc(100% - 48px)',
-                      right: '24px',
-                      left: '24px',
-                      borderRadius: '16px',
-                      bottom: '16px',
-                      border: '1px solid',
-                      borderColor: alpha(theme.palette.divider, 0.1)
-                    })
+                    width: '100%',
+                    paddingLeft: onClose ? '80px' : 0, // 为右侧关闭按钮平衡空间
                   }}
                 >
-                  <Box 
+                  <IconButton 
+                    onClick={() => zoomOut()}
+                    disabled={error}
+                    size={isSmallScreen ? "medium" : "large"}
                     sx={{ 
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: 2,
-                      width: '100%',
-                      paddingLeft: onClose ? '80px' : 0, // 为右侧关闭按钮平衡空间
-                    }}
-                  >
-                    <IconButton 
-                      onClick={() => zoomOut()}
-                      disabled={error}
-                      size={isSmallScreen ? "medium" : "large"}
-                      sx={{ 
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.2)
-                        },
-                        borderRadius: '12px',
-                        padding: isSmallScreen ? '8px' : '10px',
-                        height: isSmallScreen ? '40px' : '48px',
-                        width: isSmallScreen ? '40px' : '48px'
-                      }}
-                    >
-                      <ZoomOutIcon fontSize={isSmallScreen ? "small" : "medium"} />
-                    </IconButton>
-                    
-                    <IconButton 
-                      onClick={() => resetTransform()}
-                      disabled={error}
-                      size={isSmallScreen ? "medium" : "large"}
-                      sx={{ 
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.2)
-                        },
-                        borderRadius: '12px',
-                        padding: isSmallScreen ? '8px' : '10px',
-                        width: isSmallScreen ? '64px' : '80px',
-                        minWidth: isSmallScreen ? '64px' : '80px',
-                        height: isSmallScreen ? '40px' : '48px',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Typography 
-                        variant={isSmallScreen ? "caption" : "body2"} 
-                        sx={{ 
-                          fontWeight: 500,
-                          minWidth: isSmallScreen ? '36px' : '44px',
-                          textAlign: 'center'
-                        }}
-                      >
-                        {Math.round(scale * 100)}%
-                      </Typography>
-                    </IconButton>
-                    
-                    <IconButton 
-                      onClick={() => zoomIn()}
-                      disabled={error}
-                      size={isSmallScreen ? "medium" : "large"}
-                      sx={{ 
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.2)
-                        },
-                        borderRadius: '12px',
-                        padding: isSmallScreen ? '8px' : '10px',
-                        height: isSmallScreen ? '40px' : '48px',
-                        width: isSmallScreen ? '40px' : '48px'
-                      }}
-                    >
-                      <ZoomInIcon fontSize={isSmallScreen ? "small" : "medium"} />
-                    </IconButton>
-
-                    <IconButton 
-                      onClick={handleRotateLeft}
-                      disabled={error}
-                      size={isSmallScreen ? "medium" : "large"}
-                      sx={{ 
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.2)
-                        },
-                        borderRadius: '12px',
-                        padding: isSmallScreen ? '8px' : '10px',
-                        height: isSmallScreen ? '40px' : '48px',
-                        width: isSmallScreen ? '40px' : '48px'
-                      }}
-                    >
-                      <RotateLeftIcon fontSize={isSmallScreen ? "small" : "medium"} />
-                    </IconButton>
-
-                    <IconButton 
-                      onClick={handleRotateRight}
-                      disabled={error}
-                      size={isSmallScreen ? "medium" : "large"}
-                      sx={{ 
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.2)
-                        },
-                        borderRadius: '12px',
-                        padding: isSmallScreen ? '8px' : '10px',
-                        height: isSmallScreen ? '40px' : '48px',
-                        width: isSmallScreen ? '40px' : '48px'
-                      }}
-                    >
-                      <RotateRightIcon fontSize={isSmallScreen ? "small" : "medium"} />
-                    </IconButton>
-
-                    {!fullScreenMode && (
-                      <IconButton 
-                        onClick={toggleFullScreen}
-                        disabled={error}
-                        size={isSmallScreen ? "medium" : "large"}
-                        sx={{ 
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.2)
-                          },
-                          borderRadius: '12px',
-                          padding: isSmallScreen ? '8px' : '10px',
-                          height: isSmallScreen ? '40px' : '48px',
-                          width: isSmallScreen ? '40px' : '48px'
-                        }}
-                      >
-                        <FullscreenIcon fontSize={isSmallScreen ? "small" : "medium"} />
-                      </IconButton>
-                    )}
-
-                    {error && (
-                      <IconButton 
-                        onClick={() => handleReset(resetTransform)} 
-                        color="primary" 
-                        size={isSmallScreen ? "medium" : "large"}
-                        sx={{ 
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.2)
-                          },
-                          borderRadius: '12px',
-                          padding: isSmallScreen ? '8px' : '10px',
-                          height: isSmallScreen ? '40px' : '48px',
-                          width: isSmallScreen ? '40px' : '48px'
-                        }}
-                      >
-                        <ReplayIcon fontSize={isSmallScreen ? "small" : "medium"} />
-                      </IconButton>
-                    )}
-                  </Box>
-                  
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleClosePreview}
-                    sx={{
-                      position: 'absolute',
-                      right: theme.spacing(2),
-                      borderRadius: theme.shape.borderRadius * 2,
-                      minWidth: '80px',
-                      fontWeight: 'bold',
-                      backgroundColor: theme.palette.mode === 'dark' 
-                        ? theme.palette.primary.dark 
-                        : theme.palette.primary.main,
-                      color: '#fff',
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
                       '&:hover': {
-                        backgroundColor: theme.palette.mode === 'dark' 
-                          ? alpha(theme.palette.primary.dark, 0.9) 
-                          : alpha(theme.palette.primary.main, 0.9),
+                        bgcolor: alpha(theme.palette.primary.main, 0.2)
                       },
-                      zIndex: theme.zIndex.modal + 50
+                      borderRadius: '12px',
+                      padding: isSmallScreen ? '8px' : '10px',
+                      height: isSmallScreen ? '40px' : '48px',
+                      width: isSmallScreen ? '40px' : '48px'
                     }}
                   >
-                    关闭
-                  </Button>
+                    <ZoomOutIcon fontSize={isSmallScreen ? "small" : "medium"} />
+                  </IconButton>
+                  
+                  <IconButton 
+                    onClick={() => resetTransform()}
+                    disabled={error}
+                    size={isSmallScreen ? "medium" : "large"}
+                    sx={{ 
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.2)
+                      },
+                      borderRadius: '12px',
+                      padding: isSmallScreen ? '8px' : '10px',
+                      width: isSmallScreen ? '64px' : '80px',
+                      minWidth: isSmallScreen ? '64px' : '80px',
+                      height: isSmallScreen ? '40px' : '48px',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Typography 
+                      variant={isSmallScreen ? "caption" : "body2"} 
+                      sx={{ 
+                        fontWeight: 500,
+                        minWidth: isSmallScreen ? '36px' : '44px',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {Math.round(scale * 100)}%
+                    </Typography>
+                  </IconButton>
+                  
+                  <IconButton 
+                    onClick={() => zoomIn()}
+                    disabled={error}
+                    size={isSmallScreen ? "medium" : "large"}
+                    sx={{ 
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.2)
+                      },
+                      borderRadius: '12px',
+                      padding: isSmallScreen ? '8px' : '10px',
+                      height: isSmallScreen ? '40px' : '48px',
+                      width: isSmallScreen ? '40px' : '48px'
+                    }}
+                  >
+                    <ZoomInIcon fontSize={isSmallScreen ? "small" : "medium"} />
+                  </IconButton>
+
+                  <IconButton 
+                    onClick={handleRotateLeft}
+                    disabled={error}
+                    size={isSmallScreen ? "medium" : "large"}
+                    sx={{ 
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.2)
+                      },
+                      borderRadius: '12px',
+                      padding: isSmallScreen ? '8px' : '10px',
+                      height: isSmallScreen ? '40px' : '48px',
+                      width: isSmallScreen ? '40px' : '48px'
+                    }}
+                  >
+                    <RotateLeftIcon fontSize={isSmallScreen ? "small" : "medium"} />
+                  </IconButton>
+
+                  <IconButton 
+                    onClick={handleRotateRight}
+                    disabled={error}
+                    size={isSmallScreen ? "medium" : "large"}
+                    sx={{ 
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.2)
+                      },
+                      borderRadius: '12px',
+                      padding: isSmallScreen ? '8px' : '10px',
+                      height: isSmallScreen ? '40px' : '48px',
+                      width: isSmallScreen ? '40px' : '48px'
+                    }}
+                  >
+                    <RotateRightIcon fontSize={isSmallScreen ? "small" : "medium"} />
+                  </IconButton>
+
+                  {!fullScreenMode && (
+                    <IconButton 
+                      onClick={toggleFullScreen}
+                      disabled={error}
+                      size={isSmallScreen ? "medium" : "large"}
+                      sx={{ 
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.2)
+                        },
+                        borderRadius: '12px',
+                        padding: isSmallScreen ? '8px' : '10px',
+                        height: isSmallScreen ? '40px' : '48px',
+                        width: isSmallScreen ? '40px' : '48px'
+                      }}
+                    >
+                      <FullscreenIcon fontSize={isSmallScreen ? "small" : "medium"} />
+                    </IconButton>
+                  )}
                 </Box>
-              </>
-            )}
-          </TransformWrapper>
-        )}
+                
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleClosePreview}
+                  sx={{
+                    position: 'absolute',
+                    right: theme.spacing(2),
+                    borderRadius: theme.shape.borderRadius * 2,
+                    minWidth: '80px',
+                    fontWeight: 'bold',
+                    backgroundColor: theme.palette.mode === 'dark' 
+                      ? theme.palette.primary.dark 
+                      : theme.palette.primary.main,
+                    color: '#fff',
+                    '&:hover': {
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? alpha(theme.palette.primary.dark, 0.9) 
+                        : alpha(theme.palette.primary.main, 0.9),
+                    },
+                    zIndex: theme.zIndex.modal + 50
+                  }}
+                >
+                  关闭
+                </Button>
+              </Box>
+            </>
+          )}
+        </TransformWrapper>
       </Box>
     </Box>
   ), [className, error, fileName, handleReset, handleRotateLeft, handleRotateRight, imageUrl, isSmallScreen, loading, rotation, style, theme, toggleFullScreen, fullScreenMode, scale, shouldLoad]);

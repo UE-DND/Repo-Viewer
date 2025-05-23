@@ -16,6 +16,8 @@ import {
 import FullScreenPreview from '../file/FullScreenPreview';
 import { useEffectOnce } from 'react-use';
 import { GitHubService } from '../../services/github';
+// 导入骨架屏组件
+import { OfficePreviewSkeleton } from '../common/SkeletonComponents';
 
 // 微软Office在线预览URL
 const OFFICE_PREVIEW_URL = 'https://view.officeapps.live.com/op/view.aspx?src=';
@@ -94,6 +96,7 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
   const [officeProxyUrl, setOfficeProxyUrl] = useState<string>('');
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef<boolean>(true);
+  const isIframeLoadedRef = useRef(false);
   
   // 根据文件类型获取文件类型显示名称
   const getFileTypeName = () => {
@@ -151,8 +154,39 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
   // iframe加载事件处理
   const handleIframeLoad = useCallback(() => {
     console.log(`${getFileTypeName()}预览iframe加载完成:`, actualPreviewUrl);
+    console.log('当前加载状态:', loading); // 打印当前加载状态
+    isIframeLoadedRef.current = true;
     setLoading(false);
-  }, [actualPreviewUrl]);
+    console.log('已设置加载状态为 false');
+  }, [actualPreviewUrl, fileType, getFileTypeName, loading]);
+  
+  // 添加 useEffect 钩子检查 iframe 加载状态
+  useEffect(() => {
+    if (isIframeLoadedRef.current) {
+      console.log('iframe 已加载，确保 loading 状态为 false');
+      setLoading(false);
+    }
+    
+    return () => {
+      // 当 URL 变化时重置加载状态引用
+      if (refreshKey > 0) {
+        isIframeLoadedRef.current = false;
+      }
+    };
+  }, [refreshKey]);
+  
+  // 添加强制退出骨架屏的超时处理
+  useEffect(() => {
+    // 如果正在加载，设置一个超时处理
+    if (loading) {
+      const timeoutId = setTimeout(() => {
+        console.log('强制退出骨架屏：超时');
+        setLoading(false);
+      }, 10000); // 10秒后强制退出骨架屏
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [loading]);
   
   // 处理iframe加载错误
   const handleIframeError = useCallback(() => {
@@ -234,6 +268,11 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
       }
     };
   }, [fileUrl, refreshKey]);
+  
+  // 在渲染部分使用骨架屏
+  if (loading) {
+    return <OfficePreviewSkeleton isSmallScreen={isSmallScreen} />;
+  }
   
   // 移动设备上显示特殊界面
   if (isMobileDevice) {
@@ -468,28 +507,6 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
           overflow: 'hidden'
         }}
       >
-        {loading && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-              bgcolor: alpha(theme.palette.background.paper, 0.7)
-            }}
-          >
-            <CircularProgress size={40} />
-            <Typography variant="body2" sx={{ ml: 2 }}>
-              加载{getFileTypeName()}文档预览中...
-            </Typography>
-          </Box>
-        )}
-        
         {error ? (
           <Box
             sx={{
@@ -559,7 +576,7 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
               width: '100%',
               height: '100%',
               border: 'none',
-              display: loading ? 'none' : 'block'
+              display: 'block'
             }}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             key={`iframe-${fileType}-${refreshKey}-${useBackupPreview ? 'backup' : 'main'}`}

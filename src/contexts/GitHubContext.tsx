@@ -1,9 +1,10 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
 import { useGitHubContent } from '../hooks/useGitHubContent';
 import { useFilePreview } from '../hooks/useFilePreview';
 import { useDownload } from '../hooks/useDownload';
 import { GitHubContent } from '../types';
+import { logger } from '../utils';
 
 // 定义上下文数据结构
 interface GitHubContextData {
@@ -30,6 +31,8 @@ interface GitHubContextData {
   handlePdfPagesLoaded: (numPages: number) => void;
   handlePdfError: (error: string) => void;
   handleImageError: (error: string) => void;
+  currentPreviewItemRef: React.MutableRefObject<GitHubContent | null>;
+  findFileItemByPath: (path: string) => GitHubContent | undefined;
   
   // 下载相关
   downloadState: any;
@@ -52,7 +55,34 @@ export const GitHubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   // 使用自定义Hooks
   const contentManager = useGitHubContent();
-  const previewManager = useFilePreview(handleError);
+  
+  // 创建查找文件的回调
+  const findFileItemByPath = useCallback((pathOrFileName: string) => {
+    // 记录调试信息
+    logger.debug(`尝试查找文件: ${pathOrFileName}`);
+    
+    // 首先尝试按完整路径查找
+    let fileItem = contentManager.contents.find(item => item.path === pathOrFileName);
+    
+    // 如果没找到，尝试按文件名查找
+    if (!fileItem) {
+      logger.debug('未找到完整路径匹配，尝试按文件名查找');
+      fileItem = contentManager.contents.find(item => 
+        item.name === pathOrFileName || 
+        item.path.endsWith(`/${pathOrFileName}`)
+      );
+    }
+    
+    if (fileItem) {
+      logger.debug(`找到文件: ${fileItem.path}`);
+    } else {
+      logger.warn(`未找到文件: ${pathOrFileName}`);
+    }
+    
+    return fileItem;
+  }, [contentManager.contents]);
+  
+  const previewManager = useFilePreview(handleError, findFileItemByPath);
   const downloadManager = useDownload(handleError);
   
   // 合并所有数据提供给上下文
@@ -69,6 +99,8 @@ export const GitHubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     handlePdfPagesLoaded: previewManager.handlePdfPagesLoaded,
     handlePdfError: previewManager.handlePdfError,
     handleImageError: previewManager.handleImageError,
+    currentPreviewItemRef: previewManager.currentPreviewItemRef,
+    findFileItemByPath,
     
     downloadState: downloadManager.downloadState,
     downloadFile: downloadManager.downloadFile,

@@ -10,6 +10,9 @@ import ErrorDisplay from '../common/ErrorDisplay';
 import LoadingSpinner from '../common/LoadingSpinner';
 import FullScreenPreview from '../file/FullScreenPreview';
 import { useGitHub } from '../../contexts/GitHubContext';
+import { FileListSkeleton } from '../common/SkeletonComponents';
+import { getPreviewFromUrl } from '../../utils/urlManager';
+import { logger } from '../../utils';
 
 const MainContent: React.FC = () => {
   // 获取主题和响应式布局
@@ -42,7 +45,8 @@ const MainContent: React.FC = () => {
     selectFile,
     closePreview,
     refresh,
-    cancelDownload
+    cancelDownload,
+    currentPreviewItemRef
   } = useGitHub();
   
   // 生成面包屑导航路径段
@@ -152,6 +156,50 @@ const MainContent: React.FC = () => {
     };
   }, [currentPath, isSmallScreen, generateBreadcrumbSegments]);
   
+  // 处理从 URL 加载预览
+  useEffect(() => {
+    // 只在内容加载完成且没有错误时处理
+    if (!loading && !error && contents.length > 0) {
+      const previewFileName = getPreviewFromUrl();
+      
+      if (!previewFileName) return;
+      
+      logger.debug(`从URL获取预览文件名: ${previewFileName}`);
+      
+      // 查找匹配的文件
+      // 首先尝试使用文件名直接匹配
+      let fileItem = contents.find(item => item.name === previewFileName);
+      
+      // 如果没找到，尝试查找路径末尾匹配的文件
+      if (!fileItem) {
+        fileItem = contents.find(item => item.path.endsWith(`/${previewFileName}`));
+      }
+      
+      if (fileItem) {
+        logger.debug(`找到匹配的文件: ${fileItem.path}`);
+        // 更新当前预览引用
+        currentPreviewItemRef.current = fileItem;
+        
+        // 避免重复加载已经打开的预览
+        const hasActivePreview = !!(
+          previewState.previewingItem?.path === fileItem.path || 
+          previewState.previewingPdfItem?.path === fileItem.path || 
+          previewState.previewingImageItem?.path === fileItem.path || 
+          previewState.previewingOfficeItem?.path === fileItem.path
+        );
+        
+        if (!hasActivePreview) {
+          logger.debug(`预览文件未打开，正在加载: ${fileItem.path}`);
+          selectFile(fileItem);
+        } else {
+          logger.debug(`预览文件已经打开: ${fileItem.path}`);
+        }
+      } else {
+        logger.warn(`无法找到预览文件: ${previewFileName}`);
+      }
+    }
+  }, [loading, error, contents, currentPreviewItemRef, previewState, selectFile]);
+  
   return (
     <Container component="main" sx={{ 
       flexGrow: 1, 
@@ -167,9 +215,9 @@ const MainContent: React.FC = () => {
       />
       
       {loading ? (
-        <LoadingSpinner 
+        <FileListSkeleton 
           isSmallScreen={isSmallScreen} 
-          fullHeight={true} 
+          itemCount={8}
         />
       ) : error ? (
         <ErrorDisplay

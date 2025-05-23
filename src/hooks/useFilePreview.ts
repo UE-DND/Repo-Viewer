@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useRef, useState } from 'react';
+import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
 import { 
   PreviewState, 
   PreviewAction, 
@@ -7,6 +7,7 @@ import {
 } from '../types';
 import { GitHubService } from '../services/github';
 import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger } from '../utils';
+import { getPreviewFromUrl, updateUrlWithHistory, updateUrlWithoutHistory, hasPreviewParam } from '../utils/urlManager';
 
 // 是否强制使用服务端API
 const FORCE_SERVER_PROXY = !import.meta.env.DEV || (import.meta.env.USE_TOKEN_MODE || import.meta.env.VITE_USE_TOKEN_MODE) === 'true';
@@ -173,12 +174,63 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
 }
 
 // 自定义Hook，管理文件预览
-export const useFilePreview = (onError: (message: string) => void) => {
+export const useFilePreview = (
+  onError: (message: string) => void,
+  findFileItemByPath?: (path: string) => GitHubContent | undefined
+) => {
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
   const [useTokenMode, setUseTokenMode] = useState(true);
   
   // 引用当前状态
   const pdfCurrentPageRef = useRef(previewState.pdfCurrentPage);
+  
+  // 引用当前预览的项目
+  const currentPreviewItemRef = useRef<GitHubContent | null>(null);
+
+  // 跟踪预览是否活跃的 ref
+  const hasActivePreviewRef = useRef<boolean>(false);
+  
+  // 追踪是否正在处理前进/后退操作
+  const isHandlingNavigationRef = useRef<boolean>(false);
+  
+  // 更新活跃预览状态引用
+  useEffect(() => {
+    const hasActivePreview = !!(
+      previewState.previewingItem || 
+      previewState.previewingPdfItem || 
+      previewState.previewingImageItem || 
+      previewState.previewingOfficeItem
+    );
+    hasActivePreviewRef.current = hasActivePreview;
+    logger.debug(`预览状态更新: ${hasActivePreview ? '活跃' : '非活跃'}`);
+  }, [
+    previewState.previewingItem, 
+    previewState.previewingPdfItem, 
+    previewState.previewingImageItem, 
+    previewState.previewingOfficeItem
+  ]);
+  
+  // 检查 URL 是否包含预览参数
+  useEffect(() => {
+    const previewPath = getPreviewFromUrl();
+    if (previewPath) {
+      logger.debug(`从URL加载预览: ${previewPath}`);
+      // URL 中有预览参数，但预览状态为空，需要在内容加载后处理
+      currentPreviewItemRef.current = {
+        path: previewPath,
+        name: previewPath.split('/').pop() || '',
+        // 下面的字段可能是占位符，将在实际加载内容时更新
+        type: 'file',
+        sha: '',
+        size: 0,
+        url: '',
+        html_url: '',
+        git_url: '',
+        download_url: '',
+        _links: { self: '', git: '', html: '' }
+      };
+    }
+  }, []);
   
   // 选择文件
   const selectFile = useCallback(async (item: GitHubContent) => {
@@ -187,10 +239,21 @@ export const useFilePreview = (onError: (message: string) => void) => {
       return;
     }
     
+    logger.debug(`正在选择文件预览: ${item.path}`);
+    
+    // 更新当前预览项目引用
+    currentPreviewItemRef.current = item;
+    
+    // 更新 URL，添加预览参数 - 始终创建新的历史条目
+    const dirPath = item.path.split('/').slice(0, -1).join('/');
+    // 从路径中提取文件名，作为预览参数，缩短 URL 长度
+    const fileName = item.path.split('/').pop() || '';
+    logger.debug(`使用简化的文件名作为预览参数: ${fileName}`);
+    updateUrlWithHistory(dirPath, item.path);
+    
     dispatch({ type: 'RESET_PREVIEW' });
     
     // 根据文件类型处理预览
-    const fileName = item.name.toLowerCase();
     
     try {
       // 使用代理URL
@@ -204,7 +267,9 @@ export const useFilePreview = (onError: (message: string) => void) => {
         proxyUrl = GitHubService.transformImageUrl(item.download_url, item.path, useTokenMode) || item.download_url;
       }
     
-    if (isMarkdownFile(fileName)) {
+    const fileNameLower = item.name.toLowerCase();
+    
+    if (isMarkdownFile(fileNameLower)) {
         // Markdown预览
         dispatch({ type: 'SET_MD_LOADING', loading: true });
         
@@ -217,7 +282,7 @@ export const useFilePreview = (onError: (message: string) => void) => {
           dispatch({ type: 'SET_MD_LOADING', loading: false });
         }
       } 
-      else if (isPdfFile(fileName)) {
+      else if (isPdfFile(fileNameLower)) {
         // PDF预览
         dispatch({ type: 'SET_PDF_LOADING', loading: true });
         dispatch({ type: 'SET_PDF_ERROR', error: null });
@@ -235,7 +300,7 @@ export const useFilePreview = (onError: (message: string) => void) => {
           dispatch({ type: 'SET_PDF_LOADING', loading: false });
         }
       } 
-      else if (isImageFile(fileName)) {
+      else if (isImageFile(fileNameLower)) {
         // 图片预览
         dispatch({ type: 'SET_IMAGE_LOADING', loading: true });
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });
@@ -252,13 +317,13 @@ export const useFilePreview = (onError: (message: string) => void) => {
         } finally {
           dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
         }
-    } else if (isWordFile(fileName)) {
+    } else if (isWordFile(fileNameLower)) {
       // 使用统一的Office预览组件
       loadOfficePreview(item, OfficeFileType.WORD);
-    } else if (isExcelFile(fileName)) {
+    } else if (isExcelFile(fileNameLower)) {
       // 使用统一的Office预览组件
       loadOfficePreview(item, OfficeFileType.EXCEL);
-    } else if (isPPTFile(fileName)) {
+    } else if (isPPTFile(fileNameLower)) {
       // 使用统一的Office预览组件
       loadOfficePreview(item, OfficeFileType.PPT);
     } else {
@@ -335,7 +400,29 @@ export const useFilePreview = (onError: (message: string) => void) => {
   
   // 关闭预览
   const closePreview = useCallback(() => {
+    logger.debug('关闭预览组件');
+    
+    // 获取当前预览的项目
+    const currentItem = currentPreviewItemRef.current;
+    
+    if (currentItem) {
+      // 从路径中提取目录部分
+      const dirPath = currentItem.path.split('/').slice(0, -1).join('/');
+      
+      logger.debug(`关闭预览 ${currentItem.path}，返回到目录 ${dirPath}`);
+      
+      // 更新 URL，移除预览参数 - 始终创建新的历史条目
+      updateUrlWithHistory(dirPath);
+      
+      // 重置当前预览项目引用
+      currentPreviewItemRef.current = null;
+    } else {
+      logger.warn('尝试关闭预览，但没有当前预览项目');
+    }
+    
+    // 重置预览状态
     dispatch({ type: 'RESET_PREVIEW' });
+    hasActivePreviewRef.current = false;
   }, []);
   
   // 更新PDF页码
@@ -391,6 +478,92 @@ export const useFilePreview = (onError: (message: string) => void) => {
     onError(`Office文档加载失败: ${error}`);
   }, [onError]);
   
+  // 监听浏览器历史导航事件，处理预览的后退操作
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      logger.debug('检测到浏览器后退/前进按钮操作');
+      
+      // 防止重复处理
+      if (isHandlingNavigationRef.current) {
+        logger.debug('已在处理导航事件，跳过');
+        return;
+      }
+      
+      isHandlingNavigationRef.current = true;
+      
+      try {
+        // 从历史状态中获取预览信息
+        const state = event.state as { path?: string; preview?: string } | null;
+        logger.debug(`历史状态: ${JSON.stringify(state)}`);
+        
+        // 当前是否有预览打开 - 使用 ref 值，确保最新状态
+        const hasActivePreview = hasActivePreviewRef.current;
+        logger.debug(`当前预览状态: ${hasActivePreview ? '活跃' : '非活跃'}`);
+        
+        // 检查 URL 是否包含预览参数
+        const urlHasPreview = hasPreviewParam();
+        const previewPath = getPreviewFromUrl();
+        logger.debug(`URL 预览参数: ${urlHasPreview ? previewPath : '无'}`);
+        
+        // 如果当前有预览，但 URL 不再包含预览参数，则关闭预览（后退操作）
+        if (hasActivePreview && !urlHasPreview) {
+          logger.debug('检测到后退关闭预览操作');
+          
+          // 重置预览状态
+          dispatch({ type: 'RESET_PREVIEW' });
+          currentPreviewItemRef.current = null;
+          hasActivePreviewRef.current = false;
+          
+          logger.debug('预览已关闭');
+          return;
+        }
+        
+        // 如果 URL 包含预览参数，但当前没有预览或预览的是不同文件，则尝试打开预览（前进操作）
+        if (urlHasPreview && previewPath) {
+          const currentPreviewName = currentPreviewItemRef.current?.name;
+          const currentPreviewPath = currentPreviewItemRef.current?.path;
+          
+          // 检查文件名是否匹配
+          if (!hasActivePreview || 
+              (currentPreviewName !== previewPath && 
+               !currentPreviewPath?.endsWith(`/${previewPath}`))) {
+            logger.debug(`检测到前进打开预览操作: ${previewPath}`);
+            
+            // 使用回调函数查找文件项
+            if (findFileItemByPath) {
+              const fileItem = findFileItemByPath(previewPath);
+              
+              if (fileItem) {
+                logger.debug(`找到预览文件项: ${fileItem.path}`);
+                // 更新预览引用并打开预览
+                currentPreviewItemRef.current = fileItem;
+                selectFile(fileItem);
+                logger.debug('正在重新打开预览');
+              } else {
+                logger.warn(`前进操作无法找到文件: ${previewPath}`);
+              }
+            } else {
+              logger.warn('未提供查找文件的回调函数，无法重新打开预览');
+            }
+          }
+        }
+      } finally {
+        // 完成处理
+        isHandlingNavigationRef.current = false;
+      }
+    };
+    
+    // 添加历史导航事件监听器
+    window.addEventListener('popstate', handlePopState);
+    logger.debug('已添加 popstate 事件监听器');
+    
+    // 组件卸载时移除监听器
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      logger.debug('已移除 popstate 事件监听器');
+    };
+  }, [selectFile, findFileItemByPath]);
+  
   return {
     previewState,
     useTokenMode,
@@ -406,6 +579,7 @@ export const useFilePreview = (onError: (message: string) => void) => {
     handlePdfError,
     handleImageError,
     handleOfficeError,
-    pdfCurrentPageRef
+    pdfCurrentPageRef,
+    currentPreviewItemRef
   };
 }; 

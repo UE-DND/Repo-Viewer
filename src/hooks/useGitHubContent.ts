@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { GitHubContent } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
+import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/urlManager';
 
 // 配置
 const HOMEPAGE_FILTER_ENABLED = (import.meta.env.HOMEPAGE_FILTER_ENABLED || import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED) === 'true';
@@ -21,9 +22,17 @@ const PATH_CACHE_TTL = 300000; // 路径缓存有效期，5分钟（单位：毫
 
 // 自定义Hook，管理GitHub内容获取
 export const useGitHubContent = () => {
-  // 尝试从localStorage恢复上次浏览的路径
+  // 尝试从URL或localStorage恢复路径
   const getSavedPath = (): string => {
     try {
+      // 首先尝试从URL获取路径
+      const urlPath = getPathFromUrl();
+      if (urlPath) {
+        logger.debug(`从URL获取路径: ${urlPath}`);
+        return urlPath;
+      }
+      
+      // 如果URL中没有路径，尝试从localStorage获取
       if (typeof localStorage !== 'undefined') {
         const savedPath = localStorage.getItem(STORAGE_KEY_CURRENT_PATH);
         const savedTimestamp = localStorage.getItem(STORAGE_KEY_PATH_TIMESTAMP);
@@ -45,10 +54,11 @@ export const useGitHubContent = () => {
           }
         }
         
+        logger.debug(`从localStorage获取路径: ${savedPath}`);
         return savedPath || '';
       }
     } catch (e) {
-      logger.error('无法从localStorage读取保存的路径', e);
+      logger.error('获取保存的路径失败', e);
     }
     return '';
   };
@@ -60,7 +70,10 @@ export const useGitHubContent = () => {
   const [loadingReadme, setLoadingReadme] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-
+  
+  // 使用ref跟踪初始加载状态，避免重复更新URL
+  const isInitialLoad = useRef<boolean>(true);
+  
   // 保存当前路径到localStorage
   const savePathToStorage = useCallback((path: string) => {
     try {
@@ -180,11 +193,61 @@ export const useGitHubContent = () => {
       if (!isThemeChangeOnly) {
         loadContents(currentPath);
         savePathToStorage(currentPath);
+        
+        // 只有在非初始加载时更新URL
+        if (!isInitialLoad.current) {
+          // 使用历史API更新URL，并添加历史记录
+          updateUrlWithHistory(currentPath);
+        } else {
+          // 初始加载时，如果URL中已有path参数，则不需要更新URL
+          const urlPath = getPathFromUrl();
+          if (currentPath !== urlPath) {
+            // 如果初始加载的路径与URL中的路径不同，更新URL（但不添加历史记录）
+            updateUrlWithoutHistory(currentPath);
+          }
+          isInitialLoad.current = false;
+        }
       } else {
         logger.debug('仅主题切换操作，跳过内容重新加载');
       }
     }
   }, [currentPath, refreshTrigger, loadContents, savePathToStorage]);
+  
+  // 监听浏览器历史导航事件
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      logger.debug('内容管理器: 检测到历史导航事件');
+      
+      // 从历史状态中获取路径
+      const state = event.state as { path?: string; preview?: string } | null;
+      logger.debug(`历史状态: ${JSON.stringify(state)}`);
+      
+      if (state && state.path !== undefined) {
+        logger.debug(`历史导航事件，路径: ${state.path}`);
+        // 更新当前路径，但不添加新的历史记录
+        setCurrentPath(state.path);
+      } else {
+        // 如果没有state或path未定义，尝试从 URL 获取路径
+        const urlPath = getPathFromUrl();
+        if (urlPath) {
+          logger.debug(`历史导航事件，从URL获取路径: ${urlPath}`);
+          setCurrentPath(urlPath);
+        } else {
+          // 如果URL中也没有路径，重置为根路径
+          logger.debug('历史导航事件，无路径状态，重置为根路径');
+          setCurrentPath('');
+        }
+      }
+    };
+    
+    // 添加历史导航事件监听器
+    window.addEventListener('popstate', handlePopState);
+    
+    // 组件卸载时移除监听器
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // 重试加载
   const handleRetry = useCallback(() => {
