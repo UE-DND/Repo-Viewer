@@ -1,14 +1,21 @@
+// 导入GitHubService以使用其多代理机制
+import { GitHubService } from '../services/github';
+
 // 获取处理过的URL，解决CORS问题
 export const getProxiedUrl = (url: string): string => {
   const isDevEnvironment = window.location.hostname === 'localhost';
-  const IMAGE_PROXY_URL = (import.meta.env.IMAGE_PROXY_URL || import.meta.env.VITE_IMAGE_PROXY_URL || 'https://gh-proxy.com');
 
   if (!isDevEnvironment) {
-    // 生产环境使用gh-proxy代理
-    if (url.includes('raw.githubusercontent.com')) {
-      return `${IMAGE_PROXY_URL}/${url}`;
-    } else if (url.includes('api.github.com')) {
-      return `${IMAGE_PROXY_URL}/${url}`;
+    // 生产环境使用GitHubService的多代理机制
+    if (url.includes('raw.githubusercontent.com') || url.includes('api.github.com')) {
+      try {
+        // 尝试使用GitHubService的代理机制
+        const proxiedUrl = GitHubService.transformImageUrl(url, '', true);
+        return proxiedUrl || url;
+      } catch (error) {
+        console.error('代理URL转换失败:', error);
+        return url;
+      }
     }
     return url;
   }

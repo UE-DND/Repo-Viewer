@@ -15,6 +15,8 @@ import {
   GlobalStyles
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { GitHubContent } from '../../types';
 import { GitHubService } from '../../services/github';
 import { Components } from 'react-markdown'
@@ -53,7 +55,6 @@ interface MarkdownPreviewProps {
   isSmallScreen: boolean;
   onClose?: () => void;
   previewingItem?: GitHubContent | null;
-  isFullscreen?: boolean;
   isReadme?: boolean;
   lazyLoad?: boolean;
 }
@@ -75,7 +76,6 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
   isSmallScreen,
   onClose,
   previewingItem,
-  isFullscreen = false,
   isReadme = false,
   lazyLoad = true
 }) => {
@@ -88,6 +88,10 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
   const observerRef = useRef<IntersectionObserver | null>(null);
   // 图片加载缓存，用于记住已加载的图片
   const loadedImagesRef = useRef<Set<string>>(new Set());
+  // 图片加载失败缓存，用于记住加载失败的图片
+  const failedImagesRef = useRef<Set<string>>(new Set());
+  // 图片加载超时计时器
+  const imageTimersRef = useRef<Map<string, number>>(new Map());
   // 添加主题切换状态追踪
   const [isThemeChanging, setIsThemeChanging] = useState<boolean>(false);
   // LaTeX公式数量
@@ -165,6 +169,16 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
     }
   }, [shouldRender, readmeContent, checkLatexCount]);
   
+  // 清理图片加载计时器
+  useEffect(() => {
+    return () => {
+      // 组件卸载时清理所有计时器
+      imageTimersRef.current.forEach((timer) => {
+        window.clearTimeout(timer);
+      });
+    };
+  }, []);
+  
   if (loadingReadme) {
     return (
       // 使用 Markdown 预览骨架屏替代加载指示器
@@ -224,6 +238,10 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
             '&:not(.loaded)': {
               filter: 'brightness(0.6) blur(2px)',
               transform: 'scale(0.98)'
+            },
+            '&.failed': {
+              filter: 'grayscale(0.5) brightness(0.9)',
+              border: `1px dashed ${theme.palette.error.main}`,
             },
             '&.theme-transition': {
               transition: 'none !important'
@@ -365,6 +383,11 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
                 // 处理图片路径
                 let imgSrc = props.src || '';
                 const originalSrc = props.src || '';
+                const imgId = `img-${imgSrc.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                
+                // 添加本地状态管理图片加载情况
+                const [isImageLoaded, setIsImageLoaded] = useState(false);
+                const [isImageFailed, setIsImageFailed] = useState(failedImagesRef.current.has(imgSrc || ''));
                 
                 if (previewingItem && props.src) {
                   // 记录转换前的URL
@@ -386,25 +409,123 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
                   }
                 }
                 
-                // 检查图片是否已经加载过
-                const isLoaded = loadedImagesRef.current.has(imgSrc || '');
+                // 检查图片是否已经加载失败
+                if (isImageFailed) {
+                  return (
+                    <div style={{ 
+                      position: 'relative', 
+                      margin: '1em 0',
+                      border: `1px dashed ${theme.palette.error.main}`,
+                      borderRadius: '4px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: '100px',
+                      backgroundColor: alpha(theme.palette.error.main, 0.05)
+                    }}>
+                      <ErrorOutlineIcon color="error" style={{ fontSize: 40, marginBottom: 8 }} />
+                      <Typography variant="body2" color="error" gutterBottom>
+                        图片加载失败
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" style={{ maxWidth: '90%', wordBreak: 'break-all', textAlign: 'center', marginBottom: 8 }}>
+                        {imgSrc || '未知图片路径'}
+                      </Typography>
+                      <Button
+                        startIcon={<RefreshIcon />}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => {
+                          // 重置失败状态
+                          setIsImageFailed(false);
+                          // 从失败缓存中移除
+                          failedImagesRef.current.delete(imgSrc || '');
+                          
+                          // 尝试使用备选加载方式
+                          const directSrc = tryDirectLoad();
+                          if (directSrc) {
+                            // 使用直接URL加载
+                            const imgElement = document.getElementById(imgId)?.querySelector('img');
+                            if (imgElement) {
+                              imgElement.src = directSrc;
+                            }
+                          } else {
+                            // 强制重新渲染以触发图片重新加载
+                            setIsThemeChanging(true);
+                            setTimeout(() => setIsThemeChanging(false), 50);
+                          }
+                        }}
+                      >
+                        重试加载
+                      </Button>
+                    </div>
+                  );
+                }
+                
+                // 尝试不同的加载方式
+                const tryDirectLoad = () => {
+                  // 尝试直接从GitHub加载
+                  if (imgSrc && imgSrc.includes('githubusercontent.com')) {
+                    try {
+                      // 提取实际的路径部分
+                      let directPath = '';
+                      if (imgSrc.includes('/api/github?action=getFileContent&url=')) {
+                        // 解码URL参数
+                        const encodedUrl = imgSrc.split('url=')[1];
+                        if (encodedUrl) {
+                          const decodedUrl = decodeURIComponent(encodedUrl);
+                          // 提取路径
+                          const pathMatch = decodedUrl.match(/githubusercontent\.com\/[^\/]+\/[^\/]+\/[^\/]+\/(.+)/);
+                          if (pathMatch && pathMatch[1]) {
+                            directPath = pathMatch[1];
+                          }
+                        }
+                      } else if (imgSrc.includes('githubusercontent.com')) {
+                        const pathMatch = imgSrc.match(/githubusercontent\.com\/[^\/]+\/[^\/]+\/[^\/]+\/(.+)/);
+                        if (pathMatch && pathMatch[1]) {
+                          directPath = pathMatch[1];
+                        }
+                      }
+                      
+                      if (directPath) {
+                        // 尝试使用备选的代理服务
+                        const proxy = 'https://cdn.jsdelivr.net/gh';
+                        // 提取仓库信息
+                        const repoOwner = GitHubService.getCurrentProxyService().includes('Royfor12') ? 'Royfor12' : 'UE-DND';
+                        const repoName = GitHubService.getCurrentProxyService().includes('CQUT-Course-Guide-Sharing-Scheme') ? 'CQUT-Course-Guide-Sharing-Scheme' : 'Repo-Viewer';
+                        // 构建新的URL
+                        const newSrc = `${proxy}/${repoOwner}/${repoName}@main/${directPath}`;
+                        logger.info('尝试使用JSDelivr加载图片:', newSrc);
+                        return newSrc;
+                      }
+                    } catch (error) {
+                      logger.error('解析直接URL失败:', error);
+                    }
+                  }
+                  return null;
+                };
                 
                 // 创建懒加载图片
                 return (
-                  <div style={{ position: 'relative', margin: '1em 0' }}>
+                  <div style={{ position: 'relative', margin: '1em 0' }} id={imgId}>
                     <img 
                       {...props} 
                       src={imgSrc}
                       style={{ 
                         maxWidth: '100%', 
                         height: 'auto',
-                        opacity: isLoaded ? 1 : 0.5,
+                        opacity: isImageLoaded ? 1 : 0.5,
                         transition: 'opacity 0.3s ease'
                       }}
                       alt={props.alt || '图片'}
                       loading="lazy"
-                      className={isLoaded ? 'loaded' : ''}
+                      className={isImageLoaded ? 'loaded' : isImageFailed ? 'failed' : ''}
                       onLoad={(e) => {
+                        // 设置本地状态
+                        setIsImageLoaded(true);
+                        
                         // 添加loaded类以触发淡入效果
                         e.currentTarget.classList.add('loaded');
                         e.currentTarget.style.opacity = '1';
@@ -413,20 +534,98 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
                         // 记录已加载的图片，以便主题切换时不再重复加载效果
                         if (imgSrc) {
                           loadedImagesRef.current.add(imgSrc);
+                          failedImagesRef.current.delete(imgSrc);
+                          
+                          // 清除超时计时器
+                          const timerId = imageTimersRef.current.get(imgSrc);
+                          if (timerId) {
+                            window.clearTimeout(timerId);
+                            imageTimersRef.current.delete(imgSrc);
+                          }
                         }
                       }}
                       onError={(e) => {
                         // 图片加载失败时的处理
                         logger.error('图片加载失败:', imgSrc);
-                        logger.debug('尝试使用原始URL:', originalSrc);
                         
+                        // 设置失败状态
+                        setIsImageFailed(true);
+                        
+                        // 清除超时计时器
+                        const timerId = imageTimersRef.current.get(imgSrc);
+                        if (timerId) {
+                          window.clearTimeout(timerId);
+                          imageTimersRef.current.delete(imgSrc);
+                        }
+                        
+                        // 如果是代理URL，尝试标记该代理服务失败
+                        if (imgSrc && (imgSrc.includes('gh-proxy.com') || imgSrc.includes('ghproxy.com') || imgSrc.includes('staticdn.net') || imgSrc.includes('ghfast.top'))) {
+                          try {
+                            // 提取代理服务URL
+                            const proxyUrl = imgSrc.split('/')[0] + '//' + imgSrc.split('/')[2];
+                            // 标记该代理服务失败
+                            GitHubService.markProxyServiceFailed(proxyUrl);
+                            logger.warn('标记代理服务失败:', proxyUrl);
+                            
+                            // 获取新的代理服务
+                            const currentProxy = GitHubService.getCurrentProxyService();
+                            logger.info('切换到新的代理服务:', currentProxy);
+                            
+                            // 如果还有可用的备选代理，重新加载图片
+                            if (currentProxy && currentProxy !== proxyUrl) {
+                              // 清除失败记录以允许重试
+                              failedImagesRef.current.delete(imgSrc);
+                              // 重置失败状态
+                              setIsImageFailed(false);
+                              return;
+                            }
+                          } catch (error) {
+                            logger.error('处理代理服务失败出错:', error);
+                          }
+                        }
+
+                        // 尝试使用备选的直接加载方式
+                        const directSrc = tryDirectLoad();
+                        if (directSrc) {
+                          logger.info('尝试使用直接URL加载:', directSrc);
+                          e.currentTarget.src = directSrc;
+                          
+                          // 设置新的超时计时器
+                          const newTimerId = window.setTimeout(() => {
+                            if (!loadedImagesRef.current.has(directSrc)) {
+                              failedImagesRef.current.add(imgSrc);
+                              setIsImageFailed(true);
+                            }
+                          }, 15000); // 15秒超时
+                          
+                          imageTimersRef.current.set(directSrc, newTimerId);
+                          return;
+                        }
+
                         // 如果转换后的URL加载失败，可以尝试使用原始URL
-                        if (imgSrc !== originalSrc) {
+                        if (imgSrc !== originalSrc && !failedImagesRef.current.has(originalSrc)) {
+                          logger.debug('尝试使用原始URL:', originalSrc);
                           e.currentTarget.src = originalSrc;
+                          
+                          // 为原始URL设置超时计时器
+                          const newTimerId = window.setTimeout(() => {
+                            if (!loadedImagesRef.current.has(originalSrc)) {
+                              failedImagesRef.current.add(originalSrc);
+                              setIsImageFailed(true);
+                            }
+                          }, 15000); // 15秒超时
+                          
+                          imageTimersRef.current.set(originalSrc, newTimerId);
+                        } else {
+                          // 记录失败的图片
+                          if (imgSrc) {
+                            failedImagesRef.current.add(imgSrc);
+                            setIsImageFailed(true);
+                          }
                         }
                       }}
                     />
-                    {!isLoaded && (
+                    {!isImageLoaded && !isImageFailed && (
                       <div style={{ 
                         position: 'absolute', 
                         top: 'calc(50% - 20px)', 
@@ -479,35 +678,6 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
           </Box>
         )}
       </Paper>
-      
-      {/* 添加独立的关闭按钮，样式与PDFPreview一致 */}
-      {isFullscreen && onClose && (
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={onClose}
-          sx={{
-            position: 'fixed',
-            right: theme.spacing(6),
-            bottom: theme.spacing(2),
-            borderRadius: theme.shape.borderRadius * 2,
-            minWidth: '80px',
-            fontWeight: 'bold',
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? theme.palette.primary.dark 
-              : theme.palette.primary.main,
-            color: '#fff',
-            '&:hover': {
-              backgroundColor: theme.palette.mode === 'dark' 
-                ? alpha(theme.palette.primary.dark, 0.9) 
-                : alpha(theme.palette.primary.main, 0.9),
-            },
-            zIndex: theme.zIndex.modal + 50
-          }}
-        >
-          关闭
-        </Button>
-      )}
     </Box>
   );
 });

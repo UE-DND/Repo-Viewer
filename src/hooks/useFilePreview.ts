@@ -14,11 +14,12 @@ const FORCE_SERVER_PROXY = !import.meta.env.DEV || (import.meta.env.USE_TOKEN_MO
 
 // 初始预览状态
 const initialPreviewState: PreviewState = {
+  // Markdown预览 (仅用于README文件)
   previewContent: null,
   previewingItem: null,
   loadingPreview: false,
-  isMdFullscreen: false,
   
+  // PDF预览
   pdfPreviewUrl: null,
   previewingPdfItem: null,
   loadingPdfPreview: false,
@@ -50,6 +51,7 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
       return initialPreviewState;
       
     case 'SET_MD_PREVIEW':
+      // 注意：此操作仅用于README文件预览，其他Markdown文件预览功能已禁用
       return {
         ...state,
         previewContent: action.content,
@@ -57,15 +59,10 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
       };
       
     case 'SET_MD_LOADING':
+      // 注意：此操作仅用于README文件预览，其他Markdown文件预览功能已禁用
       return {
         ...state,
         loadingPreview: action.loading
-      };
-      
-    case 'SET_MD_FULLSCREEN':
-      return {
-        ...state,
-        isMdFullscreen: action.fullscreen
       };
       
     case 'SET_PDF_PREVIEW':
@@ -270,16 +267,23 @@ export const useFilePreview = (
     const fileNameLower = item.name.toLowerCase();
     
     if (isMarkdownFile(fileNameLower)) {
-        // Markdown预览
-        dispatch({ type: 'SET_MD_LOADING', loading: true });
-        
-        try {
-          const content = await GitHubService.getFileContent(item.download_url);
-          dispatch({ type: 'SET_MD_PREVIEW', content, item });
-        } catch (error: any) {
-          onError(`加载Markdown文件失败: ${error.message}`);
-        } finally {
-          dispatch({ type: 'SET_MD_LOADING', loading: false });
+        // 只预览README.md文件，其他Markdown文件不支持预览
+        if (fileNameLower === 'readme.md') {
+          // Markdown预览
+          dispatch({ type: 'SET_MD_LOADING', loading: true });
+          
+          try {
+            const content = await GitHubService.getFileContent(item.download_url);
+            dispatch({ type: 'SET_MD_PREVIEW', content, item });
+          } catch (error: any) {
+            onError(`加载Markdown文件失败: ${error.message}`);
+          } finally {
+            dispatch({ type: 'SET_MD_LOADING', loading: false });
+          }
+        } else {
+          // 不支持预览其他Markdown文件
+          onError('已禁用Markdown文件预览功能，如需查看内容请下载文件');
+          logger.info(`阻止加载非README的Markdown文件: ${item.path}`);
         }
       } 
       else if (isPdfFile(fileNameLower)) {
@@ -359,9 +363,16 @@ export const useFilePreview = (
     }
   }, [onError]);
   
-  // 加载Markdown预览
+  // 加载Markdown预览 (仅用于README文件)
   const loadMarkdownPreview = useCallback(async (item: GitHubContent) => {
     if (!item.download_url) return;
+    
+    // 只加载README.md文件
+    if (item.name.toLowerCase() !== 'readme.md') {
+      onError('已禁用Markdown文件预览功能，如需查看内容请下载文件');
+      logger.info(`阻止加载非README的Markdown文件: ${item.path}`);
+      return;
+    }
     
     dispatch({ type: 'SET_MD_PREVIEW', content: null, item });
     dispatch({ type: 'SET_MD_LOADING', loading: true });
@@ -435,11 +446,6 @@ export const useFilePreview = (
   const togglePdfFullscreen = useCallback(() => {
     dispatch({ type: 'SET_PDF_FULLSCREEN', fullscreen: !previewState.isPdfFullscreen });
   }, [previewState.isPdfFullscreen]);
-  
-  // Markdown全屏切换
-  const toggleMdFullscreen = useCallback(() => {
-    dispatch({ type: 'SET_MD_FULLSCREEN', fullscreen: !previewState.isMdFullscreen });
-  }, [previewState.isMdFullscreen]);
   
   // 图像全屏切换
   const toggleImageFullscreen = useCallback(() => {
@@ -572,7 +578,6 @@ export const useFilePreview = (
     closePreview,
     updatePdfPage,
     togglePdfFullscreen,
-    toggleMdFullscreen,
     toggleImageFullscreen,
     toggleOfficeFullscreen,
     handlePdfPagesLoaded,

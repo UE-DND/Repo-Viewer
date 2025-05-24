@@ -26,7 +26,6 @@ interface GitHubContextData {
   closePreview: () => void;
   updatePdfPage: (page: number) => void;
   togglePdfFullscreen: () => void;
-  toggleMdFullscreen: () => void;
   toggleImageFullscreen: () => void;
   handlePdfPagesLoaded: (numPages: number) => void;
   handlePdfError: (error: string) => void;
@@ -94,7 +93,6 @@ export const GitHubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     closePreview: previewManager.closePreview,
     updatePdfPage: previewManager.updatePdfPage,
     togglePdfFullscreen: previewManager.togglePdfFullscreen,
-    toggleMdFullscreen: previewManager.toggleMdFullscreen,
     toggleImageFullscreen: previewManager.toggleImageFullscreen,
     handlePdfPagesLoaded: previewManager.handlePdfPagesLoaded,
     handlePdfError: previewManager.handlePdfError,

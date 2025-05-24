@@ -273,21 +273,6 @@ const MainContent: React.FC = () => {
             </Box>
           )}
           
-          {/* Markdown全屏预览 */}
-          {previewState.previewContent && previewState.previewingItem && previewState.previewingItem.name.toLowerCase() !== 'readme.md' && (
-            <FullScreenPreview onClose={closePreview} fitToPage={false}>
-              <MarkdownPreview 
-                readmeContent={previewState.previewContent}
-                loadingReadme={previewState.loadingPreview}
-                isSmallScreen={isSmallScreen}
-                onClose={closePreview}
-                previewingItem={previewState.previewingItem}
-                isFullscreen={true}
-                lazyLoad={false}
-              />
-            </FullScreenPreview>
-          )}
-          
           {/* PDF全屏预览 */}
           {previewState.previewingPdfItem && previewState.pdfPreviewUrl && (
             <FullScreenPreview onClose={closePreview} fitToPage={true}>

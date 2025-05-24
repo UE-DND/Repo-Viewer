@@ -44,11 +44,10 @@ export enum OfficeFileType {
 
 // 定义预览状态接口
 export interface PreviewState {
-  // Markdown预览
+  // Markdown预览 (仅用于README文件)
   previewContent: string | null;
   previewingItem: GitHubContent | null;
   loadingPreview: boolean;
-  isMdFullscreen: boolean;
   
   // PDF预览
   pdfPreviewUrl: string | null;
@@ -80,9 +79,11 @@ export interface PreviewState {
 // 定义预览操作类型
 export type PreviewAction =
   | { type: 'RESET_PREVIEW' }
+  // Markdown预览操作 (仅用于README文件)
   | { type: 'SET_MD_PREVIEW', content: string | null, item: GitHubContent | null }
   | { type: 'SET_MD_LOADING', loading: boolean }
-  | { type: 'SET_MD_FULLSCREEN', fullscreen: boolean }
+  
+  // PDF预览操作
   | { type: 'SET_PDF_PREVIEW', url: string | null, item: GitHubContent | null }
   | { type: 'SET_PDF_LOADING', loading: boolean }
   | { type: 'SET_PDF_ERROR', error: string | null }
@@ -91,10 +92,13 @@ export type PreviewAction =
   | { type: 'SET_PDF_FULLSCREEN', fullscreen: boolean }
   | { type: 'SET_PDF_DIMMED', dimmed: boolean }
   | { type: 'SET_PDF_PAGE_INPUT', input: string }
+  
+  // 图像预览操作
   | { type: 'SET_IMAGE_PREVIEW', url: string | null, item: GitHubContent | null }
   | { type: 'SET_IMAGE_LOADING', loading: boolean }
   | { type: 'SET_IMAGE_ERROR', error: string | null }
   | { type: 'SET_IMAGE_FULLSCREEN', fullscreen: boolean }
+  
   // Office预览操作
   | { type: 'SET_OFFICE_PREVIEW', url: string | null, item: GitHubContent | null, fileType: OfficeFileType | null }
   | { type: 'SET_OFFICE_LOADING', loading: boolean }
