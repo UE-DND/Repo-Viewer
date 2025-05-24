@@ -258,46 +258,61 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
           minScale={0.1}
           maxScale={5}
           centerOnInit
-          wheel={{ disabled: false }}
-          pinch={{ disabled: false }}
-          panning={{ disabled: false }}
+          wheel={{ disabled: error }}
+          pinch={{ disabled: error }}
+          panning={{ disabled: error }}
           onTransformed={(ref) => {
             setScale(ref.state.scale);
           }}
         >
           {({ zoomIn, zoomOut, resetTransform }) => (
             <>
-              <TransformComponent
-                wrapperStyle={{ width: '100%', height: '100%', visibility: error ? 'hidden' : 'visible' }}
-                contentStyle={{ 
-                  width: '100%', 
-                  height: 'calc(100% - 60px)',  // 减去底部控制栏的高度
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center',
-                  paddingBottom: '60px'  // 添加底部内边距，避免图片被控制栏遮挡
+              <div
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  transition: 'transform 0.3s ease',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
                 }}
               >
-                <img
-                  ref={imgRef}
-                  src={shouldLoad ? imageUrl : ''}
-                  alt={fileName}
-                  className={!loading ? 'loaded' : ''}
-                  style={{
-                    maxWidth: '90%',
-                    maxHeight: '80%',  // 减小最大高度，确保不被底部控制栏遮挡
-                    objectFit: 'contain',
-                    transform: `rotate(${rotation}deg)`,
-                    transition: 'transform 0.3s ease',
-                    transformOrigin: 'center center',
+                <TransformComponent
+                  wrapperStyle={{ 
+                    width: '100%', 
+                    height: '100%',
                   }}
-                  onLoad={() => setLoading(false)}
-                  onError={() => {
-                    setLoading(false);
-                    setError(true);
+                  contentStyle={{ 
+                    width: '100%', 
+                    height: 'calc(100% - 60px)',
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    paddingBottom: '60px'
                   }}
-                />
-              </TransformComponent>
+                >
+                  {!error && (
+                    <img
+                      ref={imgRef}
+                      src={shouldLoad ? imageUrl : ''}
+                      alt={fileName}
+                      className={!loading ? 'loaded' : ''}
+                      style={{
+                        maxWidth: '90%',
+                        maxHeight: '80%',
+                        objectFit: 'contain',
+                        transition: 'opacity 0.3s ease',
+                      }}
+                      onLoad={() => setLoading(false)}
+                      onError={() => {
+                        setLoading(false);
+                        setError(true);
+                      }}
+                    />
+                  )}
+                </TransformComponent>
+              </div>
 
               <Box 
                 sx={{ 

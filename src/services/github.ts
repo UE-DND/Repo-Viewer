@@ -643,10 +643,16 @@ export class GitHubService {
     if (!src) return undefined;
     
     try {
+      // 添加调试日志
+      logger.debug('转换前图片URL:', src);
+      logger.debug('Markdown文件路径:', markdownFilePath);
+      
       // 判断是否是非开发环境或启用了令牌模式
       if (FORCE_SERVER_PROXY && src.startsWith('http')) {
         // 通过服务端API代理
-        return `/api/github?action=getFileContent&url=${encodeURIComponent(src)}`;
+        const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(src)}`;
+        logger.debug('使用服务端API代理:', proxyUrl);
+        return proxyUrl;
       }
       
       // --- 以下仅在开发环境或未强制使用代理时生效 ---
@@ -655,21 +661,26 @@ export class GitHubService {
       if (src.startsWith('http')) {
         // 绝对URL - 可能需要代理
         if (useTokenMode || !import.meta.env.DEV) {
-        return this.getProxiedUrl(src);
-      }
-      return src;
+          const proxyUrl = this.getProxiedUrl(src);
+          logger.debug('绝对URL使用代理:', proxyUrl);
+          return proxyUrl;
+        }
+        logger.debug('直接使用绝对URL:', src);
+        return src;
       }
       
       // 处理相对URL
       // 获取Markdown文件所在的目录路径
       const dirPath = this.getDirectoryPath(markdownFilePath);
+      logger.debug('Markdown目录路径:', dirPath);
     
       // 构建完整路径
       let fullPath = '';
       
       if (src.startsWith('./')) {
         // 当前目录相对路径
-        fullPath = src.startsWith('./') ? `${dirPath}/${src.substring(2)}` : `${dirPath}/${src}`;
+        fullPath = `${dirPath}/${src.substring(2)}`;
+        logger.debug('当前目录相对路径 (./):', fullPath);
       } else if (src.startsWith('../')) {
         // 上级目录相对路径
         // 拆分目录路径
@@ -682,7 +693,7 @@ export class GitHubService {
         while (remainingSrc.startsWith('../')) {
           parentDirCount++;
           remainingSrc = remainingSrc.substring(3);
-      }
+        }
       
         // 移除相应数量的路径段
         const newPathLength = Math.max(0, pathSegments.length - parentDirCount);
@@ -690,9 +701,15 @@ export class GitHubService {
         
         // 构建新路径
         fullPath = `${newBasePath}/${remainingSrc}`;
+        logger.debug('上级目录相对路径 (../):', fullPath);
+      } else if (src.startsWith('/')) {
+        // 根目录绝对路径 (对于这种情况，不需要添加当前目录)
+        fullPath = src.substring(1); // 移除开头的/
+        logger.debug('根目录绝对路径 (/):', fullPath);
       } else {
         // 当前目录相对路径(无./前缀)
         fullPath = `${dirPath}/${src}`;
+        logger.debug('当前目录相对路径(无前缀):', fullPath);
       }
       
       // 规范化路径(删除多余的/)
@@ -710,12 +727,16 @@ export class GitHubService {
       
       // 构建GitHub原始URL
       const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${fullPath}`;
+      logger.debug('构建的原始URL:', rawUrl);
     
       // 是否使用代理
       if (useTokenMode || !import.meta.env.DEV) {
-        return this.getProxiedUrl(rawUrl);
+        const proxyUrl = this.getProxiedUrl(rawUrl);
+        logger.debug('返回代理URL:', proxyUrl);
+        return proxyUrl;
       }
       
+      logger.debug('返回原始URL:', rawUrl);
       return rawUrl;
     } catch (e) {
       logger.error('转换图片URL失败:', e);

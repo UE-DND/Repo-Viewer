@@ -363,16 +363,27 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
               ),
               img: ({ node, ...props }) => {
                 // 处理图片路径
-                let imgSrc = props.src;
+                let imgSrc = props.src || '';
+                const originalSrc = props.src || '';
                 
                 if (previewingItem && props.src) {
+                  // 记录转换前的URL
+                  logger.debug('Markdown中的原始图片URL:', props.src);
+                  logger.debug('当前Markdown文件路径:', previewingItem.path);
+                  
                   // 使用GitHubService处理图片URL
                   const transformedSrc = GitHubService.transformImageUrl(
                     props.src, 
                     previewingItem.path, 
                     true
                   );
-                  imgSrc = transformedSrc || props.src;
+                  
+                  if (transformedSrc) {
+                    logger.debug('转换后的图片URL:', transformedSrc);
+                    imgSrc = transformedSrc;
+                  } else {
+                    logger.warn('URL转换失败，使用原始URL:', props.src);
+                  }
                 }
                 
                 // 检查图片是否已经加载过
@@ -380,23 +391,52 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
                 
                 // 创建懒加载图片
                 return (
-                  <img 
-                    {...props} 
-                    src={imgSrc}
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                    alt={props.alt || '图片'}
-                    loading="lazy"
-                    className={isLoaded ? 'loaded' : ''}
-                    onLoad={(e) => {
-                      // 添加loaded类以触发淡入效果
-                      e.currentTarget.classList.add('loaded');
-                      
-                      // 记录已加载的图片，以便主题切换时不再重复加载效果
-                      if (imgSrc) {
-                        loadedImagesRef.current.add(imgSrc);
-                      }
-                    }}
-                  />
+                  <div style={{ position: 'relative', margin: '1em 0' }}>
+                    <img 
+                      {...props} 
+                      src={imgSrc}
+                      style={{ 
+                        maxWidth: '100%', 
+                        height: 'auto',
+                        opacity: isLoaded ? 1 : 0.5,
+                        transition: 'opacity 0.3s ease'
+                      }}
+                      alt={props.alt || '图片'}
+                      loading="lazy"
+                      className={isLoaded ? 'loaded' : ''}
+                      onLoad={(e) => {
+                        // 添加loaded类以触发淡入效果
+                        e.currentTarget.classList.add('loaded');
+                        e.currentTarget.style.opacity = '1';
+                        logger.debug('图片加载成功:', imgSrc);
+                        
+                        // 记录已加载的图片，以便主题切换时不再重复加载效果
+                        if (imgSrc) {
+                          loadedImagesRef.current.add(imgSrc);
+                        }
+                      }}
+                      onError={(e) => {
+                        // 图片加载失败时的处理
+                        logger.error('图片加载失败:', imgSrc);
+                        logger.debug('尝试使用原始URL:', originalSrc);
+                        
+                        // 如果转换后的URL加载失败，可以尝试使用原始URL
+                        if (imgSrc !== originalSrc) {
+                          e.currentTarget.src = originalSrc;
+                        }
+                      }}
+                    />
+                    {!isLoaded && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 'calc(50% - 20px)', 
+                        left: 'calc(50% - 20px)',
+                        opacity: 0.7 
+                      }}>
+                        <CircularProgress size={40} />
+                      </div>
+                    )}
+                  </div>
                 );
               },
               // 添加代码块支持，改进LaTeX代码块的处理
