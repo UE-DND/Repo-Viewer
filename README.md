@@ -73,7 +73,7 @@ VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
 VITE_IMAGE_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
-# 仓库信息（生产环境可不用VITE_前缀，后端读取）
+# 仓库信息（生产环境不用VITE_前缀，后端读取）
 GITHUB_REPO_OWNER = 仓库所有者
 GITHUB_REPO_NAME = 仓库名称
 GITHUB_REPO_BRANCH = 分支名称（默认为main）

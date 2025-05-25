@@ -3,7 +3,8 @@ import { Box, IconButton, Tooltip, useTheme } from '@mui/material';
 import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  GitHub as GitHubIcon
 } from '@mui/icons-material';
 import { ColorModeContext } from '../../contexts/ColorModeContext';
 import { useRefresh } from '../../hooks/useRefresh';
@@ -33,8 +34,31 @@ const ToolbarButtons: React.FC = () => {
     colorMode.toggleColorMode();
   }, [colorMode]);
   
+  // 处理GitHub按钮点击
+  const onGitHubClick = useCallback(() => {
+    const repoOwner = import.meta.env.GITHUB_REPO_OWNER || import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
+    const repoName = import.meta.env.GITHUB_REPO_NAME || import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
+    const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
+    window.open(repoUrl, '_blank');
+  }, []);
+  
   return (
     <Box sx={{ display: 'flex', gap: 1 }}>
+      <Tooltip title="查看GitHub仓库">
+        <IconButton 
+          color="inherit"
+          onClick={onGitHubClick}
+          sx={{
+            '&:hover': {
+              animation: `${pulseAnimation} 0.4s ease`,
+              color: theme.palette.primary.light
+            }
+          }}
+        >
+          <GitHubIcon />
+        </IconButton>
+      </Tooltip>
+      
       <Tooltip title="刷新内容">
         <IconButton 
           color="inherit"

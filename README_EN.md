@@ -73,7 +73,7 @@ VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
 VITE_IMAGE_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
-# Repository info (in production, these can be without VITE_ prefix for backend use)
+# Repository info (in production, these without VITE_ prefix for backend use)
 GITHUB_REPO_OWNER = Repository Owner
 GITHUB_REPO_NAME = Repository Name
 GITHUB_REPO_BRANCH = Branch Name (defaults to main)

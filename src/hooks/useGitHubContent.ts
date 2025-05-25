@@ -240,12 +240,21 @@ export const useGitHubContent = () => {
       }
     };
     
+    // 处理标题点击导航到首页事件
+    const handleNavigateToHome = () => {
+      logger.debug('接收到返回首页事件，正在导航到首页');
+      setCurrentPath('');
+    };
+    
     // 添加历史导航事件监听器
     window.addEventListener('popstate', handlePopState);
+    // 添加自定义导航事件监听器
+    window.addEventListener('navigate-to-home', handleNavigateToHome);
     
     // 组件卸载时移除监听器
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('navigate-to-home', handleNavigateToHome);
     };
   }, []);
 

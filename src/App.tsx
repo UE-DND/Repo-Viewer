@@ -22,12 +22,25 @@ const App = React.memo(() => {
     // 在移动端禁用跳转功能
     if (isSmallScreen) return;
     
-    // 只有当事件的目标元素是文本内容时才跳转
+    // 只有当事件的目标元素是文本内容时才执行返回首页
     if (titleRef.current && (event.target === titleRef.current || titleRef.current.contains(event.target as Node))) {
-      const repoOwner = import.meta.env.GITHUB_REPO_OWNER || import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
-      const repoName = import.meta.env.GITHUB_REPO_NAME || import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
-      const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
-      window.open(repoUrl, '_blank');
+      // 清除路径缓存
+      try {
+        // 清除 localStorage 中的路径缓存
+        localStorage.removeItem('repo_viewer_current_path');
+        localStorage.removeItem('repo_viewer_path_timestamp');
+        
+        // 清除 GitHubService 中的内容缓存
+        GitHubService.clearCache();
+        
+        logger.debug('已清除所有缓存，准备返回首页');
+      } catch (e) {
+        logger.error('清除缓存失败:', e);
+      }
+      
+      // 直接跳转到网站根路径
+      window.location.href = '/';
+      logger.debug('触发返回首页并刷新页面');
     }
   };
 
