@@ -44,7 +44,7 @@ const ToolbarButtons: React.FC = () => {
   
   return (
     <Box sx={{ display: 'flex', gap: 1 }}>
-      <Tooltip title="查看GitHub仓库">
+      <Tooltip title="在GitHub中查看">
         <IconButton 
           color="inherit"
           onClick={onGitHubClick}
