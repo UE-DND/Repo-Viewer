@@ -6,6 +6,9 @@ import { useDownload } from '../hooks/useDownload';
 import { GitHubContent } from '../types';
 import { logger } from '../utils';
 
+// 定义导航方向类型
+export type NavigationDirection = 'forward' | 'backward' | 'none';
+
 // 定义上下文数据结构
 interface GitHubContextData {
   // 内容管理
@@ -15,10 +18,11 @@ interface GitHubContextData {
   loading: boolean;
   loadingReadme: boolean;
   error: string | null;
-  navigateTo: (path: string) => void;
+  navigateTo: (path: string, direction?: NavigationDirection) => void;
   refresh: () => void;
   handleRetry: () => void;
-  setCurrentPath: (path: string) => void;
+  setCurrentPath: (path: string, direction?: NavigationDirection) => void;
+  navigationDirection: NavigationDirection;
   
   // 预览相关
   previewState: any;
@@ -85,9 +89,9 @@ export const GitHubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const downloadManager = useDownload(handleError);
   
   // 添加兼容层函数
-  const navigateTo = useCallback((path: string) => {
-    logger.debug(`navigateTo 兼容函数调用: ${path}`);
-    contentManager.setCurrentPath(path);
+  const navigateTo = useCallback((path: string, direction: NavigationDirection = 'forward') => {
+    logger.debug(`navigateTo 兼容函数调用: ${path}, 方向: ${direction}`);
+    contentManager.setCurrentPath(path, direction);
   }, [contentManager.setCurrentPath]);
   
   const refresh = useCallback(() => {

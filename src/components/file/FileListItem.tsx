@@ -117,8 +117,6 @@ const FileListItem = memo<FileListItemProps>(({
     <ListItem
       disablePadding
       sx={{ 
-        mb: 0.6, 
-        '&:last-child': { mb: 0 }, 
         overflow: 'visible', 
         width: '100%', 
         position: 'relative', 
@@ -157,9 +155,10 @@ const FileListItem = memo<FileListItemProps>(({
               display: 'inline-block', 
               cursor: 'pointer',
               position: 'absolute',
-              right: '12px',
+              right: '16px',
               top: '50%',
-              transform: 'translateY(-50%)' 
+              transform: 'translateY(-50%)',
+              zIndex: 2
             }}> 
               <IconButton
                 className={isItemDownloading ? "cancel-button" : "download-button"}
@@ -215,13 +214,14 @@ const FileListItem = memo<FileListItemProps>(({
         disableTouchRipple={disableTouchRipple}
         sx={{ 
           borderRadius: { xs: 2, sm: 3 }, 
-          transition: 'transform 0.15s ease-in-out, background-color 0.15s ease-in-out',
+          transition: 'transform 0.1s ease-in-out, background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out',
           '&:hover': {
             transform: 'translateX(3px)', 
             backgroundColor: alpha(theme.palette.primary.main, 0.04),
+            boxShadow: `-1px 2px 3px ${alpha(theme.palette.common.black, 0.1)}`,
           },
-          pr: { xs: 6, sm: 8 }, 
-          py: { xs: 1, sm: 1.5 }, 
+          pr: { xs: 7, sm: 9 },
+          py: { xs: 0.75, sm: 1.25 },
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' }, 
           alignItems: { xs: 'flex-start', sm: 'center' }, 
@@ -236,7 +236,8 @@ const FileListItem = memo<FileListItemProps>(({
           display: 'flex', 
           alignItems: 'center',
           width: '100%',
-          minWidth: 0 
+          minWidth: 0,
+          py: { xs: 0.25, sm: 0.5 }
         }}>
           <ListItemIcon sx={{ 
             minWidth: { xs: '32px', sm: '40px' }, 

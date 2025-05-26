@@ -7,10 +7,11 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
+import { NavigationDirection } from '../../contexts/GitHubContext';
 
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: Array<{ name: string; path: string }>;
-  handleBreadcrumbClick: (path: string) => void;
+  handleBreadcrumbClick: (path: string, direction?: NavigationDirection) => void;
   breadcrumbsMaxItems: number;
   isSmallScreen: boolean;
   breadcrumbsContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -34,7 +35,8 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(({
     const parentIndex = breadcrumbSegments.length - 2;
     if (parentIndex >= 0) {
       const parentPath = breadcrumbSegments[parentIndex].path;
-      handleBreadcrumbClick(parentPath);
+      // 设置导航方向为后退
+      handleBreadcrumbClick(parentPath, 'backward');
     }
   };
 
@@ -212,7 +214,11 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(({
               underline="none"
               color={isHome ? 'primary' : 'inherit'}
               href="#"
-              onClick={(e) => { e.preventDefault(); handleBreadcrumbClick(segment.path); }}
+              onClick={(e) => { 
+                e.preventDefault(); 
+                // 设置导航方向为后退
+                handleBreadcrumbClick(segment.path, 'backward'); 
+              }}
               sx={{ 
                 display: 'flex', 
                 alignItems: 'center',

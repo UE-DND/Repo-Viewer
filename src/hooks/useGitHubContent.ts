@@ -3,6 +3,7 @@ import { GitHubContent } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
 import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/urlManager';
+import { NavigationDirection } from '../contexts/GitHubContext';
 
 // 配置
 const HOMEPAGE_FILTER_ENABLED = (import.meta.env.HOMEPAGE_FILTER_ENABLED || import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED) === 'true';
@@ -42,6 +43,8 @@ export const useGitHubContent = () => {
   const [loadingReadme, setLoadingReadme] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
+  // 添加导航方向状态
+  const [navigationDirection, setNavigationDirection] = useState<NavigationDirection>('none');
   
   // 使用ref跟踪初始加载状态，避免重复更新URL
   const isInitialLoad = useRef<boolean>(true);
@@ -183,16 +186,20 @@ export const useGitHubContent = () => {
       if (state && state.path !== undefined) {
         logger.debug(`历史导航事件，路径: ${state.path}`);
         // 更新当前路径，但不添加新的历史记录
+        // 设置导航方向为后退，因为这是通过浏览器的后退按钮触发的
+        setNavigationDirection('backward');
         setCurrentPath(state.path);
       } else {
         // 如果没有state或path未定义，尝试从 URL 获取路径
         const urlPath = getPathFromUrl();
         if (urlPath) {
           logger.debug(`历史导航事件，从URL获取路径: ${urlPath}`);
+          setNavigationDirection('backward');
           setCurrentPath(urlPath);
         } else {
           // 如果URL中也没有路径，重置为根路径
           logger.debug('历史导航事件，无路径状态，重置为根路径');
+          setNavigationDirection('backward');
           setCurrentPath('');
         }
       }
@@ -201,6 +208,7 @@ export const useGitHubContent = () => {
     // 处理标题点击导航到首页事件
     const handleNavigateToHome = () => {
       logger.debug('接收到返回首页事件，正在导航到首页');
+      setNavigationDirection('backward');
       setCurrentPath('');
     };
     
@@ -220,12 +228,14 @@ export const useGitHubContent = () => {
   // 刷新内容
   const refreshContents = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
+    setNavigationDirection('none'); // 刷新时不应用动画
     logger.debug('触发内容刷新');
   }, []);
 
   // 导航到指定路径
-  const navigateTo = useCallback((path: string) => {
-    logger.debug(`导航到: ${path}`);
+  const navigateTo = useCallback((path: string, direction: NavigationDirection = 'forward') => {
+    logger.debug(`导航到: ${path}, 方向: ${direction}`);
+    setNavigationDirection(direction);
     setCurrentPath(path);
   }, []);
 
@@ -237,6 +247,7 @@ export const useGitHubContent = () => {
     loadingReadme,
     error,
     setCurrentPath: navigateTo,
-    refreshContents
+    refreshContents,
+    navigationDirection
   };
 };

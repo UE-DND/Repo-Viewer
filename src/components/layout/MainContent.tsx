@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Container, useTheme, useMediaQuery, Box, Typography } from '@mui/material';
 import BreadcrumbNavigation from './BreadcrumbNavigation';
 import FileList from '../file/FileList';
@@ -9,7 +9,7 @@ import OfficePreview from '../preview/OfficePreview';
 import ErrorDisplay from '../common/ErrorDisplay';
 import LoadingSpinner from '../common/LoadingSpinner';
 import FullScreenPreview from '../file/FullScreenPreview';
-import { useGitHub } from '../../contexts/GitHubContext';
+import { useGitHub, NavigationDirection } from '../../contexts/GitHubContext';
 import { FileListSkeleton } from '../common/SkeletonComponents';
 import { getPreviewFromUrl } from '../../utils/urlManager';
 import { logger } from '../../utils';
@@ -46,8 +46,20 @@ const MainContent: React.FC = () => {
     closePreview,
     refresh,
     cancelDownload,
-    currentPreviewItemRef
+    currentPreviewItemRef,
+    navigationDirection
   } = useGitHub();
+  
+  // 检测当前目录中是否有README.md文件
+  const hasReadmeFile = useMemo(() => {
+    if (!contents || contents.length === 0) return false;
+    
+    // 检查是否有任何名称为README.md的文件（不区分大小写）
+    return contents.some(item => {
+      const fileName = item.name.toLowerCase();
+      return fileName === 'readme.md' || fileName === 'readme.markdown';
+    });
+  }, [contents]);
   
   // 生成面包屑导航路径段
   const generateBreadcrumbSegments = () => {
@@ -72,14 +84,14 @@ const MainContent: React.FC = () => {
   const breadcrumbSegments = generateBreadcrumbSegments();
   
   // 处理面包屑点击
-  const handleBreadcrumbClick = (path: string) => {
-    navigateTo(path);
+  const handleBreadcrumbClick = (path: string, direction: NavigationDirection = 'backward') => {
+    navigateTo(path, direction);
   };
   
   // 处理文件/文件夹点击
   const handleItemClick = (item: any) => {
     if (item.type === 'dir') {
-      navigateTo(item.path);
+      navigateTo(item.path, 'forward');
     } else {
       selectFile(item);
     }
@@ -238,6 +250,8 @@ const MainContent: React.FC = () => {
             handleFolderDownloadClick={handleFolderDownloadClick}
             handleCancelDownload={handleCancelDownload}
             currentPath={currentPath}
+            navigationDirection={navigationDirection}
+            hasReadmePreview={!!readmeContent && hasReadmeFile}
           />
           
           {/* README预览 - 底部展示 */}
