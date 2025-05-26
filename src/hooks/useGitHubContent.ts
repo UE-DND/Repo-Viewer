@@ -15,52 +15,24 @@ const HOMEPAGE_ALLOWED_FOLDERS = (import.meta.env.HOMEPAGE_ALLOWED_FOLDERS || im
   .filter(Boolean)
   .map((folder: string) => folder.trim());
 
-// 状态持久化键
-const STORAGE_KEY_CURRENT_PATH = 'repo_viewer_current_path';
-const STORAGE_KEY_PATH_TIMESTAMP = 'repo_viewer_path_timestamp';
-const PATH_CACHE_TTL = 300000; // 路径缓存有效期，5分钟（单位：毫秒）
-
 // 自定义Hook，管理GitHub内容获取
 export const useGitHubContent = () => {
-  // 尝试从URL或localStorage恢复路径
+  // 尝试从URL获取路径
   const getSavedPath = (): string => {
     try {
-      // 首先尝试从URL获取路径
+      // 从URL获取路径
       const urlPath = getPathFromUrl();
       if (urlPath) {
         logger.debug(`从URL获取路径: ${urlPath}`);
         return urlPath;
       }
       
-      // 如果URL中没有路径，尝试从localStorage获取
-      if (typeof localStorage !== 'undefined') {
-        const savedPath = localStorage.getItem(STORAGE_KEY_CURRENT_PATH);
-        const savedTimestamp = localStorage.getItem(STORAGE_KEY_PATH_TIMESTAMP);
-        
-        // 检查路径是否存在
-        if (!savedPath) return '';
-        
-        // 检查时间戳
-        if (savedTimestamp) {
-          const timestamp = parseInt(savedTimestamp, 10);
-          const now = Date.now();
-          
-          // 如果路径超过有效期，则清除
-          if (now - timestamp > PATH_CACHE_TTL) {
-            localStorage.removeItem(STORAGE_KEY_CURRENT_PATH);
-            localStorage.removeItem(STORAGE_KEY_PATH_TIMESTAMP);
-            logger.debug('路径缓存已过期，已重置');
-            return '';
-          }
-        }
-        
-        logger.debug(`从localStorage获取路径: ${savedPath}`);
-        return savedPath || '';
-      }
+      // 如果URL中没有路径，返回空字符串（根路径）
+      return '';
     } catch (e) {
-      logger.error('获取保存的路径失败', e);
+      logger.error('获取路径失败', e);
+      return '';
     }
-    return '';
   };
 
   const [currentPath, setCurrentPath] = useState<string>(getSavedPath());
@@ -73,19 +45,6 @@ export const useGitHubContent = () => {
   
   // 使用ref跟踪初始加载状态，避免重复更新URL
   const isInitialLoad = useRef<boolean>(true);
-  
-  // 保存当前路径到localStorage
-  const savePathToStorage = useCallback((path: string) => {
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY_CURRENT_PATH, path);
-        localStorage.setItem(STORAGE_KEY_PATH_TIMESTAMP, Date.now().toString());
-        logger.debug(`保存当前路径到localStorage: ${path}`);
-      }
-    } catch (e) {
-      logger.error('无法保存路径到localStorage', e);
-    }
-  }, []);
 
   // 处理错误显示
   const displayError = useCallback((message: string) => {
@@ -192,7 +151,6 @@ export const useGitHubContent = () => {
       
       if (!isThemeChangeOnly) {
         loadContents(currentPath);
-        savePathToStorage(currentPath);
         
         // 只有在非初始加载时更新URL
         if (!isInitialLoad.current) {
@@ -211,7 +169,7 @@ export const useGitHubContent = () => {
         logger.debug('仅主题切换操作，跳过内容重新加载');
       }
     }
-  }, [currentPath, refreshTrigger, loadContents, savePathToStorage]);
+  }, [currentPath, refreshTrigger, loadContents]);
   
   // 监听浏览器历史导航事件
   useEffect(() => {
@@ -248,29 +206,26 @@ export const useGitHubContent = () => {
     
     // 添加历史导航事件监听器
     window.addEventListener('popstate', handlePopState);
-    // 添加自定义导航事件监听器
-    window.addEventListener('navigate-to-home', handleNavigateToHome);
     
-    // 组件卸载时移除监听器
+    // 添加导航到首页事件监听器
+    window.addEventListener('navigate-to-home', handleNavigateToHome as EventListener);
+    
+    // 组件卸载时清理
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('navigate-to-home', handleNavigateToHome);
+      window.removeEventListener('navigate-to-home', handleNavigateToHome as EventListener);
     };
   }, []);
 
-  // 重试加载
-  const handleRetry = useCallback(() => {
-    setError(null);
+  // 刷新内容
+  const refreshContents = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
-  }, []);
-
-  // 强制刷新
-  const refresh = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
+    logger.debug('触发内容刷新');
   }, []);
 
   // 导航到指定路径
   const navigateTo = useCallback((path: string) => {
+    logger.debug(`导航到: ${path}`);
     setCurrentPath(path);
   }, []);
 
@@ -281,9 +236,7 @@ export const useGitHubContent = () => {
     loading,
     loadingReadme,
     error,
-    navigateTo,
-    refresh,
-    handleRetry,
-    setCurrentPath,
+    setCurrentPath: navigateTo,
+    refreshContents
   };
 };

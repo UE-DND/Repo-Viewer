@@ -8,6 +8,7 @@ const MIN_ANIMATION_DURATION = 600;
 
 // 刷新功能的自定义钩子
 export const useRefresh = () => {
+  // 使用refresh函数，该函数在GitHubContext中已经被映射到refreshContents
   const { refresh, loading } = useGitHub();
   const refreshTimerRef = useRef<number | null>(null);
   const refreshingRef = useRef<boolean>(false);

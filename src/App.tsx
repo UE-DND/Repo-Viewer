@@ -24,12 +24,8 @@ const App = React.memo(() => {
     
     // 只有当事件的目标元素是文本内容时才执行返回首页
     if (titleRef.current && (event.target === titleRef.current || titleRef.current.contains(event.target as Node))) {
-      // 清除路径缓存
+      // 清除缓存
       try {
-        // 清除 localStorage 中的路径缓存
-        localStorage.removeItem('repo_viewer_current_path');
-        localStorage.removeItem('repo_viewer_path_timestamp');
-        
         // 清除 GitHubService 中的内容缓存
         GitHubService.clearCache();
         

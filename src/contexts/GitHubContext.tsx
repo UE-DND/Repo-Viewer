@@ -84,9 +84,28 @@ export const GitHubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const previewManager = useFilePreview(handleError, findFileItemByPath);
   const downloadManager = useDownload(handleError);
   
+  // 添加兼容层函数
+  const navigateTo = useCallback((path: string) => {
+    logger.debug(`navigateTo 兼容函数调用: ${path}`);
+    contentManager.setCurrentPath(path);
+  }, [contentManager.setCurrentPath]);
+  
+  const refresh = useCallback(() => {
+    logger.debug('refresh 兼容函数调用');
+    contentManager.refreshContents();
+  }, [contentManager.refreshContents]);
+  
+  const handleRetry = useCallback(() => {
+    logger.debug('handleRetry 兼容函数调用');
+    contentManager.refreshContents();
+  }, [contentManager.refreshContents]);
+  
   // 合并所有数据提供给上下文
   const contextValue = {
     ...contentManager,
+    navigateTo,
+    refresh,
+    handleRetry,
     
     previewState: previewManager.previewState,
     selectFile: previewManager.selectFile,
