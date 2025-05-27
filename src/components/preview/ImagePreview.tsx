@@ -2,7 +2,8 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   Box, CircularProgress, 
   IconButton, Typography, alpha, useTheme, useMediaQuery,
-  Button
+  Button,
+  GlobalStyles
 } from '@mui/material';
 import {
   ZoomIn as ZoomInIcon,
@@ -208,13 +209,22 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
       <Box
         sx={{
           flex: 1,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          overflow: 'auto',
+          overflow: 'hidden',
           position: 'relative'
         }}
       >
+        <GlobalStyles 
+          styles={{
+            '.react-transform-wrapper': {
+              width: '100%',
+              height: '100%',
+            },
+            '.react-transform-component': {
+              width: '100%',
+              height: '100%',
+            }
+          }}
+        />
         {loading && (
           <ImagePreviewSkeleton isSmallScreen={isSmallScreen} />
         )}
@@ -252,12 +262,11 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
             </IconButton>
           </Box>
         )}
-        
         <TransformWrapper
           initialScale={1}
           minScale={0.1}
           maxScale={5}
-          centerOnInit
+          centerOnInit={true}
           wheel={{ disabled: error }}
           pinch={{ disabled: error }}
           panning={{ disabled: error }}
@@ -267,32 +276,34 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
         >
           {({ zoomIn, zoomOut, resetTransform }) => (
             <>
-              <div
-                style={{
-                  transform: `rotate(${rotation}deg)`,
-                  transition: 'transform 0.3s ease',
-                  width: '100%',
+              <TransformComponent
+                wrapperStyle={{ 
+                  width: '100%', 
                   height: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center'
+                  boxSizing: 'border-box',
+                }}
+                contentStyle={{ 
+                  width: '100%', 
+                  height: '100%',
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
                 }}
               >
-                <TransformComponent
-                  wrapperStyle={{ 
-                    width: '100%', 
-                    height: '100%',
-                  }}
-                  contentStyle={{ 
-                    width: '100%', 
-                    height: 'calc(100% - 60px)',
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center',
-                    paddingBottom: '60px'
-                  }}
-                >
-                  {!error && (
+                {!error && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      transform: `rotate(${rotation}deg)`,
+                      transition: 'transform 0.3s ease',
+                      transformOrigin: 'center center',
+                      width: '100%',
+                      height: '100%',
+                      position: 'relative',
+                    }}
+                  >
                     <img
                       ref={imgRef}
                       src={shouldLoad ? imageUrl : ''}
@@ -310,9 +321,9 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
                         setError(true);
                       }}
                     />
-                  )}
-                </TransformComponent>
-              </div>
+                  </div>
+                )}
+              </TransformComponent>
 
               <Box 
                 sx={{ 
@@ -331,7 +342,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  zIndex: 15,
+                  zIndex: 100, // 确保工具栏始终在最上层
                   height: '72px',
                   paddingTop: '12px',
                   paddingBottom: '12px',
@@ -560,7 +571,11 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   // 全屏模式
   if (fullScreenMode) {
     return (
-      <FullScreenPreview onClose={handleClosePreview} backgroundColor={theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5'}>
+      <FullScreenPreview 
+        onClose={handleClosePreview} 
+        backgroundColor={theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5'}
+        disablePadding={true}
+      >
         {renderPreviewContent()}
       </FullScreenPreview>
     );

@@ -7,6 +7,15 @@ import FileListItem from './FileListItem';
 import { GitHubContent } from '../../types';
 import { NavigationDirection } from '../../contexts/GitHubContext';
 
+// 添加CSS优化，提高动画性能
+const optimizedAnimationStyle = {
+  willChange: 'opacity, transform',
+  backfaceVisibility: 'hidden' as 'hidden',
+  WebkitBackfaceVisibility: 'hidden' as 'hidden',
+  perspective: 1000,
+  WebkitPerspective: 1000
+};
+
 interface FileListProps {
   contents: GitHubContent[];
   isSmallScreen: boolean;
@@ -78,13 +87,13 @@ const LIST_HEIGHT_CONFIG = {
 
 // Define animation variants
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 10 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
     transition: {
-      delay: i * 0.02,
-      duration: 0.15,
+      delay: Math.min(i * 0.01, 0.1),
+      duration: 0.12,
       ease: 'easeOut'
     }
   })
@@ -93,6 +102,45 @@ const itemVariants = {
 const listAnimationVariants = {
   hidden: {},
   visible: {}
+};
+
+// 根据滚动速度动态生成动画变体
+const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
+  // 根据滚动速度调整动画参数
+  const isFastScrolling = speed > 0.3; // 阈值可以根据实际情况调整
+  
+  if (isScrolling && isFastScrolling) {
+    // 快速滚动时使用更快的动画
+    return {
+      hidden: { opacity: 0.7, y: 5 },
+      visible: (i: number) => ({
+        opacity: 1,
+        y: 0,
+        transition: {
+          delay: 0, // 没有延迟
+          duration: 0.08, // 非常短的动画时长
+          ease: 'easeOut'
+        }
+      })
+    };
+  } else if (isScrolling) {
+    // 普通滚动时使用中等速度动画
+    return {
+      hidden: { opacity: 0, y: 8 },
+      visible: (i: number) => ({
+        opacity: 1,
+        y: 0,
+        transition: {
+          delay: Math.min(i * 0.005, 0.05), // 非常小的延迟
+          duration: 0.1, // 较短的动画时长
+          ease: 'easeOut'
+        }
+      })
+    };
+  } else {
+    // 不滚动时使用标准动画
+    return itemVariants;
+  }
 };
 
 // 列表项渲染器
@@ -107,7 +155,9 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
     handleDownloadClick,
     handleFolderDownloadClick,
     handleCancelDownload,
-    currentPath
+    currentPath,
+    isScrolling,
+    scrollSpeed
   } = data;
   
   const item = contents[index];
@@ -119,14 +169,20 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
     height: 'auto', // 让高度自适应，容器会根据 itemSize 限制
     paddingRight: '3px',
     boxSizing: 'border-box' as 'border-box',
+    ...optimizedAnimationStyle // 添加优化的动画样式
   };
+  
+  // 根据滚动状态和速度选择动画变体
+  const currentVariants = getDynamicItemVariants(scrollSpeed, isScrolling);
   
   return (
     <motion.div 
       style={adjustedStyle} 
       className="file-list-item-container" 
-      variants={itemVariants}
+      variants={currentVariants}
       custom={index}
+      initial="hidden"
+      animate="visible"
     >
       <FileListItem 
         key={item.path}
@@ -167,7 +223,10 @@ const FileList = React.memo<FileListProps>(({
   const [availableHeight, setAvailableHeight] = useState(0);
   const [needsScrolling, setNeedsScrolling] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState(0);
   const scrollTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastScrollTopRef = React.useRef(0);
+  const lastScrollTimeRef = React.useRef(Date.now());
   const listRef = React.useRef<FixedSizeList>(null);
   
   // 计算每个文件项的高度（包括间距）
@@ -323,7 +382,9 @@ const FileList = React.memo<FileListProps>(({
     handleDownloadClick,
     handleFolderDownloadClick,
     handleCancelDownload,
-    currentPath
+    currentPath,
+    isScrolling,
+    scrollSpeed
   }), [
     contents,
     isSmallScreen,
@@ -334,7 +395,9 @@ const FileList = React.memo<FileListProps>(({
     handleDownloadClick,
     handleFolderDownloadClick,
     handleCancelDownload,
-    currentPath
+    currentPath,
+    isScrolling,
+    scrollSpeed
   ]);
   
   // 计算列表内边距
@@ -364,22 +427,37 @@ const FileList = React.memo<FileListProps>(({
   }, [hasFewItems, needsScrolling, hoverExtraSpace]);
   
   // 处理滚动事件
-  const handleScroll = React.useCallback(() => {
-    // 设置为正在滚动状态
-    setIsScrolling(true);
-    
-    // 清除之前的定时器（如果有）
-    if (scrollTimerRef.current) {
-      clearTimeout(scrollTimerRef.current);
-    }
-    
-    // 设置新的定时器，在滚动停止后延迟将滚动状态设置为false
-    // 增加延迟时间以匹配CSS动画时长，确保渐隐效果完整显示
-    scrollTimerRef.current = setTimeout(() => {
-      // 使用渐变过渡来隐藏滚动条
-      setIsScrolling(false);
-    }, 500); // 减少延迟时间，因为我们现在依赖CSS过渡效果来处理渐隐
-  }, []);
+  const handleScroll = React.useCallback(
+    ({ scrollOffset, scrollDirection }: { scrollOffset: number; scrollDirection: 'forward' | 'backward' }) => {
+      // 设置为正在滚动状态
+      setIsScrolling(true);
+      
+      // 计算滚动速度
+      const now = Date.now();
+      const timeDiff = now - lastScrollTimeRef.current;
+      if (timeDiff > 0) {
+        const distance = Math.abs(scrollOffset - lastScrollTopRef.current);
+        const speed = distance / timeDiff; // 像素/毫秒
+        setScrollSpeed(speed);
+        
+        lastScrollTopRef.current = scrollOffset;
+        lastScrollTimeRef.current = now;
+      }
+      
+      // 清除之前的定时器（如果有）
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      
+      // 设置新的定时器，在滚动停止后延迟将滚动状态设置为false
+      scrollTimerRef.current = setTimeout(() => {
+        // 使用渐变过渡来隐藏滚动条
+        setIsScrolling(false);
+        setScrollSpeed(0); // 重置滚动速度
+      }, 200); // 减少延迟时间，更快地恢复正常动画
+    }, 
+    []
+  );
   
   // 在组件卸载时清除定时器
   React.useEffect(() => {
@@ -461,6 +539,7 @@ const FileList = React.memo<FileListProps>(({
               itemData={itemData}
               style={virtualListStyle}
               onScroll={handleScroll}
+              overscanCount={10} // 预渲染10个项目，提高滚动流畅度
               className={`virtual-file-list ${!needsScrolling ? 'locked-layout' : ''} ${isScrolling ? 'is-scrolling' : ''}`}
             >
               {Row}
