@@ -3,6 +3,7 @@ import { GitHubContent } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
 import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/urlManager';
+import { NavigationDirection } from '../contexts/GitHubContext';
 
 // 配置
 const HOMEPAGE_FILTER_ENABLED = (import.meta.env.HOMEPAGE_FILTER_ENABLED || import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED) === 'true';
@@ -15,77 +16,46 @@ const HOMEPAGE_ALLOWED_FOLDERS = (import.meta.env.HOMEPAGE_ALLOWED_FOLDERS || im
   .filter(Boolean)
   .map((folder: string) => folder.trim());
 
-// 状态持久化键
-const STORAGE_KEY_CURRENT_PATH = 'repo_viewer_current_path';
-const STORAGE_KEY_PATH_TIMESTAMP = 'repo_viewer_path_timestamp';
-const PATH_CACHE_TTL = 300000; // 路径缓存有效期，5分钟（单位：毫秒）
-
 // 自定义Hook，管理GitHub内容获取
 export const useGitHubContent = () => {
-  // 尝试从URL或localStorage恢复路径
+  // 尝试从URL获取路径
   const getSavedPath = (): string => {
     try {
-      // 首先尝试从URL获取路径
+      // 从URL获取路径
       const urlPath = getPathFromUrl();
       if (urlPath) {
         logger.debug(`从URL获取路径: ${urlPath}`);
         return urlPath;
       }
       
-      // 如果URL中没有路径，尝试从localStorage获取
-      if (typeof localStorage !== 'undefined') {
-        const savedPath = localStorage.getItem(STORAGE_KEY_CURRENT_PATH);
-        const savedTimestamp = localStorage.getItem(STORAGE_KEY_PATH_TIMESTAMP);
-        
-        // 检查路径是否存在
-        if (!savedPath) return '';
-        
-        // 检查时间戳
-        if (savedTimestamp) {
-          const timestamp = parseInt(savedTimestamp, 10);
-          const now = Date.now();
-          
-          // 如果路径超过有效期，则清除
-          if (now - timestamp > PATH_CACHE_TTL) {
-            localStorage.removeItem(STORAGE_KEY_CURRENT_PATH);
-            localStorage.removeItem(STORAGE_KEY_PATH_TIMESTAMP);
-            logger.debug('路径缓存已过期，已重置');
-            return '';
-          }
-        }
-        
-        logger.debug(`从localStorage获取路径: ${savedPath}`);
-        return savedPath || '';
-      }
+      // 如果URL中没有路径，返回空字符串（根路径）
+      return '';
     } catch (e) {
-      logger.error('获取保存的路径失败', e);
+      logger.error('获取路径失败', e);
+      return '';
     }
-    return '';
   };
 
+  // 获取当前路径
   const [currentPath, setCurrentPath] = useState<string>(getSavedPath());
+  // 存储目录内容
   const [contents, setContents] = useState<GitHubContent[]>([]);
+  // 存储README内容
   const [readmeContent, setReadmeContent] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingReadme, setLoadingReadme] = useState(false);
+  // 加载状态
+  const [loading, setLoading] = useState<boolean>(true);
+  // README加载状态
+  const [loadingReadme, setLoadingReadme] = useState<boolean>(false);
+  // README加载完成状态
+  const [readmeLoaded, setReadmeLoaded] = useState<boolean>(false);
+  // 错误信息
   const [error, setError] = useState<string | null>(null);
+  // 刷新触发器
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  
-  // 使用ref跟踪初始加载状态，避免重复更新URL
+  // 导航方向
+  const [navigationDirection, setNavigationDirection] = useState<NavigationDirection>('none');
+  // 初始加载标记
   const isInitialLoad = useRef<boolean>(true);
-  
-  // 保存当前路径到localStorage
-  const savePathToStorage = useCallback((path: string) => {
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY_CURRENT_PATH, path);
-        localStorage.setItem(STORAGE_KEY_PATH_TIMESTAMP, Date.now().toString());
-        logger.debug(`保存当前路径到localStorage: ${path}`);
-      }
-    } catch (e) {
-      logger.error('无法保存路径到localStorage', e);
-    }
-  }, []);
 
   // 处理错误显示
   const displayError = useCallback((message: string) => {
@@ -97,6 +67,8 @@ export const useGitHubContent = () => {
   const loadContents = useCallback(async (path: string) => {
     setLoading(true);
     setError(null);
+    // 重置README加载状态
+    setReadmeLoaded(false);
     
     try {
       logger.time(`加载目录: ${path}`);
@@ -149,6 +121,8 @@ export const useGitHubContent = () => {
         await loadReadmeContent(readmeItem);
       } else {
         setReadmeContent(null);
+        // README不存在时也设置为已加载完成
+        setReadmeLoaded(true);
       }
       
       setLoading(false);
@@ -157,6 +131,7 @@ export const useGitHubContent = () => {
       displayError(`获取目录内容失败: ${e.message}`);
       setContents([]);
       setLoading(false);
+      setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
       logger.timeEnd(`加载目录: ${path}`);
     }
@@ -168,16 +143,20 @@ export const useGitHubContent = () => {
     
     setLoadingReadme(true);
     setReadmeContent(null);
+    setReadmeLoaded(false); // 重置加载状态
     
     try {
       logger.time('加载README');
       const content = await GitHubService.getFileContent(readmeItem.download_url);
       logger.debug(`README加载成功: ${readmeItem.path}，内容长度: ${content.length} 字节`);
       setReadmeContent(content);
+      // 设置为已加载完成
+      setReadmeLoaded(true);
     } catch (e: any) {
       logger.error(`加载README失败:`, e);
       displayError(`加载 README 失败: ${e.message}`);
       setReadmeContent(null);
+      setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
       setLoadingReadme(false);
       logger.timeEnd('加载README');
@@ -192,7 +171,6 @@ export const useGitHubContent = () => {
       
       if (!isThemeChangeOnly) {
         loadContents(currentPath);
-        savePathToStorage(currentPath);
         
         // 只有在非初始加载时更新URL
         if (!isInitialLoad.current) {
@@ -211,7 +189,7 @@ export const useGitHubContent = () => {
         logger.debug('仅主题切换操作，跳过内容重新加载');
       }
     }
-  }, [currentPath, refreshTrigger, loadContents, savePathToStorage]);
+  }, [currentPath, refreshTrigger, loadContents]);
   
   // 监听浏览器历史导航事件
   useEffect(() => {
@@ -225,16 +203,20 @@ export const useGitHubContent = () => {
       if (state && state.path !== undefined) {
         logger.debug(`历史导航事件，路径: ${state.path}`);
         // 更新当前路径，但不添加新的历史记录
+        // 设置导航方向为后退，因为这是通过浏览器的后退按钮触发的
+        setNavigationDirection('backward');
         setCurrentPath(state.path);
       } else {
         // 如果没有state或path未定义，尝试从 URL 获取路径
         const urlPath = getPathFromUrl();
         if (urlPath) {
           logger.debug(`历史导航事件，从URL获取路径: ${urlPath}`);
+          setNavigationDirection('backward');
           setCurrentPath(urlPath);
         } else {
           // 如果URL中也没有路径，重置为根路径
           logger.debug('历史导航事件，无路径状态，重置为根路径');
+          setNavigationDirection('backward');
           setCurrentPath('');
         }
       }
@@ -243,34 +225,34 @@ export const useGitHubContent = () => {
     // 处理标题点击导航到首页事件
     const handleNavigateToHome = () => {
       logger.debug('接收到返回首页事件，正在导航到首页');
+      setNavigationDirection('backward');
       setCurrentPath('');
     };
     
     // 添加历史导航事件监听器
     window.addEventListener('popstate', handlePopState);
-    // 添加自定义导航事件监听器
-    window.addEventListener('navigate-to-home', handleNavigateToHome);
     
-    // 组件卸载时移除监听器
+    // 添加导航到首页事件监听器
+    window.addEventListener('navigate-to-home', handleNavigateToHome as EventListener);
+    
+    // 组件卸载时清理
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('navigate-to-home', handleNavigateToHome);
+      window.removeEventListener('navigate-to-home', handleNavigateToHome as EventListener);
     };
   }, []);
 
-  // 重试加载
-  const handleRetry = useCallback(() => {
-    setError(null);
+  // 刷新内容
+  const refreshContents = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
-  }, []);
-
-  // 强制刷新
-  const refresh = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
+    setNavigationDirection('none'); // 刷新时不应用动画
+    logger.debug('触发内容刷新');
   }, []);
 
   // 导航到指定路径
-  const navigateTo = useCallback((path: string) => {
+  const navigateTo = useCallback((path: string, direction: NavigationDirection = 'forward') => {
+    logger.debug(`导航到: ${path}, 方向: ${direction}`);
+    setNavigationDirection(direction);
     setCurrentPath(path);
   }, []);
 
@@ -280,10 +262,10 @@ export const useGitHubContent = () => {
     readmeContent,
     loading,
     loadingReadme,
+    readmeLoaded,
     error,
-    navigateTo,
-    refresh,
-    handleRetry,
-    setCurrentPath,
+    setCurrentPath: navigateTo,
+    refreshContents,
+    navigationDirection
   };
 };

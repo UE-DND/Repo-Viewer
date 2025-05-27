@@ -6,6 +6,9 @@ import { useDownload } from '../hooks/useDownload';
 import { GitHubContent } from '../types';
 import { logger } from '../utils';
 
+// 定义导航方向类型
+export type NavigationDirection = 'forward' | 'backward' | 'none';
+
 // 定义上下文数据结构
 interface GitHubContextData {
   // 内容管理
@@ -14,11 +17,13 @@ interface GitHubContextData {
   readmeContent: string | null;
   loading: boolean;
   loadingReadme: boolean;
+  readmeLoaded: boolean;
   error: string | null;
-  navigateTo: (path: string) => void;
+  navigateTo: (path: string, direction?: NavigationDirection) => void;
   refresh: () => void;
   handleRetry: () => void;
-  setCurrentPath: (path: string) => void;
+  setCurrentPath: (path: string, direction?: NavigationDirection) => void;
+  navigationDirection: NavigationDirection;
   
   // 预览相关
   previewState: any;
@@ -84,9 +89,28 @@ export const GitHubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const previewManager = useFilePreview(handleError, findFileItemByPath);
   const downloadManager = useDownload(handleError);
   
+  // 添加兼容层函数
+  const navigateTo = useCallback((path: string, direction: NavigationDirection = 'forward') => {
+    logger.debug(`navigateTo 兼容函数调用: ${path}, 方向: ${direction}`);
+    contentManager.setCurrentPath(path, direction);
+  }, [contentManager.setCurrentPath]);
+  
+  const refresh = useCallback(() => {
+    logger.debug('refresh 兼容函数调用');
+    contentManager.refreshContents();
+  }, [contentManager.refreshContents]);
+  
+  const handleRetry = useCallback(() => {
+    logger.debug('handleRetry 兼容函数调用');
+    contentManager.refreshContents();
+  }, [contentManager.refreshContents]);
+  
   // 合并所有数据提供给上下文
   const contextValue = {
     ...contentManager,
+    navigateTo,
+    refresh,
+    handleRetry,
     
     previewState: previewManager.previewState,
     selectFile: previewManager.selectFile,

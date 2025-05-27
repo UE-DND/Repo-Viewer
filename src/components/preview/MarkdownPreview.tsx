@@ -236,7 +236,8 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
             // 使用filter而不是opacity，在主题切换时不会重置
             filter: 'brightness(1)',
             '&:not(.loaded)': {
-              filter: 'brightness(0.6) blur(2px)',
+              opacity: 0.7,
+              filter: 'brightness(0.95)',
               transform: 'scale(0.98)'
             },
             '&.failed': {
@@ -516,7 +517,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
                       style={{ 
                         maxWidth: '100%', 
                         height: 'auto',
-                        opacity: isImageLoaded ? 1 : 0.5,
+                        opacity: isImageLoaded ? 1 : 0.7,
                         transition: 'opacity 0.3s ease'
                       }}
                       alt={props.alt || '图片'}
@@ -625,16 +626,6 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(({
                         }
                       }}
                     />
-                    {!isImageLoaded && !isImageFailed && (
-                      <div style={{ 
-                        position: 'absolute', 
-                        top: 'calc(50% - 20px)', 
-                        left: 'calc(50% - 20px)',
-                        opacity: 0.7 
-                      }}>
-                        <CircularProgress size={40} />
-                      </div>
-                    )}
                   </div>
                 );
               },

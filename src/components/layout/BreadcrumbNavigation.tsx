@@ -7,10 +7,11 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
+import { NavigationDirection } from '../../contexts/GitHubContext';
 
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: Array<{ name: string; path: string }>;
-  handleBreadcrumbClick: (path: string) => void;
+  handleBreadcrumbClick: (path: string, direction?: NavigationDirection) => void;
   breadcrumbsMaxItems: number;
   isSmallScreen: boolean;
   breadcrumbsContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -34,12 +35,65 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(({
     const parentIndex = breadcrumbSegments.length - 2;
     if (parentIndex >= 0) {
       const parentPath = breadcrumbSegments[parentIndex].path;
-      handleBreadcrumbClick(parentPath);
+      // 设置导航方向为后退
+      handleBreadcrumbClick(parentPath, 'backward');
     }
   };
 
   // 检查是否有上级目录可返回
   const canGoUp = breadcrumbSegments.length > 1;
+  
+  // 创建一个统一的Home按钮样式结构，完全统一图标位置
+  const renderHomeContent = (isLast: boolean) => (
+    <>
+      <Box 
+        component="span"
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          color: theme.palette.primary.main,
+          mr: 0.5, // 统一的右边距
+          width: { xs: 20, sm: 24 }, // 固定宽度确保图标位置稳定
+          height: { xs: 20, sm: 24 }, // 固定高度确保图标位置稳定
+          borderRadius: '50%',
+          flexShrink: 0,
+          position: 'relative', // 使用相对定位以便更精确控制
+          transition: 'all 0.2s',
+          ...(isLast ? {} : {
+            '.MuiLink-root:hover &': {
+              transform: 'rotate(-5deg)' // 只旋转，不改变位置
+            }
+          })
+        }}
+      >
+        {/* 固定图标大小和位置，确保在所有状态下完全相同 */}
+        <HomeIcon 
+          sx={{ 
+            fontSize: { xs: '0.9rem', sm: '1.1rem' },
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)', // 精确居中
+          }} 
+        />
+      </Box>
+      {/* 在小屏幕上，如果不是当前路径(Home)，则隐藏文字 */}
+      {(!isSmallScreen || isLast) && (
+        <Box 
+          component="span" 
+          sx={{ 
+            overflow: 'hidden', 
+            textOverflow: 'ellipsis', 
+            whiteSpace: 'nowrap',
+            display: 'block' 
+          }}
+        >
+          Home
+        </Box>
+      )}
+    </>
+  );
   
   return (
     <Box 
@@ -148,26 +202,11 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(({
                 }
               }}
             >
-              {isHome ? (
-                <Box 
-                  component="span"
-                  sx={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    color: theme.palette.primary.main,
-                    mr: 0.5,
-                    p: { xs: 0.25, sm: 0.5 }, 
-                    borderRadius: '50%',
-                    flexShrink: 0 
-                  }}
-                >
-                  <HomeIcon fontSize="small" sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem' } }} />
+              {isHome ? renderHomeContent(true) : (
+                <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {segment.name}
                 </Box>
-              ) : null}
-              <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {segment.name}
-              </Box>
+              )}
             </Typography>
           ) : (
             <Link
@@ -175,7 +214,11 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(({
               underline="none"
               color={isHome ? 'primary' : 'inherit'}
               href="#"
-              onClick={(e) => { e.preventDefault(); handleBreadcrumbClick(segment.path); }}
+              onClick={(e) => { 
+                e.preventDefault(); 
+                // 设置导航方向为后退
+                handleBreadcrumbClick(segment.path, 'backward'); 
+              }}
               sx={{ 
                 display: 'flex', 
                 alignItems: 'center',
@@ -202,29 +245,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(({
               }}
               aria-label={isHome ? "返回首页" : `返回到${segment.name}`}
             >
-              {isHome && (
-                <Box 
-                  component="span"
-                  sx={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    color: theme.palette.primary.main,
-                    mr: isSmallScreen ? 0 : 0.5,
-                    bgcolor: 'transparent',
-                    p: { xs: 0.2, sm: 0.4 }, 
-                    borderRadius: '50%',
-                    transition: 'all 0.2s',
-                    '.MuiLink-root:hover &': {
-                      transform: 'rotate(-5deg)'
-                    },
-                    flexShrink: 0 
-                  }}
-                >
-                  <HomeIcon fontSize="small" sx={{ fontSize: { xs: '0.9rem', sm: '1.1rem' } }} />
-                </Box>
-              )}
-              {(!isHome || !isSmallScreen) && (
+              {isHome ? renderHomeContent(false) : (
                 <Box 
                   component="span" 
                   sx={{ 
@@ -243,7 +264,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(({
       </Breadcrumbs>
       
       {/* 返回上一级按钮 */}
-      <Tooltip title={canGoUp ? "返回上一级" : "已在顶级目录"}>
+      <Tooltip title={canGoUp ? "返回上一级" : "已位于根目录"}>
         <span>
           <IconButton
             onClick={handleGoUp}

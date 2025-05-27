@@ -1,70 +1,70 @@
 # Repo-Viewer
 
-一个基于MD3设计语言的GitHub仓库浏览应用。
+A GitHub repository browsing web application based on the MD3 design language.
 
-中文 | [English](README_EN.md)
+[中文](README_ZH.md) | English
 
-## 目录
+## Table of Contents
 
-- [主要功能](#主要功能)
-- [本地开发](#本地开发)
-  - [本地环境变量配置](#本地环境变量配置)
-- [部署指南](#部署指南)
-  - [Vercel部署](#vercel部署)
-    - [Vercel环境变量配置](#vercel环境变量配置)
-  - [Cloudflare Worker配置](#cloudflare-worker配置)
-- [故障排除](#故障排除)
-- [技术栈](#技术栈)
-- [许可](#许可)
+- [Key Features](#key-features)
+- [Local Development](#local-development)
+  - [Local Environment Variables](#local-environment-variables)
+- [Deployment Guide](#deployment-guide)
+  - [Vercel Deployment](#vercel-deployment)
+    - [Vercel Environment Variables](#vercel-environment-variables)
+  - [Cloudflare Worker Configuration](#cloudflare-worker-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Tech Stack](#tech-stack)
+- [License](#license)
 
-## 主要功能
+## Key Features
 
-- 🔍 **仓库浏览**：直观的文件夹结构导航
-- 📄 **文件预览**：支持Markdown、PDF和图像等多种文件格式的预览
-- ⬇️ **文件下载**：下载单个文件或整个文件夹
-- 🔄 **响应式设计**：适配桌面和移动设备
-- 🔍 **内容过滤**：支持首页文件和文件夹过滤
-- 🛠️ **开发者模式**：提供详细调试信息和性能统计
+- 🔍 **Repository Browsing**: Intuitive file structure navigation
+- 📄 **File Preview**: Support for previewing multiple file formats including Markdown, PDF, and images
+- ⬇️ **File Download**: Download individual files or entire folders
+- 🔄 **Responsive Design**: Compatible with desktop and mobile devices
+- 🔍 **Content Filtering**: Support for filtering files and folders on the homepage
+- 🛠️ **Developer Mode**: Provides detailed debugging information and performance statistics
 
-## 本地开发
+## Local Development
 
-想要在本地环境开发和调试本项目？按照以下步骤设置开发环境：
+Want to develop and debug this project in your local environment? Follow these steps to set up your development environment:
 
-1. **克隆仓库**
+1. **Clone the Repository**
 
-2. **安装依赖**
+2. **Install Dependencies**
    ```bash
    npm install
    ```
 
-3. **创建环境配置**
-   - 复制`env.local.txt`为`.env`文件
+3. **Create Environment Configuration**
+   - Copy `env.local.txt` to `.env` file
    ```bash
    cp env.local.txt .env
    ```
-   - 编辑`.env`文件，配置必要的环境变量
-   - **注意**: `env.local.txt`仅作为本地开发的模板，其中的变量名格式（带`VITE_`前缀）仅用于本地开发环境
+   - Edit the `.env` file to configure the necessary environment variables
+   - **Note**: `env.local.txt` is only a template for local development, and the variable name format (with `VITE_` prefix) is only for local development environment
 
-4. **启动开发服务器**
+4. **Start the Development Server**
    ```bash
    npm run dev
    ```
-   - 开发服务器将在`http://localhost:3000`启动
+   - The development server will start at `http://localhost:3000`
 
-### 本地环境变量配置
+### Local Environment Variables
 
-> ⚠️ **重要提示**：本地开发**必须**使用 VITE_ 前缀的变量，否则前端无法读取环境变量！  
-> 生产环境（如Vercel）只有下列变量不用 VITE_ 前缀，其它所有需要前端读取的变量都必须加 VITE_ 前缀：
+> ⚠️ **Important**: For local development, you **must** use variables with the VITE_ prefix, otherwise the frontend cannot read the environment variables!  
+> In production (e.g. Vercel), ONLY the following variables do NOT require the VITE_ prefix. All other variables that need to be read by the frontend MUST have the VITE_ prefix:
 > - GITHUB_REPO_OWNER
 > - GITHUB_REPO_NAME
 > - GITHUB_REPO_BRANCH
 > - GITHUB_PAT1
 > - OFFICE_PREVIEW_PROXY
 
-**必需的环境变量**:
+**Required Environment Variables**:
 ```
-# 基础配置 (本地开发和生产前端都必须用VITE_前缀，除仓库信息)
-VITE_SITE_TITLE = 你的站点标题
+# Basic Configuration (all frontend variables must use VITE_ prefix except repo info)
+VITE_SITE_TITLE = Your Site Title
 VITE_HOMEPAGE_FILTER_ENABLED = true
 VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
@@ -73,179 +73,179 @@ VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
 VITE_IMAGE_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
-# 仓库信息（生产环境不用VITE_前缀，后端读取）
-GITHUB_REPO_OWNER = 仓库所有者
-GITHUB_REPO_NAME = 仓库名称
-GITHUB_REPO_BRANCH = 分支名称（默认为main）
-GITHUB_PAT1 = 你的GitHub个人访问令牌
+# Repository info (in production, these without VITE_ prefix for backend use)
+GITHUB_REPO_OWNER = Repository Owner
+GITHUB_REPO_NAME = Repository Name
+GITHUB_REPO_BRANCH = Branch Name (defaults to main)
+GITHUB_PAT1 = Your GitHub Personal Access Token
 OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
-## 部署指南
+## Deployment Guide
 
-### Vercel部署
+### Vercel Deployment
 
-#### 安全部署方法
+#### Secure Deployment Method
 
-在Vercel部署时，GitHub访问令牌（PAT）通过以下方式保护：
+When deploying on Vercel, GitHub Personal Access Tokens (PATs) are protected through:
 
-1. 令牌存储为Vercel环境变量，无`VITE_`前缀，因此不会打包进前端代码
-2. 使用服务端API端点处理所有需要GitHub认证的请求
-3. 支持多个PAT轮换，在令牌配额用尽或过期时自动切换
+1. Tokens are stored as Vercel environment variables without the `VITE_` prefix, so they won't be bundled with frontend code
+2. All requests requiring GitHub authentication are handled through server-side API endpoints
+3. Multiple PAT rotation is supported, automatically switching when token quotas are exhausted or expired
 
-#### 部署步骤
+#### Deployment Steps
 
-1. **在GitHub上创建个人访问令牌（PAT）**:
-   - 访问[GitHub设置→开发者设置→个人访问令牌](https://github.com/settings/tokens)
-   - 创建一个或多个具有`repo`权限的令牌
-   - 保存这些令牌，你将在下一步中使用它们
+1. **Create Personal Access Tokens (PATs) on GitHub**:
+   - Visit [GitHub Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
+   - Create one or more tokens with `repo` permissions
+   - Save these tokens; you'll use them in the next step
 
-2. **在Vercel上导入你的仓库**:
-   - 登录[Vercel](https://vercel.com)
-   - 点击"Import Project"
-   - 选择"Import Git Repository"并连接你的GitHub账号
-   - 选择Repo-Viewer仓库
+2. **Import Your Repository on Vercel**:
+   - Log in to [Vercel](https://vercel.com)
+   - Click "Import Project"
+   - Select "Import Git Repository" and connect your GitHub account
+   - Select the Repo-Viewer repository
 
-3. **配置环境变量**:
-   - 在部署设置页面，找到"Environment Variables"部分
-   - 添加必要的环境变量（见下方[Vercel环境变量配置](#vercel环境变量配置)）
+3. **Configure Environment Variables**:
+   - On the deployment settings page, find the "Environment Variables" section
+   - Add the necessary environment variables (see [Vercel Environment Variables](#vercel-environment-variables) below)
 
-4. **部署应用**:
-   - 点击"Deploy"按钮
-   - Vercel将自动构建和部署你的应用
+4. **Deploy the Application**:
+   - Click the "Deploy" button
+   - Vercel will automatically build and deploy your application
 
-#### Vercel环境变量配置
+#### Vercel Environment Variables
 
-**必需的环境变量**:
+**Required Environment Variables**:
 ```
-# 基础配置
-SITE_TITLE = 你的站点标题
-GITHUB_REPO_OWNER = 仓库所有者
-GITHUB_REPO_NAME = 仓库名称
-GITHUB_REPO_BRANCH = 分支名称（默认为main）
+# Basic Configuration
+SITE_TITLE = Your Site Title
+GITHUB_REPO_OWNER = Repository Owner
+GITHUB_REPO_NAME = Repository Name
+GITHUB_REPO_BRANCH = Branch Name (defaults to main)
 
-# GitHub令牌（至少需要一个）
-GITHUB_PAT1 = 你的GitHub个人访问令牌
-```
-
-**可选的环境变量**:
-```
-# 首页内容过滤（可选）- 仅对仓库根目录（首页）生效
-HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
-HOMEPAGE_ALLOWED_FOLDERS = 文件夹1,文件夹2       # 在首页允许显示的文件夹
-HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt        # 在首页允许显示的文件类型
-
-# 首页下载按钮控制（可选）- 仅对仓库根目录（首页）生效
-HIDE_MAIN_FOLDER_DOWNLOAD = true或false        # 是否隐藏首页主文件夹的下载按钮
-HIDE_DOWNLOAD_FOLDERS = 文件夹1,文件夹2         # 首页需要隐藏下载按钮的文件夹
-
-# 代理设置（可选）
-IMAGE_PROXY_URL = 图片代理URL                  # 图片代理URL
-
-# Office文档预览（可选）
-OFFICE_PREVIEW_PROXY = Worker URL             # Worker代理URL
-
-# 开发者选项（可选）
-DEVELOPER_MODE = true或false                  # 是否启用开发者模式
+# GitHub Tokens (at least one required)
+GITHUB_PAT1 = Your GitHub Personal Access Token
 ```
 
-### Cloudflare Worker配置
+**Optional Environment Variables**:
+```
+# Homepage Content Filtering (optional) - Only affects the repository root directory (homepage)
+HOMEPAGE_FILTER_ENABLED = true or false           # Enable homepage filtering
+HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2        # Folders allowed to be displayed on homepage
+HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt           # File types allowed to be displayed on homepage
 
-如需支持Office文档在线预览功能，您可以配置Cloudflare Worker作为代理服务：
+# Homepage Download Button Control (optional) - Only affects the repository root directory (homepage)
+HIDE_MAIN_FOLDER_DOWNLOAD = true or false         # Hide download button for the main folder on homepage
+HIDE_DOWNLOAD_FOLDERS = folder1,folder2           # Folders on homepage to hide download button for
 
-#### Worker部署步骤
+# Proxy Settings (optional)
+IMAGE_PROXY_URL = Image Proxy URL                 # Image proxy URL
 
-1. **创建Cloudflare账号**:
-   - 访问[Cloudflare官网](https://www.cloudflare.com/)并注册账号
+# Office Document Preview (optional)
+OFFICE_PREVIEW_PROXY = Worker URL                 # Worker proxy URL
 
-2. **部署Worker**:
-   - 登录Cloudflare控制台
-   - 导航到"Workers & Pages"
-   - 点击"Create Worker"
-   - 将项目根目录中的`worker.js`文件内容复制到Worker编辑器中
-   - 点击"Save and Deploy"部署Worker
-   - 记下Worker的URL（例如：`https://your-worker.your-account.workers.dev`）
+# Developer Options (optional)
+DEVELOPER_MODE = true or false                    # Enable developer mode
+```
 
-3. **配置应用使用Worker**:
-   - 在Vercel环境变量中添加：
+### Cloudflare Worker Configuration
+
+If you need to support online preview of Office documents, you can configure a Cloudflare Worker as a proxy service:
+
+#### Worker Deployment Steps
+
+1. **Create a Cloudflare Account**:
+   - Visit the [Cloudflare website](https://www.cloudflare.com/) and register an account
+
+2. **Deploy the Worker**:
+   - Log in to the Cloudflare dashboard
+   - Navigate to "Workers & Pages"
+   - Click "Create Worker"
+   - Copy the content of the `worker.js` file from the project root directory into the Worker editor
+   - Click "Save and Deploy" to deploy the Worker
+   - Note down the Worker URL (e.g., `https://your-worker.your-account.workers.dev`)
+
+3. **Configure the Application to Use the Worker**:
+   - Add to Vercel environment variables:
    ```
-   OFFICE_PREVIEW_PROXY = {你的Worker URL}
+   OFFICE_PREVIEW_PROXY = {Your Worker URL}
    ```
-   - 或在本地开发的`.env`文件中添加：
+   - Or add to your local development `.env` file:
    ```
-   VITE_OFFICE_PREVIEW_PROXY = {你的Worker URL}
+   VITE_OFFICE_PREVIEW_PROXY = {Your Worker URL}
    ```
 
-4. **绑定自定义域名（可选但推荐）**:
-   - 在Cloudflare控制台中，进入"Workers & Pages"
-   - 选择你的Worker
-   - 点击"Triggers"标签
-   - 在"Custom Domains"部分点击"Add Custom Domain"
-   - 输入你拥有的域名（如：`worker.example.com`）
-   - 确保该域名已经在Cloudflare DNS管理中
-   - 点击"Add Custom Domain"完成添加
+4. **Bind Custom Domain (Optional but Recommended)**:
+   - In the Cloudflare dashboard, go to "Workers & Pages"
+   - Select your Worker
+   - Click the "Triggers" tab
+   - In the "Custom Domains" section, click "Add Custom Domain"
+   - Enter a domain you own (e.g., `worker.example.com`)
+   - Ensure this domain is already managed in Cloudflare DNS
+   - Click "Add Custom Domain" to complete the setup
 
-5. **配置路由（通配符路由）**:
-   - 在Cloudflare控制台中，进入"Workers & Pages"
-   - 选择你的Worker
-   - 点击"Triggers"标签
-   - 在"Routes"部分点击"Add Route"
-   - 添加路由规则，例如：
-     * 精确路径：`example.com/proxy/*`（匹配指定路径下的所有请求）
-     * 子域名：`worker.example.com/*`（匹配子域名下的所有请求）
-     * 通配符域名：`*.example.com/proxy/*`（匹配所有子域名下的指定路径）
-   - 注意事项：
-     * 通配符（`*`）匹配单个路径段，不跨越斜杠
-     * 双通配符（`**`）匹配多个路径段，可跨越斜杠
-     * 示例：`example.com/proxy/*`只匹配`example.com/proxy/file`，不匹配`example.com/proxy/folder/file`
-     * 示例：`example.com/proxy/**`匹配`example.com/proxy/folder/file`
+5. **Configure Routes (Wildcard Routing)**:
+   - In the Cloudflare dashboard, go to "Workers & Pages"
+   - Select your Worker
+   - Click the "Triggers" tab
+   - In the "Routes" section, click "Add Route"
+   - Add routing rules, for example:
+     * Exact path: `example.com/proxy/*` (matches all requests under the specified path)
+     * Subdomain: `worker.example.com/*` (matches all requests under the subdomain)
+     * Wildcard domain: `*.example.com/proxy/*` (matches specified path on all subdomains)
+   - Important notes:
+     * Single wildcard (`*`) matches a single path segment and doesn't cross slashes
+     * Double wildcard (`**`) matches multiple path segments and can cross slashes
+     * Example: `example.com/proxy/*` only matches `example.com/proxy/file`, not `example.com/proxy/folder/file`
+     * Example: `example.com/proxy/**` matches `example.com/proxy/folder/file`
 
-6. **测试文档预览**:
-   - 部署完成后，打开应用
-   - 尝试预览一个Office文档（如.docx、.xlsx或.pptx）
-   - 系统将自动使用Worker代理来预览文档
+6. **Test Document Preview**:
+   - After deployment, open the application
+   - Try to preview an Office document (e.g., .docx, .xlsx, or .pptx)
+   - The system will automatically use the Worker proxy to preview the document
 
-## 故障排除
+## Troubleshooting
 
-遇到问题？以下是常见问题和解决方案：
+Encountering issues? Here are common problems and solutions:
 
-### API访问问题
+### API Access Issues
 
-如果遇到GitHub API访问问题：
+If you encounter GitHub API access issues:
 
-1. 确认环境变量已正确设置
-2. 检查PAT是否具有必要的权限(`repo`对于私有仓库，`public_repo`对于公开仓库)
-3. 确认PAT未过期
-4. 查看Vercel的函数日志以获取详细错误信息
-5. 如果启用了开发者模式，检查控制台的详细日志
+1. Confirm your environment variables are correctly set
+2. Check if PATs have the necessary permissions (`repo` for private repositories, `public_repo` for public repositories)
+3. Verify PATs have not expired
+4. Check Vercel function logs for detailed error information
+5. If developer mode is enabled, check the console for detailed logs
 
-### Office文档预览问题
+### Office Document Preview Issues
 
-如果Office文档预览不工作：
+If Office document preview is not working:
 
-1. 确认Cloudflare Worker已正确部署
-2. 检查`OFFICE_PREVIEW_PROXY`环境变量是否正确设置
-3. 查看浏览器控制台中的错误信息
-4. 在Cloudflare Workers控制台中检查Worker日志
-5. 如果使用了自定义域名，确保DNS已正确配置且SSL证书已激活
-6. 若使用通配符路由，检查路由规则是否正确匹配请求URL
+1. Confirm that the Cloudflare Worker is correctly deployed
+2. Check if the `OFFICE_PREVIEW_PROXY` environment variable is correctly set
+3. Look for error messages in the browser console
+4. Check Worker logs in the Cloudflare Workers dashboard
+5. If using a custom domain, ensure DNS is properly configured and SSL certificate is active
+6. If using wildcard routes, verify that your route rules correctly match the request URLs
 
-### 内容过滤问题
+### Content Filtering Issues
 
-如果内容过滤功能不按预期工作：
+If content filtering doesn't work as expected:
 
-1. 确认`HOMEPAGE_FILTER_ENABLED`设置为`true`
-2. 检查`HOMEPAGE_ALLOWED_FOLDERS`和`HOMEPAGE_ALLOWED_FILETYPES`配置是否正确
-3. 确保文件夹名称和文件类型名称与实际仓库内容匹配
-4. 如有更多疑问，启用开发者模式查看详细日志
+1. Confirm that `HOMEPAGE_FILTER_ENABLED` is set to `true`
+2. Check if `HOMEPAGE_ALLOWED_FOLDERS` and `HOMEPAGE_ALLOWED_FILETYPES` are configured correctly
+3. Ensure folder names and file type names match the actual repository content
+4. For more questions, enable developer mode to view detailed logs
 
-## 技术栈
+## Tech Stack
 
-- React、TypeScript、Vite
-- Material UI组件库
+- React, TypeScript, Vite
+- Material UI component library
 - Vercel Serverless Functions
-- Cloudflare Workers (用于Office文档预览代理)
+- Cloudflare Workers (for Office document preview proxy)
 
-## 许可
+## License
 
-本项目采用AGPL-3.0许可证。详情请参阅[LICENSE](LICENSE)文件。 
+This project is licensed under the AGPL-3.0 License. See the [LICENSE](LICENSE) file for details. 

@@ -6,13 +6,15 @@ interface FullScreenPreviewProps {
   onClose: () => void;
   backgroundColor?: string;
   fitToPage?: boolean;
+  disablePadding?: boolean;
 }
 
 const FullScreenPreview: React.FC<FullScreenPreviewProps> = ({
   children,
   onClose,
   backgroundColor,
-  fitToPage = true
+  fitToPage = true,
+  disablePadding = false
 }) => {
   const theme = useTheme();
   
@@ -46,7 +48,7 @@ const FullScreenPreview: React.FC<FullScreenPreviewProps> = ({
           height: 'auto',
           minHeight: '100%',
           overflow: 'visible',
-          padding: 2
+          padding: disablePadding ? 0 : 2
         }}
       >
         {children}
