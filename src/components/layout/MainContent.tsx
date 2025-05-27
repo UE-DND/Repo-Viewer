@@ -35,6 +35,7 @@ const MainContent: React.FC = () => {
     readmeContent,
     loading,
     loadingReadme,
+    readmeLoaded,
     error,
     handleRetry,
     navigateTo,
@@ -255,9 +256,9 @@ const MainContent: React.FC = () => {
           />
           
           {/* README预览 - 底部展示 */}
-          {readmeContent && (
+          {readmeContent && readmeLoaded && !loadingReadme && (
             <Box 
-              className="readme-container" 
+              className="readme-container fade-in" 
               sx={{ 
                 position: 'relative', 
                 width: '100%', 
@@ -279,10 +280,10 @@ const MainContent: React.FC = () => {
               
               <MarkdownPreview 
                 readmeContent={readmeContent}
-                loadingReadme={loadingReadme}
+                loadingReadme={false}
                 isSmallScreen={isSmallScreen}
                 isReadme={true}
-                lazyLoad={true}
+                lazyLoad={false}
               />
             </Box>
           )}

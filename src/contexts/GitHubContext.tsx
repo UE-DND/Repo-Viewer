@@ -17,6 +17,7 @@ interface GitHubContextData {
   readmeContent: string | null;
   loading: boolean;
   loadingReadme: boolean;
+  readmeLoaded: boolean;
   error: string | null;
   navigateTo: (path: string, direction?: NavigationDirection) => void;
   refresh: () => void;

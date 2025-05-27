@@ -53,10 +53,10 @@ body.theme-transition .MuiAppBar-root {
   will-change: transform; 
 }
 body.theme-transition .file-list-container {
-  transform: scale(0.96) !important;
-  opacity: 0.2 !important;
-  transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
-              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+  transform: scale(0.98) !important;
+  opacity: 0.4 !important;
+  transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
   will-change: transform, opacity; 
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -91,13 +91,20 @@ body.theme-transition .MuiLinearProgress-root {
   will-change: opacity; 
 }
 .MuiTouchRipple-ripple {
-  transition-duration: 360ms !important;
+  transition-duration: 550ms !important;
   will-change: transform, opacity; 
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   transform: translateZ(0);
   pointer-events: none;
 }
+
+/* 为刷新按钮特别定义涟漪效果 */
+.refresh-button .MuiTouchRipple-ripple {
+  transition-duration: 600ms !important; /* 与页面过渡动画保持一致 */
+  transition-timing-function: cubic-bezier(0.05, 0.01, 0.5, 1.0) !important; /* 与页面过渡动画保持一致 */
+}
+
 .MuiTouchRipple-root {
   transform: translateZ(0);
   will-change: inherit;
@@ -570,18 +577,6 @@ body {
   }
 }
 
-/* 文件项容器样式 */
-.file-list-item-container {
-  /* 确保内容可见 */
-  overflow: visible;
-  /* 统一高度处理 */
-  box-sizing: border-box;
-  /* 优化视觉间距 */
-  display: flex;
-  align-items: center;
-  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
-}
-
 /* 优化文件列表项的视觉间距 */
 .file-list-item-container .MuiListItem-root {
   padding-top: 0;
@@ -759,14 +754,22 @@ html:not([data-theme="dark"]) .katex-display {
 }
 
 /* 刷新内容时使用与主题切换相同的动画效果 */
-body.refreshing .file-list-container,
+body.refreshing .file-list-container {
+  transform: scale(0.99) !important; /* 比主题切换更柔和的缩放 */
+  opacity: 0.5 !important; /* 比主题切换更高的透明度 */
+  transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 body.refreshing .readme-container,
 body.refreshing .MuiContainer-root,
 body.refreshing .MuiBreadcrumbs-root,
 body.refreshing .image-preview-container {
-  /* 使用与theme-transition相同的效果 */
-  transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
-              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+  transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
   will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -845,12 +848,52 @@ html[data-theme-change-only="true"] .readme-container .MuiPaper-root {
 
 /* 确保文件列表项也有平滑的过渡效果 */
 .file-list-item-container {
-  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+  transition: transform 250ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 250ms cubic-bezier(0.1, 0.0, 0.2, 1.0);
+  will-change: transform, opacity;
+  /* 确保内容可见 */
+  overflow: visible;
+  /* 统一高度处理 */
+  box-sizing: border-box;
+  /* 优化视觉间距 */
+  display: flex;
+  align-items: center;
 }
 
 /* 文件列表容器的基本样式 */
 .file-list-container {
   position: relative;
+  will-change: transform, opacity;
+  transition: transform 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0);
   contain: content;
   content-visibility: auto;
+}
+
+/* 文件列表的平滑过渡效果 */
+.file-list-smooth-transition {
+  transition: transform 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
+}
+
+/* 添加淡入动画效果 */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out 0.1s forwards; /* 添加0.1s延迟 */
+  opacity: 0; /* 确保初始状态是不可见的 */
+}
+
+/* 确保README容器中的加载指示器不显示 */
+.readme-container .MuiCircularProgress-root {
+  display: none !important;
 } 

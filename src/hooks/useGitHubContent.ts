@@ -36,17 +36,25 @@ export const useGitHubContent = () => {
     }
   };
 
+  // 获取当前路径
   const [currentPath, setCurrentPath] = useState<string>(getSavedPath());
+  // 存储目录内容
   const [contents, setContents] = useState<GitHubContent[]>([]);
+  // 存储README内容
   const [readmeContent, setReadmeContent] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingReadme, setLoadingReadme] = useState(false);
+  // 加载状态
+  const [loading, setLoading] = useState<boolean>(true);
+  // README加载状态
+  const [loadingReadme, setLoadingReadme] = useState<boolean>(false);
+  // README加载完成状态
+  const [readmeLoaded, setReadmeLoaded] = useState<boolean>(false);
+  // 错误信息
   const [error, setError] = useState<string | null>(null);
+  // 刷新触发器
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  // 添加导航方向状态
+  // 导航方向
   const [navigationDirection, setNavigationDirection] = useState<NavigationDirection>('none');
-  
-  // 使用ref跟踪初始加载状态，避免重复更新URL
+  // 初始加载标记
   const isInitialLoad = useRef<boolean>(true);
 
   // 处理错误显示
@@ -59,6 +67,8 @@ export const useGitHubContent = () => {
   const loadContents = useCallback(async (path: string) => {
     setLoading(true);
     setError(null);
+    // 重置README加载状态
+    setReadmeLoaded(false);
     
     try {
       logger.time(`加载目录: ${path}`);
@@ -111,6 +121,8 @@ export const useGitHubContent = () => {
         await loadReadmeContent(readmeItem);
       } else {
         setReadmeContent(null);
+        // README不存在时也设置为已加载完成
+        setReadmeLoaded(true);
       }
       
       setLoading(false);
@@ -119,6 +131,7 @@ export const useGitHubContent = () => {
       displayError(`获取目录内容失败: ${e.message}`);
       setContents([]);
       setLoading(false);
+      setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
       logger.timeEnd(`加载目录: ${path}`);
     }
@@ -130,16 +143,20 @@ export const useGitHubContent = () => {
     
     setLoadingReadme(true);
     setReadmeContent(null);
+    setReadmeLoaded(false); // 重置加载状态
     
     try {
       logger.time('加载README');
       const content = await GitHubService.getFileContent(readmeItem.download_url);
       logger.debug(`README加载成功: ${readmeItem.path}，内容长度: ${content.length} 字节`);
       setReadmeContent(content);
+      // 设置为已加载完成
+      setReadmeLoaded(true);
     } catch (e: any) {
       logger.error(`加载README失败:`, e);
       displayError(`加载 README 失败: ${e.message}`);
       setReadmeContent(null);
+      setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
       setLoadingReadme(false);
       logger.timeEnd('加载README');
@@ -245,6 +262,7 @@ export const useGitHubContent = () => {
     readmeContent,
     loading,
     loadingReadme,
+    readmeLoaded,
     error,
     setCurrentPath: navigateTo,
     refreshContents,

@@ -23,6 +23,19 @@ export const pulseAnimation = keyframes`
   }
 `;
 
+// 刷新按钮组合动画 - 结合旋转和轻微缩放
+export const refreshAnimation = keyframes`
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+`;
+
 // 渐变动画效果 - 可用于过渡效果
 export const fadeAnimation = keyframes`
   from {

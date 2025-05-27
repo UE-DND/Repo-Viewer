@@ -8,7 +8,7 @@ import {
 } from '@mui/icons-material';
 import { ColorModeContext } from '../../contexts/ColorModeContext';
 import { useRefresh } from '../../hooks/useRefresh';
-import { pulseAnimation } from '../../theme/animations';
+import { pulseAnimation, refreshAnimation } from '../../theme/animations';
 import { GitHubService } from '../../services/github';
 import { useSnackbar } from 'notistack';
 
@@ -18,13 +18,23 @@ const ToolbarButtons: React.FC = () => {
   const theme = useTheme();
   const handleRefresh = useRefresh();
   const { enqueueSnackbar } = useSnackbar();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // 处理刷新按钮点击
   const onRefreshClick = useCallback(() => {
+    if (isRefreshing) return; // 防止重复点击
+    
+    setIsRefreshing(true);
+    
     // 强制刷新时绕过缓存获取新数据
     GitHubService.clearCache(); 
     handleRefresh();
-  }, [handleRefresh]);
+    
+    // 动画完成后重置状态
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 600); // 与动画持续时间保持一致
+  }, [handleRefresh, isRefreshing]);
   
   // 处理主题切换按钮点击
   const onThemeToggleClick = useCallback(() => {
@@ -61,12 +71,20 @@ const ToolbarButtons: React.FC = () => {
       
       <Tooltip title="刷新内容">
         <IconButton 
+          className="refresh-button"
           color="inherit"
           onClick={onRefreshClick}
+          disabled={isRefreshing}
           sx={{
+            position: 'relative',
+            overflow: 'visible',
             '&:hover': {
-              animation: `${pulseAnimation} 0.4s ease`,
               color: theme.palette.primary.light
+            },
+            '& .MuiSvgIcon-root': {
+              transition: 'transform 0.2s ease-out',
+              animation: isRefreshing ? `${refreshAnimation} 0.6s cubic-bezier(0.05, 0.01, 0.5, 1.0)` : 'none',
+              transformOrigin: 'center center',
             }
           }}
         >
