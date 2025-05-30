@@ -13,6 +13,7 @@ import { useGitHub, NavigationDirection } from '../../contexts/GitHubContext';
 import { FileListSkeleton } from '../common/SkeletonComponents';
 import { getPreviewFromUrl } from '../../utils/urlManager';
 import { logger } from '../../utils';
+import DynamicSEO from '../seo/DynamicSEO';
 
 const MainContent: React.FC = () => {
   // 获取主题和响应式布局
@@ -48,7 +49,9 @@ const MainContent: React.FC = () => {
     refresh,
     cancelDownload,
     currentPreviewItemRef,
-    navigationDirection
+    navigationDirection,
+    repoOwner,
+    repoName
   } = useGitHub();
   
   // 检测当前目录中是否有README.md文件
@@ -212,6 +215,55 @@ const MainContent: React.FC = () => {
       }
     }
   }, [loading, error, contents, currentPreviewItemRef, previewState, selectFile]);
+
+  // 获取当前文件或目录的信息用于SEO
+  const seoInfo = useMemo(() => {
+    // 如果正在预览文件，使用文件信息
+    if (previewState.previewingItem) {
+      return {
+        title: previewState.previewingItem.name,
+        filePath: previewState.previewingItem.path,
+        isDirectory: false,
+        fileType: previewState.previewingItem.name.split('.').pop() || ''
+      };
+    } else if (previewState.previewingPdfItem) {
+      return {
+        title: previewState.previewingPdfItem.name,
+        filePath: previewState.previewingPdfItem.path,
+        isDirectory: false,
+        fileType: 'PDF'
+      };
+    } else if (previewState.previewingImageItem) {
+      return {
+        title: previewState.previewingImageItem.name,
+        filePath: previewState.previewingImageItem.path,
+        isDirectory: false,
+        fileType: 'Image'
+      };
+    } else if (previewState.previewingOfficeItem) {
+      return {
+        title: previewState.previewingOfficeItem.name,
+        filePath: previewState.previewingOfficeItem.path,
+        isDirectory: false,
+        fileType: previewState.officeFileType || '文档'
+      };
+    }
+    
+    // 否则使用当前目录信息
+    return {
+      title: currentPath ? currentPath.split('/').pop() || '根目录' : '根目录',
+      filePath: currentPath || '',
+      isDirectory: true,
+      fileType: ''
+    };
+  }, [
+    currentPath, 
+    previewState.previewingItem, 
+    previewState.previewingPdfItem, 
+    previewState.previewingImageItem,
+    previewState.previewingOfficeItem,
+    previewState.officeFileType
+  ]);
   
   return (
     <Container component="main" sx={{ 
@@ -219,6 +271,16 @@ const MainContent: React.FC = () => {
       py: 4,
       overflow: 'hidden'
     }}>
+      {/* 动态SEO组件 */}
+      <DynamicSEO 
+        title={seoInfo.title}
+        filePath={seoInfo.filePath}
+        isDirectory={seoInfo.isDirectory}
+        fileType={seoInfo.fileType}
+        repoOwner={repoOwner}
+        repoName={repoName}
+      />
+      
       <BreadcrumbNavigation
         breadcrumbSegments={breadcrumbSegments}
         handleBreadcrumbClick={handleBreadcrumbClick}

@@ -25,6 +25,10 @@ interface GitHubContextData {
   setCurrentPath: (path: string, direction?: NavigationDirection) => void;
   navigationDirection: NavigationDirection;
   
+  // 仓库信息
+  repoOwner: string;
+  repoName: string;
+  
   // 预览相关
   previewState: any;
   selectFile: (item: GitHubContent) => void;
@@ -127,7 +131,11 @@ export const GitHubProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     downloadState: downloadManager.downloadState,
     downloadFile: downloadManager.downloadFile,
     downloadFolder: downloadManager.downloadFolder,
-    cancelDownload: downloadManager.cancelDownload
+    cancelDownload: downloadManager.cancelDownload,
+    
+    // 仓库信息
+    repoOwner: contentManager.repoOwner,
+    repoName: contentManager.repoName
   };
   
   return (

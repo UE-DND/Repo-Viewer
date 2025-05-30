@@ -10,7 +10,7 @@ import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTF
 import { getPreviewFromUrl, updateUrlWithHistory, updateUrlWithoutHistory, hasPreviewParam } from '../utils/urlManager';
 
 // 是否强制使用服务端API
-const FORCE_SERVER_PROXY = !import.meta.env.DEV || (import.meta.env.USE_TOKEN_MODE || import.meta.env.VITE_USE_TOKEN_MODE) === 'true';
+const FORCE_SERVER_PROXY = !import.meta.env.DEV || import.meta.env.VITE_USE_TOKEN_MODE === 'true';
 
 // 初始预览状态
 const initialPreviewState: PreviewState = {

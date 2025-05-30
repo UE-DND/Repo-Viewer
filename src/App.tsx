@@ -8,6 +8,8 @@ import { SITE_TITLE } from './constants';
 import { GitHubService } from './services/github';
 import { logger } from './utils';
 import { SnackbarProvider } from 'notistack';
+import SEO from './components/seo/SEO';
+import Footer from './components/layout/Footer';
 
 // 优化后的App组件
 const App = React.memo(() => {
@@ -58,6 +60,9 @@ const App = React.memo(() => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <>
+        {/* 基础SEO设置 */}
+        <SEO />
+        
         <style>
           {`
             .notistack-SnackbarContainer {
@@ -137,6 +142,9 @@ const App = React.memo(() => {
             </AppBar>
             
             <MainContent />
+            
+            {/* 添加页脚组件 */}
+            <Footer />
           </Box>
         </GitHubProvider>
       </SnackbarProvider>

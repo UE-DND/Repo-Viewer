@@ -6,15 +6,19 @@ import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '.
 import { NavigationDirection } from '../contexts/GitHubContext';
 
 // 配置
-const HOMEPAGE_FILTER_ENABLED = (import.meta.env.HOMEPAGE_FILTER_ENABLED || import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED) === 'true';
-const HOMEPAGE_ALLOWED_FILETYPES = (import.meta.env.HOMEPAGE_ALLOWED_FILETYPES || import.meta.env.VITE_HOMEPAGE_ALLOWED_FILETYPES || '')
+const HOMEPAGE_FILTER_ENABLED = import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED === 'true';
+const HOMEPAGE_ALLOWED_FILETYPES = (import.meta.env.VITE_HOMEPAGE_ALLOWED_FILETYPES || '')
   .split(',')
   .filter(Boolean)
   .map((type: string) => type.trim().toLowerCase());
-const HOMEPAGE_ALLOWED_FOLDERS = (import.meta.env.HOMEPAGE_ALLOWED_FOLDERS || import.meta.env.VITE_HOMEPAGE_ALLOWED_FOLDERS || '')
+const HOMEPAGE_ALLOWED_FOLDERS = (import.meta.env.VITE_HOMEPAGE_ALLOWED_FOLDERS || '')
   .split(',')
   .filter(Boolean)
   .map((folder: string) => folder.trim());
+
+// 获取仓库信息
+const GITHUB_REPO_OWNER = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
+const GITHUB_REPO_NAME = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
 
 // 自定义Hook，管理GitHub内容获取
 export const useGitHubContent = () => {
@@ -264,8 +268,13 @@ export const useGitHubContent = () => {
     loadingReadme,
     readmeLoaded,
     error,
-    setCurrentPath: navigateTo,
+    setCurrentPath: (path: string, direction: NavigationDirection = 'none') => {
+      setNavigationDirection(direction);
+      setCurrentPath(path);
+    },
     refreshContents,
-    navigationDirection
+    navigationDirection,
+    repoOwner: GITHUB_REPO_OWNER,
+    repoName: GITHUB_REPO_NAME
   };
 };
