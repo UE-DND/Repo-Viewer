@@ -19,7 +19,6 @@ const HOMEPAGE_ALLOWED_FOLDERS = (import.meta.env.VITE_HOMEPAGE_ALLOWED_FOLDERS 
 // 获取仓库信息
 const GITHUB_REPO_OWNER = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
 const GITHUB_REPO_NAME = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
-
 // 自定义Hook，管理GitHub内容获取
 export const useGitHubContent = () => {
   // 尝试从URL获取路径

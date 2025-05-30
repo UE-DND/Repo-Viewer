@@ -56,6 +56,9 @@ Want to develop and debug this project in your local environment? Follow these s
 
 > ⚠️ **Important**: For local development, you **must** use variables with the VITE_ prefix, otherwise the frontend cannot read the environment variables!  
 > In production (e.g. Vercel), ONLY the following variables do NOT require the VITE_ prefix. All other variables that need to be read by the frontend MUST have the VITE_ prefix:
+> - GITHUB_REPO_OWNER
+> - GITHUB_REPO_NAME
+> - GITHUB_REPO_BRANCH
 > - GITHUB_PAT1
 > - OFFICE_PREVIEW_PROXY
 
