@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
  
 # 站点地图
-Sitemap: https://repo-viewer.vercel.app/sitemap.xml 
+Sitemap: https://cqut.uednd.top/sitemap.xml 
