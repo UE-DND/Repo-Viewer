@@ -25,6 +25,7 @@ A GitHub repository browsing web application based on the MD3 design language.
 - 🔄 **Responsive Design**: Compatible with desktop and mobile devices
 - 🔍 **Content Filtering**: Support for filtering files and folders on the homepage
 - 🛠️ **Developer Mode**: Provides detailed debugging information and performance statistics
+- 🌐 **SEO Optimization**: Dynamic meta tags to improve search engine visibility and social sharing
 
 ## Local Development
 
@@ -65,6 +66,10 @@ Want to develop and debug this project in your local environment? Follow these s
 ```
 # Basic Configuration (all frontend variables must use VITE_ prefix except repo info)
 VITE_SITE_TITLE = Your Site Title
+VITE_SITE_DESCRIPTION = Your site description for SEO
+VITE_SITE_KEYWORDS = keyword1, keyword2, keyword3
+VITE_SITE_OG_IMAGE = /repo-viewer-icon.svg
+VITE_SITE_TWITTER_HANDLE = @yourTwitterHandle
 VITE_HOMEPAGE_FILTER_ENABLED = true
 VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
@@ -120,6 +125,9 @@ When deploying on Vercel, GitHub Personal Access Tokens (PATs) are protected thr
 ```
 # Basic Configuration
 SITE_TITLE = Your Site Title
+SITE_DESCRIPTION = Your site description for SEO
+SITE_KEYWORDS = keyword1, keyword2, keyword3
+SITE_OG_IMAGE = /path/to/og-image.jpg
 GITHUB_REPO_OWNER = Repository Owner
 GITHUB_REPO_NAME = Repository Name
 GITHUB_REPO_BRANCH = Branch Name (defaults to main)
@@ -130,6 +138,9 @@ GITHUB_PAT1 = Your GitHub Personal Access Token
 
 **Optional Environment Variables**:
 ```
+# SEO Settings (optional)
+SITE_TWITTER_HANDLE = @yourTwitterHandle
+
 # Homepage Content Filtering (optional) - Only affects the repository root directory (homepage)
 HOMEPAGE_FILTER_ENABLED = true or false           # Enable homepage filtering
 HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2        # Folders allowed to be displayed on homepage
@@ -207,27 +218,22 @@ If you need to support online preview of Office documents, you can configure a C
 
 ## Troubleshooting
 
-Encountering issues? Here are common problems and solutions:
+If you encounter issues during deployment or usage:
 
-### API Access Issues
+### API Rate Limiting Issues
 
-If you encounter GitHub API access issues:
+1. Ensure you have correctly configured GitHub Personal Access Tokens
+2. Check if your tokens have the correct permissions (`repo` scope)
+3. For high-traffic sites, consider adding multiple PATs for rotation
+4. Verify token usage in GitHub developer settings
 
-1. Confirm your environment variables are correctly set
-2. Check if PATs have the necessary permissions (`repo` for private repositories, `public_repo` for public repositories)
-3. Verify PATs have not expired
-4. Check Vercel function logs for detailed error information
-5. If developer mode is enabled, check the console for detailed logs
+### Deployment Issues
 
-### Office Document Preview Issues
-
-If Office document preview is not working:
-
-1. Confirm that the Cloudflare Worker is correctly deployed
-2. Check if the `OFFICE_PREVIEW_PROXY` environment variable is correctly set
-3. Look for error messages in the browser console
-4. Check Worker logs in the Cloudflare Workers dashboard
-5. If using a custom domain, ensure DNS is properly configured and SSL certificate is active
+1. Check if all required environment variables are set correctly
+2. Ensure your repository has necessary permissions for Vercel
+3. Check Vercel build logs for any specific error messages
+4. Verify your GitHub tokens have not expired
+5. If using a custom domain, ensure DNS is configured correctly and SSL certificate is active
 6. If using wildcard routes, verify that your route rules correctly match the request URLs
 
 ### Content Filtering Issues
@@ -237,7 +243,7 @@ If content filtering doesn't work as expected:
 1. Confirm that `HOMEPAGE_FILTER_ENABLED` is set to `true`
 2. Check if `HOMEPAGE_ALLOWED_FOLDERS` and `HOMEPAGE_ALLOWED_FILETYPES` are configured correctly
 3. Ensure folder names and file type names match the actual repository content
-4. For more questions, enable developer mode to view detailed logs
+4. For more troubleshooting, enable developer mode to view detailed logs
 
 ## Tech Stack
 

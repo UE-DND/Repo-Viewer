@@ -10,11 +10,12 @@ import ThemeProvider from './providers/ThemeProvider';
 import CustomSnackbar from './components/common/CustomSnackbar';
 import { checkTokenStatus } from './utils/token-helper';
 import { setupLatexOptimization } from './utils/latexOptimizer';
+import SEOProvider from './contexts/SEOContext';
 
 // 开发者模式配置 - 控制调试信息显示
 const DEV_CONFIG = {
-  DEBUG_MODE: (import.meta.env.DEBUG_MODE || import.meta.env.VITE_DEBUG_MODE) === 'true',
-  CONSOLE_LOGGING: (import.meta.env.CONSOLE_LOGGING || import.meta.env.VITE_CONSOLE_LOGGING) === 'true'
+  DEBUG_MODE: import.meta.env.VITE_DEBUG_MODE === 'true',
+  CONSOLE_LOGGING: import.meta.env.VITE_CONSOLE_LOGGING === 'true'
 };
 
 // 初始化日志系统
@@ -48,24 +49,26 @@ document.addEventListener('DOMContentLoaded', () => {
 // 使用更轻量级、优化的根组件
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <SnackbarProvider 
-        maxSnack={5} 
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        autoHideDuration={3000}
-        Components={{
-          default: CustomSnackbar,
-          success: CustomSnackbar,
-          error: CustomSnackbar,
-          warning: CustomSnackbar,
-          info: CustomSnackbar,
-        }}
-      >
-        <App />
-      </SnackbarProvider>
-    </ThemeProvider>
+    <SEOProvider>
+      <ThemeProvider>
+        <SnackbarProvider 
+          maxSnack={5} 
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          autoHideDuration={3000}
+          Components={{
+            default: CustomSnackbar,
+            success: CustomSnackbar,
+            error: CustomSnackbar,
+            warning: CustomSnackbar,
+            info: CustomSnackbar,
+          }}
+        >
+          <App />
+        </SnackbarProvider>
+      </ThemeProvider>
+    </SEOProvider>
   </React.StrictMode>,
 ); 

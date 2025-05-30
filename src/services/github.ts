@@ -3,15 +3,15 @@ import { logger } from '../utils';
 import axios from 'axios';
 
 // 基础配置
-const GITHUB_REPO_OWNER = import.meta.env.GITHUB_REPO_OWNER || import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
-const GITHUB_REPO_NAME = import.meta.env.GITHUB_REPO_NAME || import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
-const DEFAULT_BRANCH = import.meta.env.GITHUB_REPO_BRANCH || import.meta.env.VITE_GITHUB_REPO_BRANCH || 'main';
+const GITHUB_REPO_OWNER = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
+const GITHUB_REPO_NAME = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
+const DEFAULT_BRANCH = import.meta.env.VITE_GITHUB_REPO_BRANCH || 'main';
 
 // 是否使用服务端API（非开发环境）
 const USE_SERVER_API = !import.meta.env.DEV;
 
 // 模式设置
-const USE_TOKEN_MODE = (import.meta.env.USE_TOKEN_MODE || import.meta.env.VITE_USE_TOKEN_MODE) === 'true';
+const USE_TOKEN_MODE = import.meta.env.VITE_USE_TOKEN_MODE === 'true';
 
 // 强制使用服务端API代理所有请求
 const FORCE_SERVER_PROXY = !import.meta.env.DEV || USE_TOKEN_MODE;
@@ -372,7 +372,7 @@ export class GitHubService {
   private static readonly fileCache = new LRUCache<string, string>(MAX_CACHE_SIZE, STORAGE_KEY_FILE_CACHE);
   private static readonly batcher = new RequestBatcher();
   private static readonly GITHUB_API_BASE = 'https://api.github.com';
-  private static readonly IMAGE_PROXY_URL = import.meta.env.IMAGE_PROXY_URL || import.meta.env.VITE_IMAGE_PROXY_URL || 'https://gh-proxy.com';
+  private static readonly IMAGE_PROXY_URL = import.meta.env.VITE_IMAGE_PROXY_URL || 'https://gh-proxy.com';
   
   // 获取GitHub PAT总数
   public static getTokenCount(): number {
@@ -1018,36 +1018,62 @@ export class GitHubService {
 
   // 获取配置信息
   public static async getConfig(): Promise<ConfigInfo> {
+    // 根据开发者模式环境变量决定使用的分支
+    const isDeveloperMode = import.meta.env.VITE_DEVELOPER_MODE === 'true';
+    const branch = isDeveloperMode ? "beta" : "main";
+    
+    return {
+      officeProxyUrl: import.meta.env.OFFICE_PREVIEW_PROXY || import.meta.env.VITE_OFFICE_PREVIEW_PROXY || '',
+      repoOwner: "UE-DND",
+      repoName: "Repo-Viewer",
+      repoBranch: branch
+    };
+  }
+
+  /**
+   * 获取仓库最新的提交信息
+   * @returns Promise<{sha: string, message: string, date: string}>
+   */
+  public static async getLatestCommit(): Promise<{sha: string, message: string, date: string}> {
     try {
+      // 使用固定的仓库路径，而不是环境变量
+      const fixedRepoOwner = "UE-DND";
+      const fixedRepoName = "Repo-Viewer";
+      
+      // 根据开发者模式决定使用的分支
+      const isDeveloperMode = import.meta.env.VITE_DEVELOPER_MODE === 'true';
+      const branch = isDeveloperMode ? "beta" : "main";
+      
+      // 构建API URL
+      const url = `${this.GITHUB_API_BASE}/repos/${fixedRepoOwner}/${fixedRepoName}/commits/${branch}`;
+      
+      // 决定是使用服务端API还是直接请求
+      let response;
       if (USE_SERVER_API) {
-        // 从服务器API获取配置
-        const response = await fetch(`/api/github?action=getConfig`);
-        if (!response.ok) {
-          throw new Error(`获取配置失败: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.status === 'success' && data.data) {
-          configInfo = data.data;
-          logger.debug('从服务端API获取配置成功');
-        } else {
-          throw new Error('配置数据格式错误');
-        }
+        // 传递分支参数到API
+        response = await fetch(`/api/github/commits?branch=${branch}`);
       } else {
-        // 开发环境使用本地环境变量
-        configInfo = {
-          officeProxyUrl: import.meta.env.OFFICE_PREVIEW_PROXY || import.meta.env.VITE_OFFICE_PREVIEW_PROXY || '',
-          repoOwner: GITHUB_REPO_OWNER,
-          repoName: GITHUB_REPO_NAME,
-          repoBranch: DEFAULT_BRANCH
-        };
-        logger.debug('使用本地环境变量配置');
+        // 获取认证头
+        const headers = this.getAuthHeaders();
+        response = await fetch(url, { headers });
       }
 
-      return configInfo;
-    } catch (error: any) {
-      logger.error('获取配置失败:', error);
-      // 返回默认配置
-      return configInfo;
+      if (!response.ok) {
+        this.handleApiError(response);
+        return { sha: '', message: '无法获取版本信息', date: '' };
+      }
+
+      const data = await response.json();
+      
+      // 提取提交信息
+      const sha = data.sha?.substring(0, 7) || '';
+      const message = data.commit?.message || '';
+      const date = data.commit?.author?.date || '';
+      
+      return { sha, message, date };
+    } catch (error) {
+      logger.error('获取最新提交信息失败:', error);
+      return { sha: '', message: '获取版本信息出错', date: '' };
     }
   }
 } 

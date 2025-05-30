@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "install-deps": "npm install --legacy-peer-deps",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -44,8 +45,10 @@
     "jszip": "^3.10.1",
     "katex": "^0.16.22",
     "notistack": "^3.0.2",
+    "pdfjs-dist": "^3.11.174",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-helmet-async": "^2.0.5",
     "react-markdown": "^10.1.0",
     "react-use": "^17.6.0",
     "react-virtualized-auto-sizer": "^1.0.26",
@@ -55,5 +58,11 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0"
+  },
+  "overrides": {
+    "react-helmet-async": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
   }
 }
