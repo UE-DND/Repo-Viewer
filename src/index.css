@@ -1,0 +1,899 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.prose {
+  max-width: 100% !important;
+}
+.prose > * {
+  max-width: 100% !important;
+}
+* {
+  transition: background-color 300ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              color 300ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              opacity 300ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              transform 300ms cubic-bezier(0.05, 0.01, 0.5, 1.0);
+}
+body {
+  position: relative;
+  overflow-x: hidden;
+}
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--mui-palette-background-default);
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0);
+  will-change: opacity; 
+}
+body.theme-transition::after {
+  opacity: 0.8;
+  z-index: 9999;
+}
+.MuiContainer-root,
+.MuiAppBar-root,
+.MuiDrawer-paper,
+.MuiCard-root,
+.MuiPaper-root {
+  transition: background-color 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0);
+}
+body.theme-transition .MuiContainer-root {
+  transform: scale(0.98);
+  will-change: transform; 
+}
+body.theme-transition .MuiAppBar-root {
+  transform: translateY(-2px);
+  will-change: transform; 
+}
+body.theme-transition .file-list-container {
+  transform: scale(0.98) !important;
+  opacity: 0.4 !important;
+  transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
+  will-change: transform, opacity; 
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+body.theme-transition .readme-container {
+  transform: scale(0.96) !important;
+  opacity: 0.2 !important;
+  transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+  will-change: transform, opacity; 
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+body.theme-transition .MuiBreadcrumbs-root {
+  transform: translateY(-3px) !important;
+  opacity: 0.7 !important;
+  transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+  will-change: transform, opacity; 
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+body.theme-transition .MuiLinearProgress-root {
+  opacity: 1 !important;
+  transition: opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+  will-change: opacity; 
+}
+.MuiTouchRipple-ripple {
+  transition-duration: 550ms !important;
+  will-change: transform, opacity; 
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+/* 为刷新按钮特别定义涟漪效果 */
+.refresh-button .MuiTouchRipple-ripple {
+  transition-duration: 600ms !important; /* 与页面过渡动画保持一致 */
+  transition-timing-function: cubic-bezier(0.05, 0.01, 0.5, 1.0) !important; /* 与页面过渡动画保持一致 */
+}
+
+.MuiTouchRipple-root {
+  transform: translateZ(0);
+  will-change: inherit;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.no-transition,
+.no-transition * {
+  transition: none !important;
+}
+input, select, textarea, 
+*:active, *:focus {
+  transition-duration: 0ms !important;
+}
+body {
+  margin: 0; 
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif; 
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.markdown-body {
+  font-size: 16px !important; 
+  padding: 1rem !important; 
+  line-height: 1.6 !important; 
+  border-radius: 0 !important; 
+  overflow: visible !important; 
+}
+.markdown-body p, 
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  overflow: visible !important;
+}
+.markdown-body p {
+  margin-bottom: 1.2em !important; 
+  text-align: left !important; 
+}
+.markdown-body h1, 
+.markdown-body h2, 
+.markdown-body h3, 
+.markdown-body h4 {
+  margin-top: 1.5em !important; 
+  margin-bottom: 0.8em !important; 
+  text-align: left !important; 
+}
+.markdown-body img {
+  margin: 1.5rem 0 !important; 
+  display: inline-block !important; 
+  text-align: left !important; 
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+.markdown-body img.loaded {
+  opacity: 1;
+}
+.markdown-body ul,
+.markdown-body ol {
+  text-align: left !important;
+  padding-left: 2em !important; 
+}
+.markdown-body pre,
+.markdown-body code {
+  text-align: left !important;
+}
+.markdown-body table {
+  text-align: left !important;
+}
+[data-theme="light"] .markdown-body,
+html:not([data-theme="dark"]) .markdown-body {
+  color: #1C1B1F !important; 
+  background-color: transparent !important;
+}
+[data-theme="dark"] .markdown-body {
+  color: #E6E1E5 !important; 
+  background-color: transparent !important;
+}
+@media (max-width: 600px) {
+  .markdown-body {
+    font-size: 14px !important; 
+  }
+  .markdown-body h1 {
+    font-size: 1.6em !important;
+  }
+  .markdown-body h2 {
+    font-size: 1.4em !important;
+  }
+  .markdown-body h3 {
+    font-size: 1.2em !important;
+  }
+  .markdown-body pre,
+  .markdown-body code {
+    font-size: 0.9em !important;
+  }
+  .markdown-body blockquote {
+    padding: 0.7rem 0.7rem 0.7rem 1.2rem;
+    font-size: 0.95em !important;
+  }
+  .markdown-body table {
+    font-size: 0.9em !important;
+  }
+  .markdown-body td,
+  .markdown-body th {
+    padding: 6px 8px !important;
+  }
+}
+@media (max-width: 380px) {
+  .markdown-body {
+    font-size: 13px !important;
+  }
+  .markdown-body pre,
+  .markdown-body code {
+    font-size: 0.85em !important;
+  }
+}
+[data-theme="light"] .markdown-body a,
+html:not([data-theme="dark"]) .markdown-body a {
+  color: #6750A4 !important; 
+}
+[data-theme="dark"] .markdown-body a {
+  color: #D0BCFF !important; 
+}
+[data-theme="light"] .markdown-body h1,
+[data-theme="light"] .markdown-body h2,
+html:not([data-theme="dark"]) .markdown-body h1,
+html:not([data-theme="dark"]) .markdown-body h2 {
+  border-bottom-color: rgba(103, 80, 164, 0.1) !important;
+  padding-bottom: 0.5rem;
+}
+[data-theme="dark"] .markdown-body h1,
+[data-theme="dark"] .markdown-body h2 {
+  border-bottom-color: rgba(208, 188, 255, 0.1) !important;
+  padding-bottom: 0.5rem;
+}
+[data-theme="light"] .markdown-body blockquote,
+html:not([data-theme="dark"]) .markdown-body blockquote {
+  border-left-color: #6750A4 !important; 
+  background-color: rgba(103, 80, 164, 0.05); 
+  border-radius: 0; 
+  padding: 1rem 1rem 1rem 1.5rem;
+  overflow: visible !important; 
+}
+[data-theme="dark"] .markdown-body blockquote {
+  color: #CAC4D0 !important; 
+  border-left-color: #D0BCFF !important; 
+  background-color: rgba(208, 188, 255, 0.05) !important; 
+  border-radius: 0; 
+  overflow: visible !important; 
+}
+[data-theme="light"] .markdown-body pre,
+html:not([data-theme="dark"]) .markdown-body pre {
+  background-color: #F7F2FA !important; 
+  border-radius: 4px !important; 
+  padding: 16px !important;
+  overflow: auto !important; 
+}
+[data-theme="dark"] .markdown-body pre {
+  background-color: #332D41 !important; 
+  border-radius: 4px !important; 
+  overflow: auto !important; 
+}
+[data-theme="light"] .markdown-body code,
+html:not([data-theme="dark"]) .markdown-body code {
+  background-color: rgba(103, 80, 164, 0.1) !important; 
+  border-radius: 2px !important; 
+  padding: 2px 4px !important;
+}
+[data-theme="dark"] .markdown-body code:not([class*="language-"]) {
+  background-color: rgba(208, 188, 255, 0.1) !important; 
+  color: #D0BCFF !important; 
+  border-radius: 2px !important; 
+}
+[data-theme="light"] .markdown-body table,
+html:not([data-theme="dark"]) .markdown-body table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border-radius: 4px; 
+  overflow: visible; 
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+[data-theme="dark"] .markdown-body table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border-radius: 4px; 
+  overflow: visible; 
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border-color: rgba(208, 188, 255, 0.2) !important;
+}
+[data-theme="light"] .markdown-body table tr:nth-child(2n),
+html:not([data-theme="dark"]) .markdown-body table tr:nth-child(2n) {
+  background-color: rgba(103, 80, 164, 0.04) !important; 
+}
+[data-theme="dark"] .markdown-body table tr {
+  background-color: #2D2C34 !important; 
+  border-top: 1px solid rgba(208, 188, 255, 0.1) !important;
+}
+[data-theme="dark"] .markdown-body table tr:nth-child(2n) {
+  background-color: #332D41 !important; 
+}
+[data-theme="light"] .markdown-body table th,
+html:not([data-theme="dark"]) .markdown-body table th {
+  background-color: rgba(103, 80, 164, 0.1) !important; 
+  color: #1C1B1F !important;
+}
+[data-theme="dark"] .markdown-body table th {
+  background-color: rgba(208, 188, 255, 0.1) !important; 
+  color: #E6E1E5 !important;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+[data-theme="dark"] ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.pdf-page-shadow {
+  box-shadow: none !important; 
+}
+.pdf-page-shadow canvas {
+  margin: 0;
+  display: block;
+  box-sizing: content-box; 
+  background-color: white; 
+}
+.active-pdf-page {
+  position: relative;
+}
+[data-theme="dark"] .markdown-body hr {
+  border-color: rgba(208, 188, 255, 0.2) !important;
+}
+[data-theme="dark"] .markdown-body h1,
+[data-theme="dark"] .markdown-body h2,
+[data-theme="dark"] .markdown-body h3,
+[data-theme="dark"] .markdown-body h4,
+[data-theme="dark"] .markdown-body h5,
+[data-theme="dark"] .markdown-body h6 {
+  color: #E6E1E5 !important;
+  border-bottom-color: rgba(208, 188, 255, 0.1) !important;
+}
+.file-list-container,
+.readme-container,
+.MuiBreadcrumbs-root,
+.MuiContainer-root {
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  image-rendering: optimizeSpeed;
+  text-rendering: optimizeSpeed;
+}
+.image-preview-container {
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+.image-preview-container img {
+  will-change: transform, opacity;
+  transition: opacity 0.4s ease;
+}
+body.theme-transition .image-preview-container {
+  transform: scale(0.96) !important;
+  opacity: 0.2 !important;
+  transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+}
+.image-preview-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.image-preview-container::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+.image-preview-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+[data-theme="dark"] .image-preview-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+[data-theme="dark"] .image-preview-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.image-preview-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .image-preview-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+.image-preview-container::-webkit-scrollbar-corner {
+  background: transparent;
+}
+[data-theme="dark"] .image-preview-container::-webkit-scrollbar-corner {
+  background: transparent;
+}
+@keyframes imageAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.image-preview-container img.loaded {
+  animation: imageAppear 0.4s ease-out forwards;
+}
+html {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+[data-theme="dark"] html {
+  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.03);
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 文件夹悬浮样式效果 */
+.MuiListItemButton-root {
+  position: relative;
+  transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out !important;
+  transform: translateZ(0);
+}
+
+.MuiListItemButton-root:hover {
+  transform: translateX(3px);
+}
+
+/* 虚拟滚动列表样式 */
+.virtual-file-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  transition: all 0.3s ease;
+}
+
+/* 滚动时显示滚动条 */
+.virtual-file-list.is-scrolling::-webkit-scrollbar-thumb {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 自定义滚动条样式 */
+.virtual-file-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.virtual-file-list::-webkit-scrollbar-track {
+  background: transparent; /* 确保轨道完全透明 */
+  border-radius: 0; /* 移除轨道的圆角 */
+  box-shadow: none; /* 移除任何阴影效果 */
+}
+
+.virtual-file-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  opacity: 0;
+  visibility: visible; /* 保持可见性，但通过opacity控制显示 */
+  transition: opacity 0.8s ease; /* 增加过渡时间，使渐隐更平滑 */
+}
+
+/* 深色主题滚动条样式 */
+[data-theme="dark"] .virtual-file-list {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* 修改Firefox滚动条颜色，轨道设为透明 */
+}
+
+[data-theme="dark"] .virtual-file-list::-webkit-scrollbar-track {
+  background: transparent; /* 确保深色模式下轨道也完全透明 */
+  border-radius: 0; /* 移除轨道的圆角 */
+  box-shadow: none; /* 移除任何阴影效果 */
+}
+
+[data-theme="dark"] .virtual-file-list::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  opacity: 0;
+  visibility: visible; /* 保持可见性，但通过opacity控制显示 */
+  transition: opacity 0.8s ease; /* 增加过渡时间，使渐隐更平滑 */
+}
+
+[data-theme="dark"] .virtual-file-list.is-scrolling::-webkit-scrollbar-thumb {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 定义滚动条渐隐动画 */
+@keyframes fadeOutScrollbar {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 滚动结束后应用渐隐动画 */
+.virtual-file-list:not(.is-scrolling)::-webkit-scrollbar-thumb {
+  animation: fadeOutScrollbar 0.8s ease forwards;
+}
+
+[data-theme="dark"] .virtual-file-list:not(.is-scrolling)::-webkit-scrollbar-thumb {
+  animation: fadeOutScrollbar 0.8s ease forwards;
+}
+
+/* Firefox 滚动条样式 */
+@supports (scrollbar-width: thin) {
+  .virtual-file-list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    transition: scrollbar-color 0.8s ease; /* 增加过渡时间 */
+  }
+  
+  .virtual-file-list:not(.is-scrolling) {
+    scrollbar-color: transparent transparent; /* 完全透明的滚动条 */
+    transition: scrollbar-color 0.8s ease; /* 平滑过渡 */
+  }
+  
+  .virtual-file-list.is-scrolling {
+    scrollbar-width: thin;
+  }
+  
+  [data-theme="dark"] .virtual-file-list {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    transition: scrollbar-color 0.8s ease; /* 增加过渡时间 */
+  }
+  
+  [data-theme="dark"] .virtual-file-list:not(.is-scrolling) {
+    scrollbar-color: transparent transparent; /* 完全透明的滚动条 */
+    transition: scrollbar-color 0.8s ease; /* 平滑过渡 */
+  }
+}
+
+/* 优化文件列表项的视觉间距 */
+.file-list-item-container .MuiListItem-root {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* 少量文件列表的特殊样式 */
+.file-list-container.few-items {
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.03) !important;
+  border-width: 1px !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="dark"] .file-list-container.few-items {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.file-list-container.few-items .virtual-file-list {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* 不需要滚动的文件列表样式 */
+.file-list-container.no-scroll {
+  /* 稍微降低边框强度，更轻量的视觉效果 */
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* 锁定布局的虚拟列表样式 */
+.virtual-file-list.locked-layout {
+  /* 确保不显示滚动条 */
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.virtual-file-list.locked-layout::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 文件列表项在不可滚动模式下的样式优化 */
+.file-list-container.no-scroll .file-list-item-container {
+  /* 确保在不可滚动模式下项目布局整齐 */
+  margin-bottom: 0 !important;
+}
+
+/* 分割线长度调整 */
+.file-list-container .MuiBox-root[style*="height: 1px"] {
+  width: calc(100% - 20px) !important; /* 减去左右圆角的宽度 */
+  position: relative;
+}
+
+.file-list-container .MuiBox-root[style*="height: 1px"]::before,
+.file-list-container .MuiBox-root[style*="height: 1px"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  height: 1px;
+  width: 8px; /* 圆角半径大小 */
+}
+
+.file-list-container .MuiBox-root[style*="height: 1px"]::before {
+  left: -8px;
+}
+
+.file-list-container .MuiBox-root[style*="height: 1px"]::after {
+  right: -8px;
+}
+
+/* 优化大量文件渲染性能 */
+.file-list-container {
+  contain: content;
+  content-visibility: auto;
+}
+
+/* 当文件列表很长时，减少涟漪效果的视觉复杂度 */
+@media (min-height: 800px) {
+  .file-list-container .MuiListItemButton-root:nth-child(n+20) .MuiTouchRipple-ripple {
+    transition-duration: 220ms !important;
+    opacity: 0.7;
+  }
+}
+
+/* 添加Markdown图片和内容的懒加载淡入效果 */
+.markdown-body img {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.markdown-body img.loaded {
+  opacity: 1;
+}
+
+/* 优化Markdown容器的性能 */
+.readme-container {
+  contain: content;
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 5000px;
+}
+
+/* 图片懒加载优化 */
+.image-preview-container img {
+  will-change: transform, opacity;
+  transition: opacity 0.4s ease;
+}
+
+/* KaTeX样式调整 */
+.katex {
+  font-size: 1.1em;
+  text-rendering: optimizeLegibility;
+  will-change: opacity, color;
+  transition: color 0.3s ease-out;
+}
+
+[data-theme="dark"] .katex {
+  color: #E6E1E5;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5em;
+  margin: 1em 0;
+  will-change: opacity, background-color;
+  transition: background-color 0.3s ease-out;
+}
+
+/* 主题切换时的优化 */
+body.theme-transition .katex-display,
+body.theme-transition .katex {
+  transition: none !important;
+  opacity: 0.05 !important;
+}
+
+/* 防止LaTeX公式在主题切换时重排 */
+.katex * {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.katex-display > .katex {
+  transform: translateZ(0);
+  contain: layout style paint;
+}
+
+[data-theme="dark"] .katex-display {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+[data-theme="light"] .katex-display,
+html:not([data-theme="dark"]) .katex-display {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+/* 确保inline公式垂直对齐 */
+.katex-inline {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 提高移动设备上的数学公式可读性 */
+@media (max-width: 600px) {
+  .katex {
+    font-size: 1em;
+  }
+  
+  .katex-display {
+    padding: 0.3em;
+    margin: 0.7em 0;
+    font-size: 0.9em;
+  }
+}
+
+/* 刷新内容时使用与主题切换相同的动画效果 */
+body.refreshing .file-list-container {
+  transform: scale(0.99) !important; /* 比主题切换更柔和的缩放 */
+  opacity: 0.5 !important; /* 比主题切换更高的透明度 */
+  transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+body.refreshing .readme-container,
+body.refreshing .MuiContainer-root,
+body.refreshing .MuiBreadcrumbs-root,
+body.refreshing .image-preview-container {
+  transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* 主题切换时对README容器的特殊处理 */
+html[data-theme-change-only="true"] body.theme-transition .readme-container {
+  transform: scale(0.99) !important;
+  opacity: 0.6 !important;
+  transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
+              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+}
+
+/* 主题切换期间保持内容可见性 */
+html[data-theme-change-only="true"] .readme-container .MuiPaper-root {
+  transition: background-color 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+}
+
+/* 文件列表导航动画 */
+@keyframes slideInFromLeft {
+  0% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutToRight {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+}
+
+.file-list-container {
+  position: relative;
+  will-change: transform, opacity;
+}
+
+.file-list-slide-left {
+  animation: slideInFromRight 0.3s ease-out forwards;
+}
+
+.file-list-slide-right {
+  animation: slideInFromLeft 0.3s ease-out forwards;
+}
+
+/* 确保文件列表项也有平滑的过渡效果 */
+.file-list-item-container {
+  transition: transform 250ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 250ms cubic-bezier(0.1, 0.0, 0.2, 1.0);
+  will-change: transform, opacity;
+  /* 确保内容可见 */
+  overflow: visible;
+  /* 统一高度处理 */
+  box-sizing: border-box;
+  /* 优化视觉间距 */
+  display: flex;
+  align-items: center;
+}
+
+/* 文件列表容器的基本样式 */
+.file-list-container {
+  position: relative;
+  will-change: transform, opacity;
+  transition: transform 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0);
+  contain: content;
+  content-visibility: auto;
+}
+
+/* 文件列表的平滑过渡效果 */
+.file-list-smooth-transition {
+  transition: transform 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
+              opacity 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
+}
+
+/* 添加淡入动画效果 */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out 0.1s forwards; /* 添加0.1s延迟 */
+  opacity: 0; /* 确保初始状态是不可见的 */
+}
+
+/* 确保README容器中的加载指示器不显示 */
+.readme-container .MuiCircularProgress-root {
+  display: none !important;
+} 

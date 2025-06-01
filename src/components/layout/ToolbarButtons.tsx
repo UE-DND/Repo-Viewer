@@ -1,0 +1,116 @@
+import React, { useContext, useState, useCallback } from 'react';
+import { Box, IconButton, Tooltip, useTheme } from '@mui/material';
+import {
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
+  Refresh as RefreshIcon,
+  GitHub as GitHubIcon
+} from '@mui/icons-material';
+import { ColorModeContext } from '../../contexts/ColorModeContext';
+import { useRefresh } from '../../hooks/useRefresh';
+import { pulseAnimation, refreshAnimation } from '../../theme/animations';
+import { GitHubService } from '../../services/github';
+import { useSnackbar } from 'notistack';
+
+// 工具栏按钮组件
+const ToolbarButtons: React.FC = () => {
+  const colorMode = useContext(ColorModeContext);
+  const theme = useTheme();
+  const handleRefresh = useRefresh();
+  const { enqueueSnackbar } = useSnackbar();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // 处理刷新按钮点击
+  const onRefreshClick = useCallback(() => {
+    if (isRefreshing) return; // 防止重复点击
+    
+    setIsRefreshing(true);
+    
+    // 强制刷新时绕过缓存获取新数据
+    GitHubService.clearCache(); 
+    handleRefresh();
+    
+    // 动画完成后重置状态
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 600); // 与动画持续时间保持一致
+  }, [handleRefresh, isRefreshing]);
+  
+  // 处理主题切换按钮点击
+  const onThemeToggleClick = useCallback(() => {
+    // 设置标记，表明这是一个主题切换操作，防止触发README重新加载
+    document.documentElement.setAttribute('data-theme-change-only', 'true');
+    // 执行主题切换
+    colorMode.toggleColorMode();
+  }, [colorMode]);
+  
+  // 处理GitHub按钮点击
+  const onGitHubClick = useCallback(() => {
+    const repoOwner = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
+    const repoName = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
+    const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
+    window.open(repoUrl, '_blank');
+  }, []);
+  
+  return (
+    <Box sx={{ display: 'flex', gap: 1 }}>
+      <Tooltip title="在GitHub中查看">
+        <IconButton 
+          color="inherit"
+          onClick={onGitHubClick}
+          sx={{
+            '&:hover': {
+              animation: `${pulseAnimation} 0.4s ease`,
+              color: theme.palette.primary.light
+            }
+          }}
+        >
+          <GitHubIcon />
+        </IconButton>
+      </Tooltip>
+      
+      <Tooltip title="刷新内容">
+        <IconButton 
+          className="refresh-button"
+          color="inherit"
+          onClick={onRefreshClick}
+          disabled={isRefreshing}
+          sx={{
+            position: 'relative',
+            overflow: 'visible',
+            '&:hover': {
+              color: theme.palette.primary.light
+            },
+            '& .MuiSvgIcon-root': {
+              transition: 'transform 0.2s ease-out',
+              animation: isRefreshing ? `${refreshAnimation} 0.6s cubic-bezier(0.05, 0.01, 0.5, 1.0)` : 'none',
+              transformOrigin: 'center center',
+            }
+          }}
+        >
+          <RefreshIcon />
+        </IconButton>
+      </Tooltip>
+      
+      {/* 主题切换按钮 - 点击时不会触发内容重新加载 */}
+      <Tooltip title={theme.palette.mode === 'dark' ? '浅色模式' : '深色模式'}>
+        <IconButton 
+          onClick={onThemeToggleClick} 
+          color="inherit"
+          sx={{
+            '&:hover': {
+              animation: `${pulseAnimation} 0.4s ease`,
+              color: theme.palette.mode === 'dark' 
+                ? theme.palette.warning.light 
+                : theme.palette.primary.light
+            }
+          }}
+        >
+          {theme.palette.mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
+
+export default ToolbarButtons; 
