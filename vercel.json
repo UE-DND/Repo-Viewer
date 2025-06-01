@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/github",
+      "destination": "/api/github.ts"
+    },
+    {
+      "source": "/api/github/commits",
+      "destination": "/api/github.ts?action=getCommits"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [],
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "installCommand": "npm install --legacy-peer-deps"
+}
