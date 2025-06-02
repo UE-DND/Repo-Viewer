@@ -1,5 +1,5 @@
-import React from 'react';
-import NativeSEO from './NativeSEO'; // 导入NativeSEO
+import React from "react";
+import NativeSEO from "./NativeSEO"; // 导入NativeSEO
 
 // 基础SEO组件属性类型
 interface SEOProps {
@@ -18,7 +18,7 @@ interface SEOProps {
  * 使用React 19原生元数据支持
  */
 const SEO: React.FC<SEOProps> = (props) => {
-  return <NativeSEO {...props} />;
+  return <NativeSEO {...props} data-oid="auibq8i" />;
 };
 
-export default SEO; 
+export default SEO;

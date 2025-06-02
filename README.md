@@ -2,7 +2,7 @@
 
 A GitHub repository browsing web application based on the MD3 design language.
 
-[中文](README_ZH.md) | English
+English | [中文](README_ZH.md)
 
 ## Table of Contents
 
@@ -11,7 +11,7 @@ A GitHub repository browsing web application based on the MD3 design language.
   - [Local Environment Variables](#local-environment-variables)
 - [Deployment Guide](#deployment-guide)
   - [Vercel Deployment](#vercel-deployment)
-    - [Vercel Environment Variables](#vercel-environment-variables)
+    - [Vercel Environment Variables Configuration](#vercel-environment-variables-configuration)
   - [Cloudflare Worker Configuration](#cloudflare-worker-configuration)
 - [Troubleshooting](#troubleshooting)
 - [Tech Stack](#tech-stack)
@@ -55,16 +55,13 @@ Want to develop and debug this project in your local environment? Follow these s
 ### Local Environment Variables
 
 > ⚠️ **Important**: For local development, you **must** use variables with the VITE_ prefix, otherwise the frontend cannot read the environment variables!  
-> In production (e.g. Vercel), ONLY the following variables do NOT require the VITE_ prefix. All other variables that need to be read by the frontend MUST have the VITE_ prefix:
-> - GITHUB_REPO_OWNER
-> - GITHUB_REPO_NAME
-> - GITHUB_REPO_BRANCH
+> In production (e.g. Vercel), only the following variables do **not** need the VITE_ prefix. All other variables that need to be read by the frontend **must** have the VITE_ prefix:
 > - GITHUB_PAT1
 > - OFFICE_PREVIEW_PROXY
 
 **Required Environment Variables**:
 ```
-# Basic Configuration (all frontend variables must use VITE_ prefix except repo info)
+# Basic Configuration
 VITE_SITE_TITLE = Your Site Title
 VITE_SITE_DESCRIPTION = Your site description for SEO
 VITE_SITE_KEYWORDS = keyword1, keyword2, keyword3
@@ -77,13 +74,13 @@ VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
 VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
 VITE_IMAGE_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
+VITE_GITHUB_REPO_OWNER = Repository Owner
+VITE_GITHUB_REPO_NAME = Repository Name
+VITE_GITHUB_REPO_BRANCH = Branch Name (defaults to main)
 
-# Repository info (in production, these without VITE_ prefix for backend use)
-GITHUB_REPO_OWNER = Repository Owner
-GITHUB_REPO_NAME = Repository Name
-GITHUB_REPO_BRANCH = Branch Name (defaults to main)
-GITHUB_PAT1 = Your GitHub Personal Access Token
-OFFICE_PREVIEW_PROXY = Worker URL
+# Repository Information
+VITE_GITHUB_PAT1 = Your GitHub Personal Access Token
+VITE_OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 ## Deployment Guide
@@ -113,27 +110,36 @@ When deploying on Vercel, GitHub Personal Access Tokens (PATs) are protected thr
 
 3. **Configure Environment Variables**:
    - On the deployment settings page, find the "Environment Variables" section
-   - Add the necessary environment variables (see [Vercel Environment Variables](#vercel-environment-variables) below)
+   - Add the necessary environment variables (see [Vercel Environment Variables Configuration](#vercel-environment-variables-configuration) below)
 
 4. **Deploy the Application**:
    - Click the "Deploy" button
    - Vercel will automatically build and deploy your application
 
-#### Vercel Environment Variables
+#### Vercel Environment Variables Configuration
 
 **Required Environment Variables**:
 ```
 # Basic Configuration
-SITE_TITLE = Your Site Title
-SITE_DESCRIPTION = Your site description for SEO
-SITE_KEYWORDS = keyword1, keyword2, keyword3
-SITE_OG_IMAGE = /path/to/og-image.jpg
+VITE_SITE_TITLE = Your Site Title
+VITE_SITE_DESCRIPTION = Your site description for SEO
+VITE_SITE_KEYWORDS = keyword1, keyword2, keyword3
+VITE_SITE_OG_IMAGE = /repo-viewer-icon.svg
+VITE_SITE_TWITTER_HANDLE = @yourTwitterHandle
+VITE_HOMEPAGE_FILTER_ENABLED = true
+VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
+VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
+VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
+VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
+VITE_IMAGE_PROXY_URL = https://your-proxy
+VITE_DEVELOPER_MODE = false
+
+# Repository Information
 GITHUB_REPO_OWNER = Repository Owner
 GITHUB_REPO_NAME = Repository Name
 GITHUB_REPO_BRANCH = Branch Name (defaults to main)
-
-# GitHub Tokens (at least one required)
 GITHUB_PAT1 = Your GitHub Personal Access Token
+OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 **Optional Environment Variables**:
@@ -209,12 +215,6 @@ If you need to support online preview of Office documents, you can configure a C
      * Single wildcard (`*`) matches a single path segment and doesn't cross slashes
      * Double wildcard (`**`) matches multiple path segments and can cross slashes
      * Example: `example.com/proxy/*` only matches `example.com/proxy/file`, not `example.com/proxy/folder/file`
-     * Example: `example.com/proxy/**` matches `example.com/proxy/folder/file`
-
-6. **Test Document Preview**:
-   - After deployment, open the application
-   - Try to preview an Office document (e.g., .docx, .xlsx, or .pptx)
-   - The system will automatically use the Worker proxy to preview the document
 
 ## Troubleshooting
 
@@ -251,6 +251,7 @@ If content filtering doesn't work as expected:
 - Material UI component library
 - Vercel Serverless Functions
 - Cloudflare Workers (for Office document preview proxy)
+- SEO optimization with dynamic meta tags
 
 ## License
 

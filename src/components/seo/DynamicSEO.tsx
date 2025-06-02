@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { useSEO } from '../../contexts/SEOContext';
-import SEO from './SEO';
+import React, { useEffect } from "react";
+import { useSEO } from "../../contexts/SEOContext";
+import SEO from "./SEO";
 
 interface DynamicSEOProps {
   title?: string;
@@ -25,56 +25,66 @@ const DynamicSEO: React.FC<DynamicSEOProps> = ({
   repoName,
 }) => {
   const { updateSEO, resetSEO } = useSEO();
-  
+
   useEffect(() => {
     // 如果没有足够的信息，则使用默认SEO设置
     if (!filePath && !title) {
       resetSEO();
       return;
     }
-    
+
     // 构建SEO标题
-    let seoTitle = title || '';
+    let seoTitle = title || "";
     if (filePath && !seoTitle) {
       const fileNameMatch = filePath.match(/([^/]+)$/);
       seoTitle = fileNameMatch ? fileNameMatch[1] : filePath;
     }
-    
+
     // 如果有仓库信息，添加到标题中
     if (repoOwner && repoName) {
       seoTitle = `${seoTitle} - ${repoOwner}/${repoName}`;
     }
-    
+
     // 构建SEO描述
-    let seoDescription = description || '';
+    let seoDescription = description || "";
     if (!seoDescription) {
       if (isDirectory) {
-        seoDescription = `查看 ${filePath || '仓库'} 目录中的内容`;
+        seoDescription = `查看 ${filePath || "仓库"} 目录中的内容`;
       } else {
-        seoDescription = `查看 ${filePath || '文件'} 的详细内容`;
+        seoDescription = `查看 ${filePath || "文件"} 的详细内容`;
         if (fileType) {
           seoDescription += `（${fileType}格式）`;
         }
       }
-      
+
       if (repoOwner && repoName) {
         seoDescription += ` - ${repoOwner}/${repoName} GitHub仓库`;
       }
     }
-    
+
     // 更新SEO数据
     updateSEO({
       title: seoTitle,
       description: seoDescription,
     });
-    
+
     // 组件卸载时重置SEO数据
     return () => {
       resetSEO();
     };
-  }, [filePath, title, description, fileType, isDirectory, repoOwner, repoName, updateSEO, resetSEO]);
-  
-  return <SEO />;
+  }, [
+    filePath,
+    title,
+    description,
+    fileType,
+    isDirectory,
+    repoOwner,
+    repoName,
+    updateSEO,
+    resetSEO,
+  ]);
+
+  return <SEO data-oid="yjh--07" />;
 };
 
-export default DynamicSEO; 
+export default DynamicSEO;
