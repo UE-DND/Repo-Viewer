@@ -1,4 +1,4 @@
-import React, { useContext, useState, useCallback } from 'react';
+import React, { useContext, useState, useCallback, useEffect } from 'react';
 import { Box, IconButton, Tooltip, useTheme } from '@mui/material';
 import {
   DarkMode as DarkModeIcon,
@@ -11,6 +11,7 @@ import { useRefresh } from '../../hooks/useRefresh';
 import { pulseAnimation, refreshAnimation } from '../../theme/animations';
 import { GitHubService } from '../../services/github';
 import { useSnackbar } from 'notistack';
+import axios from 'axios';
 
 // 工具栏按钮组件
 const ToolbarButtons: React.FC = () => {
@@ -19,6 +20,31 @@ const ToolbarButtons: React.FC = () => {
   const handleRefresh = useRefresh();
   const { enqueueSnackbar } = useSnackbar();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [repoInfo, setRepoInfo] = useState({
+    repoOwner: import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND',
+    repoName: import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer'
+  });
+  
+  // 在组件加载时获取仓库信息
+  useEffect(() => {
+    const fetchRepoInfo = async () => {
+      try {
+        // 尝试从API获取仓库信息
+        const response = await axios.get('/api/github?action=getConfig');
+        if (response.data && response.data.status === 'success') {
+          const { repoOwner, repoName } = response.data.data;
+          if (repoOwner && repoName) {
+            setRepoInfo({ repoOwner, repoName });
+          }
+        }
+      } catch (error) {
+        // 如果API请求失败，保持使用默认值或环境变量值
+        console.error('获取仓库信息失败:', error);
+      }
+    };
+    
+    fetchRepoInfo();
+  }, []);
   
   // 处理刷新按钮点击
   const onRefreshClick = useCallback(() => {
@@ -46,11 +72,10 @@ const ToolbarButtons: React.FC = () => {
   
   // 处理GitHub按钮点击
   const onGitHubClick = useCallback(() => {
-    const repoOwner = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
-    const repoName = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
+    const { repoOwner, repoName } = repoInfo;
     const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
     window.open(repoUrl, '_blank');
-  }, []);
+  }, [repoInfo]);
   
   return (
     <Box sx={{ display: 'flex', gap: 1 }}>

@@ -62,7 +62,7 @@
 
 **必需的环境变量**:
 ```
-# 基础配置 (本地开发和生产前端都必须用VITE_前缀，除仓库信息)
+# 基础配置
 VITE_SITE_TITLE = 你的站点标题
 VITE_SITE_DESCRIPTION = 你的站点描述,用于SEO
 VITE_SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
@@ -79,9 +79,9 @@ VITE_GITHUB_REPO_OWNER = 仓库所有者
 VITE_GITHUB_REPO_NAME = 仓库名称
 VITE_GITHUB_REPO_BRANCH = 分支名称（默认为main）
 
-# 仓库信息（生产环境不用VITE_前缀，后端读取）
-GITHUB_PAT1 = 你的GitHub个人访问令牌
-OFFICE_PREVIEW_PROXY = Worker URL
+# 仓库信息
+VITE_GITHUB_PAT1 = 你的GitHub个人访问令牌
+VITE_OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 ## 部署指南
@@ -122,16 +122,25 @@ OFFICE_PREVIEW_PROXY = Worker URL
 **必需的环境变量**:
 ```
 # 基础配置
-SITE_TITLE = 你的站点标题
-SITE_DESCRIPTION = 你的站点描述用于SEO
-SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
-SITE_OG_IMAGE = /path/to/og-image.jpg
+VITE_SITE_TITLE = 你的站点标题
+VITE_SITE_DESCRIPTION = 你的站点描述,用于SEO
+VITE_SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
+VITE_SITE_OG_IMAGE = /repo-viewer-icon.svg
+VITE_SITE_TWITTER_HANDLE = @你的推特句柄
+VITE_HOMEPAGE_FILTER_ENABLED = true
+VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
+VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
+VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
+VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
+VITE_IMAGE_PROXY_URL = https://your-proxy
+VITE_DEVELOPER_MODE = false
+
+# 仓库信息
 GITHUB_REPO_OWNER = 仓库所有者
 GITHUB_REPO_NAME = 仓库名称
 GITHUB_REPO_BRANCH = 分支名称（默认为main）
-
-# GitHub令牌（至少需要一个）
 GITHUB_PAT1 = 你的GitHub个人访问令牌
+OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 **可选的环境变量**:
