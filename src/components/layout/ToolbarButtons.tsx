@@ -1,5 +1,6 @@
 import React, { useContext, useState, useCallback, useEffect } from "react";
 import { Box, IconButton, Tooltip, useTheme } from "@mui/material";
+
 import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
@@ -21,9 +22,10 @@ const ToolbarButtons: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [repoInfo, setRepoInfo] = useState({
-    repoOwner: import.meta.env.VITE_GITHUB_REPO_OWNER || "UE-DND",
-    repoName: import.meta.env.VITE_GITHUB_REPO_NAME || "Repo-Viewer",
-  });
+
+  repoOwner: import.meta.env.VITE_GITHUB_REPO_OWNER || "UE-DND",
+  repoName: import.meta.env.VITE_GITHUB_REPO_NAME || "Repo-Viewer",
+});
 
   // 在组件加载时获取仓库信息
   useEffect(() => {
@@ -45,7 +47,7 @@ const ToolbarButtons: React.FC = () => {
 
     fetchRepoInfo();
   }, []);
-
+        
   // 处理刷新按钮点击
   const onRefreshClick = useCallback(() => {
     if (isRefreshing) return; // 防止重复点击
@@ -76,7 +78,6 @@ const ToolbarButtons: React.FC = () => {
     const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
     window.open(repoUrl, "_blank");
   }, [repoInfo]);
-
   return (
     <Box sx={{ display: "flex", gap: 1 }} data-oid="7:zr_jb">
       <Tooltip title="在GitHub中查看" data-oid="f.rvw_c">
