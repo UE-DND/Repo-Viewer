@@ -40,10 +40,8 @@ const DynamicSEO: React.FC<DynamicSEOProps> = ({
       seoTitle = fileNameMatch ? fileNameMatch[1] : filePath;
     }
 
-    // 如果有仓库信息，添加到标题中
-    if (repoOwner && repoName) {
-      seoTitle = `${seoTitle} - ${repoOwner}/${repoName}`;
-    }
+    // 添加"Repoviewer"到标题中，不再显示仓库信息
+    seoTitle = `${seoTitle} | Repo-Viewer`;
 
     // 构建SEO描述
     let seoDescription = description || "";
