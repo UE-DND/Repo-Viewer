@@ -1,11 +1,15 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode } from "react";
 
 // SEO默认值从环境变量获取
-const DEFAULT_TITLE = import.meta.env.VITE_SITE_TITLE || 'Repo-Viewer';
-const DEFAULT_DESCRIPTION = import.meta.env.VITE_SITE_DESCRIPTION || '基于MD3设计语言的GitHub仓库浏览应用';
-const DEFAULT_KEYWORDS = import.meta.env.VITE_SITE_KEYWORDS || 'GitHub, 仓库, 浏览器, 代码, 查看器';
-const DEFAULT_OG_IMAGE = import.meta.env.VITE_SITE_OG_IMAGE || '/repo-viewer-icon.svg';
-const DEFAULT_TWITTER_HANDLE = import.meta.env.VITE_SITE_TWITTER_HANDLE || '';
+const DEFAULT_TITLE = import.meta.env.VITE_SITE_TITLE || "Repo-Viewer";
+const DEFAULT_DESCRIPTION =
+  import.meta.env.VITE_SITE_DESCRIPTION ||
+  "基于MD3设计语言的GitHub仓库浏览应用";
+const DEFAULT_KEYWORDS =
+  import.meta.env.VITE_SITE_KEYWORDS || "GitHub, 仓库, 浏览器, 代码, 查看器";
+const DEFAULT_OG_IMAGE =
+  import.meta.env.VITE_SITE_OG_IMAGE || "/repo-viewer-icon.svg";
+const DEFAULT_TWITTER_HANDLE = import.meta.env.VITE_SITE_TWITTER_HANDLE || "";
 
 // SEO上下文类型定义
 interface MetadataContextType {
@@ -40,12 +44,16 @@ interface MetadataProviderProps {
 }
 
 // SEO提供者组件
-export const MetadataProvider: React.FC<MetadataProviderProps> = ({ children }) => {
+export const MetadataProvider: React.FC<MetadataProviderProps> = ({
+  children,
+}) => {
   const [title, setTitle] = useState<string>(DEFAULT_TITLE);
   const [description, setDescription] = useState<string>(DEFAULT_DESCRIPTION);
   const [keywords, setKeywords] = useState<string>(DEFAULT_KEYWORDS);
   const [ogImage, setOgImage] = useState<string>(DEFAULT_OG_IMAGE);
-  const [twitterHandle, setTwitterHandle] = useState<string>(DEFAULT_TWITTER_HANDLE);
+  const [twitterHandle, setTwitterHandle] = useState<string>(
+    DEFAULT_TWITTER_HANDLE,
+  );
 
   // 重置SEO数据到默认值
   const resetMetadata = () => {
@@ -81,6 +89,7 @@ export const MetadataProvider: React.FC<MetadataProviderProps> = ({ children }) 
         resetMetadata,
         updateMetadata,
       }}
+      data-oid="2::o-n6"
     >
       {children}
     </MetadataContext.Provider>
@@ -91,9 +100,9 @@ export const MetadataProvider: React.FC<MetadataProviderProps> = ({ children }) 
 export const useMetadata = () => {
   const context = useContext(MetadataContext);
   if (!context) {
-    throw new Error('useMetadata必须在MetadataProvider内部使用');
+    throw new Error("useMetadata必须在MetadataProvider内部使用");
   }
   return context;
 };
 
-export default MetadataProvider; 
+export default MetadataProvider;
