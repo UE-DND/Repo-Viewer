@@ -303,26 +303,21 @@ const FileList = React.memo<FileListProps>(
 
         // 非滚动模式下的高度计算（文件数量小于10个且内容高度不超过最大可用高度）
         if (!needsScrolling) {
-          // 计算非滚动模式下的容器高度
-          // 内容高度 + 上下内边距 + 悬停效果所需的额外空间
-          const nonScrollHeight =
-            contentHeight +
-            LIST_HEIGHT_CONFIG.nonScrollPadding.top +
-            LIST_HEIGHT_CONFIG.nonScrollPadding.bottom +
-            // 为第一个和最后一个文件项添加悬停效果所需的额外空间
-            // 只需要考虑顶部和底部各一个文件项的悬停效果
-            hoverExtraSpace * 2;
+          // 根据文件数量调整容器高度
+          let paddingMultiplier;
+          if (fileCount <= 2) {
+            // 极少量文件，使用最紧凑的设置
+            paddingMultiplier = isSmallScreen ? 12 : 20;
+          } else if (fileCount <= 5) {
+            // 少量文件，使用适中的设置
+            paddingMultiplier = isSmallScreen ? 16 : 24;
+          } else {
+            // 中等数量文件，使用稍大的设置
+            paddingMultiplier = isSmallScreen ? 20 : 28;
+          }
 
-          // 确保高度不小于最小值（至少显示一个文件项）
-          const minHeight = Math.max(
-            rowHeight +
-              LIST_HEIGHT_CONFIG.nonScrollPadding.top +
-              LIST_HEIGHT_CONFIG.nonScrollPadding.bottom +
-              hoverExtraSpace * 2,
-            LIST_HEIGHT_CONFIG.minVisibleItems * rowHeight,
-          );
-
-          return Math.max(nonScrollHeight, minHeight);
+          const compactHeight = contentHeight + paddingMultiplier;
+          return Math.min(compactHeight, maxAvailableHeight);
         }
 
         // 滚动模式下的高度计算
@@ -423,32 +418,23 @@ const FileList = React.memo<FileListProps>(
       ],
     );
 
-    // 计算列表内边距
+    // 简化的列表内边距计算
     const listPadding = useMemo(() => {
-      // 如果不需要滚动，使用更精确的内边距来确保顶部和底部间距相等
+      // 非滚动模式：使用固定的对称内边距，稍微增加一点
       if (!needsScrolling) {
-        // 顶部、底部都需要完整的 nonScrollPadding + hoverExtraSpace，确保上下留白完全一致
+        const padding = isSmallScreen ? 16 : 20; // 增加4px
         return {
-          paddingTop:
-            LIST_HEIGHT_CONFIG.nonScrollPadding.top + hoverExtraSpace,
-          paddingBottom:
-            LIST_HEIGHT_CONFIG.nonScrollPadding.bottom + hoverExtraSpace,
+          paddingTop: padding,
+          paddingBottom: padding,
         };
       }
 
-      // 文件少时使用更小的内边距
-      if (hasFewItems) {
-        return {
-          paddingTop: 2,
-          paddingBottom: 2,
-        };
-      }
-      // 文件多时使用标准内边距
+      // 滚动模式：使用较小的内边距
       return {
-        paddingTop: 4,
-        paddingBottom: 4,
+        paddingTop: 8,
+        paddingBottom: 8,
       };
-    }, [hasFewItems, needsScrolling, hoverExtraSpace]);
+    }, [needsScrolling, isSmallScreen]);
 
     // 处理滚动事件
     const handleScroll = React.useCallback(
@@ -498,61 +484,76 @@ const FileList = React.memo<FileListProps>(
       };
     }, []);
 
-    // 根据是否需要滚动计算虚拟列表样式
+    // 简化的虚拟列表样式
     const virtualListStyle = useMemo(() => {
-      const baseStyle = {
-        overflowX: "hidden" as const,
-        ...listPadding,
-        // transition: 'all 0.3s ease'
-      };
-
-      // 当不需要滚动时，隐藏垂直滚动条并锁定内部布局
-      if (!needsScrolling) {
-        return {
-          ...baseStyle,
-          overflowY: "hidden" as const,
-          // 非滚动模式下确保内容居中对齐
-          display: "flex",
-          flexDirection: "column" as const,
-          justifyContent: "center" as const,
-          // 确保有足够空间显示阴影效果
-          margin: `${hoverExtraSpace / 2}px 0`,
-        };
-      }
-
-      // 需要滚动时，允许垂直滚动
       return {
-        ...baseStyle,
-        overflowY: "auto" as const,
+        overflowX: "hidden" as const,
+        overflowY: needsScrolling ? ("auto" as const) : ("hidden" as const),
+        ...listPadding,
       };
-    }, [needsScrolling, listPadding, hoverExtraSpace]);
+    }, [needsScrolling, listPadding]);
 
-    // 始终使用虚拟化列表，但根据是否需要滚动调整样式
+    // 重构的渲染逻辑：非滚动模式使用简单布局，滚动模式使用虚拟化
+    const containerStyle = {
+      width: "100%",
+      bgcolor: "background.paper",
+      borderRadius: 2,
+      mb: 2,
+      overflow: "hidden",
+      boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
+      border: "1px solid",
+      borderColor: "divider",
+      position: "relative" as const,
+      zIndex: 1,
+    };
+
+    if (!needsScrolling) {
+      // 非滚动模式：简单布局，完美居中
+      const totalContentHeight = contents.length * rowHeight;
+      const finalHeight = totalContentHeight + listPadding.paddingTop + listPadding.paddingBottom;
+
+      return (
+        <Box
+          sx={{
+            ...containerStyle,
+            height: finalHeight,
+            p: containerPadding,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          className={`file-list-container ${hasFewItems ? "few-items" : ""} no-scroll`}
+        >
+          <motion.div
+            style={{
+              width: "100%",
+              paddingTop: listPadding.paddingTop,
+              paddingBottom: listPadding.paddingBottom,
+            }}
+            key={currentPath}
+            variants={listAnimationVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {contents.map((item, index) => (
+              <div key={`${item.name}-${index}`} style={{ height: rowHeight }}>
+                <Row index={index} style={{ height: rowHeight }} data={itemData} />
+              </div>
+            ))}
+          </motion.div>
+        </Box>
+      );
+    }
+
+    // 滚动模式：使用虚拟化
     return (
       <Box
         sx={{
-          width: "100%",
+          ...containerStyle,
           height: availableHeight,
-          bgcolor: "background.paper",
-          borderRadius: 2,
-          mb: 2,
-          overflow: "hidden",
-          boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-          border: "1px solid",
-          borderColor: "divider",
           p: containerPadding,
-          pr: needsScrolling
-            ? { xs: containerPadding.xs + 0.5, sm: containerPadding.sm + 0.5 }
-            : containerPadding,
-          transition: "height 0.3s ease-out",
-          display: !needsScrolling ? "flex" : "block",
-          alignItems: !needsScrolling ? "center" : "initial",
-          justifyContent: !needsScrolling ? "center" : "initial",
-          position: "relative",
-          zIndex: 1,
         }}
-        className={`file-list-container ${hasFewItems ? "few-items" : ""} ${!needsScrolling ? "no-scroll" : ""}`}
-        data-oid=":g5iqd_"
+        className={`file-list-container ${hasFewItems ? "few-items" : ""}`}
       >
         <motion.div
           style={{ height: "100%", width: "100%" }}
@@ -560,9 +561,8 @@ const FileList = React.memo<FileListProps>(
           variants={listAnimationVariants}
           initial="hidden"
           animate="visible"
-          data-oid="g:nk:x_"
         >
-          <AutoSizer data-oid="q8rihqn">
+          <AutoSizer>
             {({ width, height }: { width: number; height: number }) => (
               <FixedSizeList
                 ref={listRef}
@@ -573,9 +573,8 @@ const FileList = React.memo<FileListProps>(
                 itemData={itemData}
                 style={virtualListStyle}
                 onScroll={handleScroll}
-                overscanCount={10} // 预渲染10个项目，提高滚动流畅度
-                className={`virtual-file-list ${!needsScrolling ? "locked-layout" : ""} ${isScrolling ? "is-scrolling" : ""}`}
-                data-oid="obfdn0y"
+                overscanCount={10}
+                className={`virtual-file-list ${isScrolling ? "is-scrolling" : ""}`}
               >
                 {Row}
               </FixedSizeList>
