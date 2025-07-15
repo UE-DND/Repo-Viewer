@@ -20,6 +20,8 @@ import { FileListSkeleton } from "../common/SkeletonComponents";
 import { getPreviewFromUrl } from "../../utils/urlManager";
 import { logger } from "../../utils";
 import DynamicSEO from "../seo/DynamicSEO";
+import ScrollToTopFab from "../common/ScrollToTopFab";
+import EmptyState from "../common/EmptyState";
 
 const MainContent: React.FC = () => {
   // 获取主题和响应式布局
@@ -326,6 +328,12 @@ const MainContent: React.FC = () => {
           isSmallScreen={isSmallScreen}
           data-oid="j0jgapo"
         />
+      ) : contents.length === 0 ? (
+        <EmptyState
+          type="empty-directory"
+          onAction={handleRetry}
+          isSmallScreen={isSmallScreen}
+        />
       ) : (
         <>
           <FileList
@@ -430,6 +438,9 @@ const MainContent: React.FC = () => {
             )}
         </>
       )}
+
+      {/* 返回顶部浮动操作按钮 */}
+      <ScrollToTopFab />
     </Container>
   );
 };

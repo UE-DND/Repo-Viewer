@@ -283,7 +283,7 @@ const FileListItem = memo<FileListItemProps>(
           disableRipple={disableRipple}
           disableTouchRipple={disableTouchRipple}
           sx={{
-            borderRadius: 2,
+            borderRadius: 2, // 与外部容器保持一致的圆角
             transition:
               "transform 0.1s ease-in-out, background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out",
             "&:hover": {

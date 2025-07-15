@@ -484,6 +484,7 @@ const FileList = React.memo<FileListProps>(
       };
     }, []);
 
+    // 简化的虚拟列表样式
     const virtualListStyle = useMemo(() => {
       return {
         overflowX: "hidden" as const,
@@ -492,7 +493,7 @@ const FileList = React.memo<FileListProps>(
       };
     }, [needsScrolling, listPadding]);
 
-    // 非滚动模式使用简单布局，滚动模式使用虚拟化
+    // 重构的渲染逻辑：非滚动模式使用简单布局，滚动模式使用虚拟化
     const containerStyle = {
       width: "100%",
       bgcolor: "background.paper",
@@ -507,7 +508,7 @@ const FileList = React.memo<FileListProps>(
     };
 
     if (!needsScrolling) {
-      // 非滚动模式
+      // 非滚动模式：简单布局，完美居中
       const totalContentHeight = contents.length * rowHeight;
       const finalHeight = totalContentHeight + listPadding.paddingTop + listPadding.paddingBottom;
 
@@ -544,7 +545,7 @@ const FileList = React.memo<FileListProps>(
       );
     }
 
-    // 滚动模式
+    // 滚动模式：使用虚拟化
     return (
       <Box
         sx={{
