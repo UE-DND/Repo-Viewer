@@ -64,4 +64,26 @@ export const bounceAnimation = keyframes`
   50% {
     transform: translateY(-5px);
   }
-`; 
+`;
+
+// 浮动动画效果 - 用于FAB按钮
+export const floatAnimation = keyframes`
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+`;
+
+// 缩放进入动画 - 用于空状态组件
+export const scaleInAnimation = keyframes`
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+`;

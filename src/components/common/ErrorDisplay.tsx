@@ -1,9 +1,5 @@
 import React, { memo } from "react";
-import { Box, Paper, Typography, Button, alpha, useTheme } from "@mui/material";
-import {
-  ErrorOutline as ErrorIcon,
-  Refresh as RefreshIcon,
-} from "@mui/icons-material";
+import EmptyState from "./EmptyState";
 
 interface ErrorDisplayProps {
   errorMessage: string;
@@ -13,78 +9,21 @@ interface ErrorDisplayProps {
 
 const ErrorDisplay = memo<ErrorDisplayProps>(
   ({ errorMessage, onRetry, isSmallScreen }) => {
-    // 使用useTheme钩子获取主题
-    const theme = useTheme();
+    // 判断错误类型
+    const getErrorType = () => {
+      if (errorMessage.includes("网络") || errorMessage.includes("连接")) {
+        return "network-error";
+      }
+      return "general-error";
+    };
 
     return (
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 3, sm: 4 },
-          borderRadius: 2,
-          bgcolor: "background.paper",
-          border: "1px solid",
-          borderColor: alpha(theme.palette.error.main, 0.2),
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          width: "100%",
-          minHeight: "200px",
-        }}
-        data-oid="nclnano"
-      >
-        <ErrorIcon
-          color="error"
-          sx={{
-            fontSize: { xs: "2.5rem", sm: "3rem" },
-            mb: 2,
-          }}
-          data-oid="k-3ae4h"
-        />
-
-        <Typography
-          variant={isSmallScreen ? "body1" : "h6"}
-          color="error"
-          gutterBottom
-          sx={{ fontWeight: 500 }}
-          data-oid=":9ww_h8"
-        >
-          出错了
-        </Typography>
-
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{
-            maxWidth: "500px",
-            mb: 3,
-          }}
-          data-oid="bhjr__c"
-        >
-          {errorMessage}
-        </Typography>
-
-        {onRetry && (
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<RefreshIcon data-oid="7q7vy:y" />}
-            onClick={onRetry}
-            sx={{
-              borderRadius: { xs: 4, sm: 5 },
-              px: { xs: 2, sm: 3 },
-              py: { xs: 0.75, sm: 1 },
-              textTransform: "none",
-              fontWeight: 500,
-            }}
-            data-oid="311efdw"
-          >
-            重试
-          </Button>
-        )}
-      </Paper>
+      <EmptyState
+        type={getErrorType()}
+        description={errorMessage}
+        onAction={onRetry}
+        isSmallScreen={isSmallScreen}
+      />
     );
   },
 );
