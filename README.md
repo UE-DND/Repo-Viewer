@@ -6,16 +6,24 @@ English | [中文](README_ZH.md)
 
 ## Table of Contents
 
-- [Key Features](#key-features)
-- [Local Development](#local-development)
-  - [Local Environment Variables](#local-environment-variables)
-- [Deployment Guide](#deployment-guide)
-  - [Vercel Deployment](#vercel-deployment)
-    - [Vercel Environment Variables Configuration](#vercel-environment-variables-configuration)
-  - [Cloudflare Worker Configuration](#cloudflare-worker-configuration)
-- [Troubleshooting](#troubleshooting)
-- [Tech Stack](#tech-stack)
-- [License](#license)
+- [Repo-Viewer](#repo-viewer)
+  - [Table of Contents](#table-of-contents)
+  - [Key Features](#key-features)
+  - [Local Development](#local-development)
+    - [Local Environment Variables](#local-environment-variables)
+  - [Deployment Guide](#deployment-guide)
+    - [Vercel Deployment](#vercel-deployment)
+      - [Secure Deployment Method](#secure-deployment-method)
+      - [Deployment Steps](#deployment-steps)
+      - [Vercel Environment Variables Configuration](#vercel-environment-variables-configuration)
+    - [Cloudflare Worker Configuration](#cloudflare-worker-configuration)
+      - [Worker Deployment Steps](#worker-deployment-steps)
+  - [Troubleshooting](#troubleshooting)
+    - [API Rate Limiting Issues](#api-rate-limiting-issues)
+    - [Deployment Issues](#deployment-issues)
+    - [Content Filtering Issues](#content-filtering-issues)
+  - [Tech Stack](#tech-stack)
+  - [License](#license)
 
 ## Key Features
 
@@ -34,32 +42,39 @@ Want to develop and debug this project in your local environment? Follow these s
 1. **Clone the Repository**
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Create Environment Configuration**
    - Copy `env.local.txt` to `.env` file
+
    ```bash
    cp env.local.txt .env
    ```
+
    - Edit the `.env` file to configure the necessary environment variables
    - **Note**: `env.local.txt` is only a template for local development, and the variable name format (with `VITE_` prefix) is only for local development environment
 
 4. **Start the Development Server**
+
    ```bash
    npm run dev
    ```
+
    - The development server will start at `http://localhost:3000`
 
 ### Local Environment Variables
 
-> ⚠️ **Important**: For local development, you **must** use variables with the VITE_ prefix, otherwise the frontend cannot read the environment variables!  
+> ⚠️ **Important**: For local development, you **must** use variables with the VITE_prefix, otherwise the frontend cannot read the environment variables!  
 > In production (e.g. Vercel), only the following variables do **not** need the VITE_ prefix. All other variables that need to be read by the frontend **must** have the VITE_ prefix:
+>
 > - GITHUB_PAT1
 > - OFFICE_PREVIEW_PROXY
 
 **Required Environment Variables**:
+
 ```
 # Basic Configuration
 VITE_SITE_TITLE = Your Site Title
@@ -119,6 +134,7 @@ When deploying on Vercel, GitHub Personal Access Tokens (PATs) are protected thr
 #### Vercel Environment Variables Configuration
 
 **Required Environment Variables**:
+
 ```
 # Basic Configuration
 VITE_SITE_TITLE = Your Site Title
@@ -143,6 +159,7 @@ OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 **Optional Environment Variables**:
+
 ```
 # SEO Settings (optional)
 SITE_TWITTER_HANDLE = @yourTwitterHandle
@@ -185,10 +202,13 @@ If you need to support online preview of Office documents, you can configure a C
 
 3. **Configure the Application to Use the Worker**:
    - Add to Vercel environment variables:
+
    ```
    OFFICE_PREVIEW_PROXY = {Your Worker URL}
    ```
+
    - Or add to your local development `.env` file:
+
    ```
    VITE_OFFICE_PREVIEW_PROXY = {Your Worker URL}
    ```
@@ -208,13 +228,13 @@ If you need to support online preview of Office documents, you can configure a C
    - Click the "Triggers" tab
    - In the "Routes" section, click "Add Route"
    - Add routing rules, for example:
-     * Exact path: `example.com/proxy/*` (matches all requests under the specified path)
-     * Subdomain: `worker.example.com/*` (matches all requests under the subdomain)
-     * Wildcard domain: `*.example.com/proxy/*` (matches specified path on all subdomains)
+     - Exact path: `example.com/proxy/*` (matches all requests under the specified path)
+     - Subdomain: `worker.example.com/*` (matches all requests under the subdomain)
+     - Wildcard domain: `*.example.com/proxy/*` (matches specified path on all subdomains)
    - Important notes:
-     * Single wildcard (`*`) matches a single path segment and doesn't cross slashes
-     * Double wildcard (`**`) matches multiple path segments and can cross slashes
-     * Example: `example.com/proxy/*` only matches `example.com/proxy/file`, not `example.com/proxy/folder/file`
+     - Single wildcard (`*`) matches a single path segment and doesn't cross slashes
+     - Double wildcard (`**`) matches multiple path segments and can cross slashes
+     - Example: `example.com/proxy/*` only matches `example.com/proxy/file`, not `example.com/proxy/folder/file`
 
 ## Troubleshooting
 
@@ -255,4 +275,4 @@ If content filtering doesn't work as expected:
 
 ## License
 
-This project is licensed under the AGPL-3.0 License. See the [LICENSE](LICENSE) file for details. 
+This project is licensed under the AGPL-3.0 License. See the [LICENSE](LICENSE) file for details.

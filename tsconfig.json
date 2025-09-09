@@ -26,9 +26,9 @@
     // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
 
     /* Modules */
-    "module": "ESNext",  /* 将模块类型改为ESNext */
+  "module": "ESNext",
     // "rootDir": "./",                                  /* Specify the root folder within your source files. */
-    "moduleResolution": "node", /* 添加模块解析策略 */
+  "moduleResolution": "bundler",
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
     // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
