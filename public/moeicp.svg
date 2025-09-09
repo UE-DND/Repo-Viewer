@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 28" role="img" aria-label="萌ICP备 20251940号">
+  <title>萌ICP备 20251940号</title>
+  <style>
+    :root { --bg:#E7E0EC; --fg:#1D1B20; --stroke:#CAC4D0; --chipPad:4; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#2B2930; --fg:#E6E1E5; --stroke:#49454F; }
+    }
+    .chip { fill: var(--bg); stroke: var(--stroke); stroke-width: 1; }
+    .label { font: 500 12px/20px "Roboto","Noto Sans SC","Segoe UI","Arial",sans-serif; fill: var(--fg); }
+    .icon { fill: none; stroke: var(--fg); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+  </style>
+  <!-- MD3 Assist Chip container -->
+  <rect class="chip" x="0.5" y="0.5" width="159" height="27" rx="14" ry="14"/>
+  <!-- Minimal shield-like icon (ICP hint) -->
+  <g transform="translate(10,6)">
+    <path class="icon" d="M10 0 L18 3.5 V9.5c0 4.2-3 6.9-8 9-5-2.1-8-4.8-8-9V3.5L10 0z"/>
+    <path class="icon" d="M6.5 8.5h7"/>
+  </g>
+  <!-- Label -->
+  <text class="label" x="38" y="18">萌ICP备 20251940号</text>
+</svg>

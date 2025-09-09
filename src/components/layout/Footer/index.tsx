@@ -12,7 +12,6 @@ const Footer: React.FC = () => {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
   const currentYear = new Date().getFullYear();
   const theme = useTheme();
-
   useEffect(() => {
     const fetchVersionInfo = async () => {
       try {
@@ -50,11 +49,35 @@ const Footer: React.FC = () => {
           }}
           data-oid="uk5kgqo"
         >
+          {/* 左侧：萌ICP备徽标 */}
           <Box
-            sx={{ display: { xs: "none", sm: "block" } }}
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              alignItems: "center",
+              justifyContent: "flex-start",
+            }}
             data-oid="3z6-ik7"
-          />{" "}
-          {/* 左侧空白占位 */}
+          >
+            <Link
+              href="https://icp.gov.moe/?keyword=20251940"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                lineHeight: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                transition: "opacity 0.2s ease-in-out, transform 0.2s ease",
+                opacity: 0.9,
+                '&:hover': { opacity: 1, transform: 'translateY(-1px)' },
+              }}
+            >
+              <img
+                src="/moeicp.svg"
+                alt="萌ICP备 20251940号"
+                style={{ display: 'block', height: 20, width: 'auto' }}
+              />
+            </Link>
+          </Box>
           <Typography
             variant="caption"
             color="text.secondary"

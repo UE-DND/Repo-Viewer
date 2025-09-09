@@ -6,16 +6,24 @@
 
 ## 目录
 
-- [主要功能](#主要功能)
-- [本地开发](#本地开发)
-  - [本地环境变量](#本地环境变量)
-- [部署指南](#部署指南)
-  - [Vercel部署](#vercel部署)
-    - [Vercel环境变量配置](#vercel环境变量配置)
-  - [Cloudflare Worker配置](#cloudflare-worker配置)
-- [故障排除](#故障排除)
-- [技术栈](#技术栈)
-- [许可证](#许可证)
+- [Repo-Viewer](#repo-viewer)
+  - [目录](#目录)
+  - [主要功能](#主要功能)
+  - [本地开发](#本地开发)
+    - [本地环境变量](#本地环境变量)
+  - [部署指南](#部署指南)
+    - [Vercel部署](#vercel部署)
+      - [安全部署方法](#安全部署方法)
+      - [部署步骤](#部署步骤)
+      - [Vercel环境变量配置](#vercel环境变量配置)
+    - [Cloudflare Worker配置](#cloudflare-worker配置)
+      - [Worker部署步骤](#worker部署步骤)
+  - [故障排除](#故障排除)
+    - [API限流问题](#api限流问题)
+    - [部署问题](#部署问题)
+    - [内容过滤问题](#内容过滤问题)
+  - [技术栈](#技术栈)
+  - [许可证](#许可证)
 
 ## 主要功能
 
@@ -31,36 +39,42 @@
 
 想要在本地环境开发和调试这个项目吗？按照以下步骤设置您的开发环境：
 
-
 1. **克隆仓库**
 
 2. **安装依赖**
+
    ```bash
    npm install
    ```
 
 3. **创建环境配置**
    - 复制`env.local.txt`到`.env`文件
+
    ```bash
    cp env.local.txt .env
    ```
+
    - 编辑`.env`文件配置必要的环境变量
    - **注意**：`env.local.txt`仅为本地开发模板，变量名格式（带`VITE_`前缀）仅用于本地开发环境
 
 4. **启动开发服务器**
+
    ```bash
    npm run dev
    ```
+
    - 开发服务器将在`http://localhost:3000`启动
 
 ### 本地环境变量
 
 > ⚠️ **重要**：对于本地开发，您**必须**使用带VITE_前缀的变量，否则前端无法读取环境变量！  
 > 在生产环境（如Vercel），只有以下变量**不**需要VITE_前缀。所有需要被前端读取的其他变量**必须**带有VITE_前缀：
+>
 > - GITHUB_PAT1
 > - OFFICE_PREVIEW_PROXY
 
 **必需的环境变量**:
+
 ```
 # 基础配置
 VITE_SITE_TITLE = 你的站点标题
@@ -120,6 +134,7 @@ VITE_OFFICE_PREVIEW_PROXY = Worker URL
 #### Vercel环境变量配置
 
 **必需的环境变量**:
+
 ```
 # 基础配置
 VITE_SITE_TITLE = 你的站点标题
@@ -144,6 +159,7 @@ OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 **可选的环境变量**:
+
 ```
 # SEO设置（可选）
 SITE_TWITTER_HANDLE = @你的推特句柄
@@ -186,10 +202,13 @@ DEVELOPER_MODE = true或false                     # 启用开发者模式
 
 3. **配置应用使用Worker**:
    - 添加到Vercel环境变量:
+
    ```
    OFFICE_PREVIEW_PROXY = {你的Worker URL}
    ```
+
    - 或添加到本地开发`.env`文件:
+
    ```
    VITE_OFFICE_PREVIEW_PROXY = {你的Worker URL}
    ```
@@ -209,13 +228,13 @@ DEVELOPER_MODE = true或false                     # 启用开发者模式
    - 点击"Triggers"选项卡
    - 在"Routes"部分，点击"Add Route"
    - 添加路由规则，例如：
-     * 精确路径：`example.com/proxy/*`（匹配指定路径下的所有请求）
-     * 子域名：`worker.example.com/*`（匹配子域名下的所有请求）
-     * 通配符域名：`*.example.com/proxy/*`（匹配所有子域名上的指定路径）
+     - 精确路径：`example.com/proxy/*`（匹配指定路径下的所有请求）
+     - 子域名：`worker.example.com/*`（匹配子域名下的所有请求）
+     - 通配符域名：`*.example.com/proxy/*`（匹配所有子域名上的指定路径）
    - 重要注意事项：
-     * 单通配符（`*`）匹配单个路径段，不跨越斜杠
-     * 双通配符（`**`）匹配多个路径段，可以跨越斜杠
-     * 示例：`example.com/proxy/*`仅匹配`example.com/proxy/file`，不匹配`example.com/proxy/folder/file`
+     - 单通配符（`*`）匹配单个路径段，不跨越斜杠
+     - 双通配符（`**`）匹配多个路径段，可以跨越斜杠
+     - 示例：`example.com/proxy/*`仅匹配`example.com/proxy/file`，不匹配`example.com/proxy/folder/file`
 
 ## 故障排除
 
@@ -237,7 +256,6 @@ DEVELOPER_MODE = true或false                     # 启用开发者模式
 5. 如果使用自定义域名，确保DNS配置正确且SSL证书已激活
 6. 如果使用通配符路由，验证您的路由规则是否正确匹配请求URL
 
-
 ### 内容过滤问题
 
 如果内容过滤功能不按预期工作：
@@ -257,4 +275,4 @@ DEVELOPER_MODE = true或false                     # 启用开发者模式
 
 ## 许可证
 
-本项目基于AGPL-3.0许可证开源。详见[LICENSE](LICENSE)文件。 
+本项目基于AGPL-3.0许可证开源。详见[LICENSE](LICENSE)文件。
