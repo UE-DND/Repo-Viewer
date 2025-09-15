@@ -10,7 +10,6 @@ import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import FileList from "../file/FileList";
 import MarkdownPreview from "../preview/MarkdownPreview";
 import ImagePreview from "../preview/ImagePreview";
-import PDFPreview from "../preview/PDFPreview";
 import OfficePreview from "../preview/OfficePreview";
 import ErrorDisplay from "../common/ErrorDisplay";
 import LoadingSpinner from "../common/LoadingSpinner";
@@ -30,9 +29,7 @@ const MainContent: React.FC = () => {
 
   // 创建引用
   const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
-  const pdfContainerRef = useRef<HTMLDivElement>(null);
-  const lastVisiblePagesRef = useRef<{ page: number; ratio: number }[]>([]);
-  const isPdfInitializingRef = useRef<boolean>(false);
+  // PDF 预览已改为浏览器原生新标签页打开，不再需要 PDF 容器引用
 
   // 自动计算面包屑最大项目数
   const [breadcrumbsMaxItems, setBreadcrumbsMaxItems] = useState<number>(0); // 0表示不限制
@@ -64,10 +61,11 @@ const MainContent: React.FC = () => {
 
   // 检测当前目录中是否有README.md文件
   const hasReadmeFile = useMemo(() => {
-    if (!contents || contents.length === 0) return false;
+    if (!Array.isArray(contents) || contents.length === 0) return false;
 
     // 检查是否有任何名称为README.md的文件（不区分大小写）
     return contents.some((item) => {
+      if (!item || typeof item.name !== "string") return false;
       const fileName = item.name.toLowerCase();
       return fileName === "readme.md" || fileName === "readme.markdown";
     });
@@ -135,7 +133,6 @@ const MainContent: React.FC = () => {
 
   // 确定是否有活跃的预览
   const hasActivePreview =
-    (previewState.previewingPdfItem && previewState.pdfPreviewUrl) ||
     (previewState.previewingImageItem && previewState.imagePreviewUrl);
 
   // 自动调整面包屑显示
@@ -246,13 +243,6 @@ const MainContent: React.FC = () => {
         isDirectory: false,
         fileType: previewState.previewingItem.name.split(".").pop() || "",
       };
-    } else if (previewState.previewingPdfItem) {
-      return {
-        title: previewState.previewingPdfItem.name,
-        filePath: previewState.previewingPdfItem.path,
-        isDirectory: false,
-        fileType: "PDF",
-      };
     } else if (previewState.previewingImageItem) {
       return {
         title: previewState.previewingImageItem.name,
@@ -279,7 +269,6 @@ const MainContent: React.FC = () => {
   }, [
     currentPath,
     previewState.previewingItem,
-    previewState.previewingPdfItem,
     previewState.previewingImageItem,
     previewState.previewingOfficeItem,
     previewState.officeFileType,
@@ -388,26 +377,7 @@ const MainContent: React.FC = () => {
             </Box>
           )}
 
-          {/* PDF全屏预览 */}
-          {previewState.previewingPdfItem && previewState.pdfPreviewUrl && (
-            <FullScreenPreview
-              onClose={closePreview}
-              fitToPage={true}
-              data-oid="ysef31k"
-            >
-              <PDFPreview
-                pdfUrl={previewState.pdfPreviewUrl}
-                fileName={previewState.previewingPdfItem.name}
-                isSmallScreen={isSmallScreen}
-                pdfContainerRef={pdfContainerRef}
-                lastVisiblePagesRef={lastVisiblePagesRef}
-                isPdfInitializingRef={isPdfInitializingRef}
-                fitToPage={true}
-                onClose={closePreview}
-                data-oid="t:j5wi2"
-              />
-            </FullScreenPreview>
-          )}
+          {/* PDF 预览已改为浏览器原生打开，不在应用内渲染 */}
 
           {/* 图像预览 */}
           {previewState.previewingImageItem && previewState.imagePreviewUrl && (

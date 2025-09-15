@@ -29,13 +29,13 @@ function downloadReducer(state: DownloadState, action: DownloadAction): Download
       return {
         ...state,
         downloadingPath: action.path,
-        isCancelled: false // 重置取消状态
+        isCancelled: false
       };
     case 'SET_DOWNLOADING_FOLDER':
       return {
         ...state,
         downloadingFolderPath: action.path,
-        isCancelled: false // 重置取消状态
+        isCancelled: false
       };
     case 'SET_FOLDER_PROGRESS':
       return {
