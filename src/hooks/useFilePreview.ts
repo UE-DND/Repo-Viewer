@@ -1,4 +1,5 @@
 import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
+import { useTheme } from '@mui/material';
 import { 
   PreviewState, 
   PreviewAction, 
@@ -8,18 +9,14 @@ import {
 import { GitHubService } from '../services/github';
 import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger } from '../utils';
 import { getPreviewFromUrl, updateUrlWithHistory, updateUrlWithoutHistory, hasPreviewParam } from '../utils/urlManager';
+import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '../utils/pdfLoading';
 
-// 是否强制使用服务端API
 const FORCE_SERVER_PROXY = !import.meta.env.DEV || import.meta.env.VITE_USE_TOKEN_MODE === 'true';
 
-// 初始预览状态
 const initialPreviewState: PreviewState = {
-  // Markdown预览 (仅用于README文件)
   previewContent: null,
   previewingItem: null,
   loadingPreview: false,
-  
-  // PDF预览
   pdfPreviewUrl: null,
   previewingPdfItem: null,
   loadingPdfPreview: false,
@@ -29,13 +26,11 @@ const initialPreviewState: PreviewState = {
   isPdfFullscreen: false,
   isPdfDimmed: false,
   pdfPageInput: '1',
-  
   imagePreviewUrl: null,
   previewingImageItem: null,
   isImageFullscreen: false,
   loadingImagePreview: false,
   imageError: null,
-  
   officePreviewUrl: null,
   previewingOfficeItem: null,
   loadingOfficePreview: false,
@@ -43,15 +38,12 @@ const initialPreviewState: PreviewState = {
   officeError: null,
   officeFileType: null
 };
-
-// 预览状态reducer
 function previewReducer(state: PreviewState, action: PreviewAction): PreviewState {
   switch (action.type) {
     case 'RESET_PREVIEW':
       return initialPreviewState;
       
     case 'SET_MD_PREVIEW':
-      // 注意：此操作仅用于README文件预览，其他Markdown文件预览功能已禁用
       return {
         ...state,
         previewContent: action.content,
@@ -59,7 +51,6 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
       };
       
     case 'SET_MD_LOADING':
-      // 注意：此操作仅用于README文件预览，其他Markdown文件预览功能已禁用
       return {
         ...state,
         loadingPreview: action.loading
@@ -170,27 +161,18 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
   }
 }
 
-// 自定义Hook，管理文件预览
 export const useFilePreview = (
   onError: (message: string) => void,
   findFileItemByPath?: (path: string) => GitHubContent | undefined
 ) => {
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
   const [useTokenMode, setUseTokenMode] = useState(true);
-  
-  // 引用当前状态
+  const muiTheme = useTheme();
   const pdfCurrentPageRef = useRef(previewState.pdfCurrentPage);
-  
-  // 引用当前预览的项目
   const currentPreviewItemRef = useRef<GitHubContent | null>(null);
-
-  // 跟踪预览是否活跃的 ref
   const hasActivePreviewRef = useRef<boolean>(false);
-  
-  // 追踪是否正在处理前进/后退操作
   const isHandlingNavigationRef = useRef<boolean>(false);
   
-  // 更新活跃预览状态引用
   useEffect(() => {
     const hasActivePreview = !!(
       previewState.previewingItem || 
@@ -207,16 +189,13 @@ export const useFilePreview = (
     previewState.previewingOfficeItem
   ]);
   
-  // 检查 URL 是否包含预览参数
   useEffect(() => {
     const previewPath = getPreviewFromUrl();
     if (previewPath) {
       logger.debug(`从URL加载预览: ${previewPath}`);
-      // URL 中有预览参数，但预览状态为空，需要在内容加载后处理
       currentPreviewItemRef.current = {
         path: previewPath,
         name: previewPath.split('/').pop() || '',
-        // 下面的字段可能是占位符，将在实际加载内容时更新
         type: 'file',
         sha: '',
         size: 0,
@@ -229,7 +208,6 @@ export const useFilePreview = (
     }
   }, []);
   
-  // 选择文件
   const selectFile = useCallback(async (item: GitHubContent) => {
     if (!item.download_url) {
       onError('无法获取文件下载链接');
@@ -237,39 +215,26 @@ export const useFilePreview = (
     }
     
     logger.debug(`正在选择文件预览: ${item.path}`);
-    
-    // 更新当前预览项目引用
     currentPreviewItemRef.current = item;
-    
-    // 更新 URL，添加预览参数 - 始终创建新的历史条目
     const dirPath = item.path.split('/').slice(0, -1).join('/');
-    // 从路径中提取文件名，作为预览参数，缩短 URL 长度
     const fileName = item.path.split('/').pop() || '';
     logger.debug(`使用简化的文件名作为预览参数: ${fileName}`);
-    updateUrlWithHistory(dirPath, item.path);
     
     dispatch({ type: 'RESET_PREVIEW' });
     
-    // 根据文件类型处理预览
-    
     try {
-      // 使用代理URL
       let proxyUrl = item.download_url;
-      
-      // 如果是非开发环境或启用了令牌模式，使用服务端API代理
       if (FORCE_SERVER_PROXY) {
         proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
       } else {
-        // 开发环境下可能需要使用代理
         proxyUrl = GitHubService.transformImageUrl(item.download_url, item.path, useTokenMode) || item.download_url;
       }
     
     const fileNameLower = item.name.toLowerCase();
     
     if (isMarkdownFile(fileNameLower)) {
-        // 只预览README.md文件，其他Markdown文件不支持预览
         if (fileNameLower === 'readme.md') {
-          // Markdown预览
+          updateUrlWithHistory(dirPath, item.path);
           dispatch({ type: 'SET_MD_LOADING', loading: true });
           
           try {
@@ -281,28 +246,146 @@ export const useFilePreview = (
             dispatch({ type: 'SET_MD_LOADING', loading: false });
           }
         } else {
-          // 不支持预览其他Markdown文件
           onError('已禁用Markdown文件预览功能，如需查看内容请下载文件');
           logger.info(`阻止加载非README的Markdown文件: ${item.path}`);
         }
       } 
       else if (isPdfFile(fileNameLower)) {
-        // PDF预览
-        dispatch({ type: 'SET_PDF_LOADING', loading: true });
-        dispatch({ type: 'SET_PDF_ERROR', error: null });
-        
         try {
-          dispatch({ 
-            type: 'SET_PDF_PREVIEW', 
-            url: proxyUrl,
-            item
-          });
+          let newTab: Window | null = window.open('', '_blank');
+          if (!newTab) {
+            const a = document.createElement('a');
+            a.href = item.download_url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            return;
+          }
+
+          const themeColors = extractPDFThemeColors(muiTheme);
+          try { logger.debug('PDF 预览使用的主题色:', themeColors); } catch {}
+
+          const loadingHTML = generatePDFLoadingHTML(item.name, themeColors);
+          newTab.document.write(loadingHTML);
+          newTab.document.close();
+
+          if (import.meta.env.DEV) {
+            try {
+              const statusEl = newTab.document.getElementById('status');
+              const progressEl = newTab.document.getElementById('progress');
+              const viewerEl = newTab.document.getElementById('viewer') as HTMLIFrameElement | null;
+              const loaderEl = newTab.document.getElementById('loader');
+              const progressCircle = newTab.document.getElementById('progress-circle') as SVGCircleElement | null;
+
+              // 创建 AbortController 用于取消请求
+              const abortController = new AbortController();
+              // 将 abortController 设置到新标签页的全局变量中
+              (newTab as any).abortController = abortController;
+
+              const resp = await fetch(item.download_url, { 
+                mode: 'cors',
+                signal: abortController.signal
+              });
+              if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
+
+              const contentLengthHeader = resp.headers.get('Content-Length') || resp.headers.get('content-length');
+              const total = contentLengthHeader ? parseInt(contentLengthHeader, 10) : 0;
+              let loaded = 0;
+              const reader = resp.body.getReader();
+              const chunks: Uint8Array[] = [];
+
+              const formatBytes = (n: number) => `${(n / 1048576).toFixed(2)} MB`;
+              const circumference = 2 * Math.PI * 20; // radius = 20
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value) {
+                  chunks.push(value);
+                  loaded += value.byteLength;
+                  const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
+                  
+                  // 更新文本进度
+                  if (progressEl) {
+                    progressEl.textContent = total > 0
+                      ? `已下载 ${formatBytes(loaded)} / ${formatBytes(total)} (${pct}%)`
+                      : `已下载 ${formatBytes(loaded)}`;
+                  }
+                  
+                  // 更新圆形进度条
+                  if (progressCircle && total > 0 && pct !== null) {
+                    progressCircle.classList.add('determinate');
+                    const dashOffset = circumference - (circumference * pct / 100);
+                    progressCircle.style.strokeDashoffset = dashOffset.toString();
+                  }
+                }
+              }
+
+              const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' });
+              const blobUrl = URL.createObjectURL(blob);
+              setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+
+              if (viewerEl) {
+                viewerEl.src = blobUrl;
+                viewerEl.style.visibility = 'visible';
+              } else {
+                newTab.location.replace(blobUrl);
+              }
+              if (loaderEl) loaderEl.style.display = 'none';
+              // 隐藏取消按钮，因为加载已完成
+              const cancelBtn = newTab.document.getElementById('cancel-btn');
+              if (cancelBtn) cancelBtn.style.display = 'none';
+              newTab.document.title = item.name || 'PDF';
+            } catch (e: any) {
+              // 检查是否是用户主动取消
+              if (e.name === 'AbortError') {
+                // 用户取消，不显示错误信息
+                return;
+              }
+              // 使用统一的错误页面模板
+              const loaderEl = newTab.document.getElementById('loader');
+              if (loaderEl) {
+                const errorHTML = generatePDFErrorHTML(item.name, (e && e.message) || '未知错误', item.download_url, themeColors);
+                loaderEl.innerHTML = errorHTML;
+              } else {
+                newTab.location.replace(item.download_url);
+              }
+            }
+          } else {
+            try {
+              const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
+              
+              if (newTab.document.getElementById('status')) {
+                newTab.document.getElementById('status')!.textContent = '正在载入预览';
+              }
+              
+              if (newTab.document.getElementById('progress')) {
+                newTab.document.getElementById('progress')!.textContent = '若等待时间过长，请尝试直接下载';
+              }
+              
+              const cancelBtn = newTab.document.getElementById('cancel-btn');
+              if (cancelBtn) cancelBtn.style.display = 'none';
+              setTimeout(() => {
+                newTab!.location.replace(proxyUrl);
+              }, 800);
+            } catch (e: any) {
+              const loaderEl = newTab.document.getElementById('loader');
+              if (loaderEl) {
+                const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
+                const errorHTML = generatePDFErrorHTML(item.name, '加载失败，请直接打开', proxyUrl, themeColors);
+                loaderEl.innerHTML = errorHTML;
+              }
+            }
+          }
+          logger.info(`已在新标签页打开 PDF: ${item.path}`);
         } catch (error: any) {
-          dispatch({ type: 'SET_PDF_ERROR', error: error.message });
-          onError(`加载PDF文件失败: ${error.message}`);
-        } finally {
-          dispatch({ type: 'SET_PDF_LOADING', loading: false });
+          onError(`打开PDF失败: ${error.message}`);
         }
+        // 对于原生预览，不在应用内维护预览状态，也不使用预览参数
+        return;
       } 
       else if (isImageFile(fileNameLower)) {
         // 图片预览
@@ -310,6 +393,8 @@ export const useFilePreview = (
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });
         
         try {
+          // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
+          updateUrlWithHistory(dirPath, item.path);
           dispatch({ 
             type: 'SET_IMAGE_PREVIEW', 
             url: proxyUrl,
@@ -323,12 +408,18 @@ export const useFilePreview = (
         }
     } else if (isWordFile(fileNameLower)) {
       // 使用统一的Office预览组件
+      // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
+      updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.WORD);
     } else if (isExcelFile(fileNameLower)) {
       // 使用统一的Office预览组件
+      // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
+      updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.EXCEL);
     } else if (isPPTFile(fileNameLower)) {
       // 使用统一的Office预览组件
+      // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
+      updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.PPT);
     } else {
       onError('不支持的文件类型');
@@ -336,7 +427,7 @@ export const useFilePreview = (
     } catch (error: any) {
       onError(`预览文件失败: ${error.message}`);
     }
-  }, [onError, useTokenMode]);
+  }, [onError, useTokenMode, muiTheme]);
 
   // Office预览加载函数
   const loadOfficePreview = useCallback((item: GitHubContent, fileType: OfficeFileType) => {

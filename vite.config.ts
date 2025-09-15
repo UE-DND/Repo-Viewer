@@ -115,11 +115,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      'pdfjs-dist': path.resolve(__dirname, 'node_modules/pdfjs-dist')
     }
   },
   optimizeDeps: {
-    include: ['pdfjs-dist']
   },
   // 将环境变量转发到前端
   define: {
