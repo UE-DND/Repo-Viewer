@@ -165,19 +165,19 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
     
     .loading-text {
       color: var(--md-sys-color-on-surface-variant);
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 400;
-      line-height: 24px;
+      line-height: 26px;
       margin: 0;
     }
     
     .progress-text {
       color: var(--md-sys-color-primary);
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 500;
-      line-height: 20px;
+      line-height: 18px;
       margin: 0;
-      min-height: 20px;
+      min-height: 18px;
     }
     
     /* 取消按钮样式 - 使用副主题色 */
@@ -284,8 +284,8 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
         border-radius: 20px; 
         max-width: none;
       }
-      .loading-text { font-size: 15px; }
-      .progress-text { font-size: 13px; }
+      .loading-text { font-size: 16px; }
+      .progress-text { font-size: 11px; }
       .cancel-button { 
         font-size: 12px; 
         padding: 6px 12px; 

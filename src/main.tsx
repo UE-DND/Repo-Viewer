@@ -7,7 +7,7 @@ import "katex/dist/katex.min.css"; // 确保KaTeX样式全局引入
 import { SnackbarProvider } from "notistack";
 import { logger } from "./utils";
 import ThemeProvider from "./providers/ThemeProvider";
-import CustomSnackbar from "./components/common/CustomSnackbar";
+import CustomSnackbar from "./components/ui/CustomSnackbar";
 import { checkTokenStatus } from "./utils/token-helper";
 import { setupLatexOptimization } from "./utils/latexOptimizer";
 import SEOProvider from "./contexts/SEOContext";

@@ -1,29 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Box, Typography, Link, Container, useTheme } from "@mui/material";
-import { GitHubService } from "../../../services/github";
 
-interface VersionInfo {
-  sha: string;
-  message: string;
-  date: string;
-}
+// 声明全局变量类型
+declare const __APP_VERSION__: string;
 
 const Footer: React.FC = () => {
-  const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
+  const version = __APP_VERSION__;
   const currentYear = new Date().getFullYear();
   const theme = useTheme();
-  useEffect(() => {
-    const fetchVersionInfo = async () => {
-      try {
-        const latestCommit = await GitHubService.getLatestCommit();
-        setVersionInfo(latestCommit);
-      } catch (error) {
-        console.error("获取版本信息失败:", error);
-      }
-    };
-
-    fetchVersionInfo();
-  }, []);
 
   return (
     <Box
@@ -105,11 +89,10 @@ const Footer: React.FC = () => {
             >
               Repo-Viewer
             </Link>
-            {versionInfo && (
+            {version && (
               <>
                 {" "}
-                · {versionInfo.sha.substring(0, 7)} -{" "}
-                {versionInfo.message.split("\n")[0]}
+                · {version}
               </>
             )}
           </Typography>

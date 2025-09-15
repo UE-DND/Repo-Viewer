@@ -27,7 +27,7 @@ import { Components } from "react-markdown";
 import { logger } from "../../utils";
 import { countLatexElements } from "../../utils/latexOptimizer";
 // 导入骨架屏组件
-import { MarkdownPreviewSkeleton } from "../common/SkeletonComponents";
+import { MarkdownPreviewSkeleton } from "../ui/skeletons";
 
 // LaTeX错误处理函数
 const handleKatexError = (message: string) => {

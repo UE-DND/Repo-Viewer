@@ -1,12 +1,12 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { useGitHub } from '../contexts/GitHubContext';
+import { useContentContext } from '../contexts/github';
 import { removeLatexElements, restoreLatexElements } from '../utils/latexOptimizer';
 import { logger } from '../utils';
 
 const MIN_ANIMATION_DURATION = 600;
 
 export const useRefresh = () => {
-  const { refresh, loading } = useGitHub();
+  const { refresh, loading } = useContentContext();
   const refreshTimerRef = useRef<number | null>(null);
   const refreshingRef = useRef<boolean>(false);
   const startTimeRef = useRef<number>(0);

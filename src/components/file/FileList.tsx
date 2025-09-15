@@ -5,7 +5,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { motion } from "framer-motion";
 import FileListItem from "./FileListItem";
 import { GitHubContent } from "../../types";
-import { NavigationDirection } from "../../contexts/GitHubContext";
+import { NavigationDirection } from "../../contexts/github";
 
 // 添加CSS优化，提高动画性能
 const optimizedAnimationStyle = {

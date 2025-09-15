@@ -11,16 +11,21 @@ import FileList from "../file/FileList";
 import MarkdownPreview from "../preview/MarkdownPreview";
 import ImagePreview from "../preview/ImagePreview";
 import OfficePreview from "../preview/OfficePreview";
-import ErrorDisplay from "../common/ErrorDisplay";
-import LoadingSpinner from "../common/LoadingSpinner";
+import ErrorDisplay from "../ui/ErrorDisplay";
+import LoadingSpinner from "../ui/LoadingSpinner";
 import FullScreenPreview from "../file/FullScreenPreview";
-import { useGitHub, NavigationDirection } from "../../contexts/GitHubContext";
-import { FileListSkeleton } from "../common/SkeletonComponents";
+import { 
+  useContentContext, 
+  usePreviewContext, 
+  useDownloadContext,
+  NavigationDirection 
+} from "../../contexts/github";
+import { FileListSkeleton } from "../ui/skeletons";
 import { getPreviewFromUrl } from "../../utils/urlManager";
 import { logger } from "../../utils";
 import DynamicSEO from "../seo/DynamicSEO";
-import ScrollToTopFab from "../common/ScrollToTopFab";
-import EmptyState from "../common/EmptyState";
+import ScrollToTopFab from "../interactions/ScrollToTopFab";
+import EmptyState from "../ui/EmptyState";
 
 const MainContent: React.FC = () => {
   // 获取主题和响应式布局
@@ -45,19 +50,25 @@ const MainContent: React.FC = () => {
     error,
     handleRetry,
     navigateTo,
-    previewState,
-    downloadState,
-    downloadFile,
-    downloadFolder,
-    selectFile,
-    closePreview,
-    refresh,
-    cancelDownload,
-    currentPreviewItemRef,
     navigationDirection,
     repoOwner,
     repoName,
-  } = useGitHub();
+    refresh,
+  } = useContentContext();
+
+  const {
+    previewState,
+    selectFile,
+    closePreview,
+    currentPreviewItemRef,
+  } = usePreviewContext();
+
+  const {
+    downloadState,
+    downloadFile,
+    downloadFolder,
+    cancelDownload,
+  } = useDownloadContext();
 
   // 检测当前目录中是否有README.md文件
   const hasReadmeFile = useMemo(() => {

@@ -8,7 +8,7 @@ const DEFAULT_DESCRIPTION =
 const DEFAULT_KEYWORDS =
   import.meta.env.VITE_SITE_KEYWORDS || "GitHub, 仓库, 浏览器, 代码, 查看器";
 const DEFAULT_OG_IMAGE =
-  import.meta.env.VITE_SITE_OG_IMAGE || "/repo-viewer-icon.svg";
+  import.meta.env.VITE_SITE_OG_IMAGE || "/icon.svg";
 const DEFAULT_TWITTER_HANDLE = import.meta.env.VITE_SITE_TWITTER_HANDLE || "";
 
 // SEO上下文类型定义
