@@ -3,7 +3,7 @@ import { GitHubContent } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
 import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/urlManager';
-import { NavigationDirection } from '../contexts/GitHubContext';
+import { NavigationDirection } from '../contexts/github';
 
 // 配置
 const HOMEPAGE_FILTER_ENABLED = import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED === 'true';

@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import * as path from 'path'
 import * as http from 'http'
 import * as https from 'https'
+import { readFileSync } from 'fs'
 
 // 开发者模式配置 - 控制调试信息显示
 const DEVELOPER_MODE = process.env.DEVELOPER_MODE === 'true';
@@ -64,6 +65,19 @@ function getAllGithubPATs() {
   return patEnvVars;
 }
 
+// 获取package.json版本信息
+function getPackageVersion() {
+  try {
+    const packagePath = path.resolve(__dirname, 'package.json');
+    const packageContent = readFileSync(packagePath, 'utf-8');
+    const packageJson = JSON.parse(packageContent);
+    return packageJson.version;
+  } catch (error) {
+    console.warn('无法读取package.json版本信息:', error);
+    return '1.0.0';
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -121,6 +135,7 @@ export default defineConfig({
   },
   // 将环境变量转发到前端
   define: {
-    ...getAllGithubPATs()
+    ...getAllGithubPATs(),
+    __APP_VERSION__: JSON.stringify(getPackageVersion())
   }
 }) 

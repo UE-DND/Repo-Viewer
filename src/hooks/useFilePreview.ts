@@ -17,15 +17,6 @@ const initialPreviewState: PreviewState = {
   previewContent: null,
   previewingItem: null,
   loadingPreview: false,
-  pdfPreviewUrl: null,
-  previewingPdfItem: null,
-  loadingPdfPreview: false,
-  pdfError: null,
-  numPdfPages: null,
-  pdfCurrentPage: 1,
-  isPdfFullscreen: false,
-  isPdfDimmed: false,
-  pdfPageInput: '1',
   imagePreviewUrl: null,
   previewingImageItem: null,
   isImageFullscreen: false,
@@ -56,54 +47,6 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
         loadingPreview: action.loading
       };
       
-    case 'SET_PDF_PREVIEW':
-      return {
-        ...state,
-        pdfPreviewUrl: action.url,
-        previewingPdfItem: action.item
-      };
-      
-    case 'SET_PDF_LOADING':
-      return {
-        ...state,
-        loadingPdfPreview: action.loading
-      };
-      
-    case 'SET_PDF_ERROR':
-      return {
-        ...state,
-        pdfError: action.error
-      };
-      
-    case 'SET_PDF_PAGES':
-      return {
-        ...state,
-        numPdfPages: action.pages
-      };
-      
-    case 'SET_PDF_PAGE':
-      return {
-        ...state,
-        pdfCurrentPage: action.page
-      };
-      
-    case 'SET_PDF_FULLSCREEN':
-      return {
-        ...state,
-        isPdfFullscreen: action.fullscreen
-      };
-      
-    case 'SET_PDF_DIMMED':
-      return {
-        ...state,
-        isPdfDimmed: action.dimmed
-      };
-      
-    case 'SET_PDF_PAGE_INPUT':
-      return {
-        ...state,
-        pdfPageInput: action.input
-      };
       
     case 'SET_IMAGE_PREVIEW':
       return {
@@ -168,7 +111,7 @@ export const useFilePreview = (
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
   const [useTokenMode, setUseTokenMode] = useState(true);
   const muiTheme = useTheme();
-  const pdfCurrentPageRef = useRef(previewState.pdfCurrentPage);
+  // pdfCurrentPageRef 已移除，因为PDF预览改为浏览器原生预览
   const currentPreviewItemRef = useRef<GitHubContent | null>(null);
   const hasActivePreviewRef = useRef<boolean>(false);
   const isHandlingNavigationRef = useRef<boolean>(false);
@@ -176,7 +119,6 @@ export const useFilePreview = (
   useEffect(() => {
     const hasActivePreview = !!(
       previewState.previewingItem || 
-      previewState.previewingPdfItem || 
       previewState.previewingImageItem || 
       previewState.previewingOfficeItem
     );
@@ -184,7 +126,6 @@ export const useFilePreview = (
     logger.debug(`预览状态更新: ${hasActivePreview ? '活跃' : '非活跃'}`);
   }, [
     previewState.previewingItem, 
-    previewState.previewingPdfItem, 
     previewState.previewingImageItem, 
     previewState.previewingOfficeItem
   ]);
@@ -480,15 +421,6 @@ export const useFilePreview = (
     }
   }, [onError]);
   
-  // 加载PDF预览
-  const loadPdfPreview = useCallback((item: GitHubContent) => {
-    if (!item.download_url) return;
-    
-    dispatch({ type: 'SET_PDF_PREVIEW', url: item.download_url, item });
-    dispatch({ type: 'SET_PDF_LOADING', loading: true });
-    
-    // PDF加载通过组件处理，这里只设置URL
-  }, []);
   
   // 加载图像预览
   const loadImagePreview = useCallback((item: GitHubContent) => {
@@ -527,16 +459,6 @@ export const useFilePreview = (
     hasActivePreviewRef.current = false;
   }, []);
   
-  // 更新PDF页码
-  const updatePdfPage = useCallback((page: number) => {
-    pdfCurrentPageRef.current = page;
-    dispatch({ type: 'SET_PDF_PAGE', page });
-  }, []);
-  
-  // PDF全屏切换
-  const togglePdfFullscreen = useCallback(() => {
-    dispatch({ type: 'SET_PDF_FULLSCREEN', fullscreen: !previewState.isPdfFullscreen });
-  }, [previewState.isPdfFullscreen]);
   
   // 图像全屏切换
   const toggleImageFullscreen = useCallback(() => {
@@ -548,18 +470,6 @@ export const useFilePreview = (
     dispatch({ type: 'SET_OFFICE_FULLSCREEN', fullscreen: !previewState.isOfficeFullscreen });
   }, [previewState.isOfficeFullscreen]);
   
-  // PDF页面加载完成
-  const handlePdfPagesLoaded = useCallback((numPages: number) => {
-    dispatch({ type: 'SET_PDF_PAGES', pages: numPages });
-    dispatch({ type: 'SET_PDF_LOADING', loading: false });
-  }, []);
-  
-  // PDF错误处理
-  const handlePdfError = useCallback((error: string) => {
-    dispatch({ type: 'SET_PDF_ERROR', error });
-    dispatch({ type: 'SET_PDF_LOADING', loading: false });
-    onError(`PDF加载失败: ${error}`);
-  }, [onError]);
   
   // 图像错误处理
   const handleImageError = useCallback((error: string) => {
@@ -667,15 +577,10 @@ export const useFilePreview = (
     setUseTokenMode,
     selectFile,
     closePreview,
-    updatePdfPage,
-    togglePdfFullscreen,
     toggleImageFullscreen,
     toggleOfficeFullscreen,
-    handlePdfPagesLoaded,
-    handlePdfError,
     handleImageError,
     handleOfficeError,
-    pdfCurrentPageRef,
     currentPreviewItemRef
   };
 }; 

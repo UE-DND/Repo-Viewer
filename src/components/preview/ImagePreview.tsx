@@ -21,7 +21,7 @@ import {
 } from "@mui/icons-material";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import FullScreenPreview from "../file/FullScreenPreview";
-import { ImagePreviewSkeleton } from "../common/SkeletonComponents";
+import { ImagePreviewSkeleton } from "../ui/skeletons";
 
 interface ImagePreviewProps {
   /**

@@ -80,8 +80,7 @@ Want to develop and debug this project in your local environment? Follow these s
 VITE_SITE_TITLE = Your Site Title
 VITE_SITE_DESCRIPTION = Your site description for SEO
 VITE_SITE_KEYWORDS = keyword1, keyword2, keyword3
-VITE_SITE_OG_IMAGE = /repo-viewer-icon.svg
-VITE_SITE_TWITTER_HANDLE = @yourTwitterHandle
+VITE_SITE_OG_IMAGE = /icon.svg
 VITE_HOMEPAGE_FILTER_ENABLED = true
 VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
@@ -140,7 +139,7 @@ When deploying on Vercel, GitHub Personal Access Tokens (PATs) are protected thr
 VITE_SITE_TITLE = Your Site Title
 VITE_SITE_DESCRIPTION = Your site description for SEO
 VITE_SITE_KEYWORDS = keyword1, keyword2, keyword3
-VITE_SITE_OG_IMAGE = /repo-viewer-icon.svg
+VITE_SITE_OG_IMAGE = /icon.svg
 VITE_SITE_TWITTER_HANDLE = @yourTwitterHandle
 VITE_HOMEPAGE_FILTER_ENABLED = true
 VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src

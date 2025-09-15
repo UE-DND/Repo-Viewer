@@ -9,7 +9,7 @@ import {
   ThemeProvider,
   useMediaQuery,
 } from "@mui/material";
-import { GitHubProvider } from "./contexts/GitHubContext";
+import { AppContextProvider } from "./contexts/github";
 import MainContent from "./components/layout/MainContent";
 import ToolbarButtons from "./components/layout/ToolbarButtons";
 import { ColorModeContext } from "./contexts/ColorModeContext";
@@ -19,6 +19,7 @@ import { logger } from "./utils";
 import { SnackbarProvider } from "notistack";
 import SEO from "./components/seo/SEO";
 import Footer from "./components/layout/Footer";
+import { FaviconManager } from "./components/ui/DynamicIcon";
 
 // 优化后的App组件
 const App = React.memo(() => {
@@ -76,6 +77,8 @@ const App = React.memo(() => {
   return (
     <ThemeProvider theme={theme} data-oid="..yfsak">
       <CssBaseline data-oid="q-9ujvb" />
+      {/* 动态favicon管理器 */}
+      <FaviconManager />
       <>
         {/* 基础SEO设置 */}
         <SEO data-oid="542h-3i" />
@@ -108,7 +111,7 @@ const App = React.memo(() => {
           TransitionProps={{ direction: "up" }}
           data-oid="a3ed3_x"
         >
-          <GitHubProvider data-oid="a29dni6">
+          <AppContextProvider data-oid="a29dni6">
             <Box
               sx={{
                 display: "flex",
@@ -172,7 +175,7 @@ const App = React.memo(() => {
               {/* 添加页脚组件 */}
               <Footer data-oid="ntwtx22" />
             </Box>
-          </GitHubProvider>
+          </AppContextProvider>
         </SnackbarProvider>
       </>
     </ThemeProvider>

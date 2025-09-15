@@ -101,8 +101,5 @@
     "strict": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["./src"],
-  "exclude": [
-    "src/components/preview/PDFPreview.tsx"
-  ]
+  "include": ["./src"]
 }

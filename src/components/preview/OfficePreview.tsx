@@ -25,7 +25,7 @@ import FullScreenPreview from "../file/FullScreenPreview";
 import { useEffectOnce } from "react-use";
 import { GitHubService } from "../../services/github";
 // 导入骨架屏组件
-import { OfficePreviewSkeleton } from "../common/SkeletonComponents";
+import { OfficePreviewSkeleton } from "../ui/skeletons";
 
 // 微软Office在线预览URL
 const OFFICE_PREVIEW_URL = "https://view.officeapps.live.com/op/view.aspx?src=";

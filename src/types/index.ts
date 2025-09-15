@@ -49,16 +49,6 @@ export interface PreviewState {
   previewingItem: GitHubContent | null;
   loadingPreview: boolean;
   
-  // PDF预览
-  pdfPreviewUrl: string | null;
-  previewingPdfItem: GitHubContent | null;
-  loadingPdfPreview: boolean;
-  pdfError: string | null;
-  numPdfPages: number | null;
-  pdfCurrentPage: number;
-  isPdfFullscreen: boolean;
-  isPdfDimmed: boolean;
-  pdfPageInput: string;
   
   // 图像预览
   imagePreviewUrl: string | null;
@@ -83,15 +73,6 @@ export type PreviewAction =
   | { type: 'SET_MD_PREVIEW', content: string | null, item: GitHubContent | null }
   | { type: 'SET_MD_LOADING', loading: boolean }
   
-  // PDF预览操作
-  | { type: 'SET_PDF_PREVIEW', url: string | null, item: GitHubContent | null }
-  | { type: 'SET_PDF_LOADING', loading: boolean }
-  | { type: 'SET_PDF_ERROR', error: string | null }
-  | { type: 'SET_PDF_PAGES', pages: number | null }
-  | { type: 'SET_PDF_PAGE', page: number }
-  | { type: 'SET_PDF_FULLSCREEN', fullscreen: boolean }
-  | { type: 'SET_PDF_DIMMED', dimmed: boolean }
-  | { type: 'SET_PDF_PAGE_INPUT', input: string }
   
   // 图像预览操作
   | { type: 'SET_IMAGE_PREVIEW', url: string | null, item: GitHubContent | null }
