@@ -4,8 +4,6 @@ import axios from 'axios';
 // 配置常量
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com';
-// 添加代理服务配置
-const OFFICE_PROXY_URL = process.env.OFFICE_PROXY_URL || '';
 
 // GitHub Token管理器
 class GitHubTokenManager {
@@ -148,7 +146,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         status: 'success',
         data: {
-          officeProxyUrl: OFFICE_PROXY_URL || '',
           repoOwner: process.env.GITHUB_REPO_OWNER || '',
           repoName: process.env.GITHUB_REPO_NAME || '',
           repoBranch: process.env.GITHUB_REPO_BRANCH || 'main'

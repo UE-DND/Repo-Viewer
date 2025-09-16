@@ -16,8 +16,6 @@ English | [中文](README_ZH.md)
       - [Secure Deployment Method](#secure-deployment-method)
       - [Deployment Steps](#deployment-steps)
       - [Vercel Environment Variables Configuration](#vercel-environment-variables-configuration)
-    - [Cloudflare Worker Configuration](#cloudflare-worker-configuration)
-      - [Worker Deployment Steps](#worker-deployment-steps)
   - [Troubleshooting](#troubleshooting)
     - [API Rate Limiting Issues](#api-rate-limiting-issues)
     - [Deployment Issues](#deployment-issues)
@@ -33,7 +31,7 @@ English | [中文](README_ZH.md)
 - 🔄 **Responsive Design**: Compatible with desktop and mobile devices
 - 🔍 **Content Filtering**: Support for filtering files and folders on the homepage
 - 🛠️ **Developer Mode**: Provides detailed debugging information and performance statistics
-- 🌐 **SEO Optimization**: Dynamic meta tags to improve search engine visibility and social sharing
+- 🌐 **SEO Optimization**: Improve search engine visibility
 
 ## Local Development
 
@@ -94,7 +92,6 @@ VITE_GITHUB_REPO_BRANCH = Branch Name (defaults to main)
 
 # Repository Information
 VITE_GITHUB_PAT1 = Your GitHub Personal Access Token
-VITE_OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 ## Deployment Guide
@@ -140,7 +137,6 @@ VITE_SITE_TITLE = Your Site Title
 VITE_SITE_DESCRIPTION = Your site description for SEO
 VITE_SITE_KEYWORDS = keyword1, keyword2, keyword3
 VITE_SITE_OG_IMAGE = /icon.svg
-VITE_SITE_TWITTER_HANDLE = @yourTwitterHandle
 VITE_HOMEPAGE_FILTER_ENABLED = true
 VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
@@ -154,15 +150,11 @@ GITHUB_REPO_OWNER = Repository Owner
 GITHUB_REPO_NAME = Repository Name
 GITHUB_REPO_BRANCH = Branch Name (defaults to main)
 GITHUB_PAT1 = Your GitHub Personal Access Token
-OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 **Optional Environment Variables**:
 
 ```
-# SEO Settings (optional)
-SITE_TWITTER_HANDLE = @yourTwitterHandle
-
 # Homepage Content Filtering (optional) - Only affects the repository root directory (homepage)
 HOMEPAGE_FILTER_ENABLED = true or false           # Enable homepage filtering
 HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2        # Folders allowed to be displayed on homepage
@@ -175,65 +167,10 @@ HIDE_DOWNLOAD_FOLDERS = folder1,folder2           # Folders on homepage to hide 
 # Proxy Settings (optional)
 IMAGE_PROXY_URL = Image Proxy URL                 # Image proxy URL
 
-# Office Document Preview (optional)
-OFFICE_PREVIEW_PROXY = Worker URL                 # Worker proxy URL
 
 # Developer Options (optional)
 DEVELOPER_MODE = true or false                    # Enable developer mode
 ```
-
-### Cloudflare Worker Configuration
-
-If you need to support online preview of Office documents, you can configure a Cloudflare Worker as a proxy service:
-
-#### Worker Deployment Steps
-
-1. **Create a Cloudflare Account**:
-   - Visit the [Cloudflare website](https://www.cloudflare.com/) and register an account
-
-2. **Deploy the Worker**:
-   - Log in to the Cloudflare dashboard
-   - Navigate to "Workers & Pages"
-   - Click "Create Worker"
-   - Copy the content of the `worker.js` file from the project root directory into the Worker editor
-   - Click "Save and Deploy" to deploy the Worker
-   - Note down the Worker URL (e.g., `https://your-worker.your-account.workers.dev`)
-
-3. **Configure the Application to Use the Worker**:
-   - Add to Vercel environment variables:
-
-   ```
-   OFFICE_PREVIEW_PROXY = {Your Worker URL}
-   ```
-
-   - Or add to your local development `.env` file:
-
-   ```
-   VITE_OFFICE_PREVIEW_PROXY = {Your Worker URL}
-   ```
-
-4. **Bind Custom Domain (Optional but Recommended)**:
-   - In the Cloudflare dashboard, go to "Workers & Pages"
-   - Select your Worker
-   - Click the "Triggers" tab
-   - In the "Custom Domains" section, click "Add Custom Domain"
-   - Enter a domain you own (e.g., `worker.example.com`)
-   - Ensure this domain is already managed in Cloudflare DNS
-   - Click "Add Custom Domain" to complete the setup
-
-5. **Configure Routes (Wildcard Routing)**:
-   - In the Cloudflare dashboard, go to "Workers & Pages"
-   - Select your Worker
-   - Click the "Triggers" tab
-   - In the "Routes" section, click "Add Route"
-   - Add routing rules, for example:
-     - Exact path: `example.com/proxy/*` (matches all requests under the specified path)
-     - Subdomain: `worker.example.com/*` (matches all requests under the subdomain)
-     - Wildcard domain: `*.example.com/proxy/*` (matches specified path on all subdomains)
-   - Important notes:
-     - Single wildcard (`*`) matches a single path segment and doesn't cross slashes
-     - Double wildcard (`**`) matches multiple path segments and can cross slashes
-     - Example: `example.com/proxy/*` only matches `example.com/proxy/file`, not `example.com/proxy/folder/file`
 
 ## Troubleshooting
 
@@ -269,7 +206,6 @@ If content filtering doesn't work as expected:
 - React, TypeScript, Vite
 - Material UI component library
 - Vercel Serverless Functions
-- Cloudflare Workers (for Office document preview proxy)
 - SEO optimization with dynamic meta tags
 
 ## License

@@ -4,21 +4,20 @@ import { GitHubService } from '../services/github';
 import { logger } from '../utils';
 import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/urlManager';
 import { NavigationDirection } from '../contexts/github';
+import { getFeaturesConfig, getGithubConfig } from '../config/ConfigManager';
 
 // 配置
-const HOMEPAGE_FILTER_ENABLED = import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED === 'true';
-const HOMEPAGE_ALLOWED_FILETYPES = (import.meta.env.VITE_HOMEPAGE_ALLOWED_FILETYPES || '')
-  .split(',')
-  .filter(Boolean)
-  .map((type: string) => type.trim().toLowerCase());
-const HOMEPAGE_ALLOWED_FOLDERS = (import.meta.env.VITE_HOMEPAGE_ALLOWED_FOLDERS || '')
-  .split(',')
-  .filter(Boolean)
-  .map((folder: string) => folder.trim());
+const featuresConfig = getFeaturesConfig();
+const githubConfig = getGithubConfig();
+
+const HOMEPAGE_FILTER_ENABLED = featuresConfig.homepageFilter.enabled;
+const HOMEPAGE_ALLOWED_FILETYPES = featuresConfig.homepageFilter.allowedFileTypes;
+const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 
 // 获取仓库信息
-const GITHUB_REPO_OWNER = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
-const GITHUB_REPO_NAME = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
+const GITHUB_REPO_OWNER = githubConfig.repoOwner;
+const GITHUB_REPO_NAME = githubConfig.repoName;
+
 // 自定义Hook，管理GitHub内容获取
 export const useGitHubContent = () => {
   // 尝试从URL获取路径

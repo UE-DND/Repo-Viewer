@@ -16,8 +16,6 @@
       - [安全部署方法](#安全部署方法)
       - [部署步骤](#部署步骤)
       - [Vercel环境变量配置](#vercel环境变量配置)
-    - [Cloudflare Worker配置](#cloudflare-worker配置)
-      - [Worker部署步骤](#worker部署步骤)
   - [故障排除](#故障排除)
     - [API限流问题](#api限流问题)
     - [部署问题](#部署问题)
@@ -33,7 +31,7 @@
 - 🔄 **响应式设计**：兼容桌面和移动设备
 - 🔍 **内容过滤**：支持首页文件和文件夹过滤
 - 🛠️ **开发者模式**：提供详细调试信息和性能统计
-- 🌐 **SEO优化**：动态元标签以提高搜索引擎可见性和社交分享
+- 🌐 **SEO优化**：提高搜索引擎可见性
 
 ## 本地开发
 
@@ -81,7 +79,6 @@ VITE_SITE_TITLE = 你的站点标题
 VITE_SITE_DESCRIPTION = 你的站点描述,用于SEO
 VITE_SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
 VITE_SITE_OG_IMAGE = /icon.svg
-VITE_SITE_TWITTER_HANDLE = @你的推特句柄
 VITE_HOMEPAGE_FILTER_ENABLED = true
 VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
@@ -95,7 +92,6 @@ VITE_GITHUB_REPO_BRANCH = 分支名称（默认为main）
 
 # 仓库信息
 VITE_GITHUB_PAT1 = 你的GitHub个人访问令牌
-VITE_OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 ## 部署指南
@@ -154,15 +150,11 @@ GITHUB_REPO_OWNER = 仓库所有者
 GITHUB_REPO_NAME = 仓库名称
 GITHUB_REPO_BRANCH = 分支名称（默认为main）
 GITHUB_PAT1 = 你的GitHub个人访问令牌
-OFFICE_PREVIEW_PROXY = Worker URL
 ```
 
 **可选的环境变量**:
 
 ```
-# SEO设置（可选）
-SITE_TWITTER_HANDLE = @你的推特句柄
-
 # 首页内容过滤（可选）- 仅对仓库根目录（首页）生效
 HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
 HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
@@ -175,65 +167,9 @@ HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按
 # 代理设置（可选）
 IMAGE_PROXY_URL = 图片代理URL                    # 图片代理URL
 
-# Office文档预览（可选）
-OFFICE_PREVIEW_PROXY = Worker URL                # Worker代理URL
-
 # 开发者选项（可选）
 DEVELOPER_MODE = true或false                     # 启用开发者模式
 ```
-
-### Cloudflare Worker配置
-
-如果你需要支持在线预览Office文档，可以配置Cloudflare Worker作为代理服务：
-
-#### Worker部署步骤
-
-1. **创建Cloudflare账户**:
-   - 访问[Cloudflare网站](https://www.cloudflare.com/)并注册账户
-
-2. **部署Worker**:
-   - 登录Cloudflare控制面板
-   - 导航至"Workers & Pages"
-   - 点击"创建Worker"
-   - 将项目根目录中的`worker.js`文件内容复制到Worker编辑器中
-   - 点击"保存并部署"以部署Worker
-   - 记下Worker URL（例如，`https://your-worker.your-account.workers.dev`）
-
-3. **配置应用使用Worker**:
-   - 添加到Vercel环境变量:
-
-   ```
-   OFFICE_PREVIEW_PROXY = {你的Worker URL}
-   ```
-
-   - 或添加到本地开发`.env`文件:
-
-   ```
-   VITE_OFFICE_PREVIEW_PROXY = {你的Worker URL}
-   ```
-
-4. **绑定自定义域名（可选但推荐）**:
-   - 在Cloudflare控制面板中，前往"Workers & Pages"
-   - 选择你的Worker
-   - 点击"Triggers"选项卡
-   - 在"Custom Domains"部分，点击"Add Custom Domain"
-   - 输入你拥有的域名（例如，`worker.example.com`）
-   - 确保该域名已在Cloudflare DNS中管理
-   - 点击"Add Custom Domain"完成设置
-
-5. **配置路由（通配符路由）**:
-   - 在Cloudflare控制面板中，前往"Workers & Pages"
-   - 选择你的Worker
-   - 点击"Triggers"选项卡
-   - 在"Routes"部分，点击"Add Route"
-   - 添加路由规则，例如：
-     - 精确路径：`example.com/proxy/*`（匹配指定路径下的所有请求）
-     - 子域名：`worker.example.com/*`（匹配子域名下的所有请求）
-     - 通配符域名：`*.example.com/proxy/*`（匹配所有子域名上的指定路径）
-   - 重要注意事项：
-     - 单通配符（`*`）匹配单个路径段，不跨越斜杠
-     - 双通配符（`**`）匹配多个路径段，可以跨越斜杠
-     - 示例：`example.com/proxy/*`仅匹配`example.com/proxy/file`，不匹配`example.com/proxy/folder/file`
 
 ## 故障排除
 
@@ -269,7 +205,6 @@ DEVELOPER_MODE = true或false                     # 启用开发者模式
 - React, TypeScript, Vite
 - Material UI组件库
 - Vercel Serverless Functions
-- Cloudflare Workers (用于Office文档预览代理)
 - SEO优化与动态元标签
 
 ## 许可证

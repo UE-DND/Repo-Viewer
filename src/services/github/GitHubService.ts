@@ -1,5 +1,6 @@
 import { GitHubContent } from '../../types';
 import { logger } from '../../utils';
+import { getGithubConfig, getRuntimeConfig, getAccessConfig, getProxyConfig, isDeveloperMode } from '../../config/ConfigManager';
 import axios from 'axios';
 import { CacheManager } from './CacheManager';
 import { GitHubTokenManager } from './TokenManager';
@@ -7,25 +8,29 @@ import { ProxyService } from './ProxyService';
 import { RequestBatcher } from './RequestBatcher';
 
 // 基础配置
-const GITHUB_REPO_OWNER = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
-const GITHUB_REPO_NAME = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
-const DEFAULT_BRANCH = import.meta.env.VITE_GITHUB_REPO_BRANCH || 'main';
+const githubConfig = getGithubConfig();
+const GITHUB_REPO_OWNER = githubConfig.repoOwner;
+const GITHUB_REPO_NAME = githubConfig.repoName;
+const DEFAULT_BRANCH = githubConfig.repoBranch;
+
+// 运行时配置
+const runtimeConfig = getRuntimeConfig();
+const accessConfig = getAccessConfig();
 
 // 是否使用服务端API（非开发环境）
-const USE_SERVER_API = !import.meta.env.DEV;
+const USE_SERVER_API = !runtimeConfig.isDev;
 
 // 模式设置
-const USE_TOKEN_MODE = import.meta.env.VITE_USE_TOKEN_MODE === 'true';
+const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
 // 强制使用服务端API代理所有请求
-const FORCE_SERVER_PROXY = !import.meta.env.DEV || USE_TOKEN_MODE;
+const FORCE_SERVER_PROXY = !runtimeConfig.isDev || USE_TOKEN_MODE;
 
 // 工具函数
 const isDevEnvironment = window.location.hostname === 'localhost';
 
 // 添加配置信息
 export interface ConfigInfo {
-  officeProxyUrl: string;
   repoOwner: string;
   repoName: string;
   repoBranch: string;
@@ -33,7 +38,6 @@ export interface ConfigInfo {
 
 // 存储配置信息
 let configInfo: ConfigInfo = {
-  officeProxyUrl: import.meta.env.OFFICE_PREVIEW_PROXY || import.meta.env.VITE_OFFICE_PREVIEW_PROXY || '',
   repoOwner: GITHUB_REPO_OWNER,
   repoName: GITHUB_REPO_NAME,
   repoBranch: DEFAULT_BRANCH
@@ -44,7 +48,7 @@ export class GitHubService {
   private static readonly tokenManager = new GitHubTokenManager();
   private static readonly batcher = new RequestBatcher();
   private static readonly GITHUB_API_BASE = 'https://api.github.com';
-  private static readonly IMAGE_PROXY_URL = import.meta.env.VITE_IMAGE_PROXY_URL || 'https://gh-proxy.com';
+  private static readonly IMAGE_PROXY_URL = getProxyConfig().imageProxyUrl;
   
   // 初始化缓存管理器
   static {
@@ -415,11 +419,10 @@ export class GitHubService {
   // 获取配置信息
   public static async getConfig(): Promise<ConfigInfo> {
     // 根据开发者模式环境变量决定使用的分支
-    const isDeveloperMode = import.meta.env.VITE_DEVELOPER_MODE === 'true';
-    const branch = isDeveloperMode ? "beta" : "main";
+    const isDeveloperModeEnabled = isDeveloperMode();
+    const branch = isDeveloperModeEnabled ? "beta" : "main";
     
     return {
-      officeProxyUrl: import.meta.env.OFFICE_PREVIEW_PROXY || import.meta.env.VITE_OFFICE_PREVIEW_PROXY || '',
       repoOwner: "UE-DND",
       repoName: "Repo-Viewer",
       repoBranch: branch
@@ -437,8 +440,8 @@ export class GitHubService {
       const fixedRepoName = "Repo-Viewer";
       
       // 根据开发者模式决定使用的分支
-      const isDeveloperMode = import.meta.env.VITE_DEVELOPER_MODE === 'true';
-      const branch = isDeveloperMode ? "beta" : "main";
+      const isDeveloperModeEnabled = isDeveloperMode();
+      const branch = isDeveloperModeEnabled ? "beta" : "main";
       
       // 构建API URL
       const url = `${this.GITHUB_API_BASE}/repos/${fixedRepoOwner}/${fixedRepoName}/commits/${branch}`;

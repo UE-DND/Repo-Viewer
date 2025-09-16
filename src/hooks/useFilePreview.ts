@@ -11,7 +11,9 @@ import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTF
 import { getPreviewFromUrl, updateUrlWithHistory, updateUrlWithoutHistory, hasPreviewParam } from '../utils/urlManager';
 import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '../utils/pdfLoading';
 
-const FORCE_SERVER_PROXY = !import.meta.env.DEV || import.meta.env.VITE_USE_TOKEN_MODE === 'true';
+import { getRuntimeConfig, getAccessConfig } from '../config/ConfigManager';
+
+const FORCE_SERVER_PROXY = !getRuntimeConfig().isDev || getAccessConfig().useTokenMode;
 
 const initialPreviewState: PreviewState = {
   previewContent: null,

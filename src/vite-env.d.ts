@@ -13,15 +13,12 @@ interface ImportMetaEnv {
   readonly VITE_DEVELOPER_MODE?: string
   readonly VITE_HIDE_MAIN_FOLDER_DOWNLOAD?: string
   readonly VITE_HIDE_DOWNLOAD_FOLDERS?: string
-  readonly OFFICE_PREVIEW_PROXY?: string
-  readonly VITE_OFFICE_PREVIEW_PROXY?: string
   readonly VITE_DEBUG_MODE?: string
   readonly VITE_CONSOLE_LOGGING?: string
   // SEO相关环境变量
   readonly VITE_SITE_DESCRIPTION?: string
   readonly VITE_SITE_KEYWORDS?: string
   readonly VITE_SITE_OG_IMAGE?: string
-  readonly VITE_SITE_TWITTER_HANDLE?: string
   // GITHUB_PAT*相关变量保留无前缀
   readonly GITHUB_PAT1?: string
   readonly GITHUB_PAT2?: string

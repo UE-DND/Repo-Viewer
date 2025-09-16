@@ -1,10 +1,17 @@
 import { logger } from '../../utils';
+import { 
+  getGithubPATs, 
+  isTokenMode, 
+  isDeveloperMode,
+  configManager, 
+  EnvParser 
+} from '../../config/ConfigManager';
 
 // 工具函数
 const isDevEnvironment = window.location.hostname === 'localhost';
 
 // 模式设置
-const USE_TOKEN_MODE = import.meta.env.VITE_USE_TOKEN_MODE === 'true';
+const USE_TOKEN_MODE = isTokenMode();
 
 export class GitHubTokenManager {
   private tokens: string[] = [];
@@ -31,29 +38,36 @@ export class GitHubTokenManager {
     this.tokens = [];
     
     try {
-      // 获取PAT时支持无前缀
-      Object.keys(import.meta.env).forEach(key => {
-        if ((key.startsWith('GITHUB_PAT') || key.startsWith('VITE_GITHUB_PAT')) && import.meta.env[key]) {
-          const token = import.meta.env[key];
-          if (token && typeof token === 'string' && token.trim().length > 0) {
-            this.tokens.push(token.trim());
-            logger.debug(`已加载环境变量token: ${key.substring(0, 15)}... (已脱敏)`);
-          }
-        }
-      });
+      // 使用统一的配置管理器获取所有 tokens
+      const envTokens = getGithubPATs();
+      this.tokens.push(...envTokens);
+      
+      // 记录加载的环境变量 tokens 数量
+      if (envTokens.length > 0) {
+        logger.debug(`从环境变量加载了 ${envTokens.length} 个 GitHub PAT`);
+      }
       
       // 尝试从localStorage加载token（用于开发环境）
       if (typeof localStorage !== 'undefined') {
         const localToken = localStorage.getItem('GITHUB_PAT');
-        if (localToken && localToken.trim().length > 0) {
+        if (localToken && EnvParser.validateToken(localToken)) {
           this.tokens.push(localToken.trim());
           logger.debug('已从localStorage加载token (已脱敏)');
         }
       }
       
+      // 去重处理
+      this.tokens = [...new Set(this.tokens)];
+      
       // 记录token加载状态
       if (this.tokens.length > 0) {
-        logger.info(`已加载 ${this.tokens.length} 个GitHub Personal Access Token`);
+        logger.info(`成功加载 ${this.tokens.length} 个GitHub Personal Access Token`);
+      }
+      
+      // 开发者模式下显示详细调试信息
+      if (isDeveloperMode()) {
+        const debugInfo = configManager.getDebugInfo();
+        logger.debug('PAT 配置调试信息:', debugInfo);
       }
     } catch (error) {
       logger.error('加载GitHub token失败:', error);

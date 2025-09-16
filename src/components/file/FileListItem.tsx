@@ -21,20 +21,14 @@ import {
 import { getFileIcon, logger } from "../../utils";
 import { GitHubContent } from "../../types";
 
-// 从App.tsx提取的配置
-const HOMEPAGE_FILTER_ENABLED =
-  import.meta.env.VITE_HOMEPAGE_FILTER_ENABLED === "true";
-const HOMEPAGE_ALLOWED_FOLDERS = (
-  import.meta.env.VITE_HOMEPAGE_ALLOWED_FOLDERS || ""
-)
-  .split(",")
-  .filter(Boolean)
-  .map((folder: string) => folder.trim());
-const HIDE_MAIN_FOLDER_DOWNLOAD =
-  import.meta.env.VITE_HIDE_MAIN_FOLDER_DOWNLOAD === "true";
-const HIDE_DOWNLOAD_FOLDERS = (import.meta.env.VITE_HIDE_DOWNLOAD_FOLDERS || "")
-  .split(",")
-  .map((folder: string) => folder.trim());
+import { getFeaturesConfig } from '../../config/ConfigManager';
+
+// 从统一配置获取配置
+const featuresConfig = getFeaturesConfig();
+const HOMEPAGE_FILTER_ENABLED = featuresConfig.homepageFilter.enabled;
+const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
+const HIDE_MAIN_FOLDER_DOWNLOAD = featuresConfig.hideDownload.enabled; 
+const HIDE_DOWNLOAD_FOLDERS = featuresConfig.hideDownload.hiddenFolders;
 
 interface FileListItemProps {
   item: GitHubContent;

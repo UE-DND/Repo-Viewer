@@ -8,9 +8,10 @@ import {
 } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
+import { getRuntimeConfig, getAccessConfig } from '../config/ConfigManager';
 
 // 是否使用服务端API代理下载
-const FORCE_SERVER_PROXY = !import.meta.env.DEV || import.meta.env.VITE_USE_TOKEN_MODE === 'true';
+const FORCE_SERVER_PROXY = !getRuntimeConfig().isDev || getAccessConfig().useTokenMode;
 
 // 下载状态初始值
 const initialDownloadState: DownloadState = {
