@@ -27,7 +27,7 @@ const USE_TOKEN_MODE = accessConfig.useTokenMode;
 const FORCE_SERVER_PROXY = !runtimeConfig.isDev || USE_TOKEN_MODE;
 
 // 工具函数
-const isDevEnvironment = window.location.hostname === 'localhost';
+const isDevEnvironment = import.meta.env.DEV;
 
 // 添加配置信息
 export interface ConfigInfo {
@@ -48,7 +48,7 @@ export class GitHubService {
   private static readonly tokenManager = new GitHubTokenManager();
   private static readonly batcher = new RequestBatcher();
   private static readonly GITHUB_API_BASE = 'https://api.github.com';
-  private static readonly IMAGE_PROXY_URL = getProxyConfig().imageProxyUrl;
+  private static readonly DOWNLOAD_PROXY_URL = getProxyConfig().imageProxyUrl;
   
   // 初始化缓存管理器
   static {
@@ -429,50 +429,4 @@ export class GitHubService {
     };
   }
 
-  /**
-   * 获取仓库最新的提交信息
-   * @returns Promise<{sha: string, message: string, date: string}>
-   */
-  public static async getLatestCommit(): Promise<{sha: string, message: string, date: string}> {
-    try {
-      // 使用固定的仓库路径，而不是环境变量
-      const fixedRepoOwner = "UE-DND";
-      const fixedRepoName = "Repo-Viewer";
-      
-      // 根据开发者模式决定使用的分支
-      const isDeveloperModeEnabled = isDeveloperMode();
-      const branch = isDeveloperModeEnabled ? "beta" : "main";
-      
-      // 构建API URL
-      const url = `${this.GITHUB_API_BASE}/repos/${fixedRepoOwner}/${fixedRepoName}/commits/${branch}`;
-      
-      // 决定是使用服务端API还是直接请求
-      let response;
-      if (USE_SERVER_API) {
-        // 传递分支参数到API
-        response = await fetch(`/api/github/commits?branch=${branch}`);
-      } else {
-        // 获取认证头
-        const headers = this.getAuthHeaders();
-        response = await fetch(url, { headers });
-      }
-
-      if (!response.ok) {
-        this.handleApiError(response);
-        return { sha: '', message: '无法获取版本信息', date: '' };
-      }
-
-      const data = await response.json();
-      
-      // 提取提交信息
-      const sha = data.sha?.substring(0, 7) || '';
-      const message = data.commit?.message || '';
-      const date = data.commit?.author?.date || '';
-      
-      return { sha, message, date };
-    } catch (error) {
-      logger.error('获取最新提交信息失败:', error);
-      return { sha: '', message: '获取版本信息出错', date: '' };
-    }
-  }
 }

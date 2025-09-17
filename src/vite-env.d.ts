@@ -5,7 +5,9 @@ interface ImportMetaEnv {
   readonly VITE_GITHUB_REPO_OWNER?: string
   readonly VITE_GITHUB_REPO_NAME?: string
   readonly VITE_GITHUB_REPO_BRANCH?: string
-  readonly VITE_IMAGE_PROXY_URL?: string
+  readonly VITE_DOWNLOAD_PROXY_URL?: string
+  readonly VITE_DOWNLOAD_PROXY_URL_BACKUP1?: string
+  readonly VITE_DOWNLOAD_PROXY_URL_BACKUP2?: string
   readonly VITE_HOMEPAGE_FILTER_ENABLED?: string
   readonly VITE_HOMEPAGE_ALLOWED_FOLDERS?: string
   readonly VITE_HOMEPAGE_ALLOWED_FILETYPES?: string

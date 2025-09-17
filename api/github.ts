@@ -261,36 +261,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
     
-    // 获取最新提交信息
-    if (action === 'getCommits') {
-      try {
-        // 使用固定的仓库路径，而不是环境变量
-        const fixedRepoOwner = "UE-DND";
-        const fixedRepoName = "Repo-Viewer";
-        
-        // 从请求参数中获取分支名称，如果没有则使用默认分支
-        const branch = req.query.branch ? 
-          (Array.isArray(req.query.branch) ? req.query.branch[0] : req.query.branch) : 
-          "main";
-        
-        const apiUrl = `${GITHUB_API_BASE}/repos/${fixedRepoOwner}/${fixedRepoName}/commits/${branch}`;
-        
-        const response = await handleRequestWithRetry(() => 
-          axios.get(apiUrl, { 
-            headers: getAuthHeaders() 
-          })
-        );
-        
-        return res.status(200).json(response.data);
-      } catch (error: any) {
-        console.error('获取提交信息失败:', error.message);
-        
-        return res.status(error.response?.status || 500).json({ 
-          error: '获取提交信息失败',
-          message: error.message
-        });
-      }
-    }
     
     // 搜索仓库
     if (action === 'search') {

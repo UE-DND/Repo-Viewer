@@ -17,9 +17,9 @@ const CONFIG_DEFAULTS = {
   GITHUB_REPO_BRANCH: 'master',
 
   // 代理配置
-  IMAGE_PROXY_URL: 'https://gh-proxy.com',
-  IMAGE_PROXY_URL_BACKUP1: 'https://ghproxy.com',
-  IMAGE_PROXY_URL_BACKUP2: 'https://raw.staticdn.net',
+  DOWNLOAD_PROXY_URL: 'https://gh-proxy.com',
+  DOWNLOAD_PROXY_URL_BACKUP1: 'https://ghproxy.com',
+  DOWNLOAD_PROXY_URL_BACKUP2: 'https://raw.staticdn.net',
 
   // PAT配置
   PAT_PREFIXES: ['GITHUB_PAT', 'VITE_GITHUB_PAT'] as const,
@@ -193,9 +193,9 @@ class ConfigManager {
         }
       },
       proxy: {
-        imageProxyUrl: env.VITE_IMAGE_PROXY_URL || CONFIG_DEFAULTS.IMAGE_PROXY_URL,
-        imageProxyUrlBackup1: env.VITE_IMAGE_PROXY_URL_BACKUP1 || CONFIG_DEFAULTS.IMAGE_PROXY_URL_BACKUP1,
-        imageProxyUrlBackup2: env.VITE_IMAGE_PROXY_URL_BACKUP2 || CONFIG_DEFAULTS.IMAGE_PROXY_URL_BACKUP2
+        imageProxyUrl: env.VITE_DOWNLOAD_PROXY_URL || CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL,
+        imageProxyUrlBackup1: env.VITE_DOWNLOAD_PROXY_URL_BACKUP1 || CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1,
+        imageProxyUrlBackup2: env.VITE_DOWNLOAD_PROXY_URL_BACKUP2 || CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2
       },
       access: {
         useTokenMode: EnvParser.parseBoolean(env.VITE_USE_TOKEN_MODE)

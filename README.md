@@ -16,11 +16,6 @@ English | [中文](README_ZH.md)
       - [Secure Deployment Method](#secure-deployment-method)
       - [Deployment Steps](#deployment-steps)
       - [Vercel Environment Variables Configuration](#vercel-environment-variables-configuration)
-  - [Troubleshooting](#troubleshooting)
-    - [API Rate Limiting Issues](#api-rate-limiting-issues)
-    - [Deployment Issues](#deployment-issues)
-    - [Content Filtering Issues](#content-filtering-issues)
-  - [Tech Stack](#tech-stack)
   - [License](#license)
 
 ## Key Features
@@ -32,6 +27,7 @@ English | [中文](README_ZH.md)
 - 🔍 **Content Filtering**: Support for filtering files and folders on the homepage
 - 🛠️ **Developer Mode**: Provides detailed debugging information and performance statistics
 - 🌐 **SEO Optimization**: Improve search engine visibility
+- 🔄 **Backup Proxy Support**: Support for multi-level proxy automatic failover, ensuring reliable file access
 
 ## Local Development
 
@@ -65,11 +61,13 @@ Want to develop and debug this project in your local environment? Follow these s
 
 ### Local Environment Variables
 
-> ⚠️ **Important**: For local development, you **must** use variables with the VITE_prefix, otherwise the frontend cannot read the environment variables!  
-> In production (e.g. Vercel), only the following variables do **not** need the VITE_ prefix. All other variables that need to be read by the frontend **must** have the VITE_ prefix:
->
-> - GITHUB_PAT1
-> - OFFICE_PREVIEW_PROXY
+> ⚠️ **Important**: For local development, all variables **must** have the VITE_ prefix, otherwise the frontend cannot read the environment variables!  
+
+> In production (e.g. Vercel), the following variables should **not** have the VITE_ prefix:
+> - GITHUB_REPO_OWNER
+> - GITHUB_REPO_NAME
+> - GITHUB_REPO_BRANCH
+> - GITHUB_PAT*
 
 **Required Environment Variables**:
 
@@ -84,14 +82,35 @@ VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
 VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
 VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
-VITE_IMAGE_PROXY_URL = https://your-proxy
+VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
+
+# Repository Information
 VITE_GITHUB_REPO_OWNER = Repository Owner
 VITE_GITHUB_REPO_NAME = Repository Name
 VITE_GITHUB_REPO_BRANCH = Branch Name (defaults to main)
-
-# Repository Information
 VITE_GITHUB_PAT1 = Your GitHub Personal Access Token
+```
+
+**Optional Environment Variables**:
+
+```
+# Homepage Content Filtering - Only affects the repository root directory (homepage)
+VITE_HOMEPAGE_FILTER_ENABLED = true or false           # Enable homepage filtering
+VITE_HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2        # Folders allowed to be displayed on homepage
+VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt           # File types allowed to be displayed on homepage
+
+# Homepage Download Button Control - Only affects the repository root directory (homepage)
+VITE_HIDE_MAIN_FOLDER_DOWNLOAD = true or false         # Hide download button for the main folder on homepage
+VITE_HIDE_DOWNLOAD_FOLDERS = folder1,folder2           # Folders on homepage to hide download button for
+
+# Proxy Settings
+VITE_DOWNLOAD_PROXY_URL = Download Proxy URL                 # Primary proxy URL
+VITE_DOWNLOAD_PROXY_URL_BACKUP1 = Backup Proxy URL           # Backup proxy 1 - automatic failover
+VITE_DOWNLOAD_PROXY_URL_BACKUP2 = Backup Proxy URL 2         # Backup proxy 2 - multi-level failover
+
+# Developer Options
+VITE_DEVELOPER_MODE = true or false                    # Enable developer mode
 ```
 
 ## Deployment Guide
@@ -142,7 +161,7 @@ VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
 VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
 VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
-VITE_IMAGE_PROXY_URL = https://your-proxy
+VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
 # Repository Information
@@ -155,58 +174,23 @@ GITHUB_PAT1 = Your GitHub Personal Access Token
 **Optional Environment Variables**:
 
 ```
-# Homepage Content Filtering (optional) - Only affects the repository root directory (homepage)
-HOMEPAGE_FILTER_ENABLED = true or false           # Enable homepage filtering
-HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2        # Folders allowed to be displayed on homepage
-HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt           # File types allowed to be displayed on homepage
+# Homepage Content Filtering - Only affects the repository root directory (homepage)
+VITE_HOMEPAGE_FILTER_ENABLED = true or false           # Enable homepage filtering
+VITE_HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2        # Folders allowed to be displayed on homepage
+VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt           # File types allowed to be displayed on homepage
 
-# Homepage Download Button Control (optional) - Only affects the repository root directory (homepage)
-HIDE_MAIN_FOLDER_DOWNLOAD = true or false         # Hide download button for the main folder on homepage
-HIDE_DOWNLOAD_FOLDERS = folder1,folder2           # Folders on homepage to hide download button for
+# Homepage Download Button Control - Only affects the repository root directory (homepage)
+VITE_HIDE_MAIN_FOLDER_DOWNLOAD = true or false         # Hide download button for the main folder on homepage
+VITE_HIDE_DOWNLOAD_FOLDERS = folder1,folder2           # Folders on homepage to hide download button for
 
-# Proxy Settings (optional)
-IMAGE_PROXY_URL = Image Proxy URL                 # Image proxy URL
+# Proxy Settings
+VITE_DOWNLOAD_PROXY_URL = Download Proxy URL                 # Primary proxy URL
+VITE_DOWNLOAD_PROXY_URL_BACKUP1 = Backup Proxy URL           # Backup proxy 1 - automatic failover
+VITE_DOWNLOAD_PROXY_URL_BACKUP2 = Backup Proxy URL 2         # Backup proxy 2 - multi-level failover
 
-
-# Developer Options (optional)
-DEVELOPER_MODE = true or false                    # Enable developer mode
+# Developer Options
+VITE_DEVELOPER_MODE = true or false                    # Enable developer mode
 ```
-
-## Troubleshooting
-
-If you encounter issues during deployment or usage:
-
-### API Rate Limiting Issues
-
-1. Ensure you have correctly configured GitHub Personal Access Tokens
-2. Check if your tokens have the correct permissions (`repo` scope)
-3. For high-traffic sites, consider adding multiple PATs for rotation
-4. Verify token usage in GitHub developer settings
-
-### Deployment Issues
-
-1. Check if all required environment variables are set correctly
-2. Ensure your repository has necessary permissions for Vercel
-3. Check Vercel build logs for any specific error messages
-4. Verify your GitHub tokens have not expired
-5. If using a custom domain, ensure DNS is configured correctly and SSL certificate is active
-6. If using wildcard routes, verify that your route rules correctly match the request URLs
-
-### Content Filtering Issues
-
-If content filtering doesn't work as expected:
-
-1. Confirm that `HOMEPAGE_FILTER_ENABLED` is set to `true`
-2. Check if `HOMEPAGE_ALLOWED_FOLDERS` and `HOMEPAGE_ALLOWED_FILETYPES` are configured correctly
-3. Ensure folder names and file type names match the actual repository content
-4. For more troubleshooting, enable developer mode to view detailed logs
-
-## Tech Stack
-
-- React, TypeScript, Vite
-- Material UI component library
-- Vercel Serverless Functions
-- SEO optimization with dynamic meta tags
 
 ## License
 
