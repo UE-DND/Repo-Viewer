@@ -64,7 +64,7 @@ Want to develop and debug this project in your local environment? Follow these s
 > ⚠️ **Important**: Repository variables (`GITHUB_REPO_*` / `VITE_GITHUB_REPO_*`) are synchronized automatically across local and production environments.  
 > - Prefer keeping only the prefix-less `GITHUB_REPO_*` entries; they satisfy both frontend and serverless needs.
 > - Existing `VITE_` prefixed values remain valid — the app now reads both forms seamlessly.
-> - Keep PATs (`GITHUB_PAT*`) without the `VITE_` prefix in production to avoid exposing them in the client bundle.
+> - Keep PATs (`GITHUB_PAT*`) without the `VITE_` prefix in production to avoid exposing them in the client bundle; during local development, the dev server auto-clones these values into `VITE_GITHUB_PAT*` so the frontend can call GitHub directly if needed.
 
 **Required Environment Variables**:
 
@@ -89,7 +89,10 @@ GITHUB_REPO_BRANCH = Branch Name (defaults to main)
 # VITE_GITHUB_REPO_OWNER = Repository Owner          # Optional legacy form
 # VITE_GITHUB_REPO_NAME = Repository Name
 # VITE_GITHUB_REPO_BRANCH = Branch Name (defaults to main)
-VITE_GITHUB_PAT1 = Your GitHub Personal Access Token
+GITHUB_PAT1 = Your GitHub Personal Access Token      # Preferred: keep secret on serverless & local
+GITHUB_PAT2 =                                        # Optional secondary token
+# VITE_GITHUB_PAT1 = Your GitHub Personal Access Token  # Optional - exposed to frontend
+# VITE_GITHUB_PAT2 =
 ```
 
 **Optional Environment Variables**:

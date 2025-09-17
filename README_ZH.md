@@ -64,7 +64,7 @@
 > ⚠️ **重要**：仓库信息变量（`GITHUB_REPO_*` / `VITE_GITHUB_REPO_*`）在本地与生产环境都会自动同步。  
 > - 推荐仅维护无前缀的 `GITHUB_REPO_*`，即可同时满足前端与服务端读取需求。
 > - 如果已经配置了 `VITE_` 前缀，也无需修改，系统会自动兼容两种命名。
-> - PAT (`GITHUB_PAT*`) 仍建议仅在服务端使用无前缀形式，避免泄露。
+> - PAT (`GITHUB_PAT*`) 仍建议仅在服务端使用无前缀形式，避免泄露；本地开发若仅设置无前缀变量，开发服务器会自动同步到 `VITE_GITHUB_PAT*` 以便调试。
 
 **必需的环境变量**:
 
@@ -89,7 +89,10 @@ GITHUB_REPO_BRANCH = 分支名称（默认为main）
 # VITE_GITHUB_REPO_OWNER = 仓库所有者               # 兼容旧写法（可选）
 # VITE_GITHUB_REPO_NAME = 仓库名称
 # VITE_GITHUB_REPO_BRANCH = 分支名称（默认为main）
-VITE_GITHUB_PAT1 = 你的GitHub个人访问令牌
+GITHUB_PAT1 = 你的GitHub个人访问令牌               # 推荐：仅在服务端与本地保存无前缀变量
+GITHUB_PAT2 =                                       # 可选备用令牌
+# VITE_GITHUB_PAT1 = 你的GitHub个人访问令牌        # 可选 - 需要暴露给前端时使用
+# VITE_GITHUB_PAT2 =
 ```
 
 **可选的环境变量**:

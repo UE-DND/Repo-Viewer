@@ -16,6 +16,8 @@ type Logger = {
 
 // 同步仓库环境变量，确保本地(VITE_)与生产(非VITE_)命名互通
 const REPO_ENV_KEYS = ['GITHUB_REPO_OWNER', 'GITHUB_REPO_NAME', 'GITHUB_REPO_BRANCH'] as const
+const PAT_BASE_KEY = 'GITHUB_PAT'
+const MAX_PAT_NUMBER = 10
 
 const normalizeEnvValue = (value?: string): string | undefined => {
   if (typeof value !== 'string') {
@@ -33,10 +35,32 @@ const syncRepoEnvVariables = (envSource: Record<string, string | undefined>) => 
 
     if (!viteValue && plainValue) {
       process.env[viteKey] = plainValue
+      envSource[viteKey] = plainValue
     }
 
     if (!plainValue && viteValue) {
       process.env[key] = viteValue
+      envSource[key] = viteValue
+    }
+  })
+}
+
+// 仅在开发模式下同步 PAT，避免生产构建时将令牌暴露给前端
+const syncPatEnvVariablesForDev = (envSource: Record<string, string | undefined>, isProdLike: boolean) => {
+  if (isProdLike) {
+    return
+  }
+
+  const suffixes = ['', ...Array.from({ length: MAX_PAT_NUMBER }, (_, index) => `${index + 1}`)]
+
+  suffixes.forEach((suffix) => {
+    const plainKey = `${PAT_BASE_KEY}${suffix}`
+    const viteKey = `VITE_${plainKey}`
+    const plainValue = normalizeEnvValue(envSource[plainKey] ?? process.env[plainKey])
+
+    if (plainValue && !process.env[viteKey]) {
+      process.env[viteKey] = plainValue
+      envSource[viteKey] = plainValue
     }
   })
 }
@@ -104,6 +128,8 @@ function getPackageVersion() {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   syncRepoEnvVariables(env);
+  const isProdLike = mode === 'production' || process.env.NODE_ENV === 'production';
+  syncPatEnvVariablesForDev(env, isProdLike);
 
   // 开发者模式配置 - 控制调试信息显示
   const DEVELOPER_MODE = process.env.DEVELOPER_MODE === 'true';
