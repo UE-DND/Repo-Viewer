@@ -8,7 +8,7 @@ import {
 } from '../../config/ConfigManager';
 
 // 工具函数
-const isDevEnvironment = window.location.hostname === 'localhost';
+const isDevEnvironment = import.meta.env.DEV;
 
 // 模式设置
 const USE_TOKEN_MODE = isTokenMode();

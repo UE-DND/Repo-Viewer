@@ -16,11 +16,6 @@
       - [安全部署方法](#安全部署方法)
       - [部署步骤](#部署步骤)
       - [Vercel环境变量配置](#vercel环境变量配置)
-  - [故障排除](#故障排除)
-    - [API限流问题](#api限流问题)
-    - [部署问题](#部署问题)
-    - [内容过滤问题](#内容过滤问题)
-  - [技术栈](#技术栈)
   - [许可证](#许可证)
 
 ## 主要功能
@@ -32,6 +27,7 @@
 - 🔍 **内容过滤**：支持首页文件和文件夹过滤
 - 🛠️ **开发者模式**：提供详细调试信息和性能统计
 - 🌐 **SEO优化**：提高搜索引擎可见性
+- 🔄 **备选代理支持**：支持多级代理自动故障转移，确保文件访问的可靠性
 
 ## 本地开发
 
@@ -65,11 +61,13 @@
 
 ### 本地环境变量
 
-> ⚠️ **重要**：对于本地开发，您**必须**使用带VITE_前缀的变量，否则前端无法读取环境变量！  
-> 在生产环境（如Vercel），只有以下变量**不**需要VITE_前缀。所有需要被前端读取的其他变量**必须**带有VITE_前缀：
->
-> - GITHUB_PAT1
-> - OFFICE_PREVIEW_PROXY
+> ⚠️ **重要**：对于本地开发，所有变量**必须**添加VITE_前缀，否则前端无法读取环境变量！  
+
+> 在生产环境（如Vercel）中，以下变量**不要添加**VITE_前缀：
+> - GITHUB_REPO_OWNER
+> - GITHUB_REPO_NAME
+> - GITHUB_REPO_BRANCH
+> - GITHUB_PAT*
 
 **必需的环境变量**:
 
@@ -84,16 +82,36 @@ VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
 VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
 VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
-VITE_IMAGE_PROXY_URL = https://your-proxy
+VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
+
+# 仓库信息
 VITE_GITHUB_REPO_OWNER = 仓库所有者
 VITE_GITHUB_REPO_NAME = 仓库名称
 VITE_GITHUB_REPO_BRANCH = 分支名称（默认为main）
-
-# 仓库信息
 VITE_GITHUB_PAT1 = 你的GitHub个人访问令牌
 ```
 
+**可选的环境变量**:
+
+```
+# 首页内容过滤- 仅对仓库根目录（首页）生效
+VITE_HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
+VITE_HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
+VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
+
+# 首页下载按钮控制- 仅对仓库根目录（首页）生效
+VITE_HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
+VITE_HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
+
+# 代理设置
+VITE_DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
+VITE_DOWNLOAD_PROXY_URL_BACKUP1 = 备选代理URL             # 备选代理1 - 自动故障转移
+VITE_DOWNLOAD_PROXY_URL_BACKUP2 = 备选代理URL2            # 备选代理2 - 多级故障转移
+
+# 开发者选项
+VITE_DEVELOPER_MODE = true或false                     # 启用开发者模式
+```
 ## 部署指南
 
 ### Vercel部署
@@ -142,7 +160,7 @@ VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
 VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
 VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
 VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
-VITE_IMAGE_PROXY_URL = https://your-proxy
+VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
 # 仓库信息
@@ -155,57 +173,23 @@ GITHUB_PAT1 = 你的GitHub个人访问令牌
 **可选的环境变量**:
 
 ```
-# 首页内容过滤（可选）- 仅对仓库根目录（首页）生效
-HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
-HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
-HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
+# 首页内容过滤- 仅对仓库根目录（首页）生效
+VITE_HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
+VITE_HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
+VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
 
-# 首页下载按钮控制（可选）- 仅对仓库根目录（首页）生效
-HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
-HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
+# 首页下载按钮控制- 仅对仓库根目录（首页）生效
+VITE_HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
+VITE_HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
 
-# 代理设置（可选）
-IMAGE_PROXY_URL = 图片代理URL                    # 图片代理URL
+# 代理设置
+VITE_DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
+VITE_DOWNLOAD_PROXY_URL_BACKUP1 = 备选代理URL             # 备选代理1 - 自动故障转移
+VITE_DOWNLOAD_PROXY_URL_BACKUP2 = 备选代理URL2            # 备选代理2 - 多级故障转移
 
-# 开发者选项（可选）
-DEVELOPER_MODE = true或false                     # 启用开发者模式
+# 开发者选项
+VITE_DEVELOPER_MODE = true或false                     # 启用开发者模式
 ```
-
-## 故障排除
-
-如果您在部署或使用过程中遇到问题：
-
-### API限流问题
-
-1. 确保您已正确配置GitHub个人访问令牌
-2. 检查您的令牌是否具有正确的权限（`repo`范围）
-3. 对于高流量站点，考虑添加多个PAT进行轮换
-4. 在GitHub的开发者设置中验证令牌使用情况
-
-### 部署问题
-
-1. 检查所有必需的环境变量是否正确设置
-2. 确保您的仓库对Vercel具有必要的权限
-3. 查看Vercel构建日志以获取任何特定错误消息
-4. 检查您的GitHub令牌是否已过期
-5. 如果使用自定义域名，确保DNS配置正确且SSL证书已激活
-6. 如果使用通配符路由，验证您的路由规则是否正确匹配请求URL
-
-### 内容过滤问题
-
-如果内容过滤功能不按预期工作：
-
-1. 确认`HOMEPAGE_FILTER_ENABLED`设置为`true`
-2. 检查`HOMEPAGE_ALLOWED_FOLDERS`和`HOMEPAGE_ALLOWED_FILETYPES`是否正确配置
-3. 确保文件夹名称和文件类型名称与实际仓库内容匹配
-4. 如需更多问题排查，启用开发者模式查看详细日志
-
-## 技术栈
-
-- React, TypeScript, Vite
-- Material UI组件库
-- Vercel Serverless Functions
-- SEO优化与动态元标签
 
 ## 许可证
 

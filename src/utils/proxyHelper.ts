@@ -3,7 +3,7 @@ import { GitHubService } from '../services/github';
 
 // 获取处理过的URL，解决CORS问题
 export const getProxiedUrl = (url: string): string => {
-  const isDevEnvironment = window.location.hostname === 'localhost';
+  const isDevEnvironment = import.meta.env.DEV;
 
   if (!isDevEnvironment) {
     // 生产环境使用GitHubService的多代理机制
