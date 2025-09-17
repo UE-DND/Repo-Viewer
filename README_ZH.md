@@ -61,13 +61,10 @@
 
 ### 本地环境变量
 
-> ⚠️ **重要**：对于本地开发，所有变量**必须**添加VITE_前缀，否则前端无法读取环境变量！  
-
-> 在生产环境（如Vercel）中，以下变量**不要添加**VITE_前缀：
-> - GITHUB_REPO_OWNER
-> - GITHUB_REPO_NAME
-> - GITHUB_REPO_BRANCH
-> - GITHUB_PAT*
+> ⚠️ **重要**：仓库信息变量（`GITHUB_REPO_*` / `VITE_GITHUB_REPO_*`）在本地与生产环境都会自动同步。  
+> - 推荐仅维护无前缀的 `GITHUB_REPO_*`，即可同时满足前端与服务端读取需求。
+> - 如果已经配置了 `VITE_` 前缀，也无需修改，系统会自动兼容两种命名。
+> - PAT (`GITHUB_PAT*`) 仍建议仅在服务端使用无前缀形式，避免泄露。
 
 **必需的环境变量**:
 
@@ -86,9 +83,12 @@ VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
 # 仓库信息
-VITE_GITHUB_REPO_OWNER = 仓库所有者
-VITE_GITHUB_REPO_NAME = 仓库名称
-VITE_GITHUB_REPO_BRANCH = 分支名称（默认为main）
+GITHUB_REPO_OWNER = 仓库所有者                      # 推荐：无前缀写法，后端与前端同时生效
+GITHUB_REPO_NAME = 仓库名称
+GITHUB_REPO_BRANCH = 分支名称（默认为main）
+# VITE_GITHUB_REPO_OWNER = 仓库所有者               # 兼容旧写法（可选）
+# VITE_GITHUB_REPO_NAME = 仓库名称
+# VITE_GITHUB_REPO_BRANCH = 分支名称（默认为main）
 VITE_GITHUB_PAT1 = 你的GitHub个人访问令牌
 ```
 
@@ -164,9 +164,10 @@ VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
 # 仓库信息
-GITHUB_REPO_OWNER = 仓库所有者
+GITHUB_REPO_OWNER = 仓库所有者                 # 推荐：仅设置无前缀变量，避免静态构建时暴露
 GITHUB_REPO_NAME = 仓库名称
 GITHUB_REPO_BRANCH = 分支名称（默认为main）
+# 可选：如需兼容旧配置，也可以额外设置 VITE_GITHUB_REPO_OWNER/VITE_GITHUB_REPO_NAME/VITE_GITHUB_REPO_BRANCH
 GITHUB_PAT1 = 你的GitHub个人访问令牌
 ```
 

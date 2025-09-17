@@ -61,13 +61,10 @@ Want to develop and debug this project in your local environment? Follow these s
 
 ### Local Environment Variables
 
-> ⚠️ **Important**: For local development, all variables **must** have the VITE_ prefix, otherwise the frontend cannot read the environment variables!  
-
-> In production (e.g. Vercel), the following variables should **not** have the VITE_ prefix:
-> - GITHUB_REPO_OWNER
-> - GITHUB_REPO_NAME
-> - GITHUB_REPO_BRANCH
-> - GITHUB_PAT*
+> ⚠️ **Important**: Repository variables (`GITHUB_REPO_*` / `VITE_GITHUB_REPO_*`) are synchronized automatically across local and production environments.  
+> - Prefer keeping only the prefix-less `GITHUB_REPO_*` entries; they satisfy both frontend and serverless needs.
+> - Existing `VITE_` prefixed values remain valid — the app now reads both forms seamlessly.
+> - Keep PATs (`GITHUB_PAT*`) without the `VITE_` prefix in production to avoid exposing them in the client bundle.
 
 **Required Environment Variables**:
 
@@ -86,9 +83,12 @@ VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
 # Repository Information
-VITE_GITHUB_REPO_OWNER = Repository Owner
-VITE_GITHUB_REPO_NAME = Repository Name
-VITE_GITHUB_REPO_BRANCH = Branch Name (defaults to main)
+GITHUB_REPO_OWNER = Repository Owner                 # Preferred: prefix-less form works for frontend & backend
+GITHUB_REPO_NAME = Repository Name
+GITHUB_REPO_BRANCH = Branch Name (defaults to main)
+# VITE_GITHUB_REPO_OWNER = Repository Owner          # Optional legacy form
+# VITE_GITHUB_REPO_NAME = Repository Name
+# VITE_GITHUB_REPO_BRANCH = Branch Name (defaults to main)
 VITE_GITHUB_PAT1 = Your GitHub Personal Access Token
 ```
 
@@ -165,9 +165,10 @@ VITE_DOWNLOAD_PROXY_URL = https://your-proxy
 VITE_DEVELOPER_MODE = false
 
 # Repository Information
-GITHUB_REPO_OWNER = Repository Owner
+GITHUB_REPO_OWNER = Repository Owner                 # Preferred: keep without prefix so values stay server-only
 GITHUB_REPO_NAME = Repository Name
 GITHUB_REPO_BRANCH = Branch Name (defaults to main)
+# Optional: also set VITE_GITHUB_REPO_OWNER / VITE_GITHUB_REPO_NAME / VITE_GITHUB_REPO_BRANCH if you rely on legacy configs
 GITHUB_PAT1 = Your GitHub Personal Access Token
 ```
 

@@ -26,6 +26,56 @@ const CONFIG_DEFAULTS = {
   MAX_PAT_NUMBER: 10,
 } as const;
 
+const runtimeProcessEnv: Record<string, string | undefined> | undefined =
+  typeof process !== 'undefined' && process.env ? process.env : undefined;
+
+const normalizeEnvValue = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const resolveEnvString = (env: Record<string, any>, keys: string[], fallback: string): string => {
+  for (const key of keys) {
+    const value = normalizeEnvValue(env[key]);
+    if (value) {
+      return value;
+    }
+  }
+
+  if (runtimeProcessEnv) {
+    for (const key of keys) {
+      const value = normalizeEnvValue(runtimeProcessEnv[key]);
+      if (value) {
+        return value;
+      }
+    }
+  }
+
+  return fallback;
+};
+
+const hasEnvValue = (env: Record<string, any>, keys: string[]): boolean => {
+  for (const key of keys) {
+    if (normalizeEnvValue(env[key])) {
+      return true;
+    }
+  }
+
+  if (runtimeProcessEnv) {
+    for (const key of keys) {
+      if (normalizeEnvValue(runtimeProcessEnv[key])) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+
 // 环境变量解析工具
 class EnvParser {
   static parseBoolean(value: string | undefined): boolean {
@@ -177,9 +227,9 @@ class ConfigManager {
         ogImage: env.VITE_SITE_OG_IMAGE || CONFIG_DEFAULTS.SITE_OG_IMAGE
       },
       github: {
-        repoOwner: env.VITE_GITHUB_REPO_OWNER || CONFIG_DEFAULTS.GITHUB_REPO_OWNER,
-        repoName: env.VITE_GITHUB_REPO_NAME || CONFIG_DEFAULTS.GITHUB_REPO_NAME,
-        repoBranch: env.VITE_GITHUB_REPO_BRANCH || CONFIG_DEFAULTS.GITHUB_REPO_BRANCH
+        repoOwner: resolveEnvString(env, ['VITE_GITHUB_REPO_OWNER', 'GITHUB_REPO_OWNER'], CONFIG_DEFAULTS.GITHUB_REPO_OWNER),
+        repoName: resolveEnvString(env, ['VITE_GITHUB_REPO_NAME', 'GITHUB_REPO_NAME'], CONFIG_DEFAULTS.GITHUB_REPO_NAME),
+        repoBranch: resolveEnvString(env, ['VITE_GITHUB_REPO_BRANCH', 'GITHUB_REPO_BRANCH'], CONFIG_DEFAULTS.GITHUB_REPO_BRANCH)
       },
       features: {
         homepageFilter: {
@@ -306,11 +356,15 @@ class ConfigManager {
         tokenCount: config.tokens.totalCount
       },
       envVarStatus: {
-        VITE_SITE_TITLE: !!env.VITE_SITE_TITLE,
-        VITE_GITHUB_REPO_OWNER: !!env.VITE_GITHUB_REPO_OWNER,
-        VITE_GITHUB_REPO_NAME: !!env.VITE_GITHUB_REPO_NAME,
-        VITE_DEVELOPER_MODE: !!env.VITE_DEVELOPER_MODE,
-        VITE_USE_TOKEN_MODE: !!env.VITE_USE_TOKEN_MODE
+        VITE_SITE_TITLE: hasEnvValue(env, ['VITE_SITE_TITLE']),
+        VITE_GITHUB_REPO_OWNER: hasEnvValue(env, ['VITE_GITHUB_REPO_OWNER']),
+        GITHUB_REPO_OWNER: hasEnvValue(env, ['GITHUB_REPO_OWNER']),
+        VITE_GITHUB_REPO_NAME: hasEnvValue(env, ['VITE_GITHUB_REPO_NAME']),
+        GITHUB_REPO_NAME: hasEnvValue(env, ['GITHUB_REPO_NAME']),
+        VITE_GITHUB_REPO_BRANCH: hasEnvValue(env, ['VITE_GITHUB_REPO_BRANCH']),
+        GITHUB_REPO_BRANCH: hasEnvValue(env, ['GITHUB_REPO_BRANCH']),
+        VITE_DEVELOPER_MODE: hasEnvValue(env, ['VITE_DEVELOPER_MODE']),
+        VITE_USE_TOKEN_MODE: hasEnvValue(env, ['VITE_USE_TOKEN_MODE'])
       },
       tokenSources: tokenSources.filter(source => source.hasValue)
     };
