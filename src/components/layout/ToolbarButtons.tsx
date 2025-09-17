@@ -13,6 +13,7 @@ import { pulseAnimation, refreshAnimation } from "../../theme/animations";
 import { GitHubService } from "../../services/github";
 import { useSnackbar } from "notistack";
 import axios from "axios";
+import { getGithubConfig, isDeveloperMode } from '../../config/ConfigManager';
 
 // 工具栏按钮组件
 const ToolbarButtons: React.FC = () => {
@@ -22,10 +23,9 @@ const ToolbarButtons: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [repoInfo, setRepoInfo] = useState({
-
-  repoOwner: import.meta.env.VITE_GITHUB_REPO_OWNER || "UE-DND",
-  repoName: import.meta.env.VITE_GITHUB_REPO_NAME || "Repo-Viewer",
-});
+    repoOwner: getGithubConfig().repoOwner,
+    repoName: getGithubConfig().repoName,
+  });
 
   // 在组件加载时获取仓库信息
   useEffect(() => {

@@ -1,7 +1,9 @@
+import { getSiteConfig } from '../config/ConfigManager';
+
 // 应用常量
 
 // 站点标题
-export const SITE_TITLE = import.meta.env.VITE_SITE_TITLE || 'Repo-Viewer';
+export const SITE_TITLE = getSiteConfig().title;
 
 // API相关常量
 export const API_CONSTANTS = {

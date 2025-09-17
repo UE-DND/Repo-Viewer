@@ -7,21 +7,19 @@ interface NativeSEOProps {
   description?: string;
   keywords?: string;
   ogImage?: string;
-  twitterHandle?: string;
   noindex?: boolean;
   canonical?: string;
 }
 
 /**
  * NativeSEO组件 - 使用React 19原生元数据功能设置页面的元数据
- * 支持标题、描述、关键词、Open Graph和Twitter Card标签
+ * 支持标题、描述、关键词、Open Graph标签
  */
 const NativeSEO: React.FC<NativeSEOProps> = ({
   title,
   description,
   keywords,
   ogImage,
-  twitterHandle,
   noindex = false,
   canonical,
 }) => {
@@ -33,7 +31,6 @@ const NativeSEO: React.FC<NativeSEOProps> = ({
   const metaDescription = description || metadata.description;
   const metaKeywords = keywords || metadata.keywords;
   const metaOgImage = ogImage || metadata.ogImage;
-  const metaTwitterHandle = twitterHandle || metadata.twitterHandle;
 
   // 确保ogImage是完整URL
   const fullOgImageUrl = metaOgImage.startsWith("http")
@@ -70,26 +67,6 @@ const NativeSEO: React.FC<NativeSEOProps> = ({
       <meta property="og:type" content="website" data-oid="vj3-ill" />
       <meta property="og:site_name" content={metaTitle} data-oid="vax8:o5" />
 
-      {/* Twitter Card标签 */}
-      <meta
-        name="twitter:card"
-        content="summary_large_image"
-        data-oid="z.c-7ah"
-      />
-      {metaTwitterHandle && (
-        <meta
-          name="twitter:creator"
-          content={metaTwitterHandle}
-          data-oid="e032kqd"
-        />
-      )}
-      <meta name="twitter:title" content={metaTitle} data-oid="ldzs5:." />
-      <meta
-        name="twitter:description"
-        content={metaDescription}
-        data-oid="06bi66m"
-      />
-      <meta name="twitter:image" content={fullOgImageUrl} data-oid=":live6:" />
 
       {/* 其他常用元标签 */}
       <meta

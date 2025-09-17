@@ -7,7 +7,6 @@ interface SEOData {
   description?: string;
   keywords?: string;
   ogImage?: string;
-  twitterHandle?: string;
 }
 
 // 创建一个适配器Hook，提供旧的API接口

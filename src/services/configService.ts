@@ -1,11 +1,11 @@
 import { logger } from '../utils';
+import { getSiteConfig, getGithubConfig } from '../config/ConfigManager';
 
 /**
  * 配置信息接口
  */
 export interface ConfigInfo {
   siteTitle: string;
-  officeProxyUrl: string;
   repoOwner: string;
   repoName: string;
   repoBranch: string;
@@ -15,11 +15,10 @@ export interface ConfigInfo {
  * 配置默认值
  */
 const DEFAULT_CONFIG: ConfigInfo = {
-  siteTitle: import.meta.env.VITE_SITE_TITLE || 'Repo-Viewer',
-  officeProxyUrl: import.meta.env.VITE_OFFICE_PREVIEW_PROXY || '',
-  repoOwner: import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND',
-  repoName: import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer',
-  repoBranch: import.meta.env.VITE_GITHUB_REPO_BRANCH || 'main'
+  siteTitle: getSiteConfig().title,
+  repoOwner: getGithubConfig().repoOwner,
+  repoName: getGithubConfig().repoName,
+  repoBranch: getGithubConfig().repoBranch
 };
 
 // 存储当前配置

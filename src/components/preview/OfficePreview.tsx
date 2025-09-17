@@ -105,7 +105,6 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
   const [fullScreenMode, setFullScreenMode] = useState<boolean>(isFullScreen);
   const [refreshKey, setRefreshKey] = useState<number>(0); // 用于强制刷新iframe
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [officeProxyUrl, setOfficeProxyUrl] = useState<string>("");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef<boolean>(true);
   const isIframeLoadedRef = useRef(false);
@@ -124,32 +123,12 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
     }
   };
 
-  // 从配置中获取代理URL
-  useEffectOnce(() => {
-    const fetchConfig = async () => {
-      try {
-        const config = await GitHubService.getConfig();
-        if (config.officeProxyUrl) {
-          console.log("使用Office代理URL:", config.officeProxyUrl);
-          setOfficeProxyUrl(config.officeProxyUrl);
-        }
-      } catch (err) {
-        console.error("获取配置失败:", err);
-      }
-    };
-
-    fetchConfig();
-  });
 
   // 确保URL是安全的
   const safeUrl = encodeURIComponent(fileUrl);
-  // 优先使用代理URL
-  const previewUrl = officeProxyUrl
-    ? `${officeProxyUrl}/proxy/https://view.officeapps.live.com/op/view.aspx?src=${safeUrl}`
-    : `${OFFICE_PREVIEW_URL}${safeUrl}`;
-  const backupPreviewUrl = officeProxyUrl
-    ? `${officeProxyUrl}/proxy/https://view.officeapps.live.com/op/embed.aspx?src=${safeUrl}`
-    : `${BACKUP_PREVIEW_URL}${safeUrl}`;
+  // 直接使用微软官方预览URL
+  const previewUrl = `${OFFICE_PREVIEW_URL}${safeUrl}`;
+  const backupPreviewUrl = `${BACKUP_PREVIEW_URL}${safeUrl}`;
 
   // 添加备用预览状态
   const [useBackupPreview, setUseBackupPreview] = useState<boolean>(false);
@@ -248,13 +227,6 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
     window.open(previewUrl, "_blank");
   }, [previewUrl]);
 
-  // 添加URL变化监控
-  useEffect(() => {
-    if (officeProxyUrl) {
-      console.log(`${getFileTypeName()}预览使用代理URL:`, officeProxyUrl);
-      console.log(`${getFileTypeName()}预览完整URL:`, actualPreviewUrl);
-    }
-  }, [officeProxyUrl, actualPreviewUrl]);
 
   useEffect(() => {
     // 重置状态
@@ -506,11 +478,11 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="在新窗口打开" data-oid=":z1ck50">
+          <Tooltip title="在新标签页打开" data-oid=":z1ck50">
             <IconButton
               onClick={handleOpenInNewWindow}
               size="small"
-              aria-label="在新窗口打开"
+              aria-label="在新标签页打开"
               sx={{
                 bgcolor: alpha(theme.palette.primary.main, 0.1),
                 "&:hover": {

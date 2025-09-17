@@ -1,0 +1,98 @@
+# Auto-normalize line endings for all text files
+* text=auto
+
+# Force Unix line endings for shell scripts and configuration files
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+Dockerfile text eol=lf
+Makefile text eol=lf
+
+# Web development files
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+*.less text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.vue text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.mdx text eol=lf
+*.txt text eol=lf
+
+# Configuration files
+*.config.js text eol=lf
+*.config.ts text eol=lf
+*.config.json text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+.eslintrc* text eol=lf
+.prettierrc* text eol=lf
+tsconfig*.json text eol=lf
+package.json text eol=lf
+package-lock.json text eol=lf
+yarn.lock text eol=lf
+vercel.json text eol=lf
+postcss.config.js text eol=lf
+tailwind.config.js text eol=lf
+vite.config.ts text eol=lf
+
+# Binary files - explicitly set as binary to prevent corruption
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# Node.js related
+node_modules/ export-ignore
+
+# Build outputs
+dist/ export-ignore
+build/ export-ignore
+out/ export-ignore
+coverage/ export-ignore
+.next/ export-ignore
+.nuxt/ export-ignore
+.vite/ export-ignore
+
+# IDE and OS specific files
+.vscode/ export-ignore
+.idea/ export-ignore
+.DS_Store export-ignore
+Thumbs.db export-ignore
+desktop.ini export-ignore
+
+# Log files
+*.log export-ignore
+npm-debug.log* export-ignore
+yarn-debug.log* export-ignore
+yarn-error.log* export-ignore
+
+# Environment files
+.env export-ignore
+.env.local export-ignore
+.env.*.local export-ignore

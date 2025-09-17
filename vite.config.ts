@@ -4,6 +4,8 @@ import * as path from 'path'
 import * as http from 'http'
 import * as https from 'https'
 import { readFileSync } from 'fs'
+// 导入配置管理器
+import { configManager } from './src/config/ConfigManager'
 
 // 开发者模式配置 - 控制调试信息显示
 const DEVELOPER_MODE = process.env.DEVELOPER_MODE === 'true';
@@ -53,16 +55,7 @@ const requestLogger = new RequestLoggerMiddleware();
 
 // 获取所有环境变量中的GitHub PAT
 function getAllGithubPATs() {
-  const env = process.env || {};
-  const patEnvVars = {};
-  
-  for (const key in env) {
-    if (key.startsWith('GITHUB_PAT') && env[key]) {
-      patEnvVars[`process.env.${key}`] = JSON.stringify(env[key]);
-    }
-  }
-  
-  return patEnvVars;
+  return configManager.getPATsForViteDefine(process.env);
 }
 
 // 获取package.json版本信息

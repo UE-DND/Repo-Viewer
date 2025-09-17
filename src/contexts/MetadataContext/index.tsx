@@ -1,15 +1,12 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
+import { getSiteConfig } from '../../config/ConfigManager';
 
-// SEO默认值从环境变量获取
-const DEFAULT_TITLE = import.meta.env.VITE_SITE_TITLE || "Repo-Viewer";
-const DEFAULT_DESCRIPTION =
-  import.meta.env.VITE_SITE_DESCRIPTION ||
-  "基于MD3设计语言的GitHub仓库浏览应用";
-const DEFAULT_KEYWORDS =
-  import.meta.env.VITE_SITE_KEYWORDS || "GitHub, 仓库, 浏览器, 代码, 查看器";
-const DEFAULT_OG_IMAGE =
-  import.meta.env.VITE_SITE_OG_IMAGE || "/icon.svg";
-const DEFAULT_TWITTER_HANDLE = import.meta.env.VITE_SITE_TWITTER_HANDLE || "";
+// SEO默认值从统一配置获取
+const siteConfig = getSiteConfig();
+const DEFAULT_TITLE = siteConfig.title;
+const DEFAULT_DESCRIPTION = siteConfig.description;
+const DEFAULT_KEYWORDS = siteConfig.keywords;
+const DEFAULT_OG_IMAGE = siteConfig.ogImage;
 
 // SEO上下文类型定义
 interface MetadataContextType {
@@ -17,12 +14,10 @@ interface MetadataContextType {
   description: string;
   keywords: string;
   ogImage: string;
-  twitterHandle: string;
   setTitle: (title: string) => void;
   setDescription: (description: string) => void;
   setKeywords: (keywords: string) => void;
   setOgImage: (ogImage: string) => void;
-  setTwitterHandle: (twitterHandle: string) => void;
   resetMetadata: () => void;
   updateMetadata: (data: Partial<MetadataData>) => void;
 }
@@ -32,7 +27,6 @@ interface MetadataData {
   description?: string;
   keywords?: string;
   ogImage?: string;
-  twitterHandle?: string;
 }
 
 // 创建SEO上下文
@@ -51,9 +45,6 @@ export const MetadataProvider: React.FC<MetadataProviderProps> = ({
   const [description, setDescription] = useState<string>(DEFAULT_DESCRIPTION);
   const [keywords, setKeywords] = useState<string>(DEFAULT_KEYWORDS);
   const [ogImage, setOgImage] = useState<string>(DEFAULT_OG_IMAGE);
-  const [twitterHandle, setTwitterHandle] = useState<string>(
-    DEFAULT_TWITTER_HANDLE,
-  );
 
   // 重置SEO数据到默认值
   const resetMetadata = () => {
@@ -61,7 +52,6 @@ export const MetadataProvider: React.FC<MetadataProviderProps> = ({
     setDescription(DEFAULT_DESCRIPTION);
     setKeywords(DEFAULT_KEYWORDS);
     setOgImage(DEFAULT_OG_IMAGE);
-    setTwitterHandle(DEFAULT_TWITTER_HANDLE);
   };
 
   // 批量更新SEO数据
@@ -70,7 +60,6 @@ export const MetadataProvider: React.FC<MetadataProviderProps> = ({
     if (data.description) setDescription(data.description);
     if (data.keywords) setKeywords(data.keywords);
     if (data.ogImage) setOgImage(data.ogImage);
-    if (data.twitterHandle) setTwitterHandle(data.twitterHandle);
   };
 
   return (
@@ -80,12 +69,10 @@ export const MetadataProvider: React.FC<MetadataProviderProps> = ({
         description,
         keywords,
         ogImage,
-        twitterHandle,
         setTitle,
         setDescription,
         setKeywords,
         setOgImage,
-        setTwitterHandle,
         resetMetadata,
         updateMetadata,
       }}

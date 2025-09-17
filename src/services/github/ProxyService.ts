@@ -1,19 +1,26 @@
 import { logger } from '../../utils';
+import { getRuntimeConfig, getAccessConfig, getProxyConfig, getGithubConfig } from '../../config/ConfigManager';
+
+// 获取配置
+const runtimeConfig = getRuntimeConfig();
+const accessConfig = getAccessConfig();
+const proxyConfig = getProxyConfig();
+const githubConfig = getGithubConfig();
 
 // 是否使用服务端API（非开发环境）
-const USE_SERVER_API = !import.meta.env.DEV;
+const USE_SERVER_API = !runtimeConfig.isDev;
 
 // 模式设置
-const USE_TOKEN_MODE = import.meta.env.VITE_USE_TOKEN_MODE === 'true';
+const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
 // 强制使用服务端API代理所有请求
-const FORCE_SERVER_PROXY = !import.meta.env.DEV || USE_TOKEN_MODE;
+const FORCE_SERVER_PROXY = !runtimeConfig.isDev || USE_TOKEN_MODE;
 
 // 定义多个代理服务URL
 const PROXY_SERVICES = [
-  import.meta.env.VITE_IMAGE_PROXY_URL || 'https://gh-proxy.com', // 默认代理
-  import.meta.env.VITE_IMAGE_PROXY_URL_BACKUP1 || 'https://ghproxy.com', // 备用代理1
-  import.meta.env.VITE_IMAGE_PROXY_URL_BACKUP2 || 'https://raw.staticdn.net', // 备用代理2
+  proxyConfig.imageProxyUrl, // 默认代理
+  proxyConfig.imageProxyUrlBackup1, // 备用代理1
+  proxyConfig.imageProxyUrlBackup2, // 备用代理2
 ];
 
 // 记录失败的代理服务
@@ -25,7 +32,7 @@ export class ProxyService {
     if (!url) return '';
     
     // 如果是开发环境且未配置代理，则直接返回原始URL
-    if (import.meta.env.DEV && !USE_TOKEN_MODE && !import.meta.env.IMAGE_PROXY_URL) {
+    if (runtimeConfig.isDev && !USE_TOKEN_MODE && !proxyConfig.imageProxyUrl) {
       return url;
     }
     
@@ -150,7 +157,7 @@ export class ProxyService {
       // 判断URL类型
       if (src.startsWith('http')) {
         // 绝对URL - 可能需要代理
-        if (useTokenMode || !import.meta.env.DEV) {
+        if (useTokenMode || !runtimeConfig.isDev) {
           const proxyUrl = this.getProxiedUrl(src);
           logger.debug('绝对URL使用代理:', proxyUrl);
           return proxyUrl;
@@ -210,10 +217,10 @@ export class ProxyService {
         fullPath = fullPath.substring(1);
       }
       
-      // 获取仓库信息 - 确保使用.env中配置的仓库信息
+      // 获取仓库信息 - 使用统一配置
       // 尝试从markdownFilePath中提取仓库信息
-      let repoOwner = import.meta.env.VITE_GITHUB_REPO_OWNER || 'UE-DND';
-      let repoName = import.meta.env.VITE_GITHUB_REPO_NAME || 'Repo-Viewer';
+      let repoOwner = githubConfig.repoOwner;
+      let repoName = githubConfig.repoName;
       
       // 检查markdownFilePath是否包含完整的GitHub URL
       if (markdownFilePath.includes('github.com')) {
@@ -232,12 +239,12 @@ export class ProxyService {
       }
       
       // 构建GitHub原始URL
-      const branch = import.meta.env.VITE_GITHUB_REPO_BRANCH || 'main';
+      const branch = githubConfig.repoBranch;
       const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${fullPath}`;
       logger.debug('构建的原始URL:', rawUrl);
     
       // 是否使用代理
-      if (useTokenMode || !import.meta.env.DEV) {
+      if (useTokenMode || !runtimeConfig.isDev) {
         const proxyUrl = this.getProxiedUrl(rawUrl);
         logger.debug('返回代理URL:', proxyUrl);
         return proxyUrl;

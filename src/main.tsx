@@ -12,10 +12,12 @@ import { checkTokenStatus } from "./utils/token-helper";
 import { setupLatexOptimization } from "./utils/latexOptimizer";
 import SEOProvider from "./contexts/SEOContext";
 
+import { getDeveloperConfig, isDeveloperMode } from './config/ConfigManager';
+
 // 开发者模式配置 - 控制调试信息显示
 const DEV_CONFIG = {
-  DEBUG_MODE: import.meta.env.VITE_DEBUG_MODE === "true",
-  CONSOLE_LOGGING: import.meta.env.VITE_CONSOLE_LOGGING === "true",
+  DEBUG_MODE: isDeveloperMode(),
+  CONSOLE_LOGGING: getDeveloperConfig().consoleLogging,
 };
 
 // 初始化日志系统
