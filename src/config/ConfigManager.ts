@@ -3,6 +3,41 @@
  * 统一管理所有应用配置
  */
 
+// 环境变量映射配置
+// 定义哪些变量需要映射到VITE_前缀
+const ENV_MAPPING = {
+  // 站点配置
+  SITE_TITLE: 'VITE_SITE_TITLE',
+  SITE_DESCRIPTION: 'VITE_SITE_DESCRIPTION',
+  SITE_KEYWORDS: 'VITE_SITE_KEYWORDS',
+  SITE_OG_IMAGE: 'VITE_SITE_OG_IMAGE',
+
+  // GitHub仓库配置
+  GITHUB_REPO_OWNER: 'VITE_GITHUB_REPO_OWNER',
+  GITHUB_REPO_NAME: 'VITE_GITHUB_REPO_NAME',
+  GITHUB_REPO_BRANCH: 'VITE_GITHUB_REPO_BRANCH',
+
+  // 功能配置
+  HOMEPAGE_FILTER_ENABLED: 'VITE_HOMEPAGE_FILTER_ENABLED',
+  HOMEPAGE_ALLOWED_FOLDERS: 'VITE_HOMEPAGE_ALLOWED_FOLDERS',
+  HOMEPAGE_ALLOWED_FILETYPES: 'VITE_HOMEPAGE_ALLOWED_FILETYPES',
+  HIDE_MAIN_FOLDER_DOWNLOAD: 'VITE_HIDE_MAIN_FOLDER_DOWNLOAD',
+  HIDE_DOWNLOAD_FOLDERS: 'VITE_HIDE_DOWNLOAD_FOLDERS',
+
+  // 代理配置
+  DOWNLOAD_PROXY_URL: 'VITE_DOWNLOAD_PROXY_URL',
+  DOWNLOAD_PROXY_URL_BACKUP1: 'VITE_DOWNLOAD_PROXY_URL_BACKUP1',
+  DOWNLOAD_PROXY_URL_BACKUP2: 'VITE_DOWNLOAD_PROXY_URL_BACKUP2',
+
+  // 访问配置
+  USE_TOKEN_MODE: 'VITE_USE_TOKEN_MODE',
+
+  // 开发者配置
+  DEVELOPER_MODE: 'VITE_DEVELOPER_MODE',
+  DEBUG_MODE: 'VITE_DEBUG_MODE',
+  CONSOLE_LOGGING: 'VITE_CONSOLE_LOGGING'
+} as const;
+
 // 配置默认值
 const CONFIG_DEFAULTS = {
   // 站点配置
@@ -26,6 +61,89 @@ const CONFIG_DEFAULTS = {
   MAX_PAT_NUMBER: 10,
 } as const;
 
+const runtimeProcessEnv: Record<string, string | undefined> | undefined =
+  typeof process !== 'undefined' && process.env ? process.env : undefined;
+
+const normalizeEnvValue = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+// 支持从无前缀变量自动映射到VITE_前缀变量的解析函数
+const resolveEnvWithMapping = (env: Record<string, any>, plainKey: string, fallback: string): string => {
+  // 优先使用VITE_前缀的变量（如果存在）
+  const viteKey = ENV_MAPPING[plainKey as keyof typeof ENV_MAPPING];
+  if (viteKey) {
+    const viteValue = normalizeEnvValue(env[viteKey]);
+    if (viteValue) {
+      return viteValue;
+    }
+
+    // 如果VITE_变量不存在，尝试使用无前缀变量
+    const plainValue = normalizeEnvValue(env[plainKey]);
+    if (plainValue) {
+      return plainValue;
+    }
+
+    // 检查runtime环境变量
+    if (runtimeProcessEnv) {
+      const runtimeViteValue = normalizeEnvValue(runtimeProcessEnv[viteKey]);
+      if (runtimeViteValue) {
+        return runtimeViteValue;
+      }
+
+      const runtimePlainValue = normalizeEnvValue(runtimeProcessEnv[plainKey]);
+      if (runtimePlainValue) {
+        return runtimePlainValue;
+      }
+    }
+  }
+
+  return fallback;
+};
+
+const resolveEnvString = (env: Record<string, any>, keys: string[], fallback: string): string => {
+  for (const key of keys) {
+    const value = normalizeEnvValue(env[key]);
+    if (value) {
+      return value;
+    }
+  }
+
+  if (runtimeProcessEnv) {
+    for (const key of keys) {
+      const value = normalizeEnvValue(runtimeProcessEnv[key]);
+      if (value) {
+        return value;
+      }
+    }
+  }
+
+  return fallback;
+};
+
+const hasEnvValue = (env: Record<string, any>, keys: string[]): boolean => {
+  for (const key of keys) {
+    if (normalizeEnvValue(env[key])) {
+      return true;
+    }
+  }
+
+  if (runtimeProcessEnv) {
+    for (const key of keys) {
+      if (normalizeEnvValue(runtimeProcessEnv[key])) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+
 // 环境变量解析工具
 class EnvParser {
   static parseBoolean(value: string | undefined): boolean {
@@ -38,8 +156,8 @@ class EnvParser {
   }
 
   static validateToken(token: any): token is string {
-    return typeof token === 'string' && 
-           token.trim().length > 0 && 
+    return typeof token === 'string' &&
+           token.trim().length > 0 &&
            token.trim() !== 'your_token_here' &&
            !token.includes('placeholder');
   }
@@ -140,11 +258,11 @@ class ConfigManager {
   reloadConfig(): Config {
     const oldConfig = this.config;
     this.config = this.loadConfig();
-    
+
     if (oldConfig) {
       this.notifyConfigChange(this.config, oldConfig);
     }
-    
+
     return this.config;
   }
 
@@ -171,39 +289,39 @@ class ConfigManager {
 
     return {
       site: {
-        title: env.VITE_SITE_TITLE || CONFIG_DEFAULTS.SITE_TITLE,
-        description: env.VITE_SITE_DESCRIPTION || CONFIG_DEFAULTS.SITE_DESCRIPTION,
-        keywords: env.VITE_SITE_KEYWORDS || CONFIG_DEFAULTS.SITE_KEYWORDS,
-        ogImage: env.VITE_SITE_OG_IMAGE || CONFIG_DEFAULTS.SITE_OG_IMAGE
+        title: resolveEnvWithMapping(env, 'SITE_TITLE', CONFIG_DEFAULTS.SITE_TITLE),
+        description: resolveEnvWithMapping(env, 'SITE_DESCRIPTION', CONFIG_DEFAULTS.SITE_DESCRIPTION),
+        keywords: resolveEnvWithMapping(env, 'SITE_KEYWORDS', CONFIG_DEFAULTS.SITE_KEYWORDS),
+        ogImage: resolveEnvWithMapping(env, 'SITE_OG_IMAGE', CONFIG_DEFAULTS.SITE_OG_IMAGE)
       },
       github: {
-        repoOwner: env.VITE_GITHUB_REPO_OWNER || CONFIG_DEFAULTS.GITHUB_REPO_OWNER,
-        repoName: env.VITE_GITHUB_REPO_NAME || CONFIG_DEFAULTS.GITHUB_REPO_NAME,
-        repoBranch: env.VITE_GITHUB_REPO_BRANCH || CONFIG_DEFAULTS.GITHUB_REPO_BRANCH
+        repoOwner: resolveEnvWithMapping(env, 'GITHUB_REPO_OWNER', CONFIG_DEFAULTS.GITHUB_REPO_OWNER),
+        repoName: resolveEnvWithMapping(env, 'GITHUB_REPO_NAME', CONFIG_DEFAULTS.GITHUB_REPO_NAME),
+        repoBranch: resolveEnvWithMapping(env, 'GITHUB_REPO_BRANCH', CONFIG_DEFAULTS.GITHUB_REPO_BRANCH)
       },
       features: {
         homepageFilter: {
-          enabled: EnvParser.parseBoolean(env.VITE_HOMEPAGE_FILTER_ENABLED),
-          allowedFolders: EnvParser.parseStringArray(env.VITE_HOMEPAGE_ALLOWED_FOLDERS),
-          allowedFileTypes: EnvParser.parseStringArray(env.VITE_HOMEPAGE_ALLOWED_FILETYPES)
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'HOMEPAGE_FILTER_ENABLED', 'false')),
+          allowedFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HOMEPAGE_ALLOWED_FOLDERS', '')),
+          allowedFileTypes: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HOMEPAGE_ALLOWED_FILETYPES', ''))
         },
         hideDownload: {
-          enabled: EnvParser.parseBoolean(env.VITE_HIDE_MAIN_FOLDER_DOWNLOAD),
-          hiddenFolders: EnvParser.parseStringArray(env.VITE_HIDE_DOWNLOAD_FOLDERS)
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'HIDE_MAIN_FOLDER_DOWNLOAD', 'false')),
+          hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HIDE_DOWNLOAD_FOLDERS', ''))
         }
       },
       proxy: {
-        imageProxyUrl: env.VITE_DOWNLOAD_PROXY_URL || CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL,
-        imageProxyUrlBackup1: env.VITE_DOWNLOAD_PROXY_URL_BACKUP1 || CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1,
-        imageProxyUrlBackup2: env.VITE_DOWNLOAD_PROXY_URL_BACKUP2 || CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2
+        imageProxyUrl: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
+        imageProxyUrlBackup1: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
+        imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2)
       },
       access: {
-        useTokenMode: EnvParser.parseBoolean(env.VITE_USE_TOKEN_MODE)
+        useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'USE_TOKEN_MODE', 'false'))
       },
       developer: {
-        mode: EnvParser.parseBoolean(env.VITE_DEVELOPER_MODE),
-        debugMode: EnvParser.parseBoolean(env.VITE_DEBUG_MODE),
-        consoleLogging: EnvParser.parseBoolean(env.VITE_CONSOLE_LOGGING)
+        mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')),
+        debugMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEBUG_MODE', 'false')),
+        consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'true'))
       },
       runtime: {
         isDev: env.DEV === true,
@@ -306,11 +424,15 @@ class ConfigManager {
         tokenCount: config.tokens.totalCount
       },
       envVarStatus: {
-        VITE_SITE_TITLE: !!env.VITE_SITE_TITLE,
-        VITE_GITHUB_REPO_OWNER: !!env.VITE_GITHUB_REPO_OWNER,
-        VITE_GITHUB_REPO_NAME: !!env.VITE_GITHUB_REPO_NAME,
-        VITE_DEVELOPER_MODE: !!env.VITE_DEVELOPER_MODE,
-        VITE_USE_TOKEN_MODE: !!env.VITE_USE_TOKEN_MODE
+        VITE_SITE_TITLE: hasEnvValue(env, ['VITE_SITE_TITLE']),
+        VITE_GITHUB_REPO_OWNER: hasEnvValue(env, ['VITE_GITHUB_REPO_OWNER']),
+        GITHUB_REPO_OWNER: hasEnvValue(env, ['GITHUB_REPO_OWNER']),
+        VITE_GITHUB_REPO_NAME: hasEnvValue(env, ['VITE_GITHUB_REPO_NAME']),
+        GITHUB_REPO_NAME: hasEnvValue(env, ['GITHUB_REPO_NAME']),
+        VITE_GITHUB_REPO_BRANCH: hasEnvValue(env, ['VITE_GITHUB_REPO_BRANCH']),
+        GITHUB_REPO_BRANCH: hasEnvValue(env, ['GITHUB_REPO_BRANCH']),
+        VITE_DEVELOPER_MODE: hasEnvValue(env, ['VITE_DEVELOPER_MODE']),
+        VITE_USE_TOKEN_MODE: hasEnvValue(env, ['VITE_USE_TOKEN_MODE'])
       },
       tokenSources: tokenSources.filter(source => source.hasValue)
     };

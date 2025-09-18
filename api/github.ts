@@ -22,11 +22,13 @@ class GitHubTokenManager {
     try {
       // 尝试查找环境变量中的所有PAT
       const envKeys = Object.keys(process.env);
-      const patKeys = envKeys.filter(key => 
-        key.startsWith('GITHUB_PAT') && 
-        process.env[key] && 
-        process.env[key]!.length > 0
-      );
+      const patKeys = envKeys.filter(key => {
+        if (!(key.startsWith('GITHUB_PAT') || key.startsWith('VITE_GITHUB_PAT'))) {
+          return false;
+        }
+        const value = process.env[key];
+        return typeof value === 'string' && value.trim().length > 0;
+      });
       
       // 收集所有有效的PAT
       this.tokens = patKeys
@@ -91,6 +93,36 @@ class GitHubTokenManager {
 // 创建token管理器实例
 const tokenManager = new GitHubTokenManager();
 
+const normalizeEnvValue = (value?: string | null): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const resolveEnvValue = (keys: string[], fallback = ''): string => {
+  for (const key of keys) {
+    const value = normalizeEnvValue(process.env[key]);
+    if (value) {
+      return value;
+    }
+  }
+  return fallback;
+};
+
+interface RepoEnvConfig {
+  repoOwner: string;
+  repoName: string;
+  repoBranch: string;
+}
+
+const getRepoEnvConfig = (): RepoEnvConfig => ({
+  repoOwner: resolveEnvValue(['GITHUB_REPO_OWNER', 'VITE_GITHUB_REPO_OWNER']),
+  repoName: resolveEnvValue(['GITHUB_REPO_NAME', 'VITE_GITHUB_REPO_NAME']),
+  repoBranch: resolveEnvValue(['GITHUB_REPO_BRANCH', 'VITE_GITHUB_REPO_BRANCH'], 'main') || 'main'
+});
+
 // 构建认证头
 function getAuthHeaders() {
   const token = tokenManager.getCurrentToken();
@@ -143,12 +175,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // 获取配置信息 - 新增API
     if (action === 'getConfig') {
+      const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
       return res.status(200).json({
         status: 'success',
         data: {
-          repoOwner: process.env.GITHUB_REPO_OWNER || '',
-          repoName: process.env.GITHUB_REPO_NAME || '',
-          repoBranch: process.env.GITHUB_REPO_BRANCH || 'main'
+          repoOwner,
+          repoName,
+          repoBranch
         }
       });
     }
@@ -167,10 +200,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: '缺少path参数' });
       }
       
-      const repoOwner = process.env.GITHUB_REPO_OWNER;
-      const repoName = process.env.GITHUB_REPO_NAME;
-      const branch = process.env.GITHUB_REPO_BRANCH || 'main';
-      
+      const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
+
+      if (!repoOwner || !repoName) {
+        return res.status(500).json({
+          error: '仓库配置缺失',
+          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+        });
+      }
+
+      const branch = repoBranch || 'main';
+
       // 处理空路径
       const pathSegment = path === '' ? '' : `/${path}`;
       const apiPath = `/repos/${repoOwner}/${repoName}/contents${pathSegment}?ref=${branch}`;
@@ -270,8 +310,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: '缺少搜索参数' });
       }
       
-      const repoOwner = process.env.GITHUB_REPO_OWNER;
-      const repoName = process.env.GITHUB_REPO_NAME;
+      const { repoOwner, repoName } = getRepoEnvConfig();
+
+      if (!repoOwner || !repoName) {
+        return res.status(500).json({
+          error: '仓库配置缺失',
+          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+        });
+      }
+
       const searchQuery = `repo:${repoOwner}/${repoName} ${q}`;
       
       const response = await handleRequestWithRetry(() => 

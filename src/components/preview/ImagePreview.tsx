@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Box,
   CircularProgress,
@@ -101,6 +101,17 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   const [showPreview, setShowPreview] = useState<boolean>(!thumbnailMode);
   const [scale, setScale] = useState<number>(1);
   const [shouldLoad, setShouldLoad] = useState<boolean>(!lazyLoad);
+
+  const closeButtonBorderRadius = useMemo(() => {
+    const radius = theme.shape.borderRadius;
+    if (typeof radius === "number") {
+      return radius * 2;
+    }
+    if (radius) {
+      return `calc(${radius} * 2)`;
+    }
+    return radius;
+  }, [theme.shape.borderRadius]);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -554,7 +565,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
                     sx={{
                       position: "absolute",
                       right: theme.spacing(2),
-                      borderRadius: theme.shape.borderRadius * 2,
+                      borderRadius: closeButtonBorderRadius,
                       minWidth: "80px",
                       fontWeight: "bold",
                       backgroundColor:

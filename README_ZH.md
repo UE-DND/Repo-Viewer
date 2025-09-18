@@ -10,12 +10,9 @@
   - [目录](#目录)
   - [主要功能](#主要功能)
   - [本地开发](#本地开发)
-    - [本地环境变量](#本地环境变量)
+  - [环境变量配置](#环境变量配置)
   - [部署指南](#部署指南)
-    - [Vercel部署](#vercel部署)
-      - [安全部署方法](#安全部署方法)
-      - [部署步骤](#部署步骤)
-      - [Vercel环境变量配置](#vercel环境变量配置)
+    - [使用Vercel部署](#使用vercel部署)
   - [许可证](#许可证)
 
 ## 主要功能
@@ -31,7 +28,7 @@
 
 ## 本地开发
 
-想要在本地环境开发和调试这个项目吗？按照以下步骤设置您的开发环境：
+按照以下步骤设置您的开发环境：
 
 1. **克隆仓库**
 
@@ -49,7 +46,7 @@
    ```
 
    - 编辑`.env`文件配置必要的环境变量
-   - **注意**：`env.local.txt`仅为本地开发模板，变量名格式（带`VITE_`前缀）仅用于本地开发环境
+   - **注意**：`env.local.txt`为环境变量模板，现在使用统一的无前缀命名，系统会自动处理VITE_前缀映射
 
 4. **启动开发服务器**
 
@@ -59,72 +56,60 @@
 
    - 开发服务器将在`http://localhost:3000`启动
 
-### 本地环境变量
-
-> ⚠️ **重要**：对于本地开发，所有变量**必须**添加VITE_前缀，否则前端无法读取环境变量！  
-
-> 在生产环境（如Vercel）中，以下变量**不要添加**VITE_前缀：
-> - GITHUB_REPO_OWNER
-> - GITHUB_REPO_NAME
-> - GITHUB_REPO_BRANCH
-> - GITHUB_PAT*
+## 环境变量配置
 
 **必需的环境变量**:
 
 ```
 # 基础配置
-VITE_SITE_TITLE = 你的站点标题
-VITE_SITE_DESCRIPTION = 你的站点描述,用于SEO
-VITE_SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
-VITE_SITE_OG_IMAGE = /icon.svg
-VITE_HOMEPAGE_FILTER_ENABLED = true
-VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
-VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
-VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
-VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
-VITE_DOWNLOAD_PROXY_URL = https://your-proxy
-VITE_DEVELOPER_MODE = false
+SITE_TITLE = 你的站点标题
+SITE_DESCRIPTION = 你的站点描述,用于SEO
+SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
+SITE_OG_IMAGE = /icon.svg
+HOMEPAGE_FILTER_ENABLED = true
+HOMEPAGE_ALLOWED_FOLDERS = docs,src
+HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
+HIDE_MAIN_FOLDER_DOWNLOAD = false
+HIDE_DOWNLOAD_FOLDERS = node_modules,dist
+DOWNLOAD_PROXY_URL = https://your-proxy
+DEVELOPER_MODE = false
 
 # 仓库信息
-VITE_GITHUB_REPO_OWNER = 仓库所有者
-VITE_GITHUB_REPO_NAME = 仓库名称
-VITE_GITHUB_REPO_BRANCH = 分支名称（默认为main）
-VITE_GITHUB_PAT1 = 你的GitHub个人访问令牌
+GITHUB_REPO_OWNER = 仓库所有者
+GITHUB_REPO_NAME = 仓库名称
+GITHUB_REPO_BRANCH = 分支名称（默认为main）
+
+# GitHub访问令牌
+GITHUB_PAT1 = 你的GitHub个人访问令牌
+GITHUB_PAT2 =                                       # 可选备用令牌
 ```
 
 **可选的环境变量**:
 
 ```
 # 首页内容过滤- 仅对仓库根目录（首页）生效
-VITE_HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
-VITE_HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
-VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
+HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
+HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
+HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
 
 # 首页下载按钮控制- 仅对仓库根目录（首页）生效
-VITE_HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
-VITE_HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
+HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
+HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
 
 # 代理设置
-VITE_DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
-VITE_DOWNLOAD_PROXY_URL_BACKUP1 = 备选代理URL             # 备选代理1 - 自动故障转移
-VITE_DOWNLOAD_PROXY_URL_BACKUP2 = 备选代理URL2            # 备选代理2 - 多级故障转移
+DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
+DOWNLOAD_PROXY_URL_BACKUP1 =
+DOWNLOAD_PROXY_URL_BACKUP2 =
 
 # 开发者选项
-VITE_DEVELOPER_MODE = true或false                     # 启用开发者模式
+DEVELOPER_MODE = true/false                     # 启用开发者模式
+DEBUG_MODE = true/false                        # 开启调试模式
+CONSOLE_LOGGING = true/false                   # 控制台日志
 ```
+
 ## 部署指南
 
-### Vercel部署
-
-#### 安全部署方法
-
-在Vercel部署时，GitHub访问令牌（PAT）通过以下方式保护：
-
-1. 令牌存储为Vercel环境变量，无`VITE_`前缀，因此不会打包进前端代码
-2. 使用服务端API端点处理所有需要GitHub认证的请求
-3. 支持多个PAT轮换，在令牌配额用尽或过期时自动切换
-
-#### 部署步骤
+### 使用Vercel部署
 
 1. **在GitHub上创建个人访问令牌（PAT）**:
    - 访问[GitHub设置→开发者设置→个人访问令牌](https://github.com/settings/tokens)
@@ -144,52 +129,6 @@ VITE_DEVELOPER_MODE = true或false                     # 启用开发者模式
 4. **部署应用**:
    - 点击"Deploy"按钮
    - Vercel将自动构建和部署你的应用
-
-#### Vercel环境变量配置
-
-**必需的环境变量**:
-
-```
-# 基础配置
-VITE_SITE_TITLE = 你的站点标题
-VITE_SITE_DESCRIPTION = 你的站点描述,用于SEO
-VITE_SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
-VITE_SITE_OG_IMAGE = /icon.svg
-VITE_HOMEPAGE_FILTER_ENABLED = true
-VITE_HOMEPAGE_ALLOWED_FOLDERS = docs,src
-VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
-VITE_HIDE_MAIN_FOLDER_DOWNLOAD = false
-VITE_HIDE_DOWNLOAD_FOLDERS = node_modules,dist
-VITE_DOWNLOAD_PROXY_URL = https://your-proxy
-VITE_DEVELOPER_MODE = false
-
-# 仓库信息
-GITHUB_REPO_OWNER = 仓库所有者
-GITHUB_REPO_NAME = 仓库名称
-GITHUB_REPO_BRANCH = 分支名称（默认为main）
-GITHUB_PAT1 = 你的GitHub个人访问令牌
-```
-
-**可选的环境变量**:
-
-```
-# 首页内容过滤- 仅对仓库根目录（首页）生效
-VITE_HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
-VITE_HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
-VITE_HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
-
-# 首页下载按钮控制- 仅对仓库根目录（首页）生效
-VITE_HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
-VITE_HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
-
-# 代理设置
-VITE_DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
-VITE_DOWNLOAD_PROXY_URL_BACKUP1 = 备选代理URL             # 备选代理1 - 自动故障转移
-VITE_DOWNLOAD_PROXY_URL_BACKUP2 = 备选代理URL2            # 备选代理2 - 多级故障转移
-
-# 开发者选项
-VITE_DEVELOPER_MODE = true或false                     # 启用开发者模式
-```
 
 ## 许可证
 
