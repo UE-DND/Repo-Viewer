@@ -86,6 +86,7 @@ const LIST_HEIGHT_CONFIG = {
 };
 
 // Define animation variants
+const EASE_OUT: [number, number, number, number] = [0.4, 0, 0.2, 1];
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
   visible: (i: number) => ({
@@ -94,7 +95,7 @@ const itemVariants = {
     transition: {
       delay: Math.min(i * 0.01, 0.1),
       duration: 0.12,
-      ease: "easeOut",
+      ease: EASE_OUT,
     },
   }),
 };
@@ -119,7 +120,7 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
         transition: {
           delay: 0, // 没有延迟
           duration: 0.08, // 非常短的动画时长
-          ease: "easeOut",
+          ease: EASE_OUT,
         },
       }),
     };
@@ -133,7 +134,7 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
         transition: {
           delay: Math.min(i * 0.005, 0.05), // 非常小的延迟
           duration: 0.1, // 较短的动画时长
-          ease: "easeOut",
+          ease: EASE_OUT,
         },
       }),
     };
