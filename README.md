@@ -16,6 +16,7 @@
 ## 主要功能
 
 - 🔍 **仓库浏览**：直观的文件结构导航
+- 🔎 **文件搜索**：基于GitHub Actions预生成索引的快速文件检索
 - 📄 **文件预览**：支持多种文件格式预览，包括Markdown、PDF和图片
 - ⬇️ **文件下载**：可下载单个文件或整个文件夹
 - 🔄 **响应式设计**：兼容桌面和移动设备
@@ -94,6 +95,14 @@ HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件
 HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
 HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
 
+# 搜索索引
+SEARCH_INDEX_ENABLED = true或false             # 是否启用预生成的搜索功能
+SEARCH_INDEX_BASE_PATH = indexes               # RV-Index 分支中索引文件所在目录（相对路径）
+SEARCH_INDEX_BRANCH = RV-Index                 # 存放索引文件的专用分支
+SEARCH_INDEX_MANIFEST_PATH = manifest.json     # 分支中记录索引列表的清单文件
+SEARCH_INDEX_FALLBACK_RAW_URL =                # 可选 CDN 前缀，形如 https://cdn.xxx/${owner}/${repo}@${ref}
+SEARCH_INDEX_MAX_RESULTS = 200                 # 搜索结果返回的最大数量
+
 # 代理设置
 DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
 DOWNLOAD_PROXY_URL_BACKUP1 =
@@ -104,6 +113,12 @@ DEVELOPER_MODE = true/false                     # 启用开发者模式
 DEBUG_MODE = true/false                        # 开启调试模式
 CONSOLE_LOGGING = true/false                   # 控制台日志
 ```
+
+## 搜索索引构建
+
+- GitHub Actions 工作流 `.github/workflows/generate-search-index.yml` 会在每次推送后自动遍历当前分支并生成索引文件，存放于专用分支 `RV-Index`，文件命名遵循 `<分支名>-<提交短哈希>-index.json`。
+- 同一分支的最新索引映射记录在 `RV-Index` 分支根目录的 `manifest.json` 中，前端会读取该清单后拉取匹配的索引文件，无需污染其他分支历史。
+- 需要手动刷新索引时，可在 GitHub Actions 面板中触发 `Build Search Index` 工作流，或复制工作流中的 Python 片段在本地执行，再将生成的文件推送到 `RV-Index` 分支。
 
 ## 部署指南
 

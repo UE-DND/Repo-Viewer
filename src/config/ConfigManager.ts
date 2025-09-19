@@ -7,65 +7,81 @@
 // 定义哪些变量需要映射到VITE_前缀
 const ENV_MAPPING = {
   // 站点配置
-  SITE_TITLE: 'VITE_SITE_TITLE',
-  SITE_DESCRIPTION: 'VITE_SITE_DESCRIPTION',
-  SITE_KEYWORDS: 'VITE_SITE_KEYWORDS',
-  SITE_OG_IMAGE: 'VITE_SITE_OG_IMAGE',
+  SITE_TITLE: "VITE_SITE_TITLE",
+  SITE_DESCRIPTION: "VITE_SITE_DESCRIPTION",
+  SITE_KEYWORDS: "VITE_SITE_KEYWORDS",
+  SITE_OG_IMAGE: "VITE_SITE_OG_IMAGE",
 
   // GitHub仓库配置
-  GITHUB_REPO_OWNER: 'VITE_GITHUB_REPO_OWNER',
-  GITHUB_REPO_NAME: 'VITE_GITHUB_REPO_NAME',
-  GITHUB_REPO_BRANCH: 'VITE_GITHUB_REPO_BRANCH',
+  GITHUB_REPO_OWNER: "VITE_GITHUB_REPO_OWNER",
+  GITHUB_REPO_NAME: "VITE_GITHUB_REPO_NAME",
+  GITHUB_REPO_BRANCH: "VITE_GITHUB_REPO_BRANCH",
 
   // 功能配置
-  HOMEPAGE_FILTER_ENABLED: 'VITE_HOMEPAGE_FILTER_ENABLED',
-  HOMEPAGE_ALLOWED_FOLDERS: 'VITE_HOMEPAGE_ALLOWED_FOLDERS',
-  HOMEPAGE_ALLOWED_FILETYPES: 'VITE_HOMEPAGE_ALLOWED_FILETYPES',
-  HIDE_MAIN_FOLDER_DOWNLOAD: 'VITE_HIDE_MAIN_FOLDER_DOWNLOAD',
-  HIDE_DOWNLOAD_FOLDERS: 'VITE_HIDE_DOWNLOAD_FOLDERS',
+  HOMEPAGE_FILTER_ENABLED: "VITE_HOMEPAGE_FILTER_ENABLED",
+  HOMEPAGE_ALLOWED_FOLDERS: "VITE_HOMEPAGE_ALLOWED_FOLDERS",
+  HOMEPAGE_ALLOWED_FILETYPES: "VITE_HOMEPAGE_ALLOWED_FILETYPES",
+  HIDE_MAIN_FOLDER_DOWNLOAD: "VITE_HIDE_MAIN_FOLDER_DOWNLOAD",
+  HIDE_DOWNLOAD_FOLDERS: "VITE_HIDE_DOWNLOAD_FOLDERS",
 
   // 代理配置
-  DOWNLOAD_PROXY_URL: 'VITE_DOWNLOAD_PROXY_URL',
-  DOWNLOAD_PROXY_URL_BACKUP1: 'VITE_DOWNLOAD_PROXY_URL_BACKUP1',
-  DOWNLOAD_PROXY_URL_BACKUP2: 'VITE_DOWNLOAD_PROXY_URL_BACKUP2',
+  DOWNLOAD_PROXY_URL: "VITE_DOWNLOAD_PROXY_URL",
+  DOWNLOAD_PROXY_URL_BACKUP1: "VITE_DOWNLOAD_PROXY_URL_BACKUP1",
+  DOWNLOAD_PROXY_URL_BACKUP2: "VITE_DOWNLOAD_PROXY_URL_BACKUP2",
 
   // 访问配置
-  USE_TOKEN_MODE: 'VITE_USE_TOKEN_MODE',
+  USE_TOKEN_MODE: "VITE_USE_TOKEN_MODE",
 
   // 开发者配置
-  DEVELOPER_MODE: 'VITE_DEVELOPER_MODE',
-  DEBUG_MODE: 'VITE_DEBUG_MODE',
-  CONSOLE_LOGGING: 'VITE_CONSOLE_LOGGING'
+  DEVELOPER_MODE: "VITE_DEVELOPER_MODE",
+  DEBUG_MODE: "VITE_DEBUG_MODE",
+  CONSOLE_LOGGING: "VITE_CONSOLE_LOGGING",
+
+  // 搜索索引配置
+  SEARCH_INDEX_ENABLED: "VITE_SEARCH_INDEX_ENABLED",
+  SEARCH_INDEX_BASE_PATH: "VITE_SEARCH_INDEX_BASE_PATH",
+  SEARCH_INDEX_FALLBACK_RAW_URL: "VITE_SEARCH_INDEX_FALLBACK_RAW_URL",
+  SEARCH_INDEX_MAX_RESULTS: "VITE_SEARCH_INDEX_MAX_RESULTS",
+  SEARCH_INDEX_BRANCH: "VITE_SEARCH_INDEX_BRANCH",
+  SEARCH_INDEX_MANIFEST_PATH: "VITE_SEARCH_INDEX_MANIFEST_PATH"
 } as const;
 
 // 配置默认值
 const CONFIG_DEFAULTS = {
   // 站点配置
-  SITE_TITLE: 'Repo-Viewer',
-  SITE_DESCRIPTION: '基于MD3设计语言的GitHub仓库浏览应用',
-  SITE_KEYWORDS: 'GitHub, 仓库, 浏览器, 代码, 查看器',
-  SITE_OG_IMAGE: '/icon.svg',
+  SITE_TITLE: "Repo-Viewer",
+  SITE_DESCRIPTION: "基于MD3设计语言的GitHub仓库浏览应用",
+  SITE_KEYWORDS: "GitHub, 仓库, 浏览器, 代码, 查看器",
+  SITE_OG_IMAGE: "/icon.svg",
 
   // GitHub仓库配置
-  GITHUB_REPO_OWNER: 'UE-DND',
-  GITHUB_REPO_NAME: 'Repo-Viewer',
-  GITHUB_REPO_BRANCH: 'master',
+  GITHUB_REPO_OWNER: "UE-DND",
+  GITHUB_REPO_NAME: "Repo-Viewer",
+  GITHUB_REPO_BRANCH: "master",
 
   // 代理配置
-  DOWNLOAD_PROXY_URL: 'https://gh-proxy.com',
-  DOWNLOAD_PROXY_URL_BACKUP1: 'https://ghproxy.com',
-  DOWNLOAD_PROXY_URL_BACKUP2: 'https://raw.staticdn.net',
+  DOWNLOAD_PROXY_URL: "https://gh-proxy.com",
+  DOWNLOAD_PROXY_URL_BACKUP1: "https://ghproxy.com",
+  DOWNLOAD_PROXY_URL_BACKUP2: "https://raw.staticdn.net",
+
+  // 搜索索引配置
+  SEARCH_INDEX_ENABLED: "true",
+  SEARCH_INDEX_BASE_PATH: "indexes",
+  SEARCH_INDEX_FALLBACK_RAW_URL: "",
+  SEARCH_INDEX_MAX_RESULTS: "200",
+  SEARCH_INDEX_BRANCH: "RV-Index",
+  SEARCH_INDEX_MANIFEST_PATH: "manifest.json",
 
   // PAT配置
-  PAT_PREFIXES: ['GITHUB_PAT', 'VITE_GITHUB_PAT'] as const,
+  PAT_PREFIXES: ["GITHUB_PAT", "VITE_GITHUB_PAT"] as const,
   MAX_PAT_NUMBER: 10,
 } as const;
 
 const runtimeProcessEnv: Record<string, string | undefined> | undefined =
-  typeof process !== 'undefined' && process.env ? process.env : undefined;
+  typeof process !== "undefined" && process.env ? process.env : undefined;
 
 const normalizeEnvValue = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') {
+  if (typeof value !== "string") {
     return undefined;
   }
   const trimmed = value.trim();
@@ -127,19 +143,25 @@ const hasEnvValue = (env: Record<string, any>, keys: string[]): boolean => {
 // 环境变量解析工具
 class EnvParser {
   static parseBoolean(value: string | undefined): boolean {
-    return value === 'true';
+    return value === "true";
   }
 
   static parseStringArray(value: string | undefined): string[] {
     if (!value) return [];
-    return value.split(',').filter(Boolean).map(item => item.trim());
+    return value.split(",").filter(Boolean).map(item => item.trim());
+  }
+
+  static parseInteger(value: string | undefined, defaultValue: number): number {
+    if (!value) return defaultValue;
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : defaultValue;
   }
 
   static validateToken(token: any): token is string {
-    return typeof token === 'string' &&
+    return typeof token === "string" &&
            token.trim().length > 0 &&
-           token.trim() !== 'your_token_here' &&
-           !token.includes('placeholder');
+           token.trim() !== "your_token_here" &&
+           !token.includes("placeholder");
   }
 }
 
@@ -165,6 +187,14 @@ export interface Config {
     hideDownload: {
       enabled: boolean;
       hiddenFolders: string[];
+    };
+    search: {
+      enabled: boolean;
+      basePath: string;
+      fallbackRawUrl: string;
+      maxResults: number;
+      branch: string;
+      manifestPath: string;
     };
   };
   proxy: {
@@ -196,7 +226,7 @@ export type ConfigChangeListener = (newConfig: Config, oldConfig: Config) => voi
 // 调试信息接口
 export interface ConfigDebugInfo {
   loadedAt: string;
-  environment: 'development' | 'production';
+  environment: "development" | "production";
   configSummary: {
     siteTitle: string;
     repoOwner: string;
@@ -258,50 +288,61 @@ class ConfigManager {
       try {
         listener(newConfig, oldConfig);
       } catch (error) {
-        console.error('配置变更监听器执行失败:', error);
+        console.error("配置变更监听器执行失败:", error);
       }
     });
   }
 
   // 从环境变量加载配置
   private loadConfig(): Config {
-    const env = typeof window !== 'undefined' ? import.meta.env : process.env;
+    const env = typeof window !== "undefined" ? import.meta.env : process.env;
 
     return {
       site: {
-        title: resolveEnvWithMapping(env, 'SITE_TITLE', CONFIG_DEFAULTS.SITE_TITLE),
-        description: resolveEnvWithMapping(env, 'SITE_DESCRIPTION', CONFIG_DEFAULTS.SITE_DESCRIPTION),
-        keywords: resolveEnvWithMapping(env, 'SITE_KEYWORDS', CONFIG_DEFAULTS.SITE_KEYWORDS),
-        ogImage: resolveEnvWithMapping(env, 'SITE_OG_IMAGE', CONFIG_DEFAULTS.SITE_OG_IMAGE)
+        title: resolveEnvWithMapping(env, "SITE_TITLE", CONFIG_DEFAULTS.SITE_TITLE),
+        description: resolveEnvWithMapping(env, "SITE_DESCRIPTION", CONFIG_DEFAULTS.SITE_DESCRIPTION),
+        keywords: resolveEnvWithMapping(env, "SITE_KEYWORDS", CONFIG_DEFAULTS.SITE_KEYWORDS),
+        ogImage: resolveEnvWithMapping(env, "SITE_OG_IMAGE", CONFIG_DEFAULTS.SITE_OG_IMAGE)
       },
       github: {
-        repoOwner: resolveEnvWithMapping(env, 'GITHUB_REPO_OWNER', CONFIG_DEFAULTS.GITHUB_REPO_OWNER),
-        repoName: resolveEnvWithMapping(env, 'GITHUB_REPO_NAME', CONFIG_DEFAULTS.GITHUB_REPO_NAME),
-        repoBranch: resolveEnvWithMapping(env, 'GITHUB_REPO_BRANCH', CONFIG_DEFAULTS.GITHUB_REPO_BRANCH)
+        repoOwner: resolveEnvWithMapping(env, "GITHUB_REPO_OWNER", CONFIG_DEFAULTS.GITHUB_REPO_OWNER),
+        repoName: resolveEnvWithMapping(env, "GITHUB_REPO_NAME", CONFIG_DEFAULTS.GITHUB_REPO_NAME),
+        repoBranch: resolveEnvWithMapping(env, "GITHUB_REPO_BRANCH", CONFIG_DEFAULTS.GITHUB_REPO_BRANCH)
       },
       features: {
         homepageFilter: {
-          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'HOMEPAGE_FILTER_ENABLED', 'false')),
-          allowedFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HOMEPAGE_ALLOWED_FOLDERS', '')),
-          allowedFileTypes: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HOMEPAGE_ALLOWED_FILETYPES', ''))
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, "HOMEPAGE_FILTER_ENABLED", "false")),
+          allowedFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, "HOMEPAGE_ALLOWED_FOLDERS", "")),
+          allowedFileTypes: EnvParser.parseStringArray(resolveEnvWithMapping(env, "HOMEPAGE_ALLOWED_FILETYPES", ""))
         },
         hideDownload: {
-          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'HIDE_MAIN_FOLDER_DOWNLOAD', 'false')),
-          hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HIDE_DOWNLOAD_FOLDERS', ''))
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, "HIDE_MAIN_FOLDER_DOWNLOAD", "false")),
+          hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, "HIDE_DOWNLOAD_FOLDERS", ""))
+        },
+        search: {
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, "SEARCH_INDEX_ENABLED", CONFIG_DEFAULTS.SEARCH_INDEX_ENABLED)),
+          basePath: resolveEnvWithMapping(env, "SEARCH_INDEX_BASE_PATH", CONFIG_DEFAULTS.SEARCH_INDEX_BASE_PATH),
+          fallbackRawUrl: resolveEnvWithMapping(env, "SEARCH_INDEX_FALLBACK_RAW_URL", CONFIG_DEFAULTS.SEARCH_INDEX_FALLBACK_RAW_URL),
+          maxResults: EnvParser.parseInteger(
+            resolveEnvWithMapping(env, "SEARCH_INDEX_MAX_RESULTS", CONFIG_DEFAULTS.SEARCH_INDEX_MAX_RESULTS),
+            200
+          ),
+          branch: resolveEnvWithMapping(env, "SEARCH_INDEX_BRANCH", CONFIG_DEFAULTS.SEARCH_INDEX_BRANCH),
+          manifestPath: resolveEnvWithMapping(env, "SEARCH_INDEX_MANIFEST_PATH", CONFIG_DEFAULTS.SEARCH_INDEX_MANIFEST_PATH)
         }
       },
       proxy: {
-        imageProxyUrl: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
-        imageProxyUrlBackup1: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
-        imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2)
+        imageProxyUrl: resolveEnvWithMapping(env, "DOWNLOAD_PROXY_URL", CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
+        imageProxyUrlBackup1: resolveEnvWithMapping(env, "DOWNLOAD_PROXY_URL_BACKUP1", CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
+        imageProxyUrlBackup2: resolveEnvWithMapping(env, "DOWNLOAD_PROXY_URL_BACKUP2", CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2)
       },
       access: {
-        useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'USE_TOKEN_MODE', 'false'))
+        useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, "USE_TOKEN_MODE", "false"))
       },
       developer: {
-        mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')),
-        debugMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEBUG_MODE', 'false')),
-        consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'true'))
+        mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, "DEVELOPER_MODE", "false")),
+        debugMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, "DEBUG_MODE", "false")),
+        consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, "CONSOLE_LOGGING", "true"))
       },
       runtime: {
         isDev: env.DEV === true,
@@ -312,7 +353,7 @@ class ConfigManager {
   }
 
   // 加载Token配置
-  private loadTokens(env: Record<string, any>): Config['tokens'] {
+  private loadTokens(env: Record<string, any>): Config["tokens"] {
     const tokens: string[] = [];
 
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
@@ -367,7 +408,7 @@ class ConfigManager {
   // 获取调试信息
   getDebugInfo(): ConfigDebugInfo {
     const config = this.getConfig();
-    const env = typeof window !== 'undefined' ? import.meta.env : process.env;
+    const env = typeof window !== "undefined" ? import.meta.env : process.env;
 
     // 生成token源信息
     const tokenSources: Array<{key: string; hasValue: boolean; isValid: boolean}> = [];
@@ -394,7 +435,7 @@ class ConfigManager {
 
     return {
       loadedAt: new Date().toISOString(),
-      environment: config.runtime.isDev ? 'development' : 'production',
+      environment: config.runtime.isDev ? "development" : "production",
       configSummary: {
         siteTitle: config.site.title,
         repoOwner: config.github.repoOwner,
@@ -404,15 +445,15 @@ class ConfigManager {
         tokenCount: config.tokens.totalCount
       },
       envVarStatus: {
-        VITE_SITE_TITLE: hasEnvValue(env, ['VITE_SITE_TITLE']),
-        VITE_GITHUB_REPO_OWNER: hasEnvValue(env, ['VITE_GITHUB_REPO_OWNER']),
-        GITHUB_REPO_OWNER: hasEnvValue(env, ['GITHUB_REPO_OWNER']),
-        VITE_GITHUB_REPO_NAME: hasEnvValue(env, ['VITE_GITHUB_REPO_NAME']),
-        GITHUB_REPO_NAME: hasEnvValue(env, ['GITHUB_REPO_NAME']),
-        VITE_GITHUB_REPO_BRANCH: hasEnvValue(env, ['VITE_GITHUB_REPO_BRANCH']),
-        GITHUB_REPO_BRANCH: hasEnvValue(env, ['GITHUB_REPO_BRANCH']),
-        VITE_DEVELOPER_MODE: hasEnvValue(env, ['VITE_DEVELOPER_MODE']),
-        VITE_USE_TOKEN_MODE: hasEnvValue(env, ['VITE_USE_TOKEN_MODE'])
+        VITE_SITE_TITLE: hasEnvValue(env, ["VITE_SITE_TITLE"]),
+        VITE_GITHUB_REPO_OWNER: hasEnvValue(env, ["VITE_GITHUB_REPO_OWNER"]),
+        GITHUB_REPO_OWNER: hasEnvValue(env, ["GITHUB_REPO_OWNER"]),
+        VITE_GITHUB_REPO_NAME: hasEnvValue(env, ["VITE_GITHUB_REPO_NAME"]),
+        GITHUB_REPO_NAME: hasEnvValue(env, ["GITHUB_REPO_NAME"]),
+        VITE_GITHUB_REPO_BRANCH: hasEnvValue(env, ["VITE_GITHUB_REPO_BRANCH"]),
+        GITHUB_REPO_BRANCH: hasEnvValue(env, ["GITHUB_REPO_BRANCH"]),
+        VITE_DEVELOPER_MODE: hasEnvValue(env, ["VITE_DEVELOPER_MODE"]),
+        VITE_USE_TOKEN_MODE: hasEnvValue(env, ["VITE_USE_TOKEN_MODE"])
       },
       tokenSources: tokenSources.filter(source => source.hasValue)
     };

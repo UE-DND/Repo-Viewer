@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import {
   Container,
   useTheme,
@@ -17,6 +17,7 @@ import {
   useContentContext, 
   usePreviewContext, 
   useDownloadContext,
+  useSearch,
   NavigationDirection
 } from "../../contexts/github";
 import { FileListSkeleton } from "../ui/skeletons";
@@ -25,6 +26,8 @@ import { logger } from "../../utils";
 import DynamicSEO from "../seo/DynamicSEO";
 import ScrollToTopFab from "../interactions/ScrollToTopFab";
 import EmptyState from "../ui/EmptyState";
+import { SearchBar, SearchResults } from "../search";
+import { SearchResult } from "../../types";
 
 const MainContent: React.FC = () => {
   // 获取主题和响应式布局
@@ -51,6 +54,7 @@ const MainContent: React.FC = () => {
     navigateTo,
     repoOwner,
     repoName,
+    findFileItemByPath,
   } = useContentContext();
 
   const {
@@ -66,6 +70,21 @@ const MainContent: React.FC = () => {
     downloadFolder,
     cancelDownload,
   } = useDownloadContext();
+
+  const {
+    searchTerm,
+    results: searchResults,
+    loading: searchLoading,
+    error: searchError,
+    metadata: searchMetadata,
+    clear: clearSearch,
+    enabled: searchEnabled,
+  } = useSearch();
+
+  const [pendingSelection, setPendingSelection] = useState<string | null>(null);
+
+  const normalizedSearchTerm = searchTerm.trim();
+  const isSearchActive = searchEnabled && normalizedSearchTerm.length > 0;
 
   // 检测当前目录中是否有README.md文件
   const hasReadmeFile = useMemo(() => {
@@ -138,6 +157,50 @@ const MainContent: React.FC = () => {
     e.stopPropagation();
     cancelDownload();
   };
+
+  const determineNavigationDirection = useCallback((from: string, to: string): NavigationDirection => {
+    if (from === to) {
+      return "none";
+    }
+    if (!from) {
+      return "forward";
+    }
+    if (!to) {
+      return "backward";
+    }
+    if (to.startsWith(from)) {
+      return "forward";
+    }
+    if (from.startsWith(to)) {
+      return "backward";
+    }
+    return "none";
+  }, []);
+
+  const handleSearchResultSelect = useCallback((item: SearchResult) => {
+    const targetDirectory = item.directory || "";
+    const fullPath = item.path;
+    const direction = determineNavigationDirection(currentPath, targetDirectory);
+
+    if (currentPath !== targetDirectory) {
+      navigateTo(targetDirectory, direction);
+    }
+
+    setPendingSelection(fullPath);
+    clearSearch();
+  }, [clearSearch, currentPath, determineNavigationDirection, navigateTo]);
+
+  useEffect(() => {
+    if (!pendingSelection) {
+      return;
+    }
+
+    const targetItem = findFileItemByPath(pendingSelection);
+    if (targetItem) {
+      selectFile(targetItem);
+      setPendingSelection(null);
+    }
+  }, [pendingSelection, findFileItemByPath, selectFile, contents]);
 
 
   // 自动调整面包屑显示
@@ -300,116 +363,129 @@ const MainContent: React.FC = () => {
         data-oid="8ov3blv"
       />
 
-      <BreadcrumbNavigation
-        breadcrumbSegments={breadcrumbSegments}
-        handleBreadcrumbClick={handleBreadcrumbClick}
-        breadcrumbsMaxItems={breadcrumbsMaxItems}
-        isSmallScreen={isSmallScreen}
-        breadcrumbsContainerRef={breadcrumbsContainerRef}
-        data-oid="c02a2p5"
-      />
+      <SearchBar />
 
-      {loading ? (
-        <FileListSkeleton
-          isSmallScreen={isSmallScreen}
-          itemCount={8}
-          data-oid="-mkjng2"
-        />
-      ) : error ? (
-        <ErrorDisplay
-          errorMessage={error}
-          onRetry={handleRetry}
-          isSmallScreen={isSmallScreen}
-          data-oid="j0jgapo"
-        />
-      ) : contents.length === 0 ? (
-        <EmptyState
-          type="empty-directory"
-          onAction={handleRetry}
-          isSmallScreen={isSmallScreen}
+      {isSearchActive ? (
+        <SearchResults
+          query={normalizedSearchTerm}
+          results={searchResults}
+          loading={searchLoading}
+          error={searchError}
+          metadata={searchMetadata}
+          onSelect={handleSearchResultSelect}
         />
       ) : (
         <>
-          <FileList
-            contents={contents}
+          <BreadcrumbNavigation
+            breadcrumbSegments={breadcrumbSegments}
+            handleBreadcrumbClick={handleBreadcrumbClick}
+            breadcrumbsMaxItems={breadcrumbsMaxItems}
             isSmallScreen={isSmallScreen}
-            downloadingPath={downloadState.downloadingPath}
-            downloadingFolderPath={downloadState.downloadingFolderPath}
-            folderDownloadProgress={downloadState.folderDownloadProgress}
-            handleItemClick={handleItemClick}
-            handleDownloadClick={handleDownloadClick}
-            handleFolderDownloadClick={handleFolderDownloadClick}
-            handleCancelDownload={handleCancelDownload}
-            currentPath={currentPath}
-            hasReadmePreview={!!readmeContent && hasReadmeFile}
-            data-oid="_qfxtvv"
+            breadcrumbsContainerRef={breadcrumbsContainerRef}
+            data-oid="c02a2p5"
           />
 
-          {/* README预览 - 底部展示 */}
-          {readmeContent && readmeLoaded && !loadingReadme && (
-            <Box
-              className="readme-container fade-in"
-              sx={{
-                position: "relative",
-                width: "100%",
-                mb: 4,
-                display: "flex",
-                flexDirection: "column",
-              }}
-              data-oid="0zc9q5:"
-            >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  mb: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  color: "text.primary",
-                }}
-                data-oid="iawc_6m"
-              />
-
-              <MarkdownPreview
-                readmeContent={readmeContent}
-                loadingReadme={false}
-                isSmallScreen={isSmallScreen}
-                isReadme={true}
-                lazyLoad={false}
-                data-oid="6nohd:r"
-              />
-            </Box>
-          )}
-
-          {/* PDF 预览已改为浏览器原生打开，不在应用内渲染 */}
-
-          {/* 图像预览 */}
-          {previewState.previewingImageItem && previewState.imagePreviewUrl && (
-            <ImagePreview
-              imageUrl={previewState.imagePreviewUrl}
-              fileName={previewState.previewingImageItem.name}
-              isFullScreen={true}
-              onClose={closePreview}
-              lazyLoad={false}
-              data-oid="yfv5ld-"
+          {loading ? (
+            <FileListSkeleton
+              isSmallScreen={isSmallScreen}
+              itemCount={8}
+              data-oid="-mkjng2"
             />
-          )}
+          ) : error ? (
+            <ErrorDisplay
+              errorMessage={error}
+              onRetry={handleRetry}
+              isSmallScreen={isSmallScreen}
+              data-oid="j0jgapo"
+            />
+          ) : contents.length === 0 ? (
+            <EmptyState
+              type="empty-directory"
+              onAction={handleRetry}
+              isSmallScreen={isSmallScreen}
+            />
+          ) : (
+            <>
+              <FileList
+                contents={contents}
+                isSmallScreen={isSmallScreen}
+                downloadingPath={downloadState.downloadingPath}
+                downloadingFolderPath={downloadState.downloadingFolderPath}
+                folderDownloadProgress={downloadState.folderDownloadProgress}
+                handleItemClick={handleItemClick}
+                handleDownloadClick={handleDownloadClick}
+                handleFolderDownloadClick={handleFolderDownloadClick}
+                handleCancelDownload={handleCancelDownload}
+                currentPath={currentPath}
+                hasReadmePreview={!!readmeContent && hasReadmeFile}
+                data-oid="_qfxtvv"
+              />
 
-          {/* Office文档预览 */}
-          {previewState.previewingOfficeItem &&
-            previewState.officePreviewUrl &&
-            previewState.officeFileType && (
-              <FullScreenPreview onClose={closePreview} data-oid="oa2lre0">
-                <OfficePreview
-                  fileUrl={previewState.officePreviewUrl}
-                  fileType={previewState.officeFileType}
-                  fileName={previewState.previewingOfficeItem.name}
-                  isFullScreen={previewState.isOfficeFullscreen}
+              {/* README预览 - 底部展示 */}
+              {readmeContent && readmeLoaded && !loadingReadme && (
+                <Box
+                  className="readme-container fade-in"
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    mb: 4,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                  data-oid="0zc9q5:"
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      color: "text.primary",
+                    }}
+                    data-oid="iawc_6m"
+                  />
+
+                  <MarkdownPreview
+                    readmeContent={readmeContent}
+                    loadingReadme={false}
+                    isSmallScreen={isSmallScreen}
+                    isReadme={true}
+                    lazyLoad={false}
+                    data-oid="6nohd:r"
+                  />
+                </Box>
+              )}
+
+              {/* 图像预览 */}
+              {previewState.previewingImageItem && previewState.imagePreviewUrl && (
+                <ImagePreview
+                  imageUrl={previewState.imagePreviewUrl}
+                  fileName={previewState.previewingImageItem.name}
+                  isFullScreen={true}
                   onClose={closePreview}
-                  data-oid="-vdkwr8"
+                  lazyLoad={false}
+                  data-oid="yfv5ld-"
                 />
-              </FullScreenPreview>
-            )}
+              )}
+
+              {/* Office文档预览 */}
+              {previewState.previewingOfficeItem &&
+                previewState.officePreviewUrl &&
+                previewState.officeFileType && (
+                  <FullScreenPreview onClose={closePreview} data-oid="oa2lre0">
+                    <OfficePreview
+                      fileUrl={previewState.officePreviewUrl}
+                      fileType={previewState.officeFileType}
+                      fileName={previewState.previewingOfficeItem.name}
+                      isFullScreen={previewState.isOfficeFullscreen}
+                      onClose={closePreview}
+                      data-oid="-vdkwr8"
+                    />
+                  </FullScreenPreview>
+                )}
+            </>
+          )}
         </>
       )}
 
