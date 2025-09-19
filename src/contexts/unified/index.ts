@@ -15,6 +15,6 @@ export {
 export type { NavigationDirection } from './OptimizedAppContext';
 
 // 导出底层的状态管理器相关内容（高级用法）
-export { StateManager, StateManagerContext, useStateSelector, useStateActions } from './StateManager';
-export type { GlobalState } from './StateManager';
+export { StateManager, StateManagerContext, useStateSelector, useStateActions } from './state';
+export type { GlobalState } from './state';
 export { StateManagerProvider } from './StateManagerProvider';

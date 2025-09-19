@@ -21,4 +21,4 @@ export {
 } from "./compatibilityHooks";
 
 // 保持原有的类型导出
-export type { NavigationDirection } from "./StateManager";
+export type { NavigationDirection } from "./state";

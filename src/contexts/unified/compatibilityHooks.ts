@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { useStateSelector, useStateActions, NavigationDirection } from './StateManager';
+import { useStateSelector, useStateActions, NavigationDirection } from './state';
 import { useSnackbar } from 'notistack';
 import { useGitHubContent } from '../../hooks/useGitHubContent';
 import { useFilePreview } from '../../hooks/useFilePreview';

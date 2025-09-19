@@ -1,5 +1,5 @@
 import React, { ReactNode, useMemo } from 'react';
-import { StateManager, StateManagerContext, GlobalState, NavigationDirection } from './StateManager';
+import { StateManager, StateManagerContext, GlobalState, NavigationDirection } from './state';
 import { getSiteConfig } from '../../config/ConfigManager';
 
 // 获取默认配置

@@ -170,6 +170,10 @@ export interface Config {
     imageProxyUrl: string;
     imageProxyUrlBackup1: string;
     imageProxyUrlBackup2: string;
+    healthCheckTimeout: number;
+    validationTimeout: number;
+    healthCheckInterval: number;
+    recoveryTime: number;
   };
   access: {
     useTokenMode: boolean;
@@ -291,7 +295,12 @@ class ConfigManager {
       proxy: {
         imageProxyUrl: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
         imageProxyUrlBackup1: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
-        imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2)
+        imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2),
+        // 代理超时配置 - 内部默认值（毫秒）
+        healthCheckTimeout: 5000,    // 健康检查超时：5秒
+        validationTimeout: 10000,    // 代理验证超时：10秒
+        healthCheckInterval: 30000,  // 健康检查间隔：30秒
+        recoveryTime: 300000         // 代理恢复时间：5分钟
       },
       access: {
         useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'USE_TOKEN_MODE', 'false'))

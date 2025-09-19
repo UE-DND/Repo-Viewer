@@ -20,8 +20,8 @@ import {
   CheckCircle,
   Error
 } from '@mui/icons-material';
-import { GitHubService } from '../../services/github/GitHubService';
-import { ProxyService } from '../../services/github/ProxyService';
+import { GitHubService } from '../../services/github/core/GitHubService';
+import { ProxyService } from '../../services/github/proxy/ProxyService';
 
 interface CacheStats {
   hits: number;
