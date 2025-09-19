@@ -14,7 +14,7 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
-import { NavigationDirection } from "../../contexts/github";
+import { NavigationDirection } from "../../contexts/unified";
 
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: Array<{ name: string; path: string }>;

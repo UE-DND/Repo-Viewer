@@ -20,13 +20,147 @@ const PROXY_SERVICES = [
   proxyConfig.imageProxyUrlBackup2, // 备用代理2
 ];
 
-// 记录失败的代理服务
+// 增强的代理故障转移管理
+interface ProxyHealth {
+  url: string;
+  failureCount: number;
+  lastFailure: number;
+  responseTime: number;
+  isHealthy: boolean;
+  consecutiveFailures: number;
+  lastSuccessTime: number;
+}
+
+class ProxyHealthManager {
+  private proxyHealth: Map<string, ProxyHealth> = new Map();
+  private readonly MAX_FAILURES = 3;
+  private readonly HEALTH_CHECK_INTERVAL = 30000; // 30秒
+  private readonly RECOVERY_TIME = 300000; // 5分钟恢复时间
+  private healthCheckTimer: number | null = null;
+  
+  constructor() {
+    this.initializeProxies();
+    this.startHealthCheck();
+  }
+  
+  private initializeProxies(): void {
+    PROXY_SERVICES.forEach(proxyUrl => {
+      if (proxyUrl) {
+        this.proxyHealth.set(proxyUrl, {
+          url: proxyUrl,
+          failureCount: 0,
+          lastFailure: 0,
+          responseTime: 0,
+          isHealthy: true,
+          consecutiveFailures: 0,
+          lastSuccessTime: Date.now()
+        });
+      }
+    });
+  }
+  
+  public recordSuccess(proxyUrl: string, responseTime: number): void {
+    const health = this.proxyHealth.get(proxyUrl);
+    if (health) {
+      health.isHealthy = true;
+      health.consecutiveFailures = 0;
+      health.responseTime = responseTime;
+      health.lastSuccessTime = Date.now();
+      console.debug(`代理成功: ${proxyUrl}, 响应时间: ${responseTime}ms`);
+    }
+  }
+  
+  public recordFailure(proxyUrl: string): void {
+    const health = this.proxyHealth.get(proxyUrl);
+    if (health) {
+      health.failureCount++;
+      health.consecutiveFailures++;
+      health.lastFailure = Date.now();
+      health.isHealthy = health.consecutiveFailures < this.MAX_FAILURES;
+      console.warn(`代理失败: ${proxyUrl}, 连续失败: ${health.consecutiveFailures}`);
+    }
+  }
+  
+  public getBestProxy(): string {
+    const healthyProxies = Array.from(this.proxyHealth.values())
+      .filter(health => health.isHealthy || this.shouldRetryProxy(health))
+      .sort((a, b) => {
+        // 优先选择健康的代理
+        if (a.isHealthy && !b.isHealthy) return -1;
+        if (!a.isHealthy && b.isHealthy) return 1;
+        // 在健康代理中，选择响应时间最短的
+        return a.responseTime - b.responseTime;
+      });
+    
+    return healthyProxies.length > 0 ? healthyProxies[0]?.url || '' : PROXY_SERVICES[0] || '';
+  }
+  
+  private shouldRetryProxy(health: ProxyHealth): boolean {
+    const now = Date.now();
+    return (now - health.lastFailure) > this.RECOVERY_TIME;
+  }
+  
+  private startHealthCheck(): void {
+    this.healthCheckTimer = window.setInterval(() => {
+      this.performHealthCheck();
+    }, this.HEALTH_CHECK_INTERVAL);
+  }
+  
+  private async performHealthCheck(): Promise<void> {
+    const unhealthyProxies = Array.from(this.proxyHealth.values())
+      .filter(health => !health.isHealthy && this.shouldRetryProxy(health));
+    
+    for (const health of unhealthyProxies) {
+      try {
+        const testUrl = `${health.url}/health-check`;
+        const startTime = Date.now();
+        const response = await fetch(testUrl, { 
+          method: 'HEAD', 
+          timeout: 5000 
+        } as any);
+        
+        if (response.ok) {
+          const responseTime = Date.now() - startTime;
+          this.recordSuccess(health.url, responseTime);
+        }
+      } catch {
+        // 健康检查失败，保持当前状态
+      }
+    }
+  }
+  
+  public getHealthStats() {
+    return Array.from(this.proxyHealth.values()).map(health => ({
+      url: health.url,
+      isHealthy: health.isHealthy,
+      failureCount: health.failureCount,
+      responseTime: health.responseTime,
+      consecutiveFailures: health.consecutiveFailures
+    }));
+  }
+  
+  public destroy(): void {
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer);
+    }
+  }
+}
+
+const proxyHealthManager = new ProxyHealthManager();
+
+// 保持向后兼容
 const failedProxyServices = new Set<string>();
 
 export class ProxyService {
-  // 获取处理过的URL，解决CORS问题
-  public static getProxiedUrl(url: string): string {
+  // 获取处理过的URL，解减CORS问题（增强版）
+  public static async getProxiedUrl(url: string, options: {
+    priority?: 'high' | 'medium' | 'low';
+    timeout?: number;
+    retryCount?: number;
+  } = {}): Promise<string> {
     if (!url) return '';
+    
+    const { priority = 'medium', timeout = 10000, retryCount = 0 } = options;
     
     // 如果是开发环境且未配置代理，则直接返回原始URL
     if (runtimeConfig.isDev && !USE_TOKEN_MODE && !proxyConfig.imageProxyUrl) {
@@ -39,20 +173,77 @@ export class ProxyService {
       return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
     }
     
-    // 使用多代理服务机制
-    // 过滤掉已知失败的代理
-    const availableProxies = PROXY_SERVICES.filter(proxy => !failedProxyServices.has(proxy));
+    // 使用智能代理选择
+    const bestProxy = proxyHealthManager.getBestProxy();
     
-    // 如果所有代理都失败了，重置失败记录并重新尝试所有代理
-    if (availableProxies.length === 0) {
-      logger.warn('所有图片代理服务均已失败，重置并重试');
-      failedProxyServices.clear();
-      // 使用默认代理
-      return this.applyProxyToUrl(url, PROXY_SERVICES[0] || "");
+    if (!bestProxy) {
+      // 如果没有可用代理，使用服务端API作为后备
+      logger.warn('没有可用代理，使用服务端API');
+      return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
     }
     
-    // 使用第一个可用的代理
-    return this.applyProxyToUrl(url, availableProxies[0] || PROXY_SERVICES[0] || "");
+    const proxiedUrl = this.applyProxyToUrl(url, bestProxy);
+    
+    // 对高优先级请求进行健康检查
+    if (priority === 'high' && retryCount === 0) {
+      try {
+        await this.validateProxy(bestProxy, timeout);
+      } catch (error) {
+        logger.warn(`代理验证失败: ${bestProxy}`, error);
+        proxyHealthManager.recordFailure(bestProxy);
+        // 递归尝试下一个代理
+        return this.getProxiedUrl(url, { ...options, retryCount: retryCount + 1 });
+      }
+    }
+    
+    return proxiedUrl;
+  }
+  
+  // 同步版本（保持向后兼容）
+  public static getProxiedUrlSync(url: string): string {
+    if (!url) return '';
+    
+    if (runtimeConfig.isDev && !USE_TOKEN_MODE && !proxyConfig.imageProxyUrl) {
+      return url;
+    }
+    
+    if (FORCE_SERVER_PROXY) {
+      return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
+    }
+    
+    const bestProxy = proxyHealthManager.getBestProxy();
+    if (!bestProxy) {
+      return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
+    }
+    
+    return this.applyProxyToUrl(url, bestProxy);
+  }
+  
+  // 验证代理是否可用
+  private static async validateProxy(proxyUrl: string, timeout: number): Promise<void> {
+    const testUrl = `${proxyUrl}/ping`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const startTime = Date.now();
+      const response = await fetch(testUrl, { 
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const responseTime = Date.now() - startTime;
+        proxyHealthManager.recordSuccess(proxyUrl, responseTime);
+      } else {
+        throw new Error(`Proxy validation failed: ${response.status}`);
+      }
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   }
   
   // 应用代理到URL
@@ -112,23 +303,38 @@ export class ProxyService {
     }
   }
   
-  // 标记代理服务失败
+  // 标记代理服务失败（增强版）
   public static markProxyServiceFailed(proxyUrl: string): void {
-    if (proxyUrl && !failedProxyServices.has(proxyUrl)) {
-      logger.warn(`标记代理服务失败: ${proxyUrl}`);
-      failedProxyServices.add(proxyUrl);
+    if (proxyUrl) {
+      // 使用新的健康管理器
+      proxyHealthManager.recordFailure(proxyUrl);
+      
+      // 保持向后兼容
+      if (!failedProxyServices.has(proxyUrl)) {
+        logger.warn(`标记代理服务失败: ${proxyUrl}`);
+        failedProxyServices.add(proxyUrl);
+      }
     }
   }
   
-  // 获取当前使用的代理服务
+  // 获取当前使用的代理服务（增强版）
   public static getCurrentProxyService(): string {
-    const availableProxies = PROXY_SERVICES.filter(proxy => !failedProxyServices.has(proxy));
-    return availableProxies[0] || PROXY_SERVICES[0] || "";
+    return proxyHealthManager.getBestProxy() || PROXY_SERVICES[0] || "";
+  }
+  
+  // 获取代理健康状态
+  public static getProxyHealthStats() {
+    return proxyHealthManager.getHealthStats();
   }
   
   // 重置失败的代理服务记录
   public static resetFailedProxyServices(): void {
     failedProxyServices.clear();
+    // 重置健康管理器状态
+    proxyHealthManager.destroy();
+    // 重新初始化
+    const newManager = new ProxyHealthManager();
+    Object.setPrototypeOf(proxyHealthManager, newManager);
     logger.info('已重置所有失败的代理服务记录');
   }
   
@@ -155,7 +361,7 @@ export class ProxyService {
       if (src.startsWith('http')) {
         // 绝对URL - 可能需要代理
         if (useTokenMode || !runtimeConfig.isDev) {
-          const proxyUrl = this.getProxiedUrl(src);
+          const proxyUrl = this.getProxiedUrlSync(src);
           logger.debug('绝对URL使用代理:', proxyUrl);
           return proxyUrl;
         }
@@ -242,7 +448,7 @@ export class ProxyService {
     
       // 是否使用代理
       if (useTokenMode || !runtimeConfig.isDev) {
-        const proxyUrl = this.getProxiedUrl(rawUrl);
+        const proxyUrl = this.getProxiedUrlSync(rawUrl);
         logger.debug('返回代理URL:', proxyUrl);
         return proxyUrl;
       }

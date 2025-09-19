@@ -18,7 +18,7 @@ import {
   usePreviewContext, 
   useDownloadContext,
   NavigationDirection
-} from "../../contexts/github";
+} from "../../contexts/unified";
 import { FileListSkeleton } from "../ui/skeletons";
 import { getPreviewFromUrl } from "../../utils/routing/urlManager";
 import { logger } from "../../utils";
@@ -402,7 +402,7 @@ const MainContent: React.FC = () => {
               <FullScreenPreview onClose={closePreview} data-oid="oa2lre0">
                 <OfficePreview
                   fileUrl={previewState.officePreviewUrl}
-                  fileType={previewState.officeFileType}
+                  fileType={previewState.officeFileType as any}
                   fileName={previewState.previewingOfficeItem.name}
                   isFullScreen={previewState.isOfficeFullscreen}
                   onClose={closePreview}

@@ -34,7 +34,6 @@ const ENV_MAPPING = {
 
   // 开发者配置
   DEVELOPER_MODE: 'VITE_DEVELOPER_MODE',
-  DEBUG_MODE: 'VITE_DEBUG_MODE',
   CONSOLE_LOGGING: 'VITE_CONSOLE_LOGGING'
 } as const;
 
@@ -177,7 +176,6 @@ export interface Config {
   };
   developer: {
     mode: boolean;
-    debugMode: boolean;
     consoleLogging: boolean;
   };
   runtime: {
@@ -300,7 +298,6 @@ class ConfigManager {
       },
       developer: {
         mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')),
-        debugMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEBUG_MODE', 'false')),
         consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'true'))
       },
       runtime: {
@@ -438,7 +435,6 @@ export const getTokensConfig = () => getConfig().tokens;
 
 // 特殊便捷函数
 export const isDeveloperMode = () => getConfig().developer.mode;
-export const isDebugMode = () => getConfig().developer.debugMode;
 export const isTokenMode = () => getConfig().access.useTokenMode;
 export const isDevEnvironment = () => getConfig().runtime.isDev;
 export const getGithubPATs = () => getConfig().tokens.githubPATs;

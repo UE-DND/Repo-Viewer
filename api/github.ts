@@ -3,7 +3,6 @@ import axios from 'axios';
 
 // 配置常量
 const GITHUB_API_BASE = 'https://api.github.com';
-const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com';
 
 // GitHub Token管理器
 class GitHubTokenManager {
@@ -31,9 +30,10 @@ class GitHubTokenManager {
       });
       
       // 收集所有有效的PAT
-      this.tokens = patKeys
-        .map(key => process.env[key] as string)
-        .filter(token => token && token.trim().length > 0);
+      const tokens = patKeys
+        .map(key => process.env[key])
+        .filter((token): token is string => typeof token === 'string' && token.trim().length > 0);
+      this.tokens = tokens;
       
       console.log(`已加载 ${this.tokens.length} 个GitHub令牌`);
     } catch (error) {
@@ -43,7 +43,8 @@ class GitHubTokenManager {
   
   public getCurrentToken(): string {
     if (this.tokens.length === 0) return '';
-    return this.tokens[this.currentIndex];
+    const token = this.tokens[this.currentIndex];
+    return token ?? '';
   }
   
   public getNextToken(): string {
@@ -56,18 +57,19 @@ class GitHubTokenManager {
       const token = this.tokens[this.currentIndex];
       
       // 跳过已知失败的令牌
-      if (this.failedTokens.has(token)) {
+      if (token && this.failedTokens.has(token)) {
         attempts++;
         continue;
       }
       
-      return token;
+      return token ?? '';
     }
     
     // 如果所有令牌都失败，重置并返回第一个令牌
     this.failedTokens.clear();
     this.currentIndex = 0;
-    return this.tokens[0];
+    const firstToken = this.tokens[0];
+    return firstToken ?? '';
   }
   
   public markTokenFailed(token: string) {
@@ -169,12 +171,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { action, path, url } = req.query;
     
-    if (!action) {
+    const actionParam = Array.isArray(action) ? action[0] : action;
+    
+    if (!actionParam || typeof actionParam !== 'string') {
       return res.status(400).json({ error: '缺少action参数' });
     }
     
     // 获取配置信息 - 新增API
-    if (action === 'getConfig') {
+    if (actionParam === 'getConfig') {
       const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
       return res.status(200).json({
         status: 'success',
@@ -187,7 +191,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     // 获取令牌状态 - 新增API
-    if (action === 'getTokenStatus') {
+    if (actionParam === 'getTokenStatus') {
       return res.status(200).json({
         status: 'success',
         data: tokenManager.getTokenStatus()
@@ -195,8 +199,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     // 获取仓库内容
-    if (action === 'getContents') {
-      if (path === undefined) {
+    if (actionParam === 'getContents') {
+      if (typeof path !== 'string') {
         return res.status(400).json({ error: '缺少path参数' });
       }
       
@@ -234,17 +238,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     // 获取文件内容
-    if (action === 'getFileContent') {
-      if (!url) {
+    if (actionParam === 'getFileContent') {
+      // 规范化并校验 url 参数
+      const urlParam = Array.isArray(url) ? (url.length > 0 ? url[0] : undefined) : url;
+      if (typeof urlParam !== 'string' || urlParam.trim() === '') {
         return res.status(400).json({ error: '缺少url参数' });
       }
       
       try {
-        // 确保url是字符串类型
-        const urlString = Array.isArray(url) ? url[0] : url;
+        const urlString = urlParam;
         
         // 判断是否是二进制文件
-        const isBinaryFile = urlString.match(/\.(png|jpg|jpeg|gif|pdf|docx|xlsx|pptx|zip|rar|7z|exe|dll|so|dylib|bin)$/i);
+        const isBinaryFile = /\.(png|jpg|jpeg|gif|pdf|docx|xlsx|pptx|zip|rar|7z|exe|dll|so|dylib|bin)$/i.test(urlString);
         
         // 设置正确的响应类型
         if (isBinaryFile) {
@@ -275,7 +280,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           
           // 二进制文件，使用arraybuffer响应类型
           const response = await handleRequestWithRetry(() => 
-            axios.get(urlString as string, { 
+            axios.get(urlString, { 
               headers: getAuthHeaders(),
               responseType: 'arraybuffer'
             })
@@ -285,7 +290,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         } else {
           // 文本文件，使用默认响应类型
       const response = await handleRequestWithRetry(() => 
-        axios.get(urlString as string, { 
+        axios.get(urlString, { 
           headers: getAuthHeaders() 
         })
       );
@@ -303,10 +308,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     
     // 搜索仓库
-    if (action === 'search') {
+    if (actionParam === 'search') {
       const { q, sort, order } = req.query;
       
-      if (!q) {
+      // 规范化查询参数
+      const qParam = Array.isArray(q) ? (q.length > 0 ? q[0] : '') : (q ?? '');
+      if (typeof qParam !== 'string' || qParam.trim() === '') {
         return res.status(400).json({ error: '缺少搜索参数' });
       }
       
@@ -319,15 +326,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      const searchQuery = `repo:${repoOwner}/${repoName} ${q}`;
+      const searchQuery = `repo:${repoOwner}/${repoName} ${qParam}`;
       
       const response = await handleRequestWithRetry(() => 
         axios.get(`${GITHUB_API_BASE}/search/code`, { 
           headers: getAuthHeaders(),
           params: {
             q: searchQuery,
-            sort: sort || 'best-match',
-            order: order || 'desc'
+            sort: (Array.isArray(sort) ? sort[0] : sort) || 'best-match',
+            order: (Array.isArray(order) ? order[0] : order) || 'desc'
           }
         })
       );
