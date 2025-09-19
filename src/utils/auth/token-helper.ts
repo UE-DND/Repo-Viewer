@@ -1,5 +1,5 @@
-import { GitHubService } from '../services/github';
-import { logger } from '../utils';
+import { GitHubService } from '../../services/github';
+import { logger } from '../logging/logger';
 import axios from 'axios';
 
 /**

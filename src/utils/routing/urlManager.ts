@@ -1,4 +1,4 @@
-import { logger } from './index';
+import { logger } from '../index';
 
 /**
  * URL 参数键名 - 仅用于向后兼容

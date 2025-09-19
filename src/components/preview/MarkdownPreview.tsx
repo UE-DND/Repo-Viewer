@@ -1,4 +1,4 @@
-import React, { memo, useState, useRef, useEffect, useCallback } from "react";
+import { memo, useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -9,23 +9,18 @@ import {
   Box,
   Typography,
   Paper,
-  Divider,
   CircularProgress,
-  Link,
   alpha,
   useTheme,
-  IconButton,
   Button,
   GlobalStyles,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { GitHubContent } from "../../types";
 import { GitHubService } from "../../services/github";
-import { Components } from "react-markdown";
 import { logger } from "../../utils";
-import { countLatexElements } from "../../utils/latexOptimizer";
+import { countLatexElements } from "../../utils/rendering/latexOptimizer";
 // 导入骨架屏组件
 import { MarkdownPreviewSkeleton } from "../ui/skeletons";
 
@@ -67,11 +62,11 @@ interface MarkdownPreviewProps {
 // 添加全局样式定义
 const globalStyles = (
   <GlobalStyles
-    styles={(theme) => ({
+    styles={{
       ".MuiPaper-root.theme-switching img": {
         transition: "none !important",
       },
-    })}
+    }}
     data-oid="66:1nx7"
   />
 );
@@ -81,9 +76,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     readmeContent,
     loadingReadme,
     isSmallScreen,
-    onClose,
     previewingItem,
-    isReadme = false,
     lazyLoad = true,
   }) => {
     // 使用useTheme钩子获取主题
@@ -126,7 +119,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
       observerRef.current = new IntersectionObserver(
         (entries) => {
-          if (entries[0].isIntersecting) {
+          if (entries[0]?.isIntersecting) {
             setShouldRender(true);
             // 一旦内容开始加载，就停止观察
             if (observerRef.current && markdownRef.current) {
@@ -397,11 +390,21 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
               rehypePlugins={[[rehypeRaw], [rehypeKatex, katexOptions]]}
               components={{
                 a: ({ node, ...props }) => (
-                  <Link
+                  <a
                     {...props}
                     target="_blank"
                     rel="noopener noreferrer"
-                    underline="hover"
+                    style={{
+                      color: theme.palette.primary.main,
+                      textDecoration: 'none',
+                      ...props.style
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.textDecoration = 'underline';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.textDecoration = 'none';
+                    }}
                     data-oid="wswk6df"
                   />
                 ),

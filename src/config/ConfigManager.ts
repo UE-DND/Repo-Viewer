@@ -105,26 +105,6 @@ const resolveEnvWithMapping = (env: Record<string, any>, plainKey: string, fallb
   return fallback;
 };
 
-const resolveEnvString = (env: Record<string, any>, keys: string[], fallback: string): string => {
-  for (const key of keys) {
-    const value = normalizeEnvValue(env[key]);
-    if (value) {
-      return value;
-    }
-  }
-
-  if (runtimeProcessEnv) {
-    for (const key of keys) {
-      const value = normalizeEnvValue(runtimeProcessEnv[key]);
-      if (value) {
-        return value;
-      }
-    }
-  }
-
-  return fallback;
-};
-
 const hasEnvValue = (env: Record<string, any>, keys: string[]): boolean => {
   for (const key of keys) {
     if (normalizeEnvValue(env[key])) {

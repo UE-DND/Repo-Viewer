@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
@@ -8,8 +8,8 @@ import { SnackbarProvider } from "notistack";
 import { logger } from "./utils";
 import ThemeProvider from "./providers/ThemeProvider";
 import CustomSnackbar from "./components/ui/CustomSnackbar";
-import { checkTokenStatus } from "./utils/token-helper";
-import { setupLatexOptimization } from "./utils/latexOptimizer";
+import { checkTokenStatus } from "./utils/auth/token-helper";
+import { setupLatexOptimization } from "./utils/rendering/latexOptimizer";
 import SEOProvider from "./contexts/SEOContext";
 
 import { getDeveloperConfig, isDeveloperMode } from './config/ConfigManager';

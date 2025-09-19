@@ -1,5 +1,4 @@
 import {
-  Folder as FolderIcon, 
   Description as FileIcon, 
   PictureAsPdf as PdfIcon,
   Article as MarkdownIcon, 
@@ -55,4 +54,25 @@ export const isPdfFile = (filename: string): boolean => {
 export const isMarkdownFile = (filename: string): boolean => {
   const extension = filename.split('.').pop()?.toLowerCase();
   return extension === 'md';
+};
+
+// Word文档处理工具
+export const isWordFile = (fileName: string): boolean => {
+  const wordExtensions = ['.doc', '.docx', '.docm'];
+  const lowerCaseFileName = fileName.toLowerCase();
+  return wordExtensions.some(ext => lowerCaseFileName.endsWith(ext));
+};
+
+// Excel文档处理工具
+export const isExcelFile = (fileName: string): boolean => {
+  const excelExtensions = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.csv'];
+  const lowerCaseFileName = fileName.toLowerCase();
+  return excelExtensions.some(ext => lowerCaseFileName.endsWith(ext));
+};
+
+// PowerPoint文档处理工具
+export const isPPTFile = (fileName: string): boolean => {
+  const pptExtensions = ['.ppt', '.pptx', '.pptm', '.pps', '.ppsx'];
+  const lowerCaseFileName = fileName.toLowerCase();
+  return pptExtensions.some(ext => lowerCaseFileName.endsWith(ext));
 }; 

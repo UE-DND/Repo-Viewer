@@ -1,4 +1,4 @@
-import React, { useContext, useState, useCallback, useEffect } from "react";
+import { useContext, useState, useCallback, useEffect } from "react";
 import { Box, IconButton, Tooltip, useTheme } from "@mui/material";
 
 import {
@@ -11,16 +11,14 @@ import { ColorModeContext } from "../../contexts/ColorModeContext";
 import { useRefresh } from "../../hooks/useRefresh";
 import { pulseAnimation, refreshAnimation } from "../../theme/animations";
 import { GitHubService } from "../../services/github";
-import { useSnackbar } from "notistack";
 import axios from "axios";
-import { getGithubConfig, isDeveloperMode } from '../../config/ConfigManager';
+import { getGithubConfig } from '../../config/ConfigManager';
 
 // 工具栏按钮组件
 const ToolbarButtons: React.FC = () => {
   const colorMode = useContext(ColorModeContext);
   const theme = useTheme();
   const handleRefresh = useRefresh();
-  const { enqueueSnackbar } = useSnackbar();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [repoInfo, setRepoInfo] = useState({
     repoOwner: getGithubConfig().repoOwner,
@@ -69,7 +67,9 @@ const ToolbarButtons: React.FC = () => {
     // 设置标记，表明这是一个主题切换操作，防止触发README重新加载
     document.documentElement.setAttribute("data-theme-change-only", "true");
     // 执行主题切换
-    colorMode.toggleColorMode();
+    if (colorMode) {
+      colorMode.toggleColorMode();
+    }
   }, [colorMode]);
 
   // 处理GitHub按钮点击

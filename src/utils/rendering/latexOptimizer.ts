@@ -3,7 +3,7 @@
  * 用于优化在主题切换时LaTeX公式的渲染性能
  */
 
-import { logger } from './logger';
+import { logger } from '../logging/logger';
 
 // 定义防抖函数，避免循环引用
 const debounce = <F extends (...args: any[]) => any>(
@@ -83,18 +83,18 @@ export const restoreLatexElements = (): void => {
   const BATCH_DELAY = 50; // 批次间延迟(ms)
   
   const batchedRestore = (startIndex: number) => {
-    // 创建一个文档片段，减少DOM操作
-    const fragment = document.createDocumentFragment();
-    
+    // 批量恢复，逐步降低对主线程的压力
     const endIndex = Math.min(startIndex + BATCH_SIZE, storedElements.length);
     
     // 处理当前批次
     for (let i = startIndex; i < endIndex; i++) {
-      const { element, parent, nextSibling, container } = storedElements[i];
+      const entry = storedElements[i];
+      if (!entry) continue;
+      const { element, parent, nextSibling } = entry;
       
       // 查找占位符
       const placeholders = parent.querySelectorAll('.latex-placeholder');
-      let placeholder = null;
+      let placeholder: HTMLElement | null = null;
       
       // 尝试恢复到原位置
       for (let j = 0; j < placeholders.length; j++) {

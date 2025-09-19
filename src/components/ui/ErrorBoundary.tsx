@@ -1,0 +1,422 @@
+/**
+ * 全局错误边界组件
+ * 捕获React组件树中的JavaScript错误并提供优雅的降级UI
+ */
+
+import React from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Collapse,
+  Stack,
+  Alert,
+  AlertTitle,
+  Chip
+} from '@mui/material';
+import {
+  ErrorOutline,
+  Refresh,
+  ExpandMore,
+  ExpandLess,
+  BugReport,
+  Home
+} from '@mui/icons-material';
+import { ErrorManager } from '../../utils/error/ErrorManager';
+// 移除未使用的类型导入
+import { isDeveloperMode } from '../../config/ConfigManager';
+
+// 统一使用 React.ErrorInfo 类型
+type ErrorInfo = React.ErrorInfo;
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  showDetails: boolean;
+  retryCount: number;
+}
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback?: React.ComponentType<ErrorFallbackProps>;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  resetOnPropsChange?: boolean;
+  resetKeys?: Array<string | number>;
+  level?: 'page' | 'component' | 'feature';
+  componentName?: string;
+}
+
+interface ErrorFallbackProps {
+  error: Error;
+  errorInfo: ErrorInfo;
+  resetError: () => void;
+  retryCount: number;
+  level: 'page' | 'component' | 'feature';
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  private resetTimeoutId: number | null = null;
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      showDetails: false,
+      retryCount: 0
+    };
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    return {
+      hasError: true,
+      error
+    };
+  }
+
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    const { onError, componentName = 'Unknown' } = this.props;
+    
+    // 创建组件错误并交给ErrorManager处理
+    const componentError = ErrorManager.createComponentError(
+      componentName,
+      error.message,
+      undefined, // props在这里不容易获取
+      {
+        componentStack: errorInfo.componentStack,
+        stack: error.stack,
+        retryCount: this.state.retryCount
+      }
+    );
+
+    ErrorManager.captureError(componentError);
+
+    // 更新状态
+    this.setState({
+      errorInfo,
+      retryCount: this.state.retryCount + 1
+    });
+
+    // 调用自定义错误处理器
+    onError?.(error, errorInfo);
+  }
+
+  override componentDidUpdate(prevProps: ErrorBoundaryProps): void {
+    const { resetOnPropsChange, resetKeys } = this.props;
+    const { hasError } = this.state;
+
+    // 当指定的props发生变化时重置错误状态
+    if (hasError && resetOnPropsChange && resetKeys) {
+      const hasResetKeyChanged = resetKeys.some(
+        (key, idx) => prevProps.resetKeys?.[idx] !== key
+      );
+      
+      if (hasResetKeyChanged) {
+        this.resetError();
+      }
+    }
+  }
+
+  resetError = () => {
+    // 清除重置定时器
+    if (this.resetTimeoutId) {
+      clearTimeout(this.resetTimeoutId);
+      this.resetTimeoutId = null;
+    }
+
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      showDetails: false
+    });
+  };
+
+  // 延迟重置，给用户时间看到错误信息
+  autoResetAfterDelay = (delay = 5000) => {
+    this.resetTimeoutId = window.setTimeout(() => {
+      this.resetError();
+    }, delay);
+  };
+
+  toggleDetails = () => {
+    this.setState(prevState => ({
+      showDetails: !prevState.showDetails
+    }));
+  };
+
+  reloadPage = () => {
+    window.location.reload();
+  };
+
+  goHome = () => {
+    window.location.href = '/';
+  };
+
+  override render(): React.ReactNode {
+    const { hasError, error, errorInfo, showDetails, retryCount } = this.state;
+    const { children, fallback: CustomFallback, level = 'component' } = this.props;
+
+    if (hasError && error) {
+      // 使用自定义fallback组件
+      if (CustomFallback) {
+        return (
+          <CustomFallback
+            error={error}
+            errorInfo={errorInfo!}
+            resetError={this.resetError}
+            retryCount={retryCount}
+            level={level}
+          />
+        );
+      }
+
+      // 默认错误UI
+      return (
+        <DefaultErrorFallback
+          error={error}
+          errorInfo={errorInfo!}
+          resetError={this.resetError}
+          retryCount={retryCount}
+          level={level}
+          toggleDetails={this.toggleDetails}
+          showDetails={showDetails}
+          reloadPage={this.reloadPage}
+          goHome={this.goHome}
+        />
+      );
+    }
+
+    return children;
+  }
+}
+
+// 默认错误回退组件
+const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
+  toggleDetails: () => void;
+  showDetails: boolean;
+  reloadPage: () => void;
+  goHome: () => void;
+}> = ({
+  error,
+  errorInfo,
+  resetError,
+  retryCount,
+  level,
+  toggleDetails,
+  showDetails,
+  reloadPage,
+  goHome
+}) => {
+  const isPageLevel = level === 'page';
+  const isDev = isDeveloperMode();
+
+  const getErrorTitle = () => {
+    switch (level) {
+      case 'page':
+        return '页面加载出错';
+      case 'feature':
+        return '功能模块出错';
+      default:
+        return '组件出错';
+    }
+  };
+
+  const getErrorMessage = () => {
+    if (retryCount > 3) {
+      return '多次重试后仍然出错，请刷新页面或联系技术支持';
+    }
+    return error.message || '发生了未知错误，请稍后重试';
+  };
+
+  return (
+    <Box
+      sx={{
+        p: isPageLevel ? 4 : 2,
+        minHeight: isPageLevel ? '50vh' : 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <Card
+        sx={{
+          maxWidth: isPageLevel ? 600 : 400,
+          width: '100%',
+          boxShadow: isPageLevel ? 3 : 1
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Stack spacing={2} alignItems="center">
+            {/* 错误图标和标题 */}
+            <Box sx={{ textAlign: 'center' }}>
+              <ErrorOutline 
+                sx={{ 
+                  fontSize: isPageLevel ? 64 : 48, 
+                  color: 'error.main',
+                  mb: 1
+                }} 
+              />
+              <Typography variant={isPageLevel ? 'h4' : 'h6'} gutterBottom>
+                {getErrorTitle()}
+              </Typography>
+            </Box>
+
+            {/* 错误信息 */}
+            <Alert severity="error" sx={{ width: '100%' }}>
+              <AlertTitle>错误详情</AlertTitle>
+              {getErrorMessage()}
+            </Alert>
+
+            {/* 重试次数显示 */}
+            {retryCount > 0 && (
+              <Chip 
+                label={`已重试 ${retryCount} 次`}
+                color="warning"
+                size="small"
+              />
+            )}
+
+            {/* 操作按钮 */}
+            <Stack 
+              direction="row" 
+              spacing={2} 
+              sx={{ width: '100%' }}
+              justifyContent="center"
+            >
+              <Button
+                variant="contained"
+                startIcon={<Refresh />}
+                onClick={resetError}
+                disabled={retryCount > 5}
+              >
+                重试
+              </Button>
+              
+              {isPageLevel && (
+                <>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Home />}
+                    onClick={goHome}
+                  >
+                    回到首页
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={reloadPage}
+                  >
+                    刷新页面
+                  </Button>
+                </>
+              )}
+            </Stack>
+
+            {/* 开发模式下的详细信息 */}
+            {isDev && (
+              <Box sx={{ width: '100%' }}>
+                <Button
+                  startIcon={showDetails ? <ExpandLess /> : <ExpandMore />}
+                  onClick={toggleDetails}
+                  size="small"
+                  endIcon={<BugReport />}
+                >
+                  {showDetails ? '隐藏' : '显示'}技术详情
+                </Button>
+                
+                <Collapse in={showDetails}>
+                  <Box sx={{ mt: 2 }}>
+                    <Alert severity="info">
+                      <AlertTitle>错误堆栈</AlertTitle>
+                      <Box
+                        component="pre"
+                        sx={{
+                          fontSize: '0.75rem',
+                          maxHeight: 200,
+                          overflow: 'auto',
+                          backgroundColor: 'grey.100',
+                          p: 1,
+                          borderRadius: 1,
+                          mt: 1
+                        }}
+                      >
+                        {error.stack}
+                      </Box>
+                    </Alert>
+
+                    {errorInfo?.componentStack && (
+                      <Alert severity="info" sx={{ mt: 1 }}>
+                        <AlertTitle>组件堆栈</AlertTitle>
+                        <Box
+                          component="pre"
+                          sx={{
+                            fontSize: '0.75rem',
+                            maxHeight: 200,
+                            overflow: 'auto',
+                            backgroundColor: 'grey.100',
+                            p: 1,
+                            borderRadius: 1,
+                            mt: 1
+                          }}
+                        >
+                          {errorInfo.componentStack}
+                        </Box>
+                      </Alert>
+                    )}
+                  </Box>
+                </Collapse>
+              </Box>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+};
+
+// 高阶组件：为组件包装错误边界
+export function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>,
+  errorBoundaryConfig?: Omit<ErrorBoundaryProps, 'children'>
+) {
+  const WrappedComponent = (props: P) => (
+    <ErrorBoundary {...errorBoundaryConfig}>
+      <Component {...props} />
+    </ErrorBoundary>
+  );
+
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  
+  return WrappedComponent;
+}
+
+// 页面级错误边界
+export const PageErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <ErrorBoundary 
+    level="page" 
+    componentName="PageLevel"
+    resetOnPropsChange={true}
+  >
+    {children}
+  </ErrorBoundary>
+);
+
+// 功能模块级错误边界
+export const FeatureErrorBoundary: React.FC<{ 
+  children: React.ReactNode;
+  featureName: string;
+}> = ({ children, featureName }) => (
+  <ErrorBoundary 
+    level="feature" 
+    componentName={featureName}
+    resetOnPropsChange={true}
+  >
+    {children}
+  </ErrorBoundary>
+);
+
+export default ErrorBoundary;

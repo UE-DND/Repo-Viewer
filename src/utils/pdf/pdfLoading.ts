@@ -346,11 +346,20 @@ export const generatePDFErrorHTML = (
   downloadUrl: string, 
   themeColors: PDFLoadingThemeColors
 ): string => {
+  // 使用传入的主题色，确保在独立使用时也有正确配色
+  const inlineStyles = `
+    background-color: ${themeColors.surface};
+    color: ${themeColors.text};
+  `;
+  const titleColor = themeColors.text;
+  const messageColor = themeColors.textSecondary;
+  const actionBg = themeColors.primary;
+  const actionColor = themeColors.onPrimary;
   return `
-    <div class="error-card">
-      <h2 class="error-title">加载 ${fileName} 失败</h2>
-      <p class="error-message">${errorMessage}</p>
-      <a href="${downloadUrl}" target="_self" rel="noopener" class="error-action">
+    <div class="error-card" style="${inlineStyles}">
+      <h2 class="error-title" style="color: ${titleColor};">加载 ${fileName} 失败</h2>
+      <p class="error-message" style="color: ${messageColor};">${errorMessage}</p>
+      <a href="${downloadUrl}" target="_self" rel="noopener" class="error-action" style="background-color: ${actionBg}; color: ${actionColor};">
         直接打开原始文件
       </a>
     </div>

@@ -1,5 +1,6 @@
-import { RefObject } from 'react';
 import { OptionsObject as NotistackOptionsObject } from 'notistack';
+
+export * from './errors';
 
 // 定义GitHub仓库内容项的接口
 export interface GitHubContent {

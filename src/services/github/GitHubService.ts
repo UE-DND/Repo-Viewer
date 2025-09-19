@@ -1,11 +1,13 @@
 import { GitHubContent } from '../../types';
 import { logger } from '../../utils';
-import { getGithubConfig, getRuntimeConfig, getAccessConfig, getProxyConfig, isDeveloperMode } from '../../config/ConfigManager';
+import { getGithubConfig, getRuntimeConfig, getAccessConfig, isDeveloperMode } from '../../config/ConfigManager';
 import axios from 'axios';
 import { CacheManager } from './CacheManager';
 import { GitHubTokenManager } from './TokenManager';
 import { ProxyService } from './ProxyService';
 import { RequestBatcher } from './RequestBatcher';
+import { ErrorManager } from '../../utils/error/ErrorManager';
+import { GitHubError } from '../../types/errors';
 
 // 基础配置
 const githubConfig = getGithubConfig();
@@ -36,19 +38,11 @@ export interface ConfigInfo {
   repoBranch: string;
 }
 
-// 存储配置信息
-let configInfo: ConfigInfo = {
-  repoOwner: GITHUB_REPO_OWNER,
-  repoName: GITHUB_REPO_NAME,
-  repoBranch: DEFAULT_BRANCH
-};
-
 // 构建API服务
 export class GitHubService {
   private static readonly tokenManager = new GitHubTokenManager();
   private static readonly batcher = new RequestBatcher();
   private static readonly GITHUB_API_BASE = 'https://api.github.com';
-  private static readonly DOWNLOAD_PROXY_URL = getProxyConfig().imageProxyUrl;
   
   // 初始化缓存管理器
   static {
@@ -93,14 +87,31 @@ export class GitHubService {
     return headers;
   }
   
-  // 处理API错误
-  private static handleApiError(error: Response): void {
+  // 处理API错误 - 增强版错误处理
+  private static handleApiError(error: Response, endpoint: string, method = 'GET'): GitHubError {
+    // 先调用原有的token管理器错误处理
     this.tokenManager.handleApiError(error);
-  }
-  
-  // 获取处理过的URL，解决CORS问题
-  private static getProxiedUrl(url: string): string {
-    return ProxyService.getProxiedUrl(url);
+    
+    // 创建详细的GitHub错误
+    const gitHubError = ErrorManager.createGitHubError(
+      error.statusText || `HTTP ${error.status} 错误`,
+      error.status,
+      endpoint,
+      method,
+      {
+        remaining: parseInt(error.headers.get('x-ratelimit-remaining') || '0'),
+        reset: parseInt(error.headers.get('x-ratelimit-reset') || '0')
+      },
+      {
+        url: error.url,
+        headers: Object.fromEntries(error.headers.entries())
+      }
+    );
+    
+    // 记录错误
+    ErrorManager.captureError(gitHubError);
+    
+    return gitHubError;
   }
   
   // 标记代理服务失败
@@ -165,11 +176,11 @@ export class GitHubService {
           const result = await fetch(apiUrl, {
             method: 'GET',
             headers: this.getAuthHeaders(),
-            signal
+            signal: signal || null
           });
           
           if (!result.ok) {
-            this.handleApiError(result);
+            throw this.handleApiError(result, apiUrl, 'GET');
           }
           
           return result.json();
@@ -228,7 +239,7 @@ export class GitHubService {
       }
           
       if (!response.ok) {
-        this.handleApiError(response);
+        throw this.handleApiError(response, fileUrl, 'GET');
           }
           
       const content = await response.text();
@@ -298,7 +309,7 @@ export class GitHubService {
           });
           
           if (!result.ok) {
-            this.handleApiError(result);
+            throw this.handleApiError(result, fetchUrl, 'GET');
           }
           
           return result.json();

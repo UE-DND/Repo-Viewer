@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { GitHubContent } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
-import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/urlManager';
+import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/routing/urlManager';
 import { NavigationDirection } from '../contexts/github';
 import { getFeaturesConfig, getGithubConfig } from '../config/ConfigManager';
 
@@ -251,12 +251,7 @@ export const useGitHubContent = () => {
     logger.debug('触发内容刷新');
   }, []);
 
-  // 导航到指定路径
-  const navigateTo = useCallback((path: string, direction: NavigationDirection = 'forward') => {
-    logger.debug(`导航到: ${path}, 方向: ${direction}`);
-    setNavigationDirection(direction);
-    setCurrentPath(path);
-  }, []);
+  
 
   return {
     currentPath,

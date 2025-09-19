@@ -16,7 +16,8 @@ export const eventEmitter = {
     this.events[event].push(callback);
     console.log(`事件订阅: ${event}, 当前订阅者数量: ${this.events[event].length}`);
     return () => {
-      this.events[event] = this.events[event].filter(cb => cb !== callback);
+      const list = this.events[event] ?? [];
+      this.events[event] = list.filter(cb => cb !== callback);
       console.log(`取消事件订阅: ${event}, 剩余订阅者数量: ${this.events[event].length}`);
     }
   },

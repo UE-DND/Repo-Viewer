@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
   useTheme,
-  CircularProgress,
   IconButton,
   useMediaQuery,
   Button,
@@ -14,16 +13,10 @@ import {
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
-  ZoomIn as ZoomInIcon,
-  ZoomOut as ZoomOutIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
   Info as InfoIcon,
 } from "@mui/icons-material";
-import FullScreenPreview from "../file/FullScreenPreview";
-import { useEffectOnce } from "react-use";
-import { GitHubService } from "../../services/github";
 // 导入骨架屏组件
 import { OfficePreviewSkeleton } from "../ui/skeletons";
 
@@ -87,7 +80,6 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
   fileUrl,
   fileType,
   fileName,
-  isFullScreen = false,
   onClose,
   className,
   style,
@@ -102,7 +94,6 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [fullScreenMode, setFullScreenMode] = useState<boolean>(isFullScreen);
   const [refreshKey, setRefreshKey] = useState<number>(0); // 用于强制刷新iframe
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -177,6 +168,9 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
 
       return () => clearTimeout(timeoutId);
     }
+    
+    // 如果不在loading状态，返回空清理函数
+    return () => {};
   }, [loading]);
 
   // 处理iframe加载错误
@@ -207,10 +201,6 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
     setRefreshKey((prev) => prev + 1);
   }, []);
 
-  // 切换全屏模式
-  const toggleFullScreen = useCallback(() => {
-    setFullScreenMode((prev) => !prev);
-  }, []);
 
   // 处理下载文件
   const handleDownload = useCallback(() => {
@@ -275,8 +265,8 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
           overflow: "hidden",
           bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : "#f5f5f5",
           borderRadius: 1,
-          ...style,
         }}
+        style={style}
         className={`${className} ${fileType}-preview-container`}
         data-oid="d6q8zg3"
       >
@@ -411,8 +401,8 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
         overflow: "hidden",
         bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : "#f5f5f5",
         borderRadius: 1,
-        ...style,
       }}
+      style={style}
       className={`${className} ${fileType}-preview-container`}
       data-oid=":ag4zt-"
     >

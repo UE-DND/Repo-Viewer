@@ -11,7 +11,7 @@ export const PERSISTENT_CACHE_ENABLED = true; // 是否启用持久化缓存
 export class LRUCache<K, V> {
   private cache: Map<K, { value: V, timestamp: number }>;
   private maxSize: number;
-  private storageKey?: string;
+  private storageKey: string | undefined;
   
   constructor(maxSize: number, storageKey?: string) {
     this.cache = new Map();

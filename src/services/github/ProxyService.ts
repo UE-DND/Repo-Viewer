@@ -7,9 +7,6 @@ const accessConfig = getAccessConfig();
 const proxyConfig = getProxyConfig();
 const githubConfig = getGithubConfig();
 
-// 是否使用服务端API（非开发环境）
-const USE_SERVER_API = !runtimeConfig.isDev;
-
 // 模式设置
 const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
@@ -51,11 +48,11 @@ export class ProxyService {
       logger.warn('所有图片代理服务均已失败，重置并重试');
       failedProxyServices.clear();
       // 使用默认代理
-      return this.applyProxyToUrl(url, PROXY_SERVICES[0]);
+      return this.applyProxyToUrl(url, PROXY_SERVICES[0] || "");
     }
     
     // 使用第一个可用的代理
-    return this.applyProxyToUrl(url, availableProxies[0]);
+    return this.applyProxyToUrl(url, availableProxies[0] || PROXY_SERVICES[0] || "");
   }
   
   // 应用代理到URL
@@ -126,7 +123,7 @@ export class ProxyService {
   // 获取当前使用的代理服务
   public static getCurrentProxyService(): string {
     const availableProxies = PROXY_SERVICES.filter(proxy => !failedProxyServices.has(proxy));
-    return availableProxies.length > 0 ? availableProxies[0] : PROXY_SERVICES[0];
+    return availableProxies[0] || PROXY_SERVICES[0] || "";
   }
   
   // 重置失败的代理服务记录
@@ -229,8 +226,8 @@ export class ProxyService {
           const urlMatch = markdownFilePath.match(/github\.com\/([^\/]+)\/([^\/]+)/);
           if (urlMatch && urlMatch.length >= 3) {
             // 使用URL中的仓库信息
-            repoOwner = urlMatch[1];
-            repoName = urlMatch[2];
+            repoOwner = urlMatch[1]!;
+            repoName = urlMatch[2]!;
             logger.debug('从URL提取的仓库信息:', `${repoOwner}/${repoName}`);
           }
         } catch (e) {

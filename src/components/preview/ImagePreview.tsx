@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Box,
-  CircularProgress,
   IconButton,
   Typography,
   alpha,
@@ -17,7 +16,6 @@ import {
   RotateLeft as RotateLeftIcon,
   RotateRight as RotateRightIcon,
   Fullscreen as FullscreenIcon,
-  Close as CloseIcon,
 } from "@mui/icons-material";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import FullScreenPreview from "../file/FullScreenPreview";
@@ -123,7 +121,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     // 创建观察器实例
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0]?.isIntersecting) {
           setShouldLoad(true);
           // 一旦图片开始加载，就停止观察
           if (observerRef.current && imgRef.current) {
@@ -170,10 +168,6 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     setFullScreenMode((prev) => !prev);
   }, []);
 
-  const handleCloseFullScreen = useCallback(() => {
-    setFullScreenMode(false);
-    if (onClose) onClose();
-  }, [onClose]);
 
   const handleOpenPreview = useCallback(() => {
     setShowPreview(true);
