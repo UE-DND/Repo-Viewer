@@ -293,8 +293,7 @@ entry = {
 }
 
 manifest[os.environ["INDEX_SANITIZED_BRANCH"]] = entry
-manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "
-", encoding="utf-8")
+manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
 
           git add "indexes/${INDEX_FILE_NAME}" manifest.json
@@ -311,5 +310,5 @@ PY
           popd >/dev/null
 
           git worktree remove "$WORKTREE"
-          rm -rf "$INDEX_FILE_PATH"
+          rm -f "$INDEX_FILE_PATH"
           rmdir indexes 2>/dev/null || true

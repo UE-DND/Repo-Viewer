@@ -1,5 +1,6 @@
 // 统一导出优化后的状态管理
 export { OptimizedAppContextProvider } from './OptimizedAppContext';
+export { useSearch } from '../github/SearchContext';
 export {
   useContent,
   usePreview,
@@ -10,7 +11,8 @@ export {
 export {
   useContentContext,
   usePreviewContext,
-  useDownloadContext
+  useDownloadContext,
+  useMetadataContext
 } from './compatibilityHooks';
 export type { NavigationDirection } from './OptimizedAppContext';
 

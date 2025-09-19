@@ -4,7 +4,7 @@ import { getGithubConfig, getRuntimeConfig, getAccessConfig, isDeveloperMode } f
 import axios from 'axios';
 import { CacheManager } from './CacheManager';
 import { GitHubTokenManager } from './TokenManager';
-import { ProxyService } from './ProxyService';
+import { ProxyService } from './proxy/ProxyService';
 import { RequestBatcher } from './RequestBatcher';
 import { ErrorManager } from '../../utils/error/ErrorManager';
 import { GitHubError } from '../../types/errors';

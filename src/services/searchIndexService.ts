@@ -12,6 +12,123 @@ import {
 
 const ABSOLUTE_URL_REGEX = /^https?:\/\//i;
 
+type RawSearchIndexFile = Partial<PreparedSearchIndexFile> & Record<string, unknown>;
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const sanitizePath = (value: unknown): string => {
+  if (!isNonEmptyString(value)) {
+    return "";
+  }
+  return value.trim().replace(/^\/+/, "");
+};
+
+const deriveSegmentsFromPath = (path: string): string[] =>
+  path
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+
+const deriveExtensionFromName = (name: string): string => {
+  const lastDotIndex = name.lastIndexOf(".");
+  if (lastDotIndex <= 0 || lastDotIndex === name.length - 1) {
+    return "";
+  }
+  return name.slice(lastDotIndex + 1).toLowerCase();
+};
+
+const deriveStemFromName = (name: string, extension: string): string => {
+  if (!extension) {
+    return name;
+  }
+  const suffix = `.${extension}`.toLowerCase();
+  if (name.toLowerCase().endsWith(suffix)) {
+    return name.slice(0, -suffix.length) || name;
+  }
+  return name;
+};
+
+const normalizeSearchIndexFile = (rawFile: RawSearchIndexFile): PreparedSearchIndexFile => {
+  const path = sanitizePath((rawFile.path as string | undefined) ?? "");
+  const rawSegments: string[] = Array.isArray(rawFile.segments)
+    ? (rawFile.segments as unknown[]).filter((segment): segment is string => isNonEmptyString(segment))
+    : deriveSegmentsFromPath(path);
+
+  const fallbackSegment = rawSegments.length > 0 ? rawSegments[rawSegments.length - 1] : "";
+  const name: string = isNonEmptyString(rawFile.name)
+    ? rawFile.name.trim()
+    : fallbackSegment || path || "unknown";
+
+  if (!name && !path) {
+    throw new Error("索引条目缺少必要的路径信息");
+  }
+
+  const directory: string = isNonEmptyString(rawFile.directory)
+    ? rawFile.directory.trim()
+    : rawSegments.length > 1
+      ? rawSegments.slice(0, -1).join("/")
+      : "";
+
+  const rawExtensionValue = isNonEmptyString(rawFile.extension)
+    ? rawFile.extension.replace(/^\./, "").toLowerCase()
+    : "";
+  const extension: string = rawExtensionValue || deriveExtensionFromName(name);
+
+  const stemFromField = isNonEmptyString(rawFile.stem) ? rawFile.stem.trim() : "";
+  const stem: string = stemFromField || deriveStemFromName(name, extension);
+
+  const lastModifiedValue = isNonEmptyString(rawFile.lastModified) ? rawFile.lastModified : "";
+  const lastModified: string = lastModifiedValue || "";
+
+  const sizeValue = (rawFile as { size?: unknown }).size;
+  const size: number =
+    typeof sizeValue === "number" && Number.isFinite(sizeValue)
+      ? sizeValue
+      : Number.parseInt(String(sizeValue ?? "0"), 10) || 0;
+
+  const segments: string[] = rawSegments.length > 0 ? rawSegments : deriveSegmentsFromPath(name);
+
+  const hadMissingFields =
+    !rawFile.name || !rawFile.directory || !rawFile.extension || !rawFile.stem || !rawFile.segments;
+
+  if (hadMissingFields) {
+    logger.debug(
+      `[SearchIndexService] 自动填充缺失的索引字段: ${name || path}`,
+      {
+        hasName: Boolean(rawFile.name),
+        hasDirectory: Boolean(rawFile.directory),
+        hasExtension: Boolean(rawFile.extension),
+        hasStem: Boolean(rawFile.stem),
+        hasSegments: Array.isArray(rawFile.segments),
+      },
+    );
+  }
+
+  const tokens = tokenize(name, directory, stem, extension, ...segments);
+
+  const resolvedPath = path || name;
+
+  return {
+    ...(rawFile as PreparedSearchIndexFile),
+    path: resolvedPath,
+    name,
+    directory,
+    extension,
+    stem,
+    segments,
+    size,
+    lastModified,
+    nameLower: name.toLowerCase(),
+    pathLower: resolvedPath.toLowerCase(),
+    directoryLower: directory.toLowerCase(),
+    stemLower: stem.toLowerCase(),
+    tokens,
+  };
+};
+
+
+
 let cachedIndex: PreparedSearchIndex | null = null;
 let loadingPromise: Promise<PreparedSearchIndex> | null = null;
 let cachedManifest: SearchIndexManifest | null = null;
@@ -144,22 +261,8 @@ const prepareIndex = (data: SearchIndexData): PreparedSearchIndex => {
     ...(source ? { source } : {}),
   };
 
-  const preparedFiles: PreparedSearchIndexFile[] = files.map((file) => {
-    const nameLower = file.name.toLowerCase();
-    const pathLower = file.path.toLowerCase();
-    const directoryLower = (file.directory || "").toLowerCase();
-    const stemLower = file.stem.toLowerCase();
-    const tokens = tokenize(file.name, file.directory, file.stem, file.extension, ...file.segments);
-
-    return {
-      ...file,
-      nameLower,
-      pathLower,
-      directoryLower,
-      stemLower,
-      tokens,
-    };
-  });
+  const rawFiles = files as RawSearchIndexFile[];
+  const preparedFiles: PreparedSearchIndexFile[] = rawFiles.map(normalizeSearchIndexFile);
 
   return {
     metadata,

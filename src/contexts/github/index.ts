@@ -1,18 +1,21 @@
-// 统一导出所有GitHub相关的Context
-export * from "./AppContext";
-export * from "./ContentContext";
-export * from "./PreviewContext";
-export * from "./DownloadContext";
-export * from "./SearchContext";
+// GitHub 上下文统一出口
+export { AppContextProvider, GitHubProvider } from "./AppContext";
+export { useSearch, SearchProvider } from "./SearchContext";
 
-// 主要的应用提供者
-export { AppContextProvider as GitHubProvider } from "./AppContext";
+// 兼容性导出：复用统一上下文实现
+export {
+  OptimizedAppContextProvider,
+  useContent as useContentContext,
+  usePreview as usePreviewContext,
+  useDownloadContext,
+  useMetadata as useMetadataContext,
+} from "../unified";
 
-// 向后兼容的导出
-export { AppContextProvider } from "./AppContext";
+// 常用别名，方便旧代码引用
+export {
+  useContentContext as useContent,
+  usePreviewContext as usePreview,
+  useMetadataContext as useMetadata,
+} from "../unified";
 
-// 别名导出，方便使用
-export { useContent as useContentContext } from "./ContentContext";
-export { usePreview as usePreviewContext } from "./PreviewContext";
-export { useDownloadContext } from "./DownloadContext";
-export { useSearch } from "./SearchContext";
+export type { NavigationDirection } from "../unified";
