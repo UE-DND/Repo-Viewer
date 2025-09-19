@@ -8,15 +8,13 @@ import { SnackbarProvider } from "notistack";
 import { logger } from "./utils";
 import ThemeProvider from "./providers/ThemeProvider";
 import CustomSnackbar from "./components/ui/CustomSnackbar";
-import { checkTokenStatus } from "./utils/auth/token-helper";
 import { setupLatexOptimization } from "./utils/rendering/latexOptimizer";
 import SEOProvider from "./contexts/SEOContext";
 
-import { getDeveloperConfig, isDeveloperMode } from './config/ConfigManager';
+import { getDeveloperConfig } from './config/ConfigManager';
 
 // 开发者模式配置 - 控制调试信息显示
 const DEV_CONFIG = {
-  DEBUG_MODE: isDeveloperMode(),
   CONSOLE_LOGGING: getDeveloperConfig().consoleLogging,
 };
 
@@ -25,16 +23,6 @@ if (!DEV_CONFIG.CONSOLE_LOGGING) {
   console.log = () => {}; // 禁用标准控制台日志
 }
 
-// 检查GitHub Token状态
-if (DEV_CONFIG.DEBUG_MODE) {
-  // 延迟执行token检查，等应用初始化完成
-  setTimeout(() => {
-    // 使用异步函数检查令牌状态
-    checkTokenStatus().catch((err) => {
-      logger.error("检查令牌状态失败:", err);
-    });
-  }, 1000);
-}
 
 // 应用LaTeX渲染优化
 // 在应用加载后设置LaTeX优化监听器

@@ -1,7 +1,13 @@
-export { GitHubService } from './github/GitHubService';
-export type { ConfigInfo } from './github/GitHubService';
-export { CacheManager } from './github/CacheManager';
+export { GitHubService } from './github/core/GitHubService';
+export type { ConfigInfo } from './github/core/GitHubService';
+export { CacheManager } from './github/cache/CacheManager';
 export { GitHubTokenManager } from './github/TokenManager';
-export { ProxyService } from './github/ProxyService';
+export { ProxyService } from './github/proxy/ProxyService';
 export { RequestBatcher } from './github/RequestBatcher';
-export { GitHubService as default } from './github/GitHubService'; 
+export { GitHubService as default } from './github/core/GitHubService';
+export { GitHubAuth } from './github/core/GitHubAuth';
+export { GitHubContentService } from './github/core/GitHubContentService';
+export { GitHubSearchService } from './github/core/GitHubSearchService';
+export { GitHubPrefetchService } from './github/core/GitHubPrefetchService';
+export { GitHubStatsService } from './github/core/GitHubStatsService';
+export * from './github/core/GitHubConfig'; 

@@ -3,7 +3,7 @@ import { GitHubContent } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
 import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/routing/urlManager';
-import { NavigationDirection } from '../contexts/github';
+import { NavigationDirection } from '../contexts/unified';
 import { getFeaturesConfig, getGithubConfig } from '../config/ConfigManager';
 
 // 配置

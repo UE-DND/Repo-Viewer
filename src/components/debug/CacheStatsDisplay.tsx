@@ -20,8 +20,8 @@ import {
   Speed as SpeedIcon,
   Memory as MemoryIcon
 } from '@mui/icons-material';
-import { GitHubService } from '../../services/github/GitHubService';
-import { CacheStats } from '../../services/github/CacheManager';
+import { GitHubService } from '../../services/github/core/GitHubService';
+import { CacheStats } from '../../services/github/cache/CacheManager';
 
 interface CacheStatsDisplayProps {
   showDetailed?: boolean;

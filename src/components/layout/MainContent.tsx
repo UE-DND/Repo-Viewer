@@ -19,7 +19,7 @@ import {
   useDownloadContext,
   useSearch,
   NavigationDirection
-} from "../../contexts/github";
+} from "../../contexts/unified";
 import { FileListSkeleton } from "../ui/skeletons";
 import { getPreviewFromUrl } from "../../utils/routing/urlManager";
 import { logger } from "../../utils";
@@ -420,55 +420,6 @@ const MainContent: React.FC = () => {
                 hasReadmePreview={!!readmeContent && hasReadmeFile}
                 data-oid="_qfxtvv"
               />
-
-              {/* README预览 - 底部展示 */}
-              {readmeContent && readmeLoaded && !loadingReadme && (
-                <Box
-                  className="readme-container fade-in"
-                  sx={{
-                    position: "relative",
-                    width: "100%",
-                    mb: 4,
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                  data-oid="0zc9q5:"
-                >
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 600,
-                      mb: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      color: "text.primary",
-                    }}
-                    data-oid="iawc_6m"
-                  />
-
-                  <MarkdownPreview
-                    readmeContent={readmeContent}
-                    loadingReadme={false}
-                    isSmallScreen={isSmallScreen}
-                    isReadme={true}
-                    lazyLoad={false}
-                    data-oid="6nohd:r"
-                  />
-                </Box>
-              )}
-
-              {/* 图像预览 */}
-              {previewState.previewingImageItem && previewState.imagePreviewUrl && (
-                <ImagePreview
-                  imageUrl={previewState.imagePreviewUrl}
-                  fileName={previewState.previewingImageItem.name}
-                  isFullScreen={true}
-                  onClose={closePreview}
-                  lazyLoad={false}
-                  data-oid="yfv5ld-"
-                />
-              )}
-
               {/* Office文档预览 */}
               {previewState.previewingOfficeItem &&
                 previewState.officePreviewUrl &&
@@ -476,11 +427,12 @@ const MainContent: React.FC = () => {
                   <FullScreenPreview onClose={closePreview} data-oid="oa2lre0">
                     <OfficePreview
                       fileUrl={previewState.officePreviewUrl}
-                      fileType={previewState.officeFileType}
+                      fileType={previewState.officeFileType as any}
                       fileName={previewState.previewingOfficeItem.name}
                       isFullScreen={previewState.isOfficeFullscreen}
                       onClose={closePreview}
-                      data-oid="-vdkwr8"
+                      lazyLoad={false}
+                      data-oid="yfv5ld-"
                     />
                   </FullScreenPreview>
                 )}

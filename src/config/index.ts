@@ -26,7 +26,6 @@ export {
   
   // 特殊便捷函数
   isDeveloperMode,
-  isDebugMode,
   isTokenMode,
   isDevEnvironment,
   getGithubPATs,

@@ -110,7 +110,6 @@ DOWNLOAD_PROXY_URL_BACKUP2 =
 
 # 开发者选项
 DEVELOPER_MODE = true/false                     # 启用开发者模式
-DEBUG_MODE = true/false                        # 开启调试模式
 CONSOLE_LOGGING = true/false                   # 控制台日志
 ```
 

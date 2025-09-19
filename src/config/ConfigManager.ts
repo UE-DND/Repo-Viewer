@@ -34,7 +34,6 @@ const ENV_MAPPING = {
 
   // 开发者配置
   DEVELOPER_MODE: "VITE_DEVELOPER_MODE",
-  DEBUG_MODE: "VITE_DEBUG_MODE",
   CONSOLE_LOGGING: "VITE_CONSOLE_LOGGING",
 
   // 搜索索引配置
@@ -201,13 +200,16 @@ export interface Config {
     imageProxyUrl: string;
     imageProxyUrlBackup1: string;
     imageProxyUrlBackup2: string;
+    healthCheckTimeout: number;
+    validationTimeout: number;
+    healthCheckInterval: number;
+    recoveryTime: number;
   };
   access: {
     useTokenMode: boolean;
   };
   developer: {
     mode: boolean;
-    debugMode: boolean;
     consoleLogging: boolean;
   };
   runtime: {
@@ -332,17 +334,21 @@ class ConfigManager {
         }
       },
       proxy: {
-        imageProxyUrl: resolveEnvWithMapping(env, "DOWNLOAD_PROXY_URL", CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
-        imageProxyUrlBackup1: resolveEnvWithMapping(env, "DOWNLOAD_PROXY_URL_BACKUP1", CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
-        imageProxyUrlBackup2: resolveEnvWithMapping(env, "DOWNLOAD_PROXY_URL_BACKUP2", CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2)
+        imageProxyUrl: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
+        imageProxyUrlBackup1: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
+        imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2),
+        // 代理超时配置 - 内部默认值（毫秒）
+        healthCheckTimeout: 5000,    // 健康检查超时：5秒
+        validationTimeout: 10000,    // 代理验证超时：10秒
+        healthCheckInterval: 30000,  // 健康检查间隔：30秒
+        recoveryTime: 300000         // 代理恢复时间：5分钟
       },
       access: {
         useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, "USE_TOKEN_MODE", "false"))
       },
       developer: {
-        mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, "DEVELOPER_MODE", "false")),
-        debugMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, "DEBUG_MODE", "false")),
-        consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, "CONSOLE_LOGGING", "true"))
+        mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')),
+        consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'true'))
       },
       runtime: {
         isDev: env.DEV === true,
@@ -479,7 +485,6 @@ export const getTokensConfig = () => getConfig().tokens;
 
 // 特殊便捷函数
 export const isDeveloperMode = () => getConfig().developer.mode;
-export const isDebugMode = () => getConfig().developer.debugMode;
 export const isTokenMode = () => getConfig().access.useTokenMode;
 export const isDevEnvironment = () => getConfig().runtime.isDev;
 export const getGithubPATs = () => getConfig().tokens.githubPATs;
