@@ -28,13 +28,13 @@ export const useDynamicIcon = () => {
         setIconPath('/icons/icon-pink.svg');
       }
     } catch (error) {
-      console.error('Failed to get current theme name:', error);
+      console.error('获取当前主题名称失败:', error);
       setIconPath('/icons/icon-pink.svg');
     }
   };
 
   useEffect(() => {
-    console.log('🎯 Initializing dynamic icon system...');
+    console.log('🎯 初始化动态图标系统...');
     
     // 初始化图标
     updateIcon();
@@ -50,7 +50,7 @@ export const useDynamicIcon = () => {
         if (mutation.type === 'attributes' && 
             (mutation.attributeName === 'data-theme' || 
              mutation.attributeName === 'class')) {
-          console.log('🔄 Theme change detected via MutationObserver');
+          console.log('🔄 通过MutationObserver检测到主题变化');
           updateIcon();
         }
       });
@@ -70,7 +70,7 @@ export const useDynamicIcon = () => {
     // 监听localStorage变化
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'colorMode' || e.key === 'themeData' || e.key === 'lastThemeColorDate') {
-        console.log('🔄 Theme change detected via localStorage:', e.key);
+        console.log('🔄 通过localStorage检测到主题变化:', e.key);
         setTimeout(updateIcon, 100);
       }
     };
@@ -106,7 +106,7 @@ export const useFaviconUpdater = () => {
       const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
       existingFavicons.forEach(link => {
         const linkElement = link as HTMLLinkElement;
-        console.log('🗑️ Removing existing favicon:', linkElement.href);
+        console.log('🗑️ 移除现有的favicon:', linkElement.href);
         link.remove();
       });
       
@@ -128,7 +128,7 @@ export const useFaviconUpdater = () => {
         shortcutIcon.href = `${iconPath}?v=${timestamp}`;
         document.head.appendChild(shortcutIcon);
 
-        console.log('✅ Favicon updated to:', `${iconPath}?v=${timestamp}`);
+        console.log('✅ Favicon已更新为:', `${iconPath}?v=${timestamp}`);
         
         // 强制触发浏览器重新加载favicon
         const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;

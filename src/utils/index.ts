@@ -1,20 +1,34 @@
 // 导出文件相关工具
-export * from './fileHelpers';
+export * from './files/fileHelpers';
 
 // 导出格式化工具
-export * from './formatters';
+export * from './format/formatters';
 
 // 导出日志工具
-export { logger } from './logger';
+export { logger } from './logging/logger';
 
 // 导出代理工具
-export { getProxiedUrl } from './proxyHelper';
+export { getProxiedUrl } from './network/proxyHelper';
 
-// 导出其他实用工具
-export * from './token-helper';
-export * from './eventEmitter';
+// 导出认证相关工具
+export * from './auth/token-helper';
 
-// 添加防抖函数
+// 导出事件相关工具
+export * from './events/eventEmitter';
+
+// 导出错误管理工具
+export { ErrorManager } from './error/ErrorManager';
+
+// 导出PDF相关工具
+export * from './pdf/pdfLoading';
+
+// 导出渲染优化工具
+export * from './rendering/latexOptimizer';
+
+// 导出路由相关工具  
+export * from './routing/urlManager';
+
+// 通用工具函数
 export const debounce = <F extends (...args: any[]) => any>(
   func: F,
   waitFor: number
@@ -27,42 +41,4 @@ export const debounce = <F extends (...args: any[]) => any>(
     }
     timeout = setTimeout(() => func(...args), waitFor);
   };
-};
-
-// 图像处理工具
-export const isImageFile = (fileName: string): boolean => {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
-  const lowerCaseFileName = fileName.toLowerCase();
-  return imageExtensions.some(ext => lowerCaseFileName.endsWith(ext));
-};
-
-// PDF处理工具
-export const isPdfFile = (fileName: string): boolean => {
-  return fileName.toLowerCase().endsWith('.pdf');
-};
-
-// Markdown处理工具
-export const isMarkdownFile = (fileName: string): boolean => {
-  return fileName.toLowerCase().endsWith('.md');
-};
-
-// Word文档处理工具
-export const isWordFile = (fileName: string): boolean => {
-  const wordExtensions = ['.doc', '.docx', '.docm'];
-  const lowerCaseFileName = fileName.toLowerCase();
-  return wordExtensions.some(ext => lowerCaseFileName.endsWith(ext));
-};
-
-// Excel文档处理工具
-export const isExcelFile = (fileName: string): boolean => {
-  const excelExtensions = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.csv'];
-  const lowerCaseFileName = fileName.toLowerCase();
-  return excelExtensions.some(ext => lowerCaseFileName.endsWith(ext));
-};
-
-// PowerPoint文档处理工具
-export const isPPTFile = (fileName: string): boolean => {
-  const pptExtensions = ['.ppt', '.pptx', '.pptm', '.pps', '.ppsx'];
-  const lowerCaseFileName = fileName.toLowerCase();
-  return pptExtensions.some(ext => lowerCaseFileName.endsWith(ext));
 }; 

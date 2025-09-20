@@ -1,5 +1,5 @@
 import { logger } from '../utils';
-import { getSiteConfig, getGithubConfig } from '../config/ConfigManager';
+import { getSiteConfig, getGithubConfig } from '../config';
 
 /**
  * 配置信息接口

@@ -5,7 +5,7 @@ import {
   isDeveloperMode,
   configManager, 
   EnvParser 
-} from '../../config/ConfigManager';
+} from '../../config';
 
 // 工具函数
 const isDevEnvironment = import.meta.env.DEV;
@@ -76,7 +76,7 @@ export class GitHubTokenManager {
   
   public getCurrentToken(): string {
     if (this.tokens.length === 0) return '';
-    return this.tokens[this.currentIndex];
+    return this.tokens[this.currentIndex] ?? '';
   }
   
   public getNextToken(): string {
@@ -88,7 +88,11 @@ export class GitHubTokenManager {
       this.currentIndex = (this.currentIndex + 1) % this.tokens.length;
       const token = this.tokens[this.currentIndex];
       
-      // 跳过已知失败的令牌
+      // 跳过无效（越界）或已知失败的令牌
+      if (!token) {
+        attempts++;
+        continue;
+      }
       if (this.failedTokens.has(token)) {
         attempts++;
         continue;
@@ -100,7 +104,7 @@ export class GitHubTokenManager {
     // 如果所有令牌都失败，重置并返回第一个令牌
     this.failedTokens.clear();
     this.currentIndex = 0;
-    return this.tokens[0];
+    return this.tokens[0] ?? '';
   }
   
   public markTokenUsed(token: string) {

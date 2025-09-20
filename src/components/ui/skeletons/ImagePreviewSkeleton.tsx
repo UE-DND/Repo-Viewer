@@ -18,15 +18,21 @@ export const ImagePreviewSkeleton: React.FC<{
   const [isExiting, setIsExiting] = useState(!visible);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (!visible && !isExiting) {
       setIsExiting(true);
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         if (onExited) onExited();
       }, 300);
-      return () => clearTimeout(timer);
     } else if (visible && isExiting) {
       setIsExiting(false);
     }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [visible, isExiting, onExited]);
 
   return (

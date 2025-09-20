@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { CustomContentProps, useSnackbar } from "notistack";
-import { eventEmitter, EVENTS } from "../../utils/eventEmitter";
+import { eventEmitter, EVENTS } from "../../utils/events/eventEmitter";
 
 // 自定义Snackbar组件Props
 interface CustomSnackbarProps extends CustomContentProps {
@@ -19,7 +19,7 @@ interface CustomSnackbarProps extends CustomContentProps {
 // 使用memo优化CustomSnackbar以减少不必要的重新渲染
 const CustomSnackbar = memo(
   forwardRef<HTMLDivElement, CustomSnackbarProps>(
-    ({ id, message, variant, progress, ...props }, ref) => {
+    ({ id, message, variant, progress }, ref) => {
       const { closeSnackbar } = useSnackbar();
 
       const handleDismiss = () => {

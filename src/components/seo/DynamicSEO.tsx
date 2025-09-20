@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useSEO } from "../../contexts/SEOContext";
 import SEO from "./SEO";
 
@@ -37,7 +37,7 @@ const DynamicSEO: React.FC<DynamicSEOProps> = ({
     let seoTitle = title || "";
     if (filePath && !seoTitle) {
       const fileNameMatch = filePath.match(/([^/]+)$/);
-      seoTitle = fileNameMatch ? fileNameMatch[1] : filePath;
+      seoTitle = fileNameMatch?.[1] || filePath;
     }
 
     // 添加"Repoviewer"到标题中，不再显示仓库信息

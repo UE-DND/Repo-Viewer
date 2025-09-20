@@ -1,4 +1,4 @@
-import { createTheme, ThemeOptions, alpha, PaletteMode } from '@mui/material/styles';
+import { createTheme, alpha, PaletteMode } from '@mui/material/styles';
 
 // 主题色配置
 const md3Themes = [
@@ -228,8 +228,8 @@ const getThemeIndexByDate = (): number => {
   return dayCount % md3Themes.length;
 };
 
-const getCurrentTheme = () => {
-  return md3Themes[getThemeIndexByDate()];
+const getCurrentTheme = (): (typeof md3Themes)[number] => {
+  return md3Themes[getThemeIndexByDate()]!;
 };
 
 const lightPalette = {

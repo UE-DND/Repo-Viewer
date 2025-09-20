@@ -16,21 +16,23 @@ export const FileListSkeleton: React.FC<{
   visible?: boolean;
   onExited?: () => void;
 }> = ({ itemCount = 10, isSmallScreen = false, visible = true, onExited }) => {
-  const theme = useTheme();
-  const rowHeight = isSmallScreen ? 60 : 72;
   const [isExiting, setIsExiting] = useState(!visible);
 
   useEffect(() => {
+    let timer: number | undefined;
     if (!visible && !isExiting) {
       setIsExiting(true);
       // 使用动画的持续时间后触发onExited回调
-      const timer = setTimeout(() => {
-        if (onExited) onExited();
+      timer = window.setTimeout(() => {
+        onExited?.();
       }, 300); // 匹配fadeOutAnimation的持续时间
-      return () => clearTimeout(timer);
     } else if (visible && isExiting) {
       setIsExiting(false);
     }
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
   }, [visible, isExiting, onExited]);
 
   return (

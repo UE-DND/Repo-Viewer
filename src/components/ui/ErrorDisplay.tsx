@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import EmptyState from "./EmptyState";
 
 interface ErrorDisplayProps {
@@ -21,7 +21,7 @@ const ErrorDisplay = memo<ErrorDisplayProps>(
       <EmptyState
         type={getErrorType()}
         description={errorMessage}
-        onAction={onRetry}
+        onAction={onRetry ?? (() => {})}
         isSmallScreen={isSmallScreen}
       />
     );

@@ -1,30 +1,25 @@
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   AppBar,
   Toolbar,
   Typography,
   Box,
   useTheme,
-  CssBaseline,
-  ThemeProvider,
   useMediaQuery,
 } from "@mui/material";
-import { AppContextProvider } from "./contexts/github";
+import { OptimizedAppContextProvider as AppContextProvider } from "./contexts/unified";
 import MainContent from "./components/layout/MainContent";
 import ToolbarButtons from "./components/layout/ToolbarButtons";
-import { ColorModeContext } from "./contexts/ColorModeContext";
 import { SITE_TITLE } from "./constants";
 import { GitHubService } from "./services/github";
 import { logger } from "./utils";
-import { SnackbarProvider } from "notistack";
 import SEO from "./components/seo/SEO";
 import Footer from "./components/layout/Footer";
 import { FaviconManager } from "./components/ui/DynamicIcon";
+import { PageErrorBoundary, FeatureErrorBoundary } from "./components/ui/ErrorBoundary";
 
 // 优化后的App组件
 const App = React.memo(() => {
-  // 使用颜色模式上下文
-  const colorMode = useContext(ColorModeContext);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const titleRef = useRef<HTMLDivElement | null>(null);
@@ -75,13 +70,11 @@ const App = React.memo(() => {
   }, []);
 
   return (
-    <ThemeProvider theme={theme} data-oid="..yfsak">
-      <CssBaseline data-oid="q-9ujvb" />
+    <>
       {/* 动态favicon管理器 */}
       <FaviconManager />
-      <>
-        {/* 基础SEO设置 */}
-        <SEO data-oid="542h-3i" />
+      {/* 基础SEO设置 */}
+      <SEO data-oid="542h-3i" />
 
         <style data-oid="b003vxu">
           {`
@@ -102,83 +95,76 @@ const App = React.memo(() => {
             }
           `}
         </style>
-        <SnackbarProvider
-          maxSnack={3}
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-          autoHideDuration={3000}
-          dense={isSmallScreen}
-          preventDuplicate
-          TransitionProps={{ direction: "up" }}
-          data-oid="a3ed3_x"
-        >
-          <AppContextProvider data-oid="a29dni6">
-            <Box
+      <PageErrorBoundary>
+        <AppContextProvider data-oid="a29dni6">
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "100vh",
+              overflow: "hidden",
+            }}
+            data-oid="x1__:v_"
+          >
+            <AppBar
+              position="static"
+              elevation={0}
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                minHeight: "100vh",
-                overflow: "hidden",
+                borderBottom: "1px solid",
+                borderColor: "divider",
               }}
-              data-oid="x1__:v_"
+              data-oid="wo6wy.h"
             >
-              <AppBar
-                position="static"
-                elevation={0}
-                sx={{
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                }}
-                data-oid="wo6wy.h"
-              >
-                <Toolbar data-oid="3t2uspn">
-                  <Box
+              <Toolbar data-oid="3t2uspn">
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                  data-oid="ldirzxg"
+                >
+                  <Typography
+                    ref={titleRef}
+                    variant="h6"
+                    component="div"
                     sx={{
-                      flexGrow: 1,
-                      display: "flex",
-                      alignItems: "center",
+                      cursor: isSmallScreen ? "default" : "pointer",
+                      transition: "opacity 0.2s ease-in-out",
+                      "&:hover": isSmallScreen
+                        ? {}
+                        : {
+                            opacity: 0.8,
+                          },
+                      fontSize: {
+                        xs: "0.9rem",
+                        sm: "1rem",
+                        md: "1.25rem",
+                      },
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                     }}
-                    data-oid="ldirzxg"
+                    onClick={handleTitleClick}
+                    data-oid="isr-jsd"
                   >
-                    <Typography
-                      ref={titleRef}
-                      variant="h6"
-                      component="div"
-                      sx={{
-                        cursor: isSmallScreen ? "default" : "pointer",
-                        transition: "opacity 0.2s ease-in-out",
-                        "&:hover": isSmallScreen
-                          ? {}
-                          : {
-                              opacity: 0.8,
-                            },
-                        fontSize: {
-                          xs: "0.9rem", // 手机屏幕
-                          sm: "1rem", // 小平板
-                          md: "1.25rem", // 正常桌面尺寸
-                        },
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                      onClick={handleTitleClick}
-                      data-oid="isr-jsd"
-                    >
-                      {SITE_TITLE}
-                    </Typography>
-                  </Box>
-                  <ToolbarButtons data-oid="enprsdk" />
-                </Toolbar>
-              </AppBar>
+                    {SITE_TITLE}
+                  </Typography>
+                </Box>
+                <ToolbarButtons data-oid="enprsdk" />
+              </Toolbar>
+            </AppBar>
 
+            <FeatureErrorBoundary featureName="MainContent">
               <MainContent data-oid="jgn58er" />
+            </FeatureErrorBoundary>
 
-              {/* 添加页脚组件 */}
-              <Footer data-oid="ntwtx22" />
-            </Box>
-          </AppContextProvider>
-        </SnackbarProvider>
-      </>
-    </ThemeProvider>
+            {/* 添加页脚组件 */}
+            <Footer data-oid="ntwtx22" />
+          </Box>
+        </AppContextProvider>
+      </PageErrorBoundary>
+    </>
   );
 });
 

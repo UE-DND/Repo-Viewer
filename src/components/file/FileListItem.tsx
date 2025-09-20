@@ -1,4 +1,4 @@
-import React, { memo, useContext } from "react";
+import React, { memo } from "react";
 import {
   ListItem,
   ListItemButton,
@@ -21,7 +21,7 @@ import {
 import { getFileIcon, logger } from "../../utils";
 import { GitHubContent } from "../../types";
 
-import { getFeaturesConfig } from '../../config/ConfigManager';
+import { getFeaturesConfig } from '../../config';
 
 // 从统一配置获取配置
 const featuresConfig = getFeaturesConfig();
@@ -32,7 +32,6 @@ const HIDE_DOWNLOAD_FOLDERS = featuresConfig.hideDownload.hiddenFolders;
 
 interface FileListItemProps {
   item: GitHubContent;
-  isSmallScreen: boolean;
   downloadingPath: string | null;
   downloadingFolderPath: string | null;
   folderDownloadProgress: number;
@@ -48,7 +47,6 @@ interface FileListItemProps {
 const FileListItem = memo<FileListItemProps>(
   ({
     item,
-    isSmallScreen,
     downloadingPath,
     downloadingFolderPath,
     folderDownloadProgress,
@@ -90,7 +88,7 @@ const FileListItem = memo<FileListItemProps>(
 
     // 记录调试信息 - 仅在开发模式下执行
     React.useEffect(() => {
-      if (process.env.NODE_ENV === "development") {
+      if (import.meta.env.DEV) {
         if (currentPath === "" && item.type === "dir") {
           logger.debug(
             `首页文件夹 ${item.name}: 是主文件夹=${isMainFolder}, 隐藏下载按钮=${shouldHideDownloadButton}`,
