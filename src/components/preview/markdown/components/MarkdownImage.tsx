@@ -24,6 +24,7 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
   style,
   previewingItem,
   imageState,
+  ...rest
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isImageFailed, setIsImageFailed] = useState(
@@ -71,6 +72,7 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
         ...style
       }}
       alt={alt || "图片"}
+      {...rest}
       loading="lazy"
       className={isImageLoaded ? "loaded" : isImageFailed ? "failed" : ""}
       onLoad={(e) => {

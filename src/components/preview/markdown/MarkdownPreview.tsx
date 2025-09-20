@@ -2,8 +2,8 @@ import { memo, useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
-// import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
 
 import {
   Box,
@@ -172,7 +172,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
           {shouldRender && !isThemeChanging && (
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[[rehypeKatex, katexOptions]]}
+              rehypePlugins={[rehypeRaw, [rehypeKatex, katexOptions]]}
               components={{
                 a: ({ href, children, ...props }) => (
                   <MarkdownLink href={href} {...props}>

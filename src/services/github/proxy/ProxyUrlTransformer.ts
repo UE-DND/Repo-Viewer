@@ -94,7 +94,19 @@ export class ProxyUrlTransformer {
 
       // 判断是否是非开发环境或启用了令牌模式
       if (getForceServerProxy() && src.startsWith('http')) {
-        // 通过服务端API代理
+        // 生产/强制模式：仅对 GitHub 相关域名走服务端API；第三方域名直接使用原URL
+        try {
+          const host = new URL(src).hostname;
+          const isGithubHost = /(^|\.)githubusercontent\.com$|(^|\.)github\.com$|^raw\.githubusercontent\.com$|(^|\.)user-images\.githubusercontent\.com$/.test(host);
+          if (!isGithubHost) {
+            logger.debug('强制模式下的非GitHub域名，直接返回原URL:', src);
+            return src;
+          }
+        } catch (e) {
+          logger.warn('强制模式解析URL失败，按GitHub域名处理:', e);
+        }
+
+        // 通过服务端API代理（仅GitHub域名）
         const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(src)}`;
         logger.debug('使用服务端API代理:', proxyUrl);
         return proxyUrl;
@@ -102,9 +114,19 @@ export class ProxyUrlTransformer {
 
       // --- 以下仅在开发环境或未强制使用代理时生效 ---
 
-      // 判断URL类型
       if (src.startsWith('http')) {
-        // 绝对URL - 可能需要代理
+        // 绝对URL
+        try {
+          const host = new URL(src).hostname;
+          const isGithubHost = /(^|\.)githubusercontent\.com$|(^|\.)github\.com$|^raw\.githubusercontent\.com$|(^|\.)user-images\.githubusercontent\.com$/.test(host);
+          if (!isGithubHost) {
+            return src;
+          }
+        } catch (e) {
+          logger.warn('解析图片URL主机失败，按原逻辑处理:', e);
+        }
+
+        // 对 GitHub 相关域名在生产或启用令牌模式时走代理
         if (useTokenMode || !runtimeConfig.isDev) {
           const proxyUrl = getProxiedUrlSync(src);
           logger.debug('绝对URL使用代理:', proxyUrl);
