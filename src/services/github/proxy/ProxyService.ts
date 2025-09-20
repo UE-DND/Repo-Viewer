@@ -1,15 +1,15 @@
 import { logger } from '../../../utils';
-import { getProxyConfig } from '../../../config/ConfigManager';
+import { getProxyConfig, getRuntimeConfig } from '../../../config/ConfigManager';
 import { 
-  runtimeConfig, 
   USE_TOKEN_MODE, 
-  FORCE_SERVER_PROXY, 
   PROXY_SERVICES
 } from './ProxyConfig';
+import { getForceServerProxy } from '../config/ProxyForceManager';
 import { proxyHealthManager } from './ProxyHealthManager';
 import { ProxyUrlTransformer } from './ProxyUrlTransformer';
 
 const proxyConfig = getProxyConfig();
+const runtimeConfig = getRuntimeConfig();
 
 
 // 保持向后兼容
@@ -32,7 +32,7 @@ export class ProxyService {
     }
 
     // 修改：优先使用服务端API代理
-    if (FORCE_SERVER_PROXY) {
+    if (getForceServerProxy()) {
       // 通过服务端API代理请求
       return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
     }
@@ -71,7 +71,7 @@ export class ProxyService {
       return url;
     }
 
-    if (FORCE_SERVER_PROXY) {
+    if (getForceServerProxy()) {
       return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
     }
 

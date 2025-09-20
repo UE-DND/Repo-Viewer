@@ -1,15 +1,15 @@
-import { getRuntimeConfig, getAccessConfig, getProxyConfig } from '../../../config/ConfigManager';
+import { getAccessConfig, getProxyConfig } from '../../../config/ConfigManager';
+import { getForceServerProxy } from '../config/ProxyForceManager';
 
 // 获取配置
-export const runtimeConfig = getRuntimeConfig();
 export const accessConfig = getAccessConfig();
 const proxyConfig = getProxyConfig();
 
 // 模式设置
 export const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
-// 强制使用服务端API代理所有请求
-export const FORCE_SERVER_PROXY = !runtimeConfig.isDev || USE_TOKEN_MODE;
+// 强制使用服务端API代理所有请求 - 使用统一的ProxyForceManager
+export const FORCE_SERVER_PROXY = getForceServerProxy();
 
 // 定义多个代理服务URL
 export const PROXY_SERVICES = [

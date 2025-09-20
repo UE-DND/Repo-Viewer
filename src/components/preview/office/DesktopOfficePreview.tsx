@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
   useTheme,
   IconButton,
-  useMediaQuery,
   Button,
   Tooltip,
   alpha,
@@ -15,68 +14,19 @@ import {
   Fullscreen as FullscreenIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
-  Info as InfoIcon,
 } from "@mui/icons-material";
-// 导入骨架屏组件
-import { OfficePreviewSkeleton } from "../ui/skeletons";
+import { OfficePreviewSkeleton } from "../../ui/skeletons";
+import { OfficePreviewProps } from './types';
+import { getFileTypeName, generatePreviewUrl } from './utils';
+import { IFRAME_LOAD_TIMEOUT, SKELETON_EXIT_TIMEOUT } from './constants';
 
-// 微软Office在线预览URL
-const OFFICE_PREVIEW_URL = "https://view.officeapps.live.com/op/view.aspx?src=";
-
-// 备用预览服务URL
-const BACKUP_PREVIEW_URL =
-  "https://view.officeapps.live.com/op/embed.aspx?src=";
-
-// 文件类型枚举
-export enum OfficeFileType {
-  WORD = "word",
-  EXCEL = "excel",
-  PPT = "ppt",
-}
-
-interface OfficePreviewProps {
-  /**
-   * 文档URL地址
-   */
-  fileUrl: string;
-
-  /**
-   * 文件类型
-   */
-  fileType: OfficeFileType;
-
-  /**
-   * 文件名
-   */
-  fileName: string;
-
-  /**
-   * 是否以全屏模式显示
-   * @default false
-   */
-  isFullScreen?: boolean;
-
-  /**
-   * 关闭预览的回调函数
-   */
-  onClose?: () => void;
-
-  /**
-   * 自定义类名
-   */
-  className?: string;
-
-  /**
-   * 自定义样式
-   */
-  style?: React.CSSProperties;
-}
+interface DesktopOfficePreviewProps extends OfficePreviewProps {}
 
 /**
- * Office文档预览组件
- * 使用微软Office在线预览服务预览Word、Excel和PPT文档
+ * 桌面端Office文档预览组件
+ * 使用iframe嵌入微软Office在线预览服务
  */
-const OfficePreview: React.FC<OfficePreviewProps> = ({
+const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   fileUrl,
   fileType,
   fileName,
@@ -85,48 +35,20 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
   style,
 }) => {
   const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-  const isMobileDevice =
-    useMediaQuery("(max-width:768px)") ||
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent,
-    );
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState<number>(0); // 用于强制刷新iframe
+  const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [useBackupPreview, setUseBackupPreview] = useState<boolean>(false);
+  const [triedBackup, setTriedBackup] = useState<boolean>(false);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef<boolean>(true);
   const isIframeLoadedRef = useRef(false);
 
-  // 根据文件类型获取文件类型显示名称
-  const getFileTypeName = () => {
-    switch (fileType) {
-      case OfficeFileType.WORD:
-        return "Word";
-      case OfficeFileType.EXCEL:
-        return "Excel";
-      case OfficeFileType.PPT:
-        return "PPT";
-      default:
-        return "Office";
-    }
-  };
-
-
-  // 确保URL是安全的
-  const safeUrl = encodeURIComponent(fileUrl);
-  // 直接使用微软官方预览URL
-  const previewUrl = `${OFFICE_PREVIEW_URL}${safeUrl}`;
-  const backupPreviewUrl = `${BACKUP_PREVIEW_URL}${safeUrl}`;
-
-  // 添加备用预览状态
-  const [useBackupPreview, setUseBackupPreview] = useState<boolean>(false);
-  const [triedBackup, setTriedBackup] = useState<boolean>(false);
-
   // 获取实际使用的预览URL
-  const actualPreviewUrl = useBackupPreview ? backupPreviewUrl : previewUrl;
+  const actualPreviewUrl = generatePreviewUrl(fileUrl, useBackupPreview);
 
   // 更新loadingRef以反映当前的loading状态
   useEffect(() => {
@@ -135,12 +57,12 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
 
   // iframe加载事件处理
   const handleIframeLoad = useCallback(() => {
-    console.log(`${getFileTypeName()}预览iframe加载完成:`, actualPreviewUrl);
-    console.log("当前加载状态:", loading); // 打印当前加载状态
+    console.log(`${getFileTypeName(fileType)}预览iframe加载完成:`, actualPreviewUrl);
+    console.log("当前加载状态:", loading);
     isIframeLoadedRef.current = true;
     setLoading(false);
     console.log("已设置加载状态为 false");
-  }, [actualPreviewUrl, fileType, getFileTypeName, loading]);
+  }, [actualPreviewUrl, fileType, loading]);
 
   // 添加 useEffect 钩子检查 iframe 加载状态
   useEffect(() => {
@@ -164,7 +86,7 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
       const timeoutId = setTimeout(() => {
         console.log("强制退出骨架屏：超时");
         setLoading(false);
-      }, 10000); // 10秒后强制退出骨架屏
+      }, SKELETON_EXIT_TIMEOUT);
 
       return () => clearTimeout(timeoutId);
     }
@@ -175,7 +97,7 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
 
   // 处理iframe加载错误
   const handleIframeError = useCallback(() => {
-    console.error(`${getFileTypeName()}预览iframe加载失败:`, actualPreviewUrl);
+    console.error(`${getFileTypeName(fileType)}预览iframe加载失败:`, actualPreviewUrl);
 
     // 如果主预览失败但还未尝试备用预览，切换到备用预览
     if (!useBackupPreview && !triedBackup) {
@@ -187,12 +109,12 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
     }
 
     // 如果备用预览也失败，显示错误
-    console.error(`${getFileTypeName()}预览所有方式都失败`);
+    console.error(`${getFileTypeName(fileType)}预览所有方式都失败`);
     setError(
-      `无法加载${getFileTypeName()}文档预览，可能是网络问题导致无法访问微软预览服务`,
+      `无法加载${getFileTypeName(fileType)}文档预览，可能是网络问题导致无法访问微软预览服务`,
     );
     setLoading(false);
-  }, [useBackupPreview, triedBackup, actualPreviewUrl]);
+  }, [useBackupPreview, triedBackup, actualPreviewUrl, fileType]);
 
   // 刷新预览
   const handleRefresh = useCallback(() => {
@@ -201,10 +123,8 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
     setRefreshKey((prev) => prev + 1);
   }, []);
 
-
   // 处理下载文件
   const handleDownload = useCallback(() => {
-    // 创建临时a标签并触发下载
     const a = document.createElement("a");
     a.href = fileUrl;
     a.download = fileName;
@@ -214,9 +134,9 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
 
   // 在新窗口中打开
   const handleOpenInNewWindow = useCallback(() => {
+    const previewUrl = generatePreviewUrl(fileUrl);
     window.open(previewUrl, "_blank");
-  }, [previewUrl]);
-
+  }, [fileUrl]);
 
   useEffect(() => {
     // 重置状态
@@ -236,7 +156,7 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
         setError("加载预览超时，请尝试使用下载按钮下载文件");
         setLoading(false);
       }
-    }, 20000); // 20秒超时
+    }, IFRAME_LOAD_TIMEOUT);
 
     return () => {
       if (timeoutRef.current) {
@@ -248,145 +168,7 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
   // 在渲染部分使用骨架屏
   if (loading) {
     return (
-      <OfficePreviewSkeleton isSmallScreen={isSmallScreen} data-oid=":hn6lc1" />
-    );
-  }
-
-  // 移动设备上显示特殊界面
-  if (isMobileDevice) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          height: "100%",
-          position: "relative",
-          overflow: "hidden",
-          bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : "#f5f5f5",
-          borderRadius: 1,
-        }}
-        style={style}
-        className={`${className} ${fileType}-preview-container`}
-        data-oid="d6q8zg3"
-      >
-        {/* 标题栏 */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            p: 1,
-            pl: 2,
-            borderBottom: 1,
-            borderColor: "divider",
-            bgcolor:
-              theme.palette.mode === "dark"
-                ? "rgba(0,0,0,0.4)"
-                : "rgba(255,255,255,0.8)",
-            backdropFilter: "blur(8px)",
-          }}
-          data-oid="adr-8nq"
-        >
-          <Typography
-            variant="subtitle1"
-            noWrap
-            sx={{ flex: 1 }}
-            data-oid="ootqlv8"
-          >
-            {fileName}
-          </Typography>
-
-          {onClose && (
-            <Tooltip title="关闭" data-oid="xx6ol5c">
-              <IconButton
-                onClick={onClose}
-                size="small"
-                aria-label="关闭"
-                sx={{
-                  bgcolor: alpha(theme.palette.error.main, 0.1),
-                  color: theme.palette.error.main,
-                  "&:hover": {
-                    bgcolor: alpha(theme.palette.error.main, 0.2),
-                  },
-                }}
-                data-oid="dkhvy9a"
-              >
-                <CloseIcon fontSize="small" data-oid="tgccf_d" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-
-        {/* 移动端提示界面 */}
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            p: 3,
-            gap: 3,
-          }}
-          data-oid="vf0oxp8"
-        >
-          <Paper
-            elevation={2}
-            sx={{
-              p: 3,
-              maxWidth: "90%",
-              width: "100%",
-              textAlign: "center",
-              bgcolor: alpha(theme.palette.info.main, 0.05),
-              border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-            }}
-            data-oid="ey75mwy"
-          >
-            <InfoIcon
-              color="info"
-              sx={{ fontSize: 48, mb: 2 }}
-              data-oid="6s2c4yf"
-            />
-
-            <Typography variant="h6" gutterBottom data-oid="fw1fx83">
-              移动设备暂不支持{getFileTypeName()}在线预览
-            </Typography>
-
-            <Typography variant="body2" sx={{ mb: 3 }} data-oid="_hrenso">
-              由于移动设备的限制，无法直接在应用内预览{getFileTypeName()}文档。
-              您可以选择在浏览器中打开或下载文件后查看。
-            </Typography>
-
-            <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-              data-oid="54i-p:q"
-            >
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                onClick={handleOpenInNewWindow}
-                startIcon={<FullscreenIcon data-oid="qmy:4p8" />}
-                data-oid="3t_-_z3"
-              >
-                在浏览器中打开
-              </Button>
-
-              <Button
-                variant="outlined"
-                color="primary"
-                fullWidth
-                onClick={handleDownload}
-                startIcon={<DownloadIcon data-oid="kwepvf1" />}
-                data-oid="-vl1:gq"
-              >
-                下载文件
-              </Button>
-            </Box>
-          </Paper>
-        </Box>
-      </Box>
+      <OfficePreviewSkeleton isSmallScreen={false} data-oid=":hn6lc1" />
     );
   }
 
@@ -618,4 +400,4 @@ const OfficePreview: React.FC<OfficePreviewProps> = ({
   );
 };
 
-export default OfficePreview;
+export default DesktopOfficePreview;

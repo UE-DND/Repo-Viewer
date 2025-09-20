@@ -27,16 +27,6 @@ export const logger = {
       console.debug('[App:Debug]', ...args);
     }
   },
-  time: (label: string) => {
-    if (isDeveloperMode()) {
-      console.time(`[App:Time] ${label}`);
-    }
-  },
-  timeEnd: (label: string) => {
-    if (isDeveloperMode()) {
-      console.timeEnd(`[App:Time] ${label}`);
-    }
-  },
   group: (label: string) => {
     if (isDeveloperMode()) {
       console.group(`[App:Group] ${label}`);
@@ -47,4 +37,4 @@ export const logger = {
       console.groupEnd();
     }
   }
-}; 
+};

@@ -5,11 +5,10 @@ import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
 import { 
-  USE_SERVER_API, 
-  FORCE_SERVER_PROXY, 
   USE_TOKEN_MODE,
   getApiUrl
 } from './GitHubConfig';
+import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubContentsResponse } from '../schemas/apiSchemas';
 import { 
   transformGitHubContentsResponse,
@@ -54,8 +53,8 @@ export class GitHubContentService {
     try {
       let rawData: unknown;
 
-      // 根据环境决定使用服务端API还是直接调用GitHub API
-      if (USE_SERVER_API) {
+  // 根据环境决定使用服务端API还是直接调用GitHub API（运行时判定）
+  if (shouldUseServerAPI()) {
         const response = await axios.get(`/api/github?action=getContents&path=${encodeURIComponent(path)}`);
         rawData = response.data;
         logger.debug(`通过服务端API获取内容: ${path}`);
@@ -136,23 +135,29 @@ export class GitHubContentService {
       return cachedContent;
     }
 
-    logger.time(`加载文件: ${fileUrl}`);
-
     try {
       let response;
 
-      if (FORCE_SERVER_PROXY) {
+      if (getForceServerProxy()) {
         // 通过服务端API获取文件内容
         const serverApiUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(fileUrl)}`;
+        response = await axios.get(serverApiUrl);
         response = await fetch(serverApiUrl);
-      } else if (USE_TOKEN_MODE) {
-        // 使用令牌模式，通过添加认证头直接请求
-        response = await fetch(fileUrl, {
-          headers: GitHubAuth.getAuthHeaders()
-        });
       } else {
-        // 开发环境，直接请求
-        response = await fetch(fileUrl);
+        // 开发环境或令牌模式，通过 Vite 代理获取文件内容
+        // 将 raw.githubusercontent.com URL 转换为本地代理路径
+        let proxyUrl: string;
+        if (fileUrl.includes('raw.githubusercontent.com')) {
+          // 转换为 /github-raw 代理路径
+          proxyUrl = fileUrl.replace('https://raw.githubusercontent.com', '/github-raw');
+        } else {
+          // 其他情况保持原样（可能已经是代理路径）
+          proxyUrl = fileUrl;
+        }
+        
+        response = await fetch(proxyUrl, {
+          headers: USE_TOKEN_MODE ? GitHubAuth.getAuthHeaders() : {}
+        });
       }
 
       if (!response.ok) {
@@ -168,8 +173,6 @@ export class GitHubContentService {
     } catch (error: any) {
       logger.error(`获取文件内容失败: ${fileUrl}`, error);
       throw new Error(`获取文件内容失败: ${error.message}`);
-    } finally {
-      logger.timeEnd(`加载文件: ${fileUrl}`);
     }
   }
 

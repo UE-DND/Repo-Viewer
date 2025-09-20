@@ -1,12 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
-import { 
-  validateGitHubContentsResponse,
-  validateGitHubSearchResponse,
-  safeValidateGitHubContentsResponse,
-  safeValidateGitHubSearchResponse,
-  ApiErrorResponseSchema 
-} from '../src/services/github/schemas/apiSchemas';
 
 // 配置常量
 const GITHUB_API_BASE = 'https://api.github.com';
@@ -233,17 +226,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
         );
         
-        // 验证GitHub API响应结构
-        const validation = safeValidateGitHubContentsResponse(response.data);
-        if (!validation.success) {
-          console.error('GitHub API响应验证失败:', validation.error);
-          return res.status(500).json({ 
-            error: '获取内容失败',
-            message: `API响应格式错误: ${validation.error}`
-          });
-        }
-        
-        return res.status(200).json(validation.data);
+        return res.status(200).json(response.data);
       } catch (error: any) {
         console.error('GitHub API请求失败:', error.message);
         
@@ -357,17 +340,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
         );
         
-        // 验证GitHub搜索API响应结构
-        const validation = safeValidateGitHubSearchResponse(response.data);
-        if (!validation.success) {
-          console.error('GitHub搜索API响应验证失败:', validation.error);
-          return res.status(500).json({ 
-            error: '搜索失败',
-            message: `搜索响应格式错误: ${validation.error}`
-          });
-        }
-        
-        return res.status(200).json(validation.data);
+        return res.status(200).json(response.data);
       } catch (error: any) {
         console.error('GitHub搜索API请求失败:', error.message);
         return res.status(error.response?.status || 500).json({ 

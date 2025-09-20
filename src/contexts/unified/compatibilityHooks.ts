@@ -103,7 +103,20 @@ export function usePreviewContext() {
   
   // 选择性订阅preview相关状态
   const previewState = useStateSelector(state => state.preview);
-  const { findFileItemByPath } = useContentContext();
+  // 选择性订阅content状态以避免循环依赖
+  const contentState = useStateSelector(state => state.content);
+  
+  // 查找文件的回调 - 避免循环依赖
+  const findFileItemByPath = useCallback(
+    (pathOrFileName: string) => {
+      return contentState.contents.find(
+        (item) => item.path === pathOrFileName || 
+                 item.name === pathOrFileName ||
+                 item.path.endsWith(`/${pathOrFileName}`)
+      );
+    },
+    [contentState.contents]
+  );
   
   // 错误处理函数
   const handleError = useCallback((message: string) => {

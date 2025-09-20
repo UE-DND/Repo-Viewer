@@ -8,9 +8,8 @@ import {
 } from "@mui/material";
 import BreadcrumbNavigation from "./BreadcrumbNavigation";
 import FileList from "../file/FileList";
-import MarkdownPreview from "../preview/MarkdownPreview";
-import ImagePreview from "../preview/ImagePreview";
-import OfficePreview from "../preview/OfficePreview";
+// 使用懒加载的预览组件，降低首屏加载体积
+import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "../../utils/lazy-loading";
 import ErrorDisplay from "../ui/ErrorDisplay";
 import FullScreenPreview from "../file/FullScreenPreview";
 import { 
@@ -238,6 +237,14 @@ const MainContent: React.FC = () => {
     selectFile,
   ]);
 
+  // 在内容加载完成后预加载预览组件
+  useEffect(() => {
+    if (!loading && !error && contents.length > 0) {
+      // 使用空闲时间预加载预览组件
+      preloadPreviewComponents();
+    }
+  }, [loading, error, contents]);
+
   // 获取当前文件或目录的信息用于SEO
   const seoInfo = useMemo(() => {
     // 如果正在预览文件，使用文件信息
@@ -370,7 +377,7 @@ const MainContent: React.FC = () => {
                 data-oid="iawc_6m"
               />
 
-              <MarkdownPreview
+              <LazyMarkdownPreview
                 readmeContent={readmeContent}
                 loadingReadme={false}
                 isSmallScreen={isSmallScreen}
@@ -385,7 +392,7 @@ const MainContent: React.FC = () => {
 
           {/* 图像预览 */}
           {previewState.previewingImageItem && previewState.imagePreviewUrl && (
-            <ImagePreview
+            <LazyImagePreview
               imageUrl={previewState.imagePreviewUrl}
               fileName={previewState.previewingImageItem.name}
               isFullScreen={true}
@@ -400,7 +407,7 @@ const MainContent: React.FC = () => {
             previewState.officePreviewUrl &&
             previewState.officeFileType && (
               <FullScreenPreview onClose={closePreview} data-oid="oa2lre0">
-                <OfficePreview
+                <LazyOfficePreview
                   fileUrl={previewState.officePreviewUrl}
                   fileType={previewState.officeFileType as any}
                   fileName={previewState.previewingOfficeItem.name}

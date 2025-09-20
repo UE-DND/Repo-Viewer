@@ -10,10 +10,7 @@ import { GitHubService } from '../services/github';
 import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger } from '../utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '../utils/routing/urlManager';
 import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '../utils/pdf/pdfLoading';
-
-import { getRuntimeConfig, getAccessConfig } from '../config/ConfigManager';
-
-const FORCE_SERVER_PROXY = !getRuntimeConfig().isDev || getAccessConfig().useTokenMode;
+import { getForceServerProxy } from '../services/github/config/ProxyForceManager';
 
 const initialPreviewState: PreviewState = {
   previewContent: null,
@@ -167,7 +164,7 @@ export const useFilePreview = (
     
     try {
       let proxyUrl = item.download_url;
-      if (FORCE_SERVER_PROXY) {
+      if (getForceServerProxy()) {
         proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
       } else {
         proxyUrl = GitHubService.transformImageUrl(item.download_url, item.path, useTokenMode) || item.download_url;

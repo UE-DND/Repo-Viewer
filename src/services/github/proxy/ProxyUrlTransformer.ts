@@ -1,8 +1,9 @@
 import { logger } from '../../../utils';
-import { getGithubConfig } from '../../../config/ConfigManager';
-import { runtimeConfig, FORCE_SERVER_PROXY } from './ProxyConfig';
+import { getGithubConfig, getRuntimeConfig } from '../../../config/ConfigManager';
+import { getForceServerProxy } from '../config/ProxyForceManager';
 
 const githubConfig = getGithubConfig();
+const runtimeConfig = getRuntimeConfig();
 
 /**
  * 代理URL转换工具类
@@ -92,7 +93,7 @@ export class ProxyUrlTransformer {
       logger.debug('Markdown文件路径:', markdownFilePath);
 
       // 判断是否是非开发环境或启用了令牌模式
-      if (FORCE_SERVER_PROXY && src.startsWith('http')) {
+      if (getForceServerProxy() && src.startsWith('http')) {
         // 通过服务端API代理
         const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(src)}`;
         logger.debug('使用服务端API代理:', proxyUrl);

@@ -1,6 +1,5 @@
 import { GitHubContent } from '../../../types';
 import { GitHubAuth } from './GitHubAuth';
-import { GitHubContentService } from './GitHubContentService';
 import { GitHubSearchService } from './GitHubSearchService';
 import { GitHubPrefetchService } from './GitHubPrefetchService';
 import { GitHubStatsService } from './GitHubStatsService';
@@ -34,6 +33,7 @@ export class GitHubService {
   
   // 获取目录内容
   public static async getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
+    const { GitHubContentService } = await import('./GitHubContentService');
     const contents = await GitHubContentService.getContents(path, signal);
     
     // 预加载相关内容
@@ -44,6 +44,7 @@ export class GitHubService {
 
   // 获取文件内容
   public static async getFileContent(fileUrl: string): Promise<string> {
+    const { GitHubContentService } = await import('./GitHubContentService');
     return GitHubContentService.getFileContent(fileUrl);
   }
 
@@ -115,12 +116,13 @@ export class GitHubService {
   }
 
   // 获取网络请求统计
-  public static getNetworkStats() {
+  public static async getNetworkStats() {
     return GitHubStatsService.getNetworkStats();
   }
 
   // 获取批处理器（用于调试）
-  public static getBatcher() {
+  public static async getBatcher() {
+    const { GitHubContentService } = await import('./GitHubContentService');
     return GitHubContentService.getBatcher();
   }
 }

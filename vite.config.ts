@@ -174,11 +174,47 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
+            // 核心框架包
             'react-vendor': ['react', 'react-dom'],
-            'ui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-            'markdown-vendor': ['react-markdown', 'katex', 'rehype-katex', 'rehype-raw', 'remark-gfm', 'remark-math'],
-            'animation-vendor': ['framer-motion', 'react-zoom-pan-pinch'],
-            'utils-vendor': ['axios', 'jszip', 'file-saver', 'react-use', 'react-virtualized-auto-sizer', 'react-window']
+            // UI组件库 - 分离大包
+            'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
+            'mui-icons': ['@mui/icons-material'],
+            // Markdown相关包 - 按需加载的重点
+            'markdown-core': ['react-markdown', 'remark-gfm', 'rehype-raw'],
+            'markdown-math': ['katex', 'rehype-katex', 'remark-math'],
+            // 动画和交互库
+            'animation-vendor': ['framer-motion'],
+            'interaction-vendor': ['react-zoom-pan-pinch'],
+            // 工具类库
+            'http-vendor': ['axios'],
+            'file-vendor': ['jszip', 'file-saver'],
+            'react-utils': ['react-use', 'react-helmet-async', 'notistack'],
+            'virtualization': ['react-virtualized-auto-sizer', 'react-window'],
+            // 其他工具
+            'validation': ['zod']
+          },
+          // 添加更智能的分块策略
+          chunkFileNames: (chunkInfo) => {
+            // 为懒加载的预览组件设置专门的命名
+            if (chunkInfo.name?.includes('preview')) {
+              return 'assets/preview/[name]-[hash].js';
+            }
+            // 为vendors设置专门的目录
+            if (chunkInfo.name?.includes('vendor')) {
+              return 'assets/vendor/[name]-[hash].js';
+            }
+            return 'assets/js/[name]-[hash].js';
+          },
+          // 资源文件命名
+          assetFileNames: (assetInfo) => {
+            // CSS文件分类
+            if (assetInfo.name?.endsWith('.css')) {
+              if (assetInfo.name.includes('katex')) {
+                return 'assets/css/vendor/katex-[hash][extname]';
+              }
+              return 'assets/css/[name]-[hash][extname]';
+            }
+            return 'assets/[ext]/[name]-[hash][extname]';
           }
         }
       }
@@ -229,11 +265,38 @@ export default defineConfig(({ mode }) => {
       open: true
     },
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      }
+      alias: [
+        { find: '@', replacement: path.resolve(__dirname, './src') }
+      ]
     },
     optimizeDeps: {
+      // 预构建优化 - 提升开发体验
+      include: [
+        // 核心依赖预构建
+        'react',
+        'react-dom',
+        '@mui/material',
+        '@emotion/react',
+        '@emotion/styled',
+        'axios',
+        // 懒加载时也会用到的基础工具
+        'framer-motion',
+        'react-use',
+        // 确保样式解析相关包被正确预构建（处理 CJS/ESM 兼容）
+        'style-to-js',
+        'style-to-object',
+        // Markdown 相关包预构建
+        'react-markdown',
+        'remark-gfm',
+        'remark-math',
+        'rehype-katex'
+      ],
+      // 排除不需要预构建的包
+      exclude: [
+        // 懒加载的重包排除预构建，减少开发时的构建时间
+        'katex',
+        'jszip'
+      ]
     },
     // 将环境变量转发到前端
     define: {

@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useRef } from 'react';
-import JSZip from 'jszip';
+import * as JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { 
   DownloadState,
@@ -8,10 +8,7 @@ import {
 } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
-import { getRuntimeConfig, getAccessConfig } from '../config/ConfigManager';
-
-// 是否使用服务端API代理下载
-const FORCE_SERVER_PROXY = !getRuntimeConfig().isDev || getAccessConfig().useTokenMode;
+import { getForceServerProxy } from '../services/github/config/ProxyForceManager';
 
 // 下载状态初始值
 const initialDownloadState: DownloadState = {
@@ -114,13 +111,11 @@ export const useDownload = (onError: (message: string) => void) => {
     const signal = abortControllerRef.current.signal;
     
     try {
-      logger.time(`下载文件: ${item.path}`);
-      
       // 使用代理URL获取文件
       let downloadUrl = item.download_url;
       
       // 如果是非开发环境或启用了令牌模式，使用服务端API代理
-      if (FORCE_SERVER_PROXY) {
+      if (getForceServerProxy()) {
         downloadUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
       }
       
@@ -155,7 +150,6 @@ export const useDownload = (onError: (message: string) => void) => {
     } finally {
       abortControllerRef.current = null;
       dispatch({ type: 'SET_DOWNLOADING_FILE', path: null });
-      logger.timeEnd(`下载文件: ${item.path}`);
     }
   }, [downloadState.downloadingPath, downloadState.downloadingFolderPath, downloadState.isCancelled, onError]);
   
@@ -177,8 +171,7 @@ export const useDownload = (onError: (message: string) => void) => {
     const signal = abortControllerRef.current.signal;
     
     try {
-      logger.time(`下载文件夹: ${path}`);
-      const zip = new JSZip();
+      const zip = new JSZip.default();
       
       // 递归获取文件夹内容
       const allFiles: { path: string; url: string }[] = [];
@@ -235,7 +228,7 @@ export const useDownload = (onError: (message: string) => void) => {
         type: 'blob',
         compression: 'DEFLATE',
         compressionOptions: { level: 6 }
-      }, (metadata) => {
+      }, (metadata: any) => {
         // 检查是否已取消
         if (downloadState.isCancelled) return;
         dispatch({ type: 'SET_FOLDER_PROGRESS', progress: Math.round(metadata.percent) });
@@ -258,7 +251,6 @@ export const useDownload = (onError: (message: string) => void) => {
     } finally {
       abortControllerRef.current = null;
       dispatch({ type: 'RESET_DOWNLOAD_STATE' });
-      logger.timeEnd(`下载文件夹: ${path}`);
     }
   }, [downloadState.downloadingPath, downloadState.downloadingFolderPath, downloadState.isCancelled, onError]);
   
@@ -291,7 +283,7 @@ export const useDownload = (onError: (message: string) => void) => {
           
           // 如果是非开发环境或启用了令牌模式，使用服务端API代理
           let downloadUrl = item.download_url;
-          if (FORCE_SERVER_PROXY) {
+          if (getForceServerProxy()) {
             downloadUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
           }
           

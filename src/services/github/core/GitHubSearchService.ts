@@ -4,11 +4,11 @@ import { logger } from '../../../utils';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
 import { 
-  USE_SERVER_API, 
   GITHUB_API_BASE,
   GITHUB_REPO_OWNER,
   GITHUB_REPO_NAME
 } from './GitHubConfig';
+import { shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubSearchResponse } from '../schemas/apiSchemas';
 import { 
   transformGitHubSearchResponse,
@@ -40,7 +40,7 @@ export class GitHubSearchService {
 
       let rawSearchResults: unknown;
 
-      if (USE_SERVER_API) {
+  if (shouldUseServerAPI()) {
         // 使用服务端API执行搜索
         const response = await axios.get(`/api/github?action=search&q=${encodeURIComponent(query)}`);
         rawSearchResults = response.data;
@@ -110,8 +110,6 @@ export class GitHubSearchService {
       return [];
     }
 
-    logger.time(`搜索文件: ${searchTerm} 在路径 ${currentPath}`);
-
     try {
       // 动态导入避免循环依赖
       const { GitHubContentService } = await import('./GitHubContentService');
@@ -175,8 +173,6 @@ export class GitHubSearchService {
     } catch (error: any) {
       logger.error(`搜索文件失败: ${error.message}`);
       throw new Error(`搜索文件失败: ${error.message}`);
-    } finally {
-      logger.timeEnd(`搜索文件: ${searchTerm} 在路径 ${currentPath}`);
     }
   }
 }

@@ -73,7 +73,6 @@ export const useGitHubContent = () => {
     setReadmeLoaded(false);
     
     try {
-      logger.time(`加载目录: ${path}`);
       const data = await GitHubService.getContents(path);
       
       // 按类型和名称排序
@@ -135,7 +134,7 @@ export const useGitHubContent = () => {
       setLoading(false);
       setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
-      logger.timeEnd(`加载目录: ${path}`);
+      setLoading(false);
     }
   }, [displayError]);
 
@@ -148,7 +147,6 @@ export const useGitHubContent = () => {
     setReadmeLoaded(false); // 重置加载状态
     
     try {
-      logger.time('加载README');
       const content = await GitHubService.getFileContent(readmeItem.download_url);
       logger.debug(`README加载成功: ${readmeItem.path}，内容长度: ${content.length} 字节`);
       setReadmeContent(content);
@@ -161,7 +159,6 @@ export const useGitHubContent = () => {
       setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
       setLoadingReadme(false);
-      logger.timeEnd('加载README');
     }
   }, [displayError]);
 
