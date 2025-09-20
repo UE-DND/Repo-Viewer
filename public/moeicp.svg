@@ -12,7 +12,7 @@
   <!-- MD3 Assist Chip container -->
   <rect class="chip" x="0.5" y="0.5" width="159" height="27" rx="14" ry="14"/>
   <!-- Minimal shield-like icon (ICP hint) -->
-  <g transform="translate(10,6)">
+  <g transform="translate(11,5)">
     <path class="icon" d="M10 0 L18 3.5 V9.5c0 4.2-3 6.9-8 9-5-2.1-8-4.8-8-9V3.5L10 0z"/>
     <path class="icon" d="M6.5 8.5h7"/>
   </g>
