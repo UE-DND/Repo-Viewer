@@ -12,7 +12,7 @@ import { useRefresh } from "../../hooks/useRefresh";
 import { pulseAnimation, refreshAnimation } from "../../theme/animations";
 import { GitHubService } from "../../services/github";
 import axios from "axios";
-import { getGithubConfig } from '../../config/ConfigManager';
+import { getGithubConfig } from '../../config';
 
 // 工具栏按钮组件
 const ToolbarButtons: React.FC = () => {

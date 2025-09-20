@@ -14,7 +14,7 @@ import {
   NetworkError, 
   FileOperationError 
 } from '../types/errors';
-import { isDeveloperMode } from '../config/ConfigManager';
+import { isDeveloperMode } from '../config';
 
 export interface UseErrorHandlerOptions {
   showNotification?: boolean;

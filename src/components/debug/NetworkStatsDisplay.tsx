@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
-  Chip, 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Chip,
   LinearProgress,
   Button,
   Tooltip,
   Stack
 } from '@mui/material';
-import { 
-  NetworkCheck, 
-  Speed, 
-  Cached, 
+import {
+  NetworkCheck,
+  Speed,
+  Cached,
   Replay,
   TrendingUp,
   Warning,
@@ -56,20 +56,44 @@ export const NetworkStatsDisplay: React.FC = () => {
   const [stats, setStats] = useState<NetworkStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const refreshTimeoutRef = React.useRef<number | null>(null);
 
   const refreshStats = async () => {
+    if (refreshTimeoutRef.current) {
+      window.clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+
     try {
       setIsLoading(true);
-      
+
       // 获取各种统计信息
-      const [batcherStats, proxyStats, cacheStats] = await Promise.all([
-        // 获取请求批处理器统计
-        Promise.resolve((GitHubService as any).batcher?.getStats() || {}),
+      const [networkStats, proxyStats, cacheStats] = await Promise.all([
+        // 获取网络请求统计
+        GitHubService.getNetworkStats().catch((error) => {
+          console.warn('获取网络统计失败:', error);
+          return {
+            batcher: {
+              pendingRequests: 0,
+              batchedRequests: 0,
+              fingerprintCache: 0,
+              fingerprintHits: 0
+            }
+          };
+        }),
         // 获取代理健康状态
         Promise.resolve(ProxyService.getProxyHealthStats() || []),
         // 获取缓存统计
         Promise.resolve(GitHubService.getCacheStats() || {})
       ]);
+
+      // 获取请求批处理器统计
+      const batcherStats = networkStats.batcher || {
+        pendingRequests: 0,
+        batchedRequests: 0,
+        fingerprintCache: 0,
+        fingerprintHits: 0
+      };
 
       setStats({
         requestBatcher: batcherStats,
@@ -85,14 +109,18 @@ export const NetworkStatsDisplay: React.FC = () => {
 
   useEffect(() => {
     refreshStats();
-    
+
     let intervalId: number | null = null;
     if (autoRefresh) {
       intervalId = window.setInterval(refreshStats, 5000); // 每5秒刷新
     }
-    
+
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId) window.clearInterval(intervalId);
+      if (refreshTimeoutRef.current) {
+        window.clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
     };
   }, [autoRefresh]);
 
@@ -141,15 +169,15 @@ export const NetworkStatsDisplay: React.FC = () => {
             网络请求统计
           </Typography>
           <Stack direction="row" spacing={1}>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               onClick={refreshStats}
               startIcon={<Replay />}
             >
               刷新
             </Button>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               variant={autoRefresh ? "contained" : "outlined"}
               onClick={() => setAutoRefresh(!autoRefresh)}
             >
@@ -172,9 +200,9 @@ export const NetworkStatsDisplay: React.FC = () => {
                   <Stack spacing={1}>
                     <Box display="flex" justifyContent="space-between">
                       <Typography variant="body2">进行中请求:</Typography>
-                      <Chip 
-                        label={stats.requestBatcher.pendingRequests} 
-                        size="small" 
+                      <Chip
+                        label={stats.requestBatcher.pendingRequests}
+                        size="small"
                         color={stats.requestBatcher.pendingRequests > 5 ? 'warning' : 'default'}
                       />
                     </Box>
@@ -188,9 +216,9 @@ export const NetworkStatsDisplay: React.FC = () => {
                     </Box>
                     <Box display="flex" justifyContent="space-between">
                       <Typography variant="body2">去重命中:</Typography>
-                      <Chip 
-                        label={stats.requestBatcher.fingerprintHits} 
-                        size="small" 
+                      <Chip
+                        label={stats.requestBatcher.fingerprintHits}
+                        size="small"
                         color="success"
                       />
                     </Box>
@@ -211,12 +239,12 @@ export const NetworkStatsDisplay: React.FC = () => {
                   <Box>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                       <Typography variant="body2">内容缓存命中率:</Typography>
-                      <Chip 
+                      <Chip
                         label={`${calculateHitRate(
                           stats.cacheStats.content?.hits || 0,
                           stats.cacheStats.content?.misses || 0
                         )}%`}
-                        size="small" 
+                        size="small"
                         color="success"
                       />
                     </Box>
@@ -227,12 +255,12 @@ export const NetworkStatsDisplay: React.FC = () => {
                   <Box>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                       <Typography variant="body2">文件缓存命中率:</Typography>
-                      <Chip 
+                      <Chip
                         label={`${calculateHitRate(
                           stats.cacheStats.file?.hits || 0,
                           stats.cacheStats.file?.misses || 0
                         )}%`}
-                        size="small" 
+                        size="small"
                         color="success"
                       />
                     </Box>
@@ -242,9 +270,9 @@ export const NetworkStatsDisplay: React.FC = () => {
                   </Box>
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body2">内存使用:</Typography>
-                    <Chip 
+                    <Chip
                       label={`${(((stats.cacheStats.content?.memoryUsage || 0) + (stats.cacheStats.file?.memoryUsage || 0)) / 1024 / 1024).toFixed(1)}MB`}
-                      size="small" 
+                      size="small"
                       color="info"
                     />
                   </Box>
@@ -288,9 +316,9 @@ export const NetworkStatsDisplay: React.FC = () => {
                           <Stack spacing={0.5}>
                             <Box display="flex" justifyContent="space-between">
                               <Typography variant="caption">响应时间:</Typography>
-                              <Chip 
+                              <Chip
                                 label={`${proxy.responseTime}ms`}
-                                size="small" 
+                                size="small"
                                 color={getHealthColor(proxy.isHealthy, proxy.responseTime)}
                               />
                             </Box>

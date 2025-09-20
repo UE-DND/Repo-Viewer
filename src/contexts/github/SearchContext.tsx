@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { getFeaturesConfig } from "../../config/ConfigManager";
+import { getFeaturesConfig } from "../../config";
 import { SearchIndexService } from "../../services/searchIndexService";
 import {
   PreparedSearchIndexFile,

@@ -16,15 +16,15 @@ class GitHubTokenManager {
   private tokens: string[] = [];
   private currentIndex: number = 0;
   private failedTokens: Set<string> = new Set();
-  
+
   constructor() {
     this.loadTokensFromEnv();
   }
-  
+
   private loadTokensFromEnv() {
     // 清空现有token
     this.tokens = [];
-    
+
     try {
       // 尝试查找环境变量中的所有PAT
       const envKeys = Object.keys(process.env);
@@ -35,62 +35,60 @@ class GitHubTokenManager {
         const value = process.env[key];
         return typeof value === 'string' && value.trim().length > 0;
       });
-      
+
       // 收集所有有效的PAT
       const tokens = patKeys
         .map(key => process.env[key])
         .filter((token): token is string => typeof token === 'string' && token.trim().length > 0);
       this.tokens = tokens;
-      
       console.log(`已加载 ${this.tokens.length} 个GitHub令牌`);
     } catch (error) {
       console.error('加载GitHub token失败:', error);
     }
   }
-  
+
   public getCurrentToken(): string {
     if (this.tokens.length === 0) return '';
     const token = this.tokens[this.currentIndex];
     return token ?? '';
   }
-  
+
   public getNextToken(): string {
     if (this.tokens.length === 0) return '';
-    
+
     // 轮换到下一个有效的令牌
     let attempts = 0;
     while (attempts < this.tokens.length) {
       this.currentIndex = (this.currentIndex + 1) % this.tokens.length;
       const token = this.tokens[this.currentIndex];
-      
+
       // 跳过已知失败的令牌
       if (token && this.failedTokens.has(token)) {
         attempts++;
         continue;
       }
-      
       return token ?? '';
     }
-    
+
     // 如果所有令牌都失败，重置并返回第一个令牌
     this.failedTokens.clear();
     this.currentIndex = 0;
     const firstToken = this.tokens[0];
     return firstToken ?? '';
   }
-  
+
   public markTokenFailed(token: string) {
     this.failedTokens.add(token);
   }
-  
+
   public hasTokens(): boolean {
     return this.tokens.length > 0;
   }
-  
+
   public getTokenCount(): number {
     return this.tokens.length;
   }
-  
+
   public getTokenStatus(): { hasTokens: boolean; count: number } {
     return {
       hasTokens: this.hasTokens(),
@@ -139,11 +137,11 @@ function getAuthHeaders() {
     'Accept': 'application/vnd.github.v3+json',
     'User-Agent': 'Repo-Viewer'
   };
-  
+
   if (token) {
     headers['Authorization'] = `token ${token}`;
   }
-  
+
   return headers;
 }
 
@@ -159,7 +157,7 @@ async function handleRequestWithRetry(requestFn: () => Promise<any>) {
       if (currentToken) {
         tokenManager.markTokenFailed(currentToken);
       }
-      
+
       // 获取新令牌并重试
       const newToken = tokenManager.getNextToken();
       if (newToken && newToken !== currentToken) {
@@ -167,7 +165,7 @@ async function handleRequestWithRetry(requestFn: () => Promise<any>) {
         return await requestFn(); // 使用新令牌重试
       }
     }
-    
+
     // 其他错误或没有可用令牌，抛出异常
     throw error;
   }
@@ -177,13 +175,13 @@ async function handleRequestWithRetry(requestFn: () => Promise<any>) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { action, path, url } = req.query;
-    
+
     const actionParam = Array.isArray(action) ? action[0] : action;
-    
+
     if (!actionParam || typeof actionParam !== 'string') {
       return res.status(400).json({ error: '缺少action参数' });
     }
-    
+
     // 获取配置信息 - 新增API
     if (actionParam === 'getConfig') {
       const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
@@ -196,7 +194,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
     }
-    
+
     // 获取令牌状态 - 新增API
     if (actionParam === 'getTokenStatus') {
       return res.status(200).json({
@@ -204,13 +202,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         data: tokenManager.getTokenStatus()
       });
     }
-    
+
     // 获取仓库内容
     if (actionParam === 'getContents') {
       if (typeof path !== 'string') {
         return res.status(400).json({ error: '缺少path参数' });
       }
-      
+
       const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
 
       if (!repoOwner || !repoName) {
@@ -225,35 +223,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // 处理空路径
       const pathSegment = path === '' ? '' : `/${path}`;
       const apiPath = `/repos/${repoOwner}/${repoName}/contents${pathSegment}?ref=${branch}`;
-      
+
       try {
-        const response = await handleRequestWithRetry(() => 
-          axios.get(`${GITHUB_API_BASE}${apiPath}`, { 
-            headers: getAuthHeaders() 
+        const response = await handleRequestWithRetry(() =>
+          axios.get(`${GITHUB_API_BASE}${apiPath}`, {
+            headers: getAuthHeaders()
           })
         );
-        
+
         // 验证GitHub API响应结构
         const validation = safeValidateGitHubContentsResponse(response.data);
         if (!validation.success) {
-          console.error('GitHub API响应验证失败:', validation.error);
-          return res.status(500).json({ 
+          console.error('GitHub内容响应验证失败:', validation.error);
+          return res.status(500).json({
             error: '获取内容失败',
-            message: `API响应格式错误: ${validation.error}`
+            message: `响应格式错误: ${validation.error}`
           });
         }
-        
+
         return res.status(200).json(validation.data);
       } catch (error: any) {
         console.error('GitHub API请求失败:', error.message);
-        
-        return res.status(error.response?.status || 500).json({ 
+
+        return res.status(error.response?.status || 500).json({
           error: '获取内容失败',
           message: error.message
         });
       }
     }
-    
+
     // 获取文件内容
     if (actionParam === 'getFileContent') {
       // 规范化并校验 url 参数
@@ -261,18 +259,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof urlParam !== 'string' || urlParam.trim() === '') {
         return res.status(400).json({ error: '缺少url参数' });
       }
-      
+
       try {
         const urlString = urlParam;
-        
+
         // 判断是否是二进制文件
         const isBinaryFile = /\.(png|jpg|jpeg|gif|pdf|docx|xlsx|pptx|zip|rar|7z|exe|dll|so|dylib|bin)$/i.test(urlString);
-        
+
         // 设置正确的响应类型
         if (isBinaryFile) {
           // 获取文件扩展名
           const fileExtension = urlString.split('.').pop()?.toLowerCase();
-          
+
           // 设置正确的Content-Type
           if (fileExtension) {
             const contentTypeMap: Record<string, string> = {
@@ -288,52 +286,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               'rar': 'application/x-rar-compressed',
               '7z': 'application/x-7z-compressed'
             };
-            
+
             const contentType = contentTypeMap[fileExtension] || 'application/octet-stream';
             res.setHeader('Content-Type', contentType);
           } else {
             res.setHeader('Content-Type', 'application/octet-stream');
           }
-          
+
           // 二进制文件，使用arraybuffer响应类型
-          const response = await handleRequestWithRetry(() => 
-            axios.get(urlString, { 
+          const response = await handleRequestWithRetry(() =>
+            axios.get(urlString, {
               headers: getAuthHeaders(),
               responseType: 'arraybuffer'
             })
           );
-          
+
           return res.status(200).send(response.data);
         } else {
           // 文本文件，使用默认响应类型
-      const response = await handleRequestWithRetry(() => 
-        axios.get(urlString, { 
-          headers: getAuthHeaders() 
-        })
-      );
-      
-      return res.status(200).send(response.data);
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+
+          const response = await handleRequestWithRetry(() =>
+            axios.get(urlString, {
+              headers: getAuthHeaders()
+            })
+          );
+
+          return res.status(200).send(response.data);
         }
       } catch (error: any) {
         console.error('获取文件内容失败:', error.message);
-        return res.status(error.response?.status || 500).json({ 
+        return res.status(error.response?.status || 500).json({
           error: '获取文件内容失败',
           message: error.message
         });
       }
     }
-    
-    
+
+
     // 搜索仓库
     if (actionParam === 'search') {
       const { q, sort, order } = req.query;
-      
       // 规范化查询参数
       const qParam = Array.isArray(q) ? (q.length > 0 ? q[0] : '') : (q ?? '');
       if (typeof qParam !== 'string' || qParam.trim() === '') {
         return res.status(400).json({ error: '缺少搜索参数' });
       }
-      
+
       const { repoOwner, repoName } = getRepoEnvConfig();
 
       if (!repoOwner || !repoName) {
@@ -344,10 +343,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const searchQuery = `repo:${repoOwner}/${repoName} ${qParam}`;
-      
+
       try {
-        const response = await handleRequestWithRetry(() => 
-          axios.get(`${GITHUB_API_BASE}/search/code`, { 
+        const response = await handleRequestWithRetry(() =>
+          axios.get(`${GITHUB_API_BASE}/search/code`, {
             headers: getAuthHeaders(),
             params: {
               q: searchQuery,
@@ -356,40 +355,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           })
         );
-        
+
         // 验证GitHub搜索API响应结构
         const validation = safeValidateGitHubSearchResponse(response.data);
         if (!validation.success) {
           console.error('GitHub搜索API响应验证失败:', validation.error);
-          return res.status(500).json({ 
+          return res.status(500).json({
             error: '搜索失败',
             message: `搜索响应格式错误: ${validation.error}`
           });
         }
-        
+
         return res.status(200).json(validation.data);
       } catch (error: any) {
         console.error('GitHub搜索API请求失败:', error.message);
-        return res.status(error.response?.status || 500).json({ 
+        return res.status(error.response?.status || 500).json({
           error: '搜索失败',
           message: error.message
         });
       }
     }
-    
+
     // 未知操作
     return res.status(400).json({ error: '不支持的操作' });
   } catch (error: any) {
     console.error('API请求处理错误:', error);
     let message = '处理请求时发生错误';
-    
+
     if (error.response) {
       const status = error.response.status;
       message = `GitHub API错误 (${status}): ${error.response.data?.message || '未知错误'}`;
     } else if (error.message) {
       message = error.message;
     }
-    
+
     return res.status(500).json({ error: message });
   }
-} 
+}

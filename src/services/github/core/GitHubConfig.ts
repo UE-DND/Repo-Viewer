@@ -1,4 +1,5 @@
-import { getGithubConfig, getRuntimeConfig, getAccessConfig } from '../../../config/ConfigManager';
+import { getGithubConfig, getAccessConfig } from '../../../config';
+import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 
 // 基础配置
 const githubConfig = getGithubConfig();
@@ -7,17 +8,16 @@ export const GITHUB_REPO_NAME = githubConfig.repoName;
 export const DEFAULT_BRANCH = githubConfig.repoBranch;
 
 // 运行时配置
-const runtimeConfig = getRuntimeConfig();
 const accessConfig = getAccessConfig();
 
-// 是否使用服务端API（非开发环境）
-export const USE_SERVER_API = !runtimeConfig.isDev;
+// 是否使用服务端API（运行时判定）
+export const USE_SERVER_API = shouldUseServerAPI();
 
 // 模式设置
 export const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
 // 强制使用服务端API代理所有请求
-export const FORCE_SERVER_PROXY = !runtimeConfig.isDev || USE_TOKEN_MODE;
+export const FORCE_SERVER_PROXY = getForceServerProxy();
 
 // 工具函数
 export const isDevEnvironment = import.meta.env.DEV;
@@ -34,24 +34,23 @@ export interface ConfigInfo {
 
 // 获取配置信息
 export async function getConfig(): Promise<ConfigInfo> {
-  const githubConfig = getGithubConfig();
-  
-  // 使用配置中的分支，保持与后端一致
+  const latestConfig = getGithubConfig();
+
   return {
-    repoOwner: githubConfig.repoOwner,
-    repoName: githubConfig.repoName,
-    repoBranch: githubConfig.repoBranch
+    repoOwner: latestConfig.repoOwner,
+    repoName: latestConfig.repoName,
+    repoBranch: latestConfig.repoBranch
   };
 }
 
 // 获取API URL
 export function getApiUrl(path: string): string {
   const safePath = path.replace(/^\/+/, '');
-  const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${safePath}?ref=${DEFAULT_BRANCH}`;
+  const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${safePath}?ref=${DEFAULT_BRANCH}`;
 
   // 开发环境使用本地代理
   if (isDevEnvironment) {
-    const encodedPath = safePath 
+    const encodedPath = safePath
       ? safePath.split('/').map(segment => encodeURIComponent(segment)).join('/')
       : '';
     return `/github-api/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${encodedPath}?ref=${DEFAULT_BRANCH}`;

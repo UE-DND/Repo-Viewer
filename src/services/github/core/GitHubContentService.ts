@@ -4,14 +4,13 @@ import { logger } from '../../../utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
-import { 
-  USE_SERVER_API, 
-  FORCE_SERVER_PROXY, 
+import {
   USE_TOKEN_MODE,
   getApiUrl
 } from './GitHubConfig';
+import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubContentsResponse } from '../schemas/apiSchemas';
-import { 
+import {
   transformGitHubContentsResponse,
   filterAndNormalizeGitHubContents,
   validateGitHubContentsArray
@@ -19,7 +18,7 @@ import {
 
 export class GitHubContentService {
   private static readonly batcher = new RequestBatcher();
-  
+
   // 缓存初始化状态
   private static cacheInitialized = false;
 
@@ -32,7 +31,6 @@ export class GitHubContentService {
         logger.info('GitHubContentService: 缓存系统初始化完成');
       } catch (error) {
         logger.warn('GitHubContentService: 缓存系统初始化失败，使用同步缓存', error);
-        // 即使初始化失败，也标记为已初始化以避免重复尝试
         this.cacheInitialized = true;
       }
     }
@@ -55,12 +53,11 @@ export class GitHubContentService {
       let rawData: unknown;
 
       // 根据环境决定使用服务端API还是直接调用GitHub API
-      if (USE_SERVER_API) {
+      if (shouldUseServerAPI()) {
         const response = await axios.get(`/api/github?action=getContents&path=${encodeURIComponent(path)}`);
         rawData = response.data;
         logger.debug(`通过服务端API获取内容: ${path}`);
       } else {
-        // 原始直接请求GitHub API的代码
         const apiUrl = getApiUrl(path);
 
         // 使用批处理器处理请求
@@ -78,7 +75,7 @@ export class GitHubContentService {
 
           return result.json();
         }, {
-          priority: 'high', // 内容获取优先级高
+          priority: 'high',
           method: 'GET',
           headers: GitHubAuth.getAuthHeaders() as Record<string, string>
         });
@@ -96,7 +93,7 @@ export class GitHubContentService {
 
       // 转换为内部模型
       const rawContents = transformGitHubContentsResponse(validation.data);
-      
+
       // 过滤和标准化内容
       const contents = filterAndNormalizeGitHubContents(rawContents, {
         excludeHidden: true,
@@ -107,7 +104,6 @@ export class GitHubContentService {
       const contentValidation = validateGitHubContentsArray(contents);
       if (!contentValidation.isValid) {
         logger.warn(`内容数据验证存在问题: ${path}`, contentValidation.invalidItems);
-        // 不阻止执行，但记录警告
       }
 
       // 使用异步缓存并包含版本信息
@@ -125,7 +121,6 @@ export class GitHubContentService {
   public static async getFileContent(fileUrl: string): Promise<string> {
     await this.ensureCacheInitialized();
 
-    // 添加缓存键
     const cacheKey = `file:${fileUrl}`;
     const fileCache = CacheManager.getFileCache();
 
@@ -136,23 +131,26 @@ export class GitHubContentService {
       return cachedContent;
     }
 
-    logger.time(`加载文件: ${fileUrl}`);
-
     try {
-      let response;
+      let response: Response;
 
-      if (FORCE_SERVER_PROXY) {
-        // 通过服务端API获取文件内容
+      // 通过服务端API获取文件内容
+      if (getForceServerProxy()) {
         const serverApiUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(fileUrl)}`;
         response = await fetch(serverApiUrl);
-      } else if (USE_TOKEN_MODE) {
-        // 使用令牌模式，通过添加认证头直接请求
-        response = await fetch(fileUrl, {
-          headers: GitHubAuth.getAuthHeaders()
-        });
       } else {
+        // 使用令牌模式，通过添加认证头直接请求
+        let proxyUrl: string;
+        if (fileUrl.includes('raw.githubusercontent.com')) {
+          proxyUrl = fileUrl.replace('https://raw.githubusercontent.com', '/github-raw');
+        } else {
+          proxyUrl = fileUrl;
+        }
+
         // 开发环境，直接请求
-        response = await fetch(fileUrl);
+        response = await fetch(proxyUrl, {
+          headers: USE_TOKEN_MODE ? GitHubAuth.getAuthHeaders() : {}
+        });
       }
 
       if (!response.ok) {
@@ -168,8 +166,6 @@ export class GitHubContentService {
     } catch (error: any) {
       logger.error(`获取文件内容失败: ${fileUrl}`, error);
       throw new Error(`获取文件内容失败: ${error.message}`);
-    } finally {
-      logger.timeEnd(`加载文件: ${fileUrl}`);
     }
   }
 
@@ -182,7 +178,7 @@ export class GitHubContentService {
   // 生成文件版本
   private static generateFileVersion(fileUrl: string, content: string): string {
     const contentLength = content.length;
-    const urlHash = fileUrl.split('/').slice(-2).join('-'); // 取文件名和父目录
+    const urlHash = fileUrl.split('/').slice(-2).join('-');
     return `${urlHash}-${contentLength}-${Date.now()}`;
   }
 

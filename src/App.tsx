@@ -5,17 +5,14 @@ import {
   Typography,
   Box,
   useTheme,
-  CssBaseline,
-  ThemeProvider,
   useMediaQuery,
 } from "@mui/material";
-import { AppContextProvider } from "./contexts/github";
+import { OptimizedAppContextProvider as AppContextProvider } from "./contexts/unified";
 import MainContent from "./components/layout/MainContent";
 import ToolbarButtons from "./components/layout/ToolbarButtons";
 import { SITE_TITLE } from "./constants";
 import { GitHubService } from "./services/github";
 import { logger } from "./utils";
-import { SnackbarProvider } from "notistack";
 import SEO from "./components/seo/SEO";
 import Footer from "./components/layout/Footer";
 import { FaviconManager } from "./components/ui/DynamicIcon";
@@ -73,13 +70,11 @@ const App = React.memo(() => {
   }, []);
 
   return (
-    <ThemeProvider theme={theme} data-oid="..yfsak">
-      <CssBaseline data-oid="q-9ujvb" />
+    <>
       {/* 动态favicon管理器 */}
       <FaviconManager />
-      <>
-        {/* 基础SEO设置 */}
-        <SEO data-oid="542h-3i" />
+      {/* 基础SEO设置 */}
+      <SEO data-oid="542h-3i" />
 
         <style data-oid="b003vxu">
           {`
@@ -100,87 +95,76 @@ const App = React.memo(() => {
             }
           `}
         </style>
-        <PageErrorBoundary>
-          <SnackbarProvider
-            maxSnack={3}
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            autoHideDuration={3000}
-            dense={isSmallScreen}
-            preventDuplicate
-            TransitionProps={{ direction: "up" }}
-            data-oid="a3ed3_x"
+      <PageErrorBoundary>
+        <AppContextProvider data-oid="a29dni6">
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "100vh",
+              overflow: "hidden",
+            }}
+            data-oid="x1__:v_"
           >
-            <AppContextProvider data-oid="a29dni6">
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: "100vh",
-                  overflow: "hidden",
-                }}
-                data-oid="x1__:v_"
-              >
-                <AppBar
-                  position="static"
-                  elevation={0}
+            <AppBar
+              position="static"
+              elevation={0}
+              sx={{
+                borderBottom: "1px solid",
+                borderColor: "divider",
+              }}
+              data-oid="wo6wy.h"
+            >
+              <Toolbar data-oid="3t2uspn">
+                <Box
                   sx={{
-                    borderBottom: "1px solid",
-                    borderColor: "divider",
+                    flexGrow: 1,
+                    display: "flex",
+                    alignItems: "center",
                   }}
-                  data-oid="wo6wy.h"
+                  data-oid="ldirzxg"
                 >
-                  <Toolbar data-oid="3t2uspn">
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                      data-oid="ldirzxg"
-                    >
-                      <Typography
-                        ref={titleRef}
-                        variant="h6"
-                        component="div"
-                        sx={{
-                          cursor: isSmallScreen ? "default" : "pointer",
-                          transition: "opacity 0.2s ease-in-out",
-                          "&:hover": isSmallScreen
-                            ? {}
-                            : {
-                                opacity: 0.8,
-                              },
-                          fontSize: {
-                            xs: "0.9rem",
-                            sm: "1rem",
-                            md: "1.25rem",
+                  <Typography
+                    ref={titleRef}
+                    variant="h6"
+                    component="div"
+                    sx={{
+                      cursor: isSmallScreen ? "default" : "pointer",
+                      transition: "opacity 0.2s ease-in-out",
+                      "&:hover": isSmallScreen
+                        ? {}
+                        : {
+                            opacity: 0.8,
                           },
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                        onClick={handleTitleClick}
-                        data-oid="isr-jsd"
-                      >
-                        {SITE_TITLE}
-                      </Typography>
-                    </Box>
-                    <ToolbarButtons data-oid="enprsdk" />
-                  </Toolbar>
-                </AppBar>
+                      fontSize: {
+                        xs: "0.9rem",
+                        sm: "1rem",
+                        md: "1.25rem",
+                      },
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                    onClick={handleTitleClick}
+                    data-oid="isr-jsd"
+                  >
+                    {SITE_TITLE}
+                  </Typography>
+                </Box>
+                <ToolbarButtons data-oid="enprsdk" />
+              </Toolbar>
+            </AppBar>
 
-                <FeatureErrorBoundary featureName="MainContent">
-                  <MainContent data-oid="jgn58er" />
-                </FeatureErrorBoundary>
+            <FeatureErrorBoundary featureName="MainContent">
+              <MainContent data-oid="jgn58er" />
+            </FeatureErrorBoundary>
 
-                {/* 添加页脚组件 */}
-                <Footer data-oid="ntwtx22" />
-              </Box>
-            </AppContextProvider>
-          </SnackbarProvider>
-        </PageErrorBoundary>
-      </>
-    </ThemeProvider>
+            {/* 添加页脚组件 */}
+            <Footer data-oid="ntwtx22" />
+          </Box>
+        </AppContextProvider>
+      </PageErrorBoundary>
+    </>
   );
 });
 

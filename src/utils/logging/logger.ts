@@ -1,4 +1,4 @@
-import { isDeveloperMode } from '../../config/ConfigManager';
+import { isDeveloperMode } from '../../config';
 
 // 开发者日志
 export const logger = {
@@ -27,16 +27,6 @@ export const logger = {
       console.debug('[App:Debug]', ...args);
     }
   },
-  time: (label: string) => {
-    if (isDeveloperMode()) {
-      console.time(`[App:Time] ${label}`);
-    }
-  },
-  timeEnd: (label: string) => {
-    if (isDeveloperMode()) {
-      console.timeEnd(`[App:Time] ${label}`);
-    }
-  },
   group: (label: string) => {
     if (isDeveloperMode()) {
       console.group(`[App:Group] ${label}`);
@@ -46,5 +36,15 @@ export const logger = {
     if (isDeveloperMode()) {
       console.groupEnd();
     }
+  },
+  time: (label: string) => {
+    if (isDeveloperMode()) {
+      console.time(`[App:Timer] ${label}`);
+    }
+  },
+  timeEnd: (label: string) => {
+    if (isDeveloperMode()) {
+      console.timeEnd(`[App:Timer] ${label}`);
+    }
   }
-}; 
+};

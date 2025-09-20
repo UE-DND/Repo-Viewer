@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getFeaturesConfig, getGithubConfig } from "../config/ConfigManager";
+import { getFeaturesConfig, getGithubConfig } from "../config";
 import { logger } from "../utils";
 import {
   PreparedSearchIndex,

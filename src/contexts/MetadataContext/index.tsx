@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
-import { getSiteConfig } from '../../config/ConfigManager';
+import { getSiteConfig } from '../../config';
 
 // SEO默认值从统一配置获取
 const siteConfig = getSiteConfig();

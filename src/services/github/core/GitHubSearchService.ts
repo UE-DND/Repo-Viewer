@@ -3,14 +3,14 @@ import { GitHubContent } from '../../../types';
 import { logger } from '../../../utils';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
-import { 
-  USE_SERVER_API, 
+import {
   GITHUB_API_BASE,
   GITHUB_REPO_OWNER,
   GITHUB_REPO_NAME
 } from './GitHubConfig';
+import { shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubSearchResponse } from '../schemas/apiSchemas';
-import { 
+import {
   transformGitHubSearchResponse,
   filterAndNormalizeGitHubContents
 } from '../schemas/dataTransformers';
@@ -40,7 +40,7 @@ export class GitHubSearchService {
 
       let rawSearchResults: unknown;
 
-      if (USE_SERVER_API) {
+      if (shouldUseServerAPI()) {
         // 使用服务端API执行搜索
         const response = await axios.get(`/api/github?action=search&q=${encodeURIComponent(query)}`);
         rawSearchResults = response.data;
@@ -50,10 +50,10 @@ export class GitHubSearchService {
         const apiUrl = `${GITHUB_API_BASE}/search/code`;
         const urlWithParams = new URL(apiUrl);
         urlWithParams.searchParams.append('q', query);
-        urlWithParams.searchParams.append('per_page', '100'); // 最大结果数
+        urlWithParams.searchParams.append('per_page', '100');
 
-        // 使用增强批处理器处理请求
         const fetchUrl = urlWithParams.toString();
+        // 使用增强批处理器处理请求
         const response = await this.batcher.enqueue(fetchUrl, async () => {
           logger.debug(`搜索API请求: ${fetchUrl}`);
           const result = await fetch(fetchUrl, {
@@ -67,7 +67,7 @@ export class GitHubSearchService {
 
           return result.json();
         }, {
-          priority: 'medium', // 搜索请求中等优先级
+          priority: 'medium',
           method: 'GET',
           headers: GitHubAuth.getAuthHeaders() as Record<string, string>
         });
@@ -85,11 +85,11 @@ export class GitHubSearchService {
 
       // 转换搜索结果为内部模型
       const searchContents = transformGitHubSearchResponse(validation.data);
-      
+
       // 过滤和标准化搜索结果
       const results = filterAndNormalizeGitHubContents(searchContents, {
-        excludeHidden: false, // 搜索结果可能包含隐藏文件
-        includeOnlyTypes: ['file'] // 搜索结果通常只包含文件
+        excludeHidden: false,
+        includeOnlyTypes: ['file']
       });
 
       return results;
@@ -110,12 +110,12 @@ export class GitHubSearchService {
       return [];
     }
 
+
     logger.time(`搜索文件: ${searchTerm} 在路径 ${currentPath}`);
 
     try {
       // 动态导入避免循环依赖
       const { GitHubContentService } = await import('./GitHubContentService');
-      
       // 首先获取当前目录的内容
       const contents = await GitHubContentService.getContents(currentPath);
 
@@ -162,7 +162,6 @@ export class GitHubSearchService {
 
           // 并行执行所有搜索请求
           const subResults = await Promise.all(searchPromises);
-
           // 合并所有子目录结果
           for (const items of subResults) {
             results = [...results, ...items];

@@ -1,38 +1,40 @@
 import { logger } from '../../../utils';
-import { getProxyConfig } from '../../../config/ConfigManager';
-import { 
-  runtimeConfig, 
-  USE_TOKEN_MODE, 
-  FORCE_SERVER_PROXY, 
+import { getProxyConfig, getRuntimeConfig } from '../../../config';
+import {
+  USE_TOKEN_MODE,
   PROXY_SERVICES
 } from './ProxyConfig';
+import { getForceServerProxy } from '../config/ProxyForceManager';
 import { proxyHealthManager } from './ProxyHealthManager';
 import { ProxyUrlTransformer } from './ProxyUrlTransformer';
 
 const proxyConfig = getProxyConfig();
-
+const runtimeConfig = getRuntimeConfig();
 
 // 保持向后兼容
 const failedProxyServices = new Set<string>();
 
+// 获取处理过的URL
 export class ProxyService {
-  // 获取处理过的URL
-  public static async getProxiedUrl(url: string, options: {
-    priority?: 'high' | 'medium' | 'low';
-    timeout?: number;
-    retryCount?: number;
-  } = {}): Promise<string> {
+  public static async getProxiedUrl(
+    url: string,
+    options: {
+      priority?: 'high' | 'medium' | 'low';
+      timeout?: number;
+      retryCount?: number;
+    } = {}
+  ): Promise<string> {
     if (!url) return '';
 
     const { priority = 'medium', timeout = proxyConfig.validationTimeout, retryCount = 0 } = options;
 
-    // 如果是开发环境且未配置代理，则直接返回原始URL
     if (runtimeConfig.isDev && !USE_TOKEN_MODE && !proxyConfig.imageProxyUrl) {
+      // 如果是开发环境且未配置代理，则直接返回原始URL
       return url;
     }
 
     // 修改：优先使用服务端API代理
-    if (FORCE_SERVER_PROXY) {
+    if (getForceServerProxy()) {
       // 通过服务端API代理请求
       return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
     }
@@ -71,7 +73,7 @@ export class ProxyService {
       return url;
     }
 
-    if (FORCE_SERVER_PROXY) {
+    if (getForceServerProxy()) {
       return `/api/github?action=getFileContent&url=${encodeURIComponent(url)}`;
     }
 
@@ -110,15 +112,13 @@ export class ProxyService {
     }
   }
 
-
   // 标记代理服务失败（增强版）
   public static markProxyServiceFailed(proxyUrl: string): void {
     if (proxyUrl) {
-      // 使用新的健康管理器
       proxyHealthManager.recordFailure(proxyUrl);
 
-      // 保持向后兼容
       if (!failedProxyServices.has(proxyUrl)) {
+        // 保持向后兼容
         logger.warn(`标记代理服务失败: ${proxyUrl}`);
         failedProxyServices.add(proxyUrl);
       }
@@ -127,7 +127,7 @@ export class ProxyService {
 
   // 获取当前使用的代理服务
   public static getCurrentProxyService(): string {
-    return proxyHealthManager.getBestProxy() || PROXY_SERVICES[0] || "";
+    return proxyHealthManager.getBestProxy() || PROXY_SERVICES[0] || '';
   }
 
   // 获取代理健康状态
@@ -139,15 +139,17 @@ export class ProxyService {
   public static resetFailedProxyServices(): void {
     // 清空旧的失败记录（向后兼容）
     failedProxyServices.clear();
-
     // 使用新的重置方法，可靠地清空健康管理器状态
     proxyHealthManager.reset();
-
     logger.info('已重置所有失败的代理服务记录，代理健康状态已完全重置');
   }
 
   // 转换相对图片URL为绝对URL
-  public static transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean): string | undefined {
-    return ProxyUrlTransformer.transformImageUrl(src, markdownFilePath, useTokenMode, this.getProxiedUrlSync);
+  public static transformImageUrl(
+    src: string | undefined,
+    markdownFilePath: string,
+    useTokenMode: boolean
+  ): string | undefined {
+    return ProxyUrlTransformer.transformImageUrl(src, markdownFilePath, useTokenMode, ProxyService.getProxiedUrlSync);
   }
 }

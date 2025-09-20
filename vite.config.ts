@@ -5,90 +5,13 @@ import * as http from 'http'
 import * as https from 'https'
 import { readFileSync } from 'fs'
 // 导入配置管理器
-import { configManager } from './src/config/ConfigManager'
+import { configManager, applyEnvMappingForVite } from './src/config'
 
 type Logger = {
   log: (...args: any[]) => void
   warn: (...args: any[]) => void
   error: (...args: any[]) => void
   info: (...args: any[]) => void
-}
-
-// GitHub PAT 相关配置
-const PAT_BASE_KEY = 'GITHUB_PAT'
-const MAX_PAT_NUMBER = 10
-
-// 映射配置
-const ENV_MAPPING_CONFIG = {
-  // 站点配置
-  SITE_TITLE: 'VITE_SITE_TITLE',
-  SITE_DESCRIPTION: 'VITE_SITE_DESCRIPTION',
-  SITE_KEYWORDS: 'VITE_SITE_KEYWORDS',
-  SITE_OG_IMAGE: 'VITE_SITE_OG_IMAGE',
-
-  // GitHub仓库配置
-  GITHUB_REPO_OWNER: 'VITE_GITHUB_REPO_OWNER',
-  GITHUB_REPO_NAME: 'VITE_GITHUB_REPO_NAME',
-  GITHUB_REPO_BRANCH: 'VITE_GITHUB_REPO_BRANCH',
-
-  // 功能配置
-  HOMEPAGE_FILTER_ENABLED: 'VITE_HOMEPAGE_FILTER_ENABLED',
-  HOMEPAGE_ALLOWED_FOLDERS: 'VITE_HOMEPAGE_ALLOWED_FOLDERS',
-  HOMEPAGE_ALLOWED_FILETYPES: 'VITE_HOMEPAGE_ALLOWED_FILETYPES',
-  HIDE_MAIN_FOLDER_DOWNLOAD: 'VITE_HIDE_MAIN_FOLDER_DOWNLOAD',
-  HIDE_DOWNLOAD_FOLDERS: 'VITE_HIDE_DOWNLOAD_FOLDERS',
-
-  // 代理配置
-  DOWNLOAD_PROXY_URL: 'VITE_DOWNLOAD_PROXY_URL',
-  DOWNLOAD_PROXY_URL_BACKUP1: 'VITE_DOWNLOAD_PROXY_URL_BACKUP1',
-  DOWNLOAD_PROXY_URL_BACKUP2: 'VITE_DOWNLOAD_PROXY_URL_BACKUP2',
-
-  // 访问配置
-  USE_TOKEN_MODE: 'VITE_USE_TOKEN_MODE',
-
-  // 开发者配置
-  DEVELOPER_MODE: 'VITE_DEVELOPER_MODE',
-  CONSOLE_LOGGING: 'VITE_CONSOLE_LOGGING'
-} as const
-
-const normalizeEnvValue = (value?: string): string | undefined => {
-  if (typeof value !== 'string') {
-    return undefined
-  }
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}
-
-const syncEnvMapping = (envSource: Record<string, string | undefined>) => {
-  Object.entries(ENV_MAPPING_CONFIG).forEach(([plainKey, viteKey]) => {
-    const plainValue = normalizeEnvValue(envSource[plainKey] ?? process.env[plainKey])
-    const viteValue = normalizeEnvValue(envSource[viteKey] ?? process.env[viteKey])
-
-    if (plainValue && !viteValue) {
-      process.env[viteKey] = plainValue
-      envSource[viteKey] = plainValue
-    }
-  })
-}
-
-// 仅在开发模式下同步 PAT，避免生产构建时将令牌暴露给前端
-const syncPatEnvVariablesForDev = (envSource: Record<string, string | undefined>, isProdLike: boolean) => {
-  if (isProdLike) {
-    return
-  }
-
-  const suffixes = ['', ...Array.from({ length: MAX_PAT_NUMBER }, (_, index) => `${index + 1}`)]
-
-  suffixes.forEach((suffix) => {
-    const plainKey = `${PAT_BASE_KEY}${suffix}`
-    const viteKey = `VITE_${plainKey}`
-    const plainValue = normalizeEnvValue(envSource[plainKey] ?? process.env[plainKey])
-
-    if (plainValue && !process.env[viteKey]) {
-      process.env[viteKey] = plainValue
-      envSource[viteKey] = plainValue
-    }
-  })
 }
 
 const createLogger = (developerMode: boolean): Logger => ({
@@ -153,11 +76,9 @@ function getPackageVersion() {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
-  // 同步变量映射
-  syncEnvMapping(env)
-
+  // 统一由 ConfigManager 执行环境变量映射（SSOT）
   const isProdLike = mode === 'production' || process.env.NODE_ENV === 'production'
-  syncPatEnvVariablesForDev(env, isProdLike);
+  applyEnvMappingForVite(env, { isProdLike })
 
   // 开发者模式配置 - 控制调试信息显示
   // 使用映射后的VITE_前缀变量或原始变量
@@ -174,11 +95,47 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
+            // 核心框架包
             'react-vendor': ['react', 'react-dom'],
-            'ui-vendor': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-            'markdown-vendor': ['react-markdown', 'katex', 'rehype-katex', 'rehype-raw', 'remark-gfm', 'remark-math'],
-            'animation-vendor': ['framer-motion', 'react-zoom-pan-pinch'],
-            'utils-vendor': ['axios', 'jszip', 'file-saver', 'react-use', 'react-virtualized-auto-sizer', 'react-window']
+            // UI组件库 - 分离大包
+            'mui-core': ['@mui/material', '@emotion/react', '@emotion/styled'],
+            'mui-icons': ['@mui/icons-material'],
+            // Markdown相关包 - 按需加载的重点
+            'markdown-core': ['react-markdown', 'remark-gfm', 'rehype-raw'],
+            'markdown-math': ['katex', 'rehype-katex', 'remark-math'],
+            // 动画和交互库
+            'animation-vendor': ['framer-motion'],
+            'interaction-vendor': ['react-zoom-pan-pinch'],
+            // 工具类库
+            'http-vendor': ['axios'],
+            'file-vendor': ['jszip', 'file-saver'],
+            'react-utils': ['react-use', 'react-helmet-async', 'notistack'],
+            'virtualization': ['react-virtualized-auto-sizer', 'react-window'],
+            // 其他工具
+            'validation': ['zod']
+          },
+          // 添加更智能的分块策略
+          chunkFileNames: (chunkInfo) => {
+            // 为懒加载的预览组件设置专门的命名
+            if (chunkInfo.name?.includes('preview')) {
+              return 'assets/preview/[name]-[hash].js';
+            }
+            // 为vendors设置专门的目录
+            if (chunkInfo.name?.includes('vendor')) {
+              return 'assets/vendor/[name]-[hash].js';
+            }
+            return 'assets/js/[name]-[hash].js';
+          },
+          // 资源文件命名
+          assetFileNames: (assetInfo) => {
+            // CSS文件分类
+            if (assetInfo.name?.endsWith('.css')) {
+              if (assetInfo.name.includes('katex')) {
+                return 'assets/css/vendor/katex-[hash][extname]';
+              }
+              return 'assets/css/[name]-[hash][extname]';
+            }
+            return 'assets/[ext]/[name]-[hash][extname]';
           }
         }
       }
@@ -229,11 +186,38 @@ export default defineConfig(({ mode }) => {
       open: true
     },
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      }
+      alias: [
+        { find: '@', replacement: path.resolve(__dirname, './src') }
+      ]
     },
     optimizeDeps: {
+      // 预构建优化 - 提升开发体验
+      include: [
+        // 核心依赖预构建
+        'react',
+        'react-dom',
+        '@mui/material',
+        '@emotion/react',
+        '@emotion/styled',
+        'axios',
+        // 懒加载时也会用到的基础工具
+        'framer-motion',
+        'react-use',
+        // 确保样式解析相关包被正确预构建（处理 CJS/ESM 兼容）
+        'style-to-js',
+        'style-to-object',
+        // Markdown 相关包预构建
+        'react-markdown',
+        'remark-gfm',
+        'remark-math',
+        'rehype-katex'
+      ],
+      // 排除不需要预构建的包
+      exclude: [
+        // 懒加载的重包排除预构建，减少开发时的构建时间
+        'katex',
+        'jszip'
+      ]
     },
     // 将环境变量转发到前端
     define: {

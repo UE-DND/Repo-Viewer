@@ -1,4 +1,4 @@
-import { getSiteConfig } from '../config/ConfigManager';
+import { getSiteConfig } from '../config';
 
 // 应用常量
 

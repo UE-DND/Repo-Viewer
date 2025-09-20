@@ -17,7 +17,7 @@ import {
   FileOperationError
 } from '../../types/errors';
 import { logger } from '../logging/logger';
-import { isDeveloperMode } from '../../config/ConfigManager';
+import { isDeveloperMode } from '../../config';
 
 class ErrorManagerClass {
   private errorHistory: AppError[] = [];
