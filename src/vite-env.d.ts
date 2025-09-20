@@ -16,7 +16,6 @@ interface ImportMetaEnv {
   readonly DOWNLOAD_PROXY_URL_BACKUP2?: string
   readonly USE_TOKEN_MODE?: string
   readonly DEVELOPER_MODE?: string
-  readonly DEBUG_MODE?: string
   readonly CONSOLE_LOGGING?: string
   
   // VITE_前缀变量（自动生成）
@@ -34,7 +33,6 @@ interface ImportMetaEnv {
   readonly VITE_DOWNLOAD_PROXY_URL_BACKUP2?: string
   readonly VITE_USE_TOKEN_MODE?: string
   readonly VITE_DEVELOPER_MODE?: string
-  readonly VITE_DEBUG_MODE?: string
   readonly VITE_CONSOLE_LOGGING?: string
   
   // GitHub仓库变量（双向同步）

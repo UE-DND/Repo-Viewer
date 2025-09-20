@@ -1,70 +1,68 @@
 # Repo-Viewer
 
-A GitHub repository browsing web application based on the MD3 design language.
+基于MD3设计语言的GitHub仓库浏览网页应用。
 
-English | [中文](README_ZH.md)
-
-## Table of Contents
+## 目录
 
 - [Repo-Viewer](#repo-viewer)
-  - [Table of Contents](#table-of-contents)
-  - [Key Features](#key-features)
-  - [Local Development](#local-development)
-  - [Environment Variables Configuration](#environment-variables-configuration)
-  - [Deployment Guide](#deployment-guide)
-    - [Deploy with Vercel](#deploy-with-vercel)
-  - [License](#license)
+  - [目录](#目录)
+  - [主要功能](#主要功能)
+  - [本地开发](#本地开发)
+  - [环境变量配置](#环境变量配置)
+  - [部署指南](#部署指南)
+    - [使用Vercel部署](#使用vercel部署)
+  - [许可证](#许可证)
 
-## Key Features
+## 主要功能
 
-- 🔍 **Repository Browsing**: Intuitive file structure navigation
-- 📄 **File Preview**: Support for previewing multiple file formats including Markdown, PDF, and images
-- ⬇️ **File Download**: Download individual files or entire folders
-- 🔄 **Responsive Design**: Compatible with desktop and mobile devices
-- 🔍 **Content Filtering**: Support for filtering files and folders on the homepage
-- 🛠️ **Developer Mode**: Provides detailed debugging information and performance statistics
-- 🌐 **SEO Optimization**: Improve search engine visibility
-- 🔄 **Backup Proxy Support**: Support for multi-level proxy automatic failover, ensuring reliable file access
+- 🔍 **仓库浏览**：直观的文件结构导航
+- 📄 **文件预览**：支持多种文件格式预览，包括Markdown、PDF和图片
+- ⬇️ **文件下载**：可下载单个文件或整个文件夹
+- 🔄 **响应式设计**：兼容桌面和移动设备
+- 🔍 **内容过滤**：支持首页文件和文件夹过滤
+- 🛠️ **开发者模式**：提供详细调试信息和性能统计
+- 🌐 **SEO优化**：提高搜索引擎可见性
+- 🔄 **备选代理支持**：支持多级代理自动故障转移，确保文件访问的可靠性
 
-## Local Development
+## 本地开发
 
-Follow these steps to set up your development environment:
+按照以下步骤设置您的开发环境：
 
-1. **Clone the Repository**
+1. **克隆仓库**
 
-2. **Install Dependencies**
+2. **安装依赖**
 
    ```bash
    npm install
    ```
 
-3. **Create Environment Configuration**
-   - Copy `env.local.txt` to `.env` file
+3. **创建环境配置**
+   - 复制`.env.example`到`.env`并修改
 
    ```bash
-   cp env.local.txt .env
+   cp .env.example .env
    ```
 
-   - Edit the `.env` file to configure the necessary environment variables
-   - **Note**: `env.local.txt` is the environment variable template, now using unified prefix-free naming with automatic VITE_ prefix mapping
+   - 编辑`.env`文件配置必要的环境变量
+   - **注意**：`.env.example`为环境变量模板，现在使用统一的无前缀命名，系统会自动处理VITE_前缀映射
 
-4. **Start the Development Server**
+4. **启动开发服务器**
 
    ```bash
    npm run dev
    ```
 
-   - The development server will start at `http://localhost:3000`
+   - 开发服务器将在`http://localhost:3000`启动
 
-## Environment Variables Configuration
+## 环境变量配置
 
-**Required Environment Variables**:
+**必需的环境变量**:
 
-```
-# Basic Configuration
-SITE_TITLE = Your Site Title
-SITE_DESCRIPTION = Your site description for SEO
-SITE_KEYWORDS = keyword1, keyword2, keyword3
+```env
+# 基础配置
+SITE_TITLE = 你的站点标题
+SITE_DESCRIPTION = 你的站点描述,用于SEO
+SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
 SITE_OG_IMAGE = /icon.svg
 HOMEPAGE_FILTER_ENABLED = true
 HOMEPAGE_ALLOWED_FOLDERS = docs,src
@@ -74,62 +72,61 @@ HIDE_DOWNLOAD_FOLDERS = node_modules,dist
 DOWNLOAD_PROXY_URL = https://your-proxy
 DEVELOPER_MODE = false
 
-# Repository Information
-GITHUB_REPO_OWNER = Repository Owner
-GITHUB_REPO_NAME = Repository Name
-GITHUB_REPO_BRANCH = Branch Name (defaults to main)
+# 仓库信息
+GITHUB_REPO_OWNER = 仓库所有者
+GITHUB_REPO_NAME = 仓库名称
+GITHUB_REPO_BRANCH = 分支名称（默认为main）
 
-# GitHub Access Tokens
-GITHUB_PAT1 = Your GitHub Personal Access Token
-GITHUB_PAT2 =                                        # Optional secondary token
+# GitHub访问令牌
+GITHUB_PAT1 = 你的GitHub个人访问令牌
+GITHUB_PAT2 =                                       # 可选备用令牌
 ```
 
-**Optional Environment Variables**:
+**可选的环境变量**:
 
-```
-# Homepage Content Filtering - Only affects the repository root directory (homepage)
-HOMEPAGE_FILTER_ENABLED = true or false           # Enable homepage filtering
-HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2        # Folders allowed to be displayed on homepage
-HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt           # File types allowed to be displayed on homepage
+```env
+# 首页内容过滤- 仅对仓库根目录（首页）生效
+HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
+HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
+HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
 
-# Homepage Download Button Control - Only affects the repository root directory (homepage)
-HIDE_MAIN_FOLDER_DOWNLOAD = true or false         # Hide download button for the main folder on homepage
-HIDE_DOWNLOAD_FOLDERS = folder1,folder2           # Folders on homepage to hide download button for
+# 首页下载按钮控制- 仅对仓库根目录（首页）生效
+HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
+HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
 
-# Proxy Settings
-DOWNLOAD_PROXY_URL = Download Proxy URL                 # Primary proxy URL
+# 代理设置
+DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
 DOWNLOAD_PROXY_URL_BACKUP1 =
 DOWNLOAD_PROXY_URL_BACKUP2 =
 
-# Developer Options
-DEVELOPER_MODE = true/false                     # Enable developer mode
-DEBUG_MODE = true/false                        # Enable debug mode
-CONSOLE_LOGGING = true/false                   # Console logging
+# 开发者选项
+DEVELOPER_MODE = true/false                     # 启用开发者模式
+CONSOLE_LOGGING = true/false                   # 控制台日志
 ```
 
-## Deployment Guide
+## 部署指南
 
-### Deploy with Vercel
+### 使用Vercel部署
 
-1. **Create Personal Access Tokens (PATs) on GitHub**:
-   - Visit [GitHub Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
-   - Create one or more tokens with `repo` permissions
-   - Save these tokens; you'll use them in the next step
+1. **在GitHub上创建个人访问令牌（PAT）**:
+   - 访问[GitHub设置→开发者设置→个人访问令牌](https://github.com/settings/tokens)
+   - 创建一个或多个具有`repo`权限的令牌
+   - 保存这些令牌，你将在下一步中使用它们
 
-2. **Import Your Repository on Vercel**:
-   - Log in to [Vercel](https://vercel.com)
-   - Click "Import Project"
-   - Select "Import Git Repository" and connect your GitHub account
-   - Select the Repo-Viewer repository
+2. **在Vercel上导入你的仓库**:
+   - 登录[Vercel](https://vercel.com)
+   - 点击"Import Project"
+   - 选择"Import Git Repository"并连接你的GitHub账号
+   - 选择Repo-Viewer仓库
 
-3. **Configure Environment Variables**:
-   - On the deployment settings page, find the "Environment Variables" section
-   - Add the necessary environment variables (see the [Environment Variables Configuration](#environment-variables-configuration) section)
+3. **配置环境变量**:
+   - 在部署设置页面，找到"Environment Variables"部分
+   - 添加必要的环境变量
 
-4. **Deploy the Application**:
-   - Click the "Deploy" button
-   - Vercel will automatically build and deploy your application
+4. **部署应用**:
+   - 点击"Deploy"按钮
+   - Vercel将自动构建和部署你的应用
 
-## License
+## 许可证
 
-This project is open-sourced under the AGPL-3.0 license. See the [LICENSE](LICENSE) file for details.
+本项目基于AGPL-3.0许可证开源。详见[LICENSE](LICENSE)文件。

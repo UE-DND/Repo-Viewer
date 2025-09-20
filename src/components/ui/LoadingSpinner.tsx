@@ -1,11 +1,5 @@
-import React, { memo } from "react";
-import {
-  Box,
-  CircularProgress,
-  Typography,
-  alpha,
-  useTheme,
-} from "@mui/material";
+import { memo } from "react";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 interface LoadingSpinnerProps {
   message?: string;
@@ -15,9 +9,6 @@ interface LoadingSpinnerProps {
 
 const LoadingSpinner = memo<LoadingSpinnerProps>(
   ({ message = "加载中...", isSmallScreen, fullHeight = false }) => {
-    // 使用useTheme钩子获取主题
-    const theme = useTheme();
-
     return (
       <Box
         sx={{

@@ -1,11 +1,10 @@
 import React, { useMemo, useEffect, useState } from "react";
-import { List, useTheme, Box } from "@mui/material";
+import { Box } from "@mui/material";
 import { FixedSizeList, ListChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { motion } from "framer-motion";
 import FileListItem from "./FileListItem";
 import { GitHubContent } from "../../types";
-import { NavigationDirection } from "../../contexts/github";
 
 // 添加CSS优化，提高动画性能
 const optimizedAnimationStyle = {
@@ -27,7 +26,6 @@ interface FileListProps {
   handleFolderDownloadClick: (e: React.MouseEvent, item: GitHubContent) => void;
   handleCancelDownload: (e: React.MouseEvent) => void;
   currentPath: string;
-  navigationDirection: NavigationDirection;
   hasReadmePreview?: boolean;
 }
 
@@ -89,11 +87,11 @@ const LIST_HEIGHT_CONFIG = {
 const EASE_OUT: [number, number, number, number] = [0.4, 0, 0.2, 1];
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
-  visible: (i: number) => ({
+  visible: (index: number) => ({
     opacity: 1,
     y: 0,
     transition: {
-      delay: Math.min(i * 0.01, 0.1),
+      delay: Math.min(index * 0.01, 0.1),
       duration: 0.12,
       ease: EASE_OUT,
     },
@@ -114,7 +112,7 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
     // 快速滚动时使用更快的动画
     return {
       hidden: { opacity: 0.7, y: 5 },
-      visible: (i: number) => ({
+      visible: () => ({
         opacity: 1,
         y: 0,
         transition: {
@@ -128,11 +126,11 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
     // 普通滚动时使用中等速度动画
     return {
       hidden: { opacity: 0, y: 8 },
-      visible: (i: number) => ({
+      visible: (index: number) => ({
         opacity: 1,
         y: 0,
         transition: {
-          delay: Math.min(i * 0.005, 0.05), // 非常小的延迟
+          delay: Math.min(index * 0.005, 0.05), // 非常小的延迟
           duration: 0.1, // 较短的动画时长
           ease: EASE_OUT,
         },
@@ -148,7 +146,6 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
 const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
   const {
     contents,
-    isSmallScreen,
     downloadingPath,
     downloadingFolderPath,
     folderDownloadProgress,
@@ -180,7 +177,7 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
 
   return (
     <motion.div
-      style={adjustedStyle}
+      style={adjustedStyle as any}
       className="file-list-item-container"
       variants={currentVariants}
       custom={index}
@@ -191,7 +188,6 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
       <FileListItem
         key={item.path}
         item={item}
-        isSmallScreen={isSmallScreen}
         downloadingPath={downloadingPath}
         downloadingFolderPath={downloadingFolderPath}
         folderDownloadProgress={folderDownloadProgress}
@@ -222,10 +218,8 @@ const FileList = React.memo<FileListProps>(
     handleFolderDownloadClick,
     handleCancelDownload,
     currentPath,
-    navigationDirection,
     hasReadmePreview = false,
   }) => {
-    const theme = useTheme();
     const [availableHeight, setAvailableHeight] = useState(0);
     const [needsScrolling, setNeedsScrolling] = useState(false);
     const [isScrolling, setIsScrolling] = useState(false);
@@ -391,7 +385,6 @@ const FileList = React.memo<FileListProps>(
     const itemData = useMemo(
       () => ({
         contents,
-        isSmallScreen,
         downloadingPath,
         downloadingFolderPath,
         folderDownloadProgress,
@@ -405,7 +398,6 @@ const FileList = React.memo<FileListProps>(
       }),
       [
         contents,
-        isSmallScreen,
         downloadingPath,
         downloadingFolderPath,
         folderDownloadProgress,
@@ -441,7 +433,6 @@ const FileList = React.memo<FileListProps>(
     const handleScroll = React.useCallback(
       ({
         scrollOffset,
-        scrollDirection,
       }: {
         scrollOffset: number;
         scrollDirection: "forward" | "backward";

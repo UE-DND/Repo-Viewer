@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { PaletteMode } from '@mui/material';
 import { logger } from '../utils';
-import { removeLatexElements, restoreLatexElements } from '../utils/latexOptimizer';
+import { removeLatexElements, restoreLatexElements } from '../utils/rendering/latexOptimizer';
 
 const shouldUseDarkMode = (): boolean => {
   const currentHour = new Date().getHours();
@@ -16,7 +16,7 @@ const getTimeBasedMode = (): PaletteMode => {
 const shouldRefreshThemeColor = (): boolean => {
   const lastThemeColorDate = localStorage.getItem('lastThemeColorDate');
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = today.toISOString().slice(0, 10);
   
   if (!lastThemeColorDate || lastThemeColorDate !== todayStr) {
     const daysSince1970 = Math.floor(today.getTime() / (24 * 60 * 60 * 1000));

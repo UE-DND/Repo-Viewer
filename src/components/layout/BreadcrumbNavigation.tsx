@@ -14,7 +14,7 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
-import { NavigationDirection } from "../../contexts/github";
+import { NavigationDirection } from "../../contexts/unified";
 
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: Array<{ name: string; path: string }>;
@@ -45,9 +45,12 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
       // 获取倒数第二个路径（当前路径的父级）
       const parentIndex = breadcrumbSegments.length - 2;
       if (parentIndex >= 0) {
-        const parentPath = breadcrumbSegments[parentIndex].path;
-        // 设置导航方向为后退
-        handleBreadcrumbClick(parentPath, "backward");
+        const parentSegment = breadcrumbSegments[parentIndex];
+        if (parentSegment) {
+          const parentPath = parentSegment.path;
+          // 设置导航方向为后退
+          handleBreadcrumbClick(parentPath, "backward");
+        }
       }
     };
 
@@ -131,7 +134,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
               data-oid="kbdj3p7"
             />
           }
-          maxItems={breadcrumbsMaxItems || undefined}
+          maxItems={breadcrumbsMaxItems > 0 ? breadcrumbsMaxItems : 100}
           itemsBeforeCollapse={isSmallScreen ? 1 : 2}
           itemsAfterCollapse={isSmallScreen ? 1 : 2}
           sx={{

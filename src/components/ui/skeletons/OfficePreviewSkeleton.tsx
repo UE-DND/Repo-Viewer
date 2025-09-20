@@ -17,15 +17,21 @@ export const OfficePreviewSkeleton: React.FC<{
   const [isExiting, setIsExiting] = useState(!visible);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (!visible && !isExiting) {
       setIsExiting(true);
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         if (onExited) onExited();
       }, 300);
-      return () => clearTimeout(timer);
     } else if (visible && isExiting) {
       setIsExiting(false);
     }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [visible, isExiting, onExited]);
 
   return (
@@ -60,8 +66,8 @@ export const OfficePreviewSkeleton: React.FC<{
       >
         <Skeleton
           variant="text"
-          width={200}
-          height={24}
+          width={isSmallScreen ? 160 : 200}
+          height={isSmallScreen ? 20 : 24}
           animation="wave"
           sx={skeletonStyles}
           data-oid="vrd9l_a"
@@ -69,32 +75,32 @@ export const OfficePreviewSkeleton: React.FC<{
         <Box sx={{ display: "flex", gap: 1 }} data-oid="4on2d:d">
           <Skeleton
             variant="circular"
-            width={28}
-            height={28}
+            width={isSmallScreen ? 24 : 28}
+            height={isSmallScreen ? 24 : 28}
             animation="wave"
             sx={skeletonStyles}
             data-oid="nnpw410"
           />
           <Skeleton
             variant="circular"
-            width={28}
-            height={28}
+            width={isSmallScreen ? 24 : 28}
+            height={isSmallScreen ? 24 : 28}
             animation="wave"
             sx={skeletonStyles}
             data-oid="vftxow2"
           />
           <Skeleton
             variant="circular"
-            width={28}
-            height={28}
+            width={isSmallScreen ? 24 : 28}
+            height={isSmallScreen ? 24 : 28}
             animation="wave"
             sx={skeletonStyles}
             data-oid="j9gw6l3"
           />
           <Skeleton
             variant="circular"
-            width={28}
-            height={28}
+            width={isSmallScreen ? 24 : 28}
+            height={isSmallScreen ? 24 : 28}
             animation="wave"
             sx={skeletonStyles}
             data-oid="yi_v9_-"

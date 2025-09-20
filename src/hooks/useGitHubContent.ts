@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { GitHubContent } from '../types';
 import { GitHubService } from '../services/github';
 import { logger } from '../utils';
-import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/urlManager';
-import { NavigationDirection } from '../contexts/github';
-import { getFeaturesConfig, getGithubConfig } from '../config/ConfigManager';
+import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/routing/urlManager';
+import { NavigationDirection } from '../contexts/unified';
+import { getFeaturesConfig, getGithubConfig } from '../config';
 
 // 配置
 const featuresConfig = getFeaturesConfig();
@@ -73,7 +73,6 @@ export const useGitHubContent = () => {
     setReadmeLoaded(false);
     
     try {
-      logger.time(`加载目录: ${path}`);
       const data = await GitHubService.getContents(path);
       
       // 按类型和名称排序
@@ -135,7 +134,7 @@ export const useGitHubContent = () => {
       setLoading(false);
       setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
-      logger.timeEnd(`加载目录: ${path}`);
+      setLoading(false);
     }
   }, [displayError]);
 
@@ -148,7 +147,6 @@ export const useGitHubContent = () => {
     setReadmeLoaded(false); // 重置加载状态
     
     try {
-      logger.time('加载README');
       const content = await GitHubService.getFileContent(readmeItem.download_url);
       logger.debug(`README加载成功: ${readmeItem.path}，内容长度: ${content.length} 字节`);
       setReadmeContent(content);
@@ -161,7 +159,6 @@ export const useGitHubContent = () => {
       setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
       setLoadingReadme(false);
-      logger.timeEnd('加载README');
     }
   }, [displayError]);
 
@@ -251,12 +248,7 @@ export const useGitHubContent = () => {
     logger.debug('触发内容刷新');
   }, []);
 
-  // 导航到指定路径
-  const navigateTo = useCallback((path: string, direction: NavigationDirection = 'forward') => {
-    logger.debug(`导航到: ${path}, 方向: ${direction}`);
-    setNavigationDirection(direction);
-    setCurrentPath(path);
-  }, []);
+  
 
   return {
     currentPath,

@@ -8,12 +8,9 @@ import {
 } from '../types';
 import { GitHubService } from '../services/github';
 import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger } from '../utils';
-import { getPreviewFromUrl, updateUrlWithHistory, updateUrlWithoutHistory, hasPreviewParam } from '../utils/urlManager';
-import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '../utils/pdfLoading';
-
-import { getRuntimeConfig, getAccessConfig } from '../config/ConfigManager';
-
-const FORCE_SERVER_PROXY = !getRuntimeConfig().isDev || getAccessConfig().useTokenMode;
+import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '../utils/routing/urlManager';
+import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '../utils/pdf/pdfLoading';
+import { getForceServerProxy } from '../services/github/config/ProxyForceManager';
 
 const initialPreviewState: PreviewState = {
   previewContent: null,
@@ -167,7 +164,7 @@ export const useFilePreview = (
     
     try {
       let proxyUrl = item.download_url;
-      if (FORCE_SERVER_PROXY) {
+      if (getForceServerProxy()) {
         proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
       } else {
         proxyUrl = GitHubService.transformImageUrl(item.download_url, item.path, useTokenMode) || item.download_url;
@@ -217,7 +214,6 @@ export const useFilePreview = (
 
           if (import.meta.env.DEV) {
             try {
-              const statusEl = newTab.document.getElementById('status');
               const progressEl = newTab.document.getElementById('progress');
               const viewerEl = newTab.document.getElementById('viewer') as HTMLIFrameElement | null;
               const loaderEl = newTab.document.getElementById('loader');
@@ -398,41 +394,7 @@ export const useFilePreview = (
   }, [onError]);
   
   // 加载Markdown预览 (仅用于README文件)
-  const loadMarkdownPreview = useCallback(async (item: GitHubContent) => {
-    if (!item.download_url) return;
-    
-    // 只加载README.md文件
-    if (item.name.toLowerCase() !== 'readme.md') {
-      onError('已禁用Markdown文件预览功能，如需查看内容请下载文件');
-      logger.info(`阻止加载非README的Markdown文件: ${item.path}`);
-      return;
-    }
-    
-    dispatch({ type: 'SET_MD_PREVIEW', content: null, item });
-    dispatch({ type: 'SET_MD_LOADING', loading: true });
-    
-    try {
-      logger.time('加载Markdown');
-      const content = await GitHubService.getFileContent(item.download_url);
-      dispatch({ type: 'SET_MD_PREVIEW', content, item });
-    } catch (e: any) {
-      onError(`加载Markdown失败: ${e.message}`);
-    } finally {
-      dispatch({ type: 'SET_MD_LOADING', loading: false });
-      logger.timeEnd('加载Markdown');
-    }
-  }, [onError]);
   
-  
-  // 加载图像预览
-  const loadImagePreview = useCallback((item: GitHubContent) => {
-    if (!item.download_url) return;
-    
-    dispatch({ type: 'SET_IMAGE_PREVIEW', url: item.download_url, item });
-    dispatch({ type: 'SET_IMAGE_LOADING', loading: true });
-    
-    // 图像加载通过img标签处理，这里只设置URL
-  }, []);
   
   // 关闭预览
   const closePreview = useCallback(() => {
