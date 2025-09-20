@@ -136,12 +136,11 @@ export class GitHubContentService {
     }
 
     try {
-      let response;
+      let response: Response;
 
       if (getForceServerProxy()) {
         // 通过服务端API获取文件内容
         const serverApiUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(fileUrl)}`;
-        response = await axios.get(serverApiUrl);
         response = await fetch(serverApiUrl);
       } else {
         // 开发环境或令牌模式，通过 Vite 代理获取文件内容

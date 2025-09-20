@@ -1,4 +1,4 @@
-import { getConfig, getAccessConfig, getRuntimeConfig, configManager } from '../../../config/ConfigManager';
+import { getConfig, getAccessConfig, getRuntimeConfig, configManager } from '../../../config';
 
 // 代理强制模式配置管理器，统一管理所有代理相关的配置逻辑
 export class ProxyForceManager {

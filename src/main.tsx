@@ -11,7 +11,7 @@ import CustomSnackbar from "./components/ui/CustomSnackbar";
 import { setupLatexOptimization } from "./utils/rendering/latexOptimizer";
 import SEOProvider from "./contexts/SEOContext";
 
-import { getDeveloperConfig } from './config/ConfigManager';
+import { getDeveloperConfig } from './config';
 
 // 开发者模式配置 - 控制调试信息显示
 const DEV_CONFIG = {

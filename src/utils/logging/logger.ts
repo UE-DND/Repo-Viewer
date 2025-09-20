@@ -1,4 +1,4 @@
-import { isDeveloperMode } from '../../config/ConfigManager';
+import { isDeveloperMode } from '../../config';
 
 // 开发者日志
 export const logger = {

@@ -26,7 +26,7 @@ import {
 } from '@mui/icons-material';
 import { ErrorManager } from '../../utils/error/ErrorManager';
 // 移除未使用的类型导入
-import { isDeveloperMode } from '../../config/ConfigManager';
+import { isDeveloperMode } from '../../config';
 
 // 统一使用 React.ErrorInfo 类型
 type ErrorInfo = React.ErrorInfo;

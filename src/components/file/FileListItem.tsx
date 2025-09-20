@@ -21,7 +21,7 @@ import {
 import { getFileIcon, logger } from "../../utils";
 import { GitHubContent } from "../../types";
 
-import { getFeaturesConfig } from '../../config/ConfigManager';
+import { getFeaturesConfig } from '../../config';
 
 // 从统一配置获取配置
 const featuresConfig = getFeaturesConfig();

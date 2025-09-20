@@ -5,7 +5,7 @@ import {
   isDeveloperMode,
   configManager, 
   EnvParser 
-} from '../../config/ConfigManager';
+} from '../../config';
 
 // 工具函数
 const isDevEnvironment = import.meta.env.DEV;

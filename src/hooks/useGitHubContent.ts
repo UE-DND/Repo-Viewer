@@ -4,7 +4,7 @@ import { GitHubService } from '../services/github';
 import { logger } from '../utils';
 import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/routing/urlManager';
 import { NavigationDirection } from '../contexts/unified';
-import { getFeaturesConfig, getGithubConfig } from '../config/ConfigManager';
+import { getFeaturesConfig, getGithubConfig } from '../config';
 
 // 配置
 const featuresConfig = getFeaturesConfig();

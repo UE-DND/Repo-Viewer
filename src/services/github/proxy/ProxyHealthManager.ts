@@ -1,4 +1,4 @@
-import { getProxyConfig } from '../../../config/ConfigManager';
+import { getProxyConfig } from '../../../config';
 import { PROXY_SERVICES } from './ProxyConfig';
 
 const proxyConfig = getProxyConfig();

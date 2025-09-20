@@ -1,5 +1,5 @@
 import { logger } from '../../../utils';
-import { getProxyConfig, getRuntimeConfig } from '../../../config/ConfigManager';
+import { getProxyConfig, getRuntimeConfig } from '../../../config';
 import { 
   USE_TOKEN_MODE, 
   PROXY_SERVICES

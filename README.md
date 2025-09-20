@@ -37,14 +37,14 @@
    ```
 
 3. **创建环境配置**
-   - 复制`env.local.txt`到`.env`文件
+   - 复制`.env.example`到`.env`并修改
 
    ```bash
-   cp env.local.txt .env
+   cp .env.example .env
    ```
 
    - 编辑`.env`文件配置必要的环境变量
-   - **注意**：`env.local.txt`为环境变量模板，现在使用统一的无前缀命名，系统会自动处理VITE_前缀映射
+   - **注意**：`.env.example`为环境变量模板，现在使用统一的无前缀命名，系统会自动处理VITE_前缀映射
 
 4. **启动开发服务器**
 
@@ -58,7 +58,7 @@
 
 **必需的环境变量**:
 
-```
+```env
 # 基础配置
 SITE_TITLE = 你的站点标题
 SITE_DESCRIPTION = 你的站点描述,用于SEO
@@ -84,7 +84,7 @@ GITHUB_PAT2 =                                       # 可选备用令牌
 
 **可选的环境变量**:
 
-```
+```env
 # 首页内容过滤- 仅对仓库根目录（首页）生效
 HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
 HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
@@ -121,7 +121,7 @@ CONSOLE_LOGGING = true/false                   # 控制台日志
 
 3. **配置环境变量**:
    - 在部署设置页面，找到"Environment Variables"部分
-   - 添加必要的环境变量（见下方[Vercel环境变量配置](#vercel环境变量配置)）
+   - 添加必要的环境变量
 
 4. **部署应用**:
    - 点击"Deploy"按钮

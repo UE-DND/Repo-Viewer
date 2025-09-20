@@ -1,5 +1,5 @@
 import { logger } from '../../../utils';
-import { getGithubConfig, getRuntimeConfig } from '../../../config/ConfigManager';
+import { getGithubConfig, getRuntimeConfig } from '../../../config';
 import { getForceServerProxy } from '../config/ProxyForceManager';
 
 const githubConfig = getGithubConfig();

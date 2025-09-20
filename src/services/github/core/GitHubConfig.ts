@@ -1,4 +1,4 @@
-import { getGithubConfig, getAccessConfig } from '../../../config/ConfigManager';
+import { getGithubConfig, getAccessConfig } from '../../../config';
 import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 
 // 基础配置

@@ -1,6 +1,6 @@
 import React, { ReactNode, useMemo } from 'react';
 import { StateManager, StateManagerContext, GlobalState, NavigationDirection } from './state';
-import { getSiteConfig } from '../../config/ConfigManager';
+import { getSiteConfig } from '../../config';
 
 // 获取默认配置
 const siteConfig = getSiteConfig();
