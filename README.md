@@ -44,7 +44,6 @@
    ```
 
    - 编辑`.env`文件配置必要的环境变量
-   - **注意**：`.env.example`为环境变量模板，现在使用统一的无前缀命名，系统会自动处理VITE_前缀映射
 
 4. **启动开发服务器**
 
@@ -60,48 +59,42 @@
 
 ```env
 # 基础配置
-SITE_TITLE = 你的站点标题
-SITE_DESCRIPTION = 你的站点描述,用于SEO
-SITE_KEYWORDS = 关键词1, 关键词2, 关键词3
-SITE_OG_IMAGE = /icon.svg
-HOMEPAGE_FILTER_ENABLED = true
-HOMEPAGE_ALLOWED_FOLDERS = docs,src
-HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt
-HIDE_MAIN_FOLDER_DOWNLOAD = false
-HIDE_DOWNLOAD_FOLDERS = node_modules,dist
-DOWNLOAD_PROXY_URL = https://your-proxy
-DEVELOPER_MODE = false
+SITE_TITLE =                                          # 你的站点标题
+SITE_DESCRIPTION =                                    # 你的站点描述,用于SEO
+SITE_KEYWORDS =                                       # 关键词1, 关键词2, 关键词3
+SITE_OG_IMAGE = /icon.svg                             # 站点图标
+
 
 # 仓库信息
-GITHUB_REPO_OWNER = 仓库所有者
-GITHUB_REPO_NAME = 仓库名称
-GITHUB_REPO_BRANCH = 分支名称（默认为main）
+GITHUB_REPO_OWNER =                                   # 仓库所有者
+GITHUB_REPO_NAME =                                    # 仓库名称
+GITHUB_REPO_BRANCH =                                  # 分支名称（默认为main）
 
 # GitHub访问令牌
-GITHUB_PAT1 = 你的GitHub个人访问令牌
-GITHUB_PAT2 =                                       # 可选备用令牌
+GITHUB_PAT1 =                                         # 个人GitHub令牌
+GITHUB_PAT2 =                                         # 可选备用令牌
 ```
 
 **可选的环境变量**:
 
 ```env
 # 首页内容过滤- 仅对仓库根目录（首页）生效
-HOMEPAGE_FILTER_ENABLED = true或false           # 启用首页过滤功能
-HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2      # 允许在首页显示的文件夹
-HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt         # 允许在首页显示的文件类型
+HOMEPAGE_FILTER_ENABLED = true/false                  # 启用首页过滤功能
+HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2            # 允许在首页显示的文件夹
+HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt               # 允许在首页显示的文件类型
 
 # 首页下载按钮控制- 仅对仓库根目录（首页）生效
-HIDE_MAIN_FOLDER_DOWNLOAD = true或false         # 隐藏首页的主文件夹下载按钮
-HIDE_DOWNLOAD_FOLDERS = folder1,folder2         # 首页上需要隐藏下载按钮的文件夹
+HIDE_MAIN_FOLDER_DOWNLOAD = true/false                # 隐藏首页的主文件夹下载按钮
+HIDE_DOWNLOAD_FOLDERS = folder1,folder2               # 首页上需要隐藏下载按钮的文件夹
 
 # 代理设置
-DOWNLOAD_PROXY_URL = 下载代理URL                    # 主代理URL
+DOWNLOAD_PROXY_URL = 下载代理URL                       # 主代理URL
 DOWNLOAD_PROXY_URL_BACKUP1 =
 DOWNLOAD_PROXY_URL_BACKUP2 =
 
 # 开发者选项
-DEVELOPER_MODE = true/false                     # 启用开发者模式
-CONSOLE_LOGGING = true/false                   # 控制台日志
+DEVELOPER_MODE = true/false                           # 启用开发者模式
+CONSOLE_LOGGING = true/false                          # 控制台日志
 ```
 
 ## 部署指南
