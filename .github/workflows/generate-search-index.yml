@@ -3,14 +3,14 @@ name: Build Search Index
 on:
   push:
     branches:
-      - "**"
+      - '**'
     paths-ignore:
-      - ".github/workflows/generate-search-index.yml"
+      - '.github/workflows/generate-search-index.yml'
   workflow_dispatch:
 
 jobs:
   generate:
-    if: github.actor != "github-actions[bot]"
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,223 +19,228 @@ jobs:
       LC_ALL: en_US.UTF-8
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
       - name: Generate search index artifact
+        shell: python
         env:
           SEARCH_INDEX_BRANCH: ${{ github.ref_name }}
           SEARCH_INDEX_COMMIT: ${{ github.sha }}
         run: |
-          python <<"PY"
-from __future__ import annotations
+            from __future__ import annotations
 
-import json
-import os
-from datetime import datetime
-from pathlib import Path
+            import json
+            import os
+            from datetime import datetime
+            from pathlib import Path
 
-VERSION = "1.0.0"
-CWD = Path(".").resolve()
-OUTPUT_DIR = CWD / "indexes"
-DEFAULT_BRANCH = "main"
+            VERSION = "1.0.0"
+            CWD = Path(".").resolve()
+            OUTPUT_DIR = CWD / "indexes"
+            DEFAULT_BRANCH = "main"
 
-DEFAULT_IGNORED_DIRECTORIES = {
-    ".git",
-    ".github",
-    ".vscode",
-    ".idea",
-    "node_modules",
-    "dist",
-    "build",
-    "out",
-    ".next",
-    ".cache",
-    ".turbo",
-    ".vercel",
-    "coverage",
-    "indexes",
-}
+            DEFAULT_IGNORED_DIRECTORIES = {
+                ".git",
+                ".github",
+                ".vscode",
+                ".idea",
+                "node_modules",
+                "dist",
+                "build",
+                "out",
+                ".next",
+                ".cache",
+                ".turbo",
+                ".vercel",
+                "coverage",
+                "indexes",
+            }
 
-DEFAULT_IGNORED_EXTENSIONS = {
-    ".zip",
-    ".tar",
-    ".gz",
-    ".lock",
-    ".log",
-    ".tmp",
-    ".exe",
-    ".dll",
-}
+            DEFAULT_IGNORED_EXTENSIONS = {
+                ".zip",
+                ".tar",
+                ".gz",
+                ".lock",
+                ".log",
+                ".tmp",
+                ".exe",
+                ".dll",
+            }
 
-def parse_list_env(key: str) -> set[str]:
-    value = os.environ.get(key, "")
-    if not value:
-        return set()
-    return {item.strip() for item in value.split(",") if item.strip()}
+            def parse_list_env(key: str) -> set[str]:
+                value = os.environ.get(key, "")
+                if not value:
+                    return set()
+                return {item.strip() for item in value.split(",") if item.strip()}
 
-def sanitize_branch(name: str) -> str:
-    sanitized = name.replace("/", "_").replace("\\", "_")
-    return sanitized or "unknown-branch"
+            def sanitize_branch(name: str) -> str:
+                sanitized = name.replace("/", "_").replace("\\", "_")
+                return sanitized or "unknown-branch"
 
-def build_repo_info() -> dict[str, str]:
-    repo_env = os.environ.get("GITHUB_REPOSITORY", "")
-    owner = os.environ.get("GITHUB_REPO_OWNER", "")
-    name = os.environ.get("GITHUB_REPO_NAME", "")
+            def build_repo_info() -> dict[str, str]:
+                repo_env = os.environ.get("GITHUB_REPOSITORY", "")
+                owner = os.environ.get("GITHUB_REPO_OWNER", "")
+                name = os.environ.get("GITHUB_REPO_NAME", "")
 
-    if repo_env and "/" in repo_env:
-        fallback_owner, fallback_name = repo_env.split("/", 1)
-        owner = owner or fallback_owner
-        name = name or fallback_name
+                if repo_env and "/" in repo_env:
+                    fallback_owner, fallback_name = repo_env.split("/", 1)
+                    owner = owner or fallback_owner
+                    name = name or fallback_name
 
-    if not name:
-        name = CWD.name
+                if not name:
+                    name = CWD.name
 
-    return {
-        "owner": owner or "unknown",
-        "name": name,
-    }
+                return {
+                    "owner": owner or "unknown",
+                    "name": name,
+                }
 
-def determine_branch() -> str:
-    branch = (
-        os.environ.get("SEARCH_INDEX_BRANCH")
-        or os.environ.get("GITHUB_REF_NAME")
-        or os.environ.get("GITHUB_BRANCH")
-        or DEFAULT_BRANCH
-    )
-    return branch.replace("refs/heads/", "")
+            def determine_branch() -> str:
+                branch = (
+                    os.environ.get("SEARCH_INDEX_BRANCH")
+                    or os.environ.get("GITHUB_REF_NAME")
+                    or os.environ.get("GITHUB_BRANCH")
+                    or DEFAULT_BRANCH
+                )
+                return branch.replace("refs/heads/", "")
 
-def should_ignore_directory(relative_path: str, ignored_dirs: set[str]) -> bool:
-    if not relative_path:
-        return False
-    return any(
-        relative_path == ignored or relative_path.startswith(f"{ignored}/")
-        for ignored in ignored_dirs
-    )
+            def should_ignore_directory(relative_path: str, ignored_dirs: set[str]) -> bool:
+                if not relative_path:
+                    return False
+                return any(
+                    relative_path == ignored or relative_path.startswith(f"{ignored}/")
+                    for ignored in ignored_dirs
+                )
 
-def should_ignore_extension(extension: str, ignored_exts: set[str]) -> bool:
-    if not extension:
-        return False
-    ext = extension.lower()
-    if not ext.startswith("."):
-        ext = f".{ext}"
-    return ext in ignored_exts
+            def should_ignore_extension(extension: str, ignored_exts: set[str]) -> bool:
+                if not extension:
+                    return False
+                ext = extension.lower()
+                if not ext.startswith("."):
+                    ext = f".{ext}"
+                return ext in ignored_exts
 
-def get_size_limit() -> tuple[int | None, float | None]:
-    raw = os.environ.get("SEARCH_INDEX_MAX_FILE_SIZE_MB", "").strip()
-    if not raw:
-        return None, None
-    try:
-        value = float(raw)
-    except ValueError:
-        return None, None
-    if value <= 0:
-        return None, None
-    return int(value * 1024 * 1024), value
+            def get_size_limit() -> tuple[int | None, float | None]:
+                raw = os.environ.get("SEARCH_INDEX_MAX_FILE_SIZE_MB", "").strip()
+                if not raw:
+                    return None, None
+                try:
+                    value = float(raw)
+                except ValueError:
+                    return None, None
+                if value <= 0:
+                    return None, None
+                return int(value * 1024 * 1024), value
 
-ignored_dir_env = parse_list_env("SEARCH_INDEX_IGNORE_DIRS")
-ignored_ext_env = parse_list_env("SEARCH_INDEX_IGNORE_EXTENSIONS")
-ignored_directories = {
-    (Path(item).as_posix() if "/" in item or item.startswith(".") else item)
-    for item in (DEFAULT_IGNORED_DIRECTORIES | ignored_dir_env)
-}
-ignored_extensions = {
-    item.lower() if item.startswith(".") else f".{item.lower()}"
-    for item in (DEFAULT_IGNORED_EXTENSIONS | ignored_ext_env)
-}
-limit_size_bytes, limit_size_mb = get_size_limit()
+            ignored_dir_env = parse_list_env("SEARCH_INDEX_IGNORE_DIRS")
+            ignored_ext_env = parse_list_env("SEARCH_INDEX_IGNORE_EXTENSIONS")
+            ignored_directories = {
+                (Path(item).as_posix() if "/" in item or item.startswith(".") else item)
+                for item in (DEFAULT_IGNORED_DIRECTORIES | ignored_dir_env)
+            }
+            ignored_extensions = {
+                item.lower() if item.startswith(".") else f".{item.lower()}"
+                for item in (DEFAULT_IGNORED_EXTENSIONS | ignored_ext_env)
+            }
+            limit_size_bytes, limit_size_mb = get_size_limit()
 
-branch_name = determine_branch()
-sanitized_branch = sanitize_branch(branch_name)
-commit_sha = os.environ.get("SEARCH_INDEX_COMMIT") or os.environ.get("GITHUB_SHA", "")
-short_sha = commit_sha[:7] if commit_sha else "unknown"
-filename = f"{sanitized_branch}-{short_sha}-index.json"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-output_path = OUTPUT_DIR / filename
+            branch_name = determine_branch()
+            sanitized_branch = sanitize_branch(branch_name)
+            commit_sha = os.environ.get("SEARCH_INDEX_COMMIT") or os.environ.get("GITHUB_SHA", "")
+            short_sha = commit_sha[:7] if commit_sha else "unknown"
+            filename = f"{sanitized_branch}-{short_sha}-index.json"
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+            output_path = OUTPUT_DIR / filename
 
-files: list[dict[str, object]] = []
+            files: list[dict[str, object]] = []
 
-for root, dirs, file_names in os.walk(CWD):
-    root_path = Path(root)
-    relative_dir_path = root_path.relative_to(CWD)
-    relative_dir = "" if relative_dir_path.as_posix() == "." else relative_dir_path.as_posix()
+            for root, dirs, file_names in os.walk(CWD):
+                root_path = Path(root)
+                relative_dir_path = root_path.relative_to(CWD)
+                relative_dir = "" if relative_dir_path.as_posix() == "." else relative_dir_path.as_posix()
 
-    pruned_dirs: list[str] = []
-    for directory in dirs:
-        candidate = f"{relative_dir}/{directory}" if relative_dir else directory
-        if should_ignore_directory(candidate, ignored_directories):
-            continue
-        pruned_dirs.append(directory)
-    dirs[:] = pruned_dirs
+                pruned_dirs: list[str] = []
+                for directory in dirs:
+                    candidate = f"{relative_dir}/{directory}" if relative_dir else directory
+                    if should_ignore_directory(candidate, ignored_directories):
+                        continue
+                    pruned_dirs.append(directory)
+                dirs[:] = pruned_dirs
 
-    for file_name in file_names:
-        absolute_path = root_path / file_name
-        if absolute_path.is_symlink() or not absolute_path.is_file():
-            continue
+                for file_name in file_names:
+                    absolute_path = root_path / file_name
+                    if absolute_path.is_symlink() or not absolute_path.is_file():
+                        continue
 
-        extension = absolute_path.suffix
-        if should_ignore_extension(extension, ignored_extensions):
-            continue
+                    extension = absolute_path.suffix
+                    if should_ignore_extension(extension, ignored_extensions):
+                        continue
 
-        stat = absolute_path.stat()
-        if limit_size_bytes is not None and stat.st_size > limit_size_bytes:
-            continue
+                    stat = absolute_path.stat()
+                    if limit_size_bytes is not None and stat.st_size > limit_size_bytes:
+                        continue
 
-        relative_file_path = absolute_path.relative_to(CWD)
-        posix_relative_path = relative_file_path.as_posix()
-        segments = posix_relative_path.split("/")
+                    relative_file_path = absolute_path.relative_to(CWD)
+                    posix_relative_path = relative_file_path.as_posix()
+                    segments = posix_relative_path.split("/")
 
-        files.append({
-            "path": posix_relative_path,
-            "name": file_name,
-            "directory": relative_dir,
-            "extension": extension.lstrip(".").lower(),
-            "size": stat.st_size,
-            "lastModified": datetime.utcfromtimestamp(stat.st_mtime).isoformat(timespec="seconds") + "Z",
-            "segments": segments,
-            "stem": absolute_path.stem,
-        })
+                    files.append({
+                        "path": posix_relative_path,
+                        "name": file_name,
+                        "directory": relative_dir,
+                        "extension": extension.lstrip(".").lower(),
+                        "size": stat.st_size,
+                        "lastModified": datetime.utcfromtimestamp(stat.st_mtime).isoformat(timespec="seconds") + "Z",
+                        "segments": segments,
+                        "stem": absolute_path.stem,
+                    })
 
-files.sort(key=lambda item: item["path"])
+            files.sort(key=lambda item: item["path"])
 
-generated_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
-repo = build_repo_info()
+            generated_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+            repo = build_repo_info()
 
-index = {
-    "version": VERSION,
-    "generatedAt": generated_at,
-    "branch": branch_name,
-    "repository": repo,
-    "summary": {
-        "totalFiles": len(files),
-        "ignoredDirectories": sorted(ignored_directories),
-        "ignoredExtensions": sorted(ignored_extensions),
-        "maxFileSizeMb": limit_size_mb,
-    },
-    "source": {
-        "branch": branch_name,
-        "commit": commit_sha,
-        "shortCommit": short_sha,
-    },
-    "files": files,
-}
+            index = {
+                "version": VERSION,
+                "generatedAt": generated_at,
+                "branch": branch_name,
+                "repository": repo,
+                "summary": {
+                    "totalFiles": len(files),
+                    "ignoredDirectories": sorted(ignored_directories),
+                    "ignoredExtensions": sorted(ignored_extensions),
+                    "maxFileSizeMb": limit_size_mb,
+                },
+                "source": {
+                    "branch": branch_name,
+                    "commit": commit_sha,
+                    "shortCommit": short_sha,
+                },
+                "files": files,
+            }
 
-serialized = json.dumps(index, ensure_ascii=False, indent=2) + "\n"
-output_path.write_text(serialized, encoding="utf-8")
+            serialized = json.dumps(index, ensure_ascii=False, indent=2) + "\n"
+            output_path.write_text(serialized, encoding="utf-8")
 
-env_path = Path(os.environ["GITHUB_ENV"])
-with env_path.open("a", encoding="utf-8") as env_file:
-    env_file.write(f"INDEX_FILE_NAME={filename}\n")
-    env_file.write(f"INDEX_FILE_PATH={output_path.relative_to(CWD).as_posix()}\n")
-    env_file.write(f"INDEX_BRANCH_NAME={branch_name}\n")
-    env_file.write(f"INDEX_SANITIZED_BRANCH={sanitized_branch}\n")
-    env_file.write(f"INDEX_SHORT_SHA={short_sha}\n")
-    env_file.write(f"INDEX_GENERATED_AT={generated_at}\n")
-    env_file.write(f"INDEX_SOURCE_COMMIT={commit_sha}\n")
-PY
+            env_path = Path(os.environ["GITHUB_ENV"])
+            with env_path.open("a", encoding="utf-8") as env_file:
+                env_file.write(f"INDEX_FILE_NAME={filename}\n")
+                env_file.write(f"INDEX_FILE_PATH={output_path.relative_to(CWD).as_posix()}\n")
+                env_file.write(f"INDEX_BRANCH_NAME={branch_name}\n")
+                env_file.write(f"INDEX_SANITIZED_BRANCH={sanitized_branch}\n")
+                env_file.write(f"INDEX_SHORT_SHA={short_sha}\n")
+                env_file.write(f"INDEX_GENERATED_AT={generated_at}\n")
+                env_file.write(f"INDEX_SOURCE_COMMIT={commit_sha}\n")
 
-      - name: Publish index to RV-Index branch
+      - name: Prepare RV-Index worktree
+        shell: bash
         env:
           INDEX_FILE_NAME: ${{ env.INDEX_FILE_NAME }}
           INDEX_FILE_PATH: ${{ env.INDEX_FILE_PATH }}
@@ -245,56 +250,67 @@ PY
           INDEX_GENERATED_AT: ${{ env.INDEX_GENERATED_AT }}
           INDEX_SOURCE_COMMIT: ${{ env.INDEX_SOURCE_COMMIT }}
         run: |
-          set -eo pipefail
+          set -euo pipefail
 
-          WORKTREE=$(mktemp -d)
+          WORKTREE="$(mktemp -d)"
           git branch -D RV-Index 2>/dev/null || true
 
           if git ls-remote --exit-code origin RV-Index >/dev/null 2>&1; then
             git worktree add --track -b RV-Index "$WORKTREE" origin/RV-Index
-            BRANCH_EXISTS=1
+            BRANCH_IS_NEW=0
           else
             git worktree add --detach "$WORKTREE"
-            BRANCH_EXISTS=0
+            BRANCH_IS_NEW=1
+          fi
+
+          if [ "$BRANCH_IS_NEW" -eq 1 ]; then
+            (cd "$WORKTREE" && git checkout --orphan RV-Index && rm -rf ./*)
           fi
 
           cp "$INDEX_FILE_PATH" "$WORKTREE/$INDEX_FILE_NAME"
 
-          pushd "$WORKTREE" >/dev/null
+          mkdir -p "$WORKTREE/indexes"
+          mv "$WORKTREE/$INDEX_FILE_NAME" "$WORKTREE/indexes/$INDEX_FILE_NAME"
 
-          if [ "$BRANCH_EXISTS" -eq 0 ]; then
-            git checkout --orphan RV-Index
-            rm -rf *
-          fi
+          {
+            echo "INDEX_WORKTREE=$WORKTREE"
+          } >> "$GITHUB_ENV"
 
-          mkdir -p indexes
-          mv "$INDEX_FILE_NAME" "indexes/$INDEX_FILE_NAME"
+      - name: Update manifest
+        shell: python
+        run: |
+            import json
+            import os
+            from pathlib import Path
 
-         
-          python <<"PY"
-import json
-import os
-from pathlib import Path
+            worktree = Path(os.environ["INDEX_WORKTREE"])
+            manifest_path = worktree / "manifest.json"
+            if manifest_path.exists():
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            else:
+                manifest = {}
 
-manifest_path = Path("manifest.json")
-if manifest_path.exists():
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-else:
-    manifest = {}
+            index_file_name = os.environ["INDEX_FILE_NAME"]
+            entry = {
+                "branch": os.environ["INDEX_BRANCH_NAME"],
+                "sanitizedBranch": os.environ["INDEX_SANITIZED_BRANCH"],
+                "commit": os.environ["INDEX_SOURCE_COMMIT"],
+                "shortCommit": os.environ["INDEX_SHORT_SHA"],
+                "file": f"indexes/{index_file_name}",
+                "generatedAt": os.environ["INDEX_GENERATED_AT"],
+            }
 
-index_file_name = os.environ["INDEX_FILE_NAME"]
-entry = {
-    "branch": os.environ["INDEX_BRANCH_NAME"],
-    "sanitizedBranch": os.environ["INDEX_SANITIZED_BRANCH"],
-    "commit": os.environ["INDEX_SOURCE_COMMIT"],
-    "shortCommit": os.environ["INDEX_SHORT_SHA"],
-    "file": f"indexes/{index_file_name}",
-    "generatedAt": os.environ["INDEX_GENERATED_AT"],
-}
+            manifest[os.environ["INDEX_SANITIZED_BRANCH"]] = entry
+            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-manifest[os.environ["INDEX_SANITIZED_BRANCH"]] = entry
-manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-PY
+      - name: Commit and push RV-Index branch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          WORKTREE="${INDEX_WORKTREE:?}"
+
+          cd "$WORKTREE"
 
           git add "indexes/${INDEX_FILE_NAME}" manifest.json
 
@@ -307,8 +323,8 @@ PY
             echo "No changes to commit on RV-Index"
           fi
 
-          popd >/dev/null
+          cd "$GITHUB_WORKSPACE"
 
-          git worktree remove "$WORKTREE"
+          git worktree remove "$WORKTREE" --force
           rm -f "$INDEX_FILE_PATH"
           rmdir indexes 2>/dev/null || true
