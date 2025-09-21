@@ -1,12 +1,10 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import { 
-  validateGitHubContentsResponse,
-  validateGitHubSearchResponse,
   safeValidateGitHubContentsResponse,
-  safeValidateGitHubSearchResponse,
-  ApiErrorResponseSchema 
+  safeValidateGitHubSearchResponse
 } from '../src/services/github/schemas/apiSchemas';
+import { CONFIG_DEFAULTS } from '../src/config/constants';
 
 // 配置常量
 const GITHUB_API_BASE = 'https://api.github.com';
@@ -125,9 +123,18 @@ interface RepoEnvConfig {
 }
 
 const getRepoEnvConfig = (): RepoEnvConfig => ({
-  repoOwner: resolveEnvValue(['GITHUB_REPO_OWNER', 'VITE_GITHUB_REPO_OWNER']),
-  repoName: resolveEnvValue(['GITHUB_REPO_NAME', 'VITE_GITHUB_REPO_NAME']),
-  repoBranch: resolveEnvValue(['GITHUB_REPO_BRANCH', 'VITE_GITHUB_REPO_BRANCH'], 'main') || 'main'
+  repoOwner: resolveEnvValue(
+    ['GITHUB_REPO_OWNER', 'VITE_GITHUB_REPO_OWNER'],
+    CONFIG_DEFAULTS.GITHUB_REPO_OWNER
+  ),
+  repoName: resolveEnvValue(
+    ['GITHUB_REPO_NAME', 'VITE_GITHUB_REPO_NAME'],
+    CONFIG_DEFAULTS.GITHUB_REPO_NAME
+  ),
+  repoBranch: resolveEnvValue(
+    ['GITHUB_REPO_BRANCH', 'VITE_GITHUB_REPO_BRANCH'],
+    CONFIG_DEFAULTS.GITHUB_REPO_BRANCH || 'main'
+  ) || 'main'
 });
 
 // 构建认证头
