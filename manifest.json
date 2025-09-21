@@ -1,0 +1,10 @@
+{
+  "feature_filesearch": {
+    "branch": "feature/filesearch",
+    "sanitizedBranch": "feature_filesearch",
+    "commit": "68fbaf905f26029a2e1c3aad772d816d241eacdb",
+    "shortCommit": "68fbaf9",
+    "file": "indexes/feature_filesearch-68fbaf9-index.json",
+    "generatedAt": "2025-09-21T08:50:41Z"
+  }
+}
