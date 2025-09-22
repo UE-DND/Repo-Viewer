@@ -255,7 +255,7 @@ jobs:
           WORKTREE="$(mktemp -d)"
           git branch -D RV-Index 2>/dev/null || true
 
-          if git ls-remote --exit-code origin RV-Index >/dev/null 2>&1; then
+          if git ls-remote --exit-code --heads origin RV-Index >/dev/null 2>&1; then
             git worktree add --track -b RV-Index "$WORKTREE" origin/RV-Index
             BRANCH_IS_NEW=0
           else
@@ -263,14 +263,32 @@ jobs:
             BRANCH_IS_NEW=1
           fi
 
+          cd "$WORKTREE"
+
           if [ "$BRANCH_IS_NEW" -eq 1 ]; then
-            (cd "$WORKTREE" && git checkout --orphan RV-Index && rm -rf ./*)
+            git checkout --orphan RV-Index
+          else
+            git reset --hard origin/RV-Index
           fi
 
-          cp "$INDEX_FILE_PATH" "$WORKTREE/$INDEX_FILE_NAME"
+          PREV_MANIFEST="$GITHUB_WORKSPACE/.rv-prev-manifest.json"
+          if [ -f manifest.json ]; then
+            cp manifest.json "$PREV_MANIFEST"
+          fi
 
-          mkdir -p "$WORKTREE/indexes"
-          mv "$WORKTREE/$INDEX_FILE_NAME" "$WORKTREE/indexes/$INDEX_FILE_NAME"
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdx
+
+          if [ -f "$PREV_MANIFEST" ]; then
+            cp "$PREV_MANIFEST" manifest.json
+          fi
+
+          mkdir -p indexes
+          cp "$GITHUB_WORKSPACE/$INDEX_FILE_PATH" "indexes/$INDEX_FILE_NAME"
+
+          rm -f "$PREV_MANIFEST"
+
+          cd "$GITHUB_WORKSPACE"
 
           {
             echo "INDEX_WORKTREE=$WORKTREE"
