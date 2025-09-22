@@ -6,10 +6,21 @@ import { logger } from '../utils';
 const MIN_ANIMATION_DURATION = 600;
 
 export const useRefresh = () => {
-  const { refresh, loading } = useContentContext();
+  const { refresh, loading, currentPath, setCurrentPath } = useContentContext();
   const refreshTimerRef = useRef<number | null>(null);
   const refreshingRef = useRef<boolean>(false);
   const startTimeRef = useRef<number>(0);
+  const currentPathRef = useRef(currentPath);
+  const requestedPathRef = useRef<string | null>(null);
+  const setCurrentPathRef = useRef(setCurrentPath);
+
+  useEffect(() => {
+    currentPathRef.current = currentPath;
+  }, [currentPath]);
+
+  useEffect(() => {
+    setCurrentPathRef.current = setCurrentPath;
+  }, [setCurrentPath]);
 
   useEffect(() => {
     if (refreshingRef.current && !loading) {
@@ -20,6 +31,14 @@ export const useRefresh = () => {
       setTimeout(() => {
         document.body.classList.remove('theme-transition');
         document.body.classList.remove('refreshing');
+        const expectedPath = requestedPathRef.current;
+        requestedPathRef.current = null;
+
+        if (expectedPath !== null && expectedPath !== currentPathRef.current) {
+          logger.info('刷新后检测到路径变化，恢复至刷新前的目录');
+          setCurrentPathRef.current?.(expectedPath, 'none');
+        }
+
         setTimeout(() => {
           refreshingRef.current = false;
           setTimeout(() => {
@@ -29,7 +48,7 @@ export const useRefresh = () => {
       }, remainingTime + 50);
     }
   }, [loading]);
-  
+
   const handleRefresh = useCallback(() => {
     const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
     if (isThemeChangeOnly) {
@@ -44,6 +63,7 @@ export const useRefresh = () => {
     }
     
     removeLatexElements();
+    requestedPathRef.current = currentPathRef.current;
     
     setTimeout(() => {
       startTimeRef.current = Date.now();
