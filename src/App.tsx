@@ -64,8 +64,8 @@ const App = React.memo(() => {
       logger.warn(
         "未检测到GitHub Token，API搜索功能可能受限。请考虑配置Token以获取更好的搜索体验。",
       );
-      console.log("您可以使用以下代码在开发环境中设置临时token:");
-      console.log('GitHubService.setLocalToken("your_github_token_here")');
+      logger.info("您可以使用以下代码在开发环境中设置临时token:");
+      logger.info('GitHubService.setLocalToken("your_github_token_here")');
     }
   }, []);
 

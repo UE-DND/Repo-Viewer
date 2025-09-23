@@ -14,7 +14,8 @@ import {
   NetworkError, 
   FileOperationError 
 } from '../types/errors';
-import { isDeveloperMode } from '../config';
+import { getDeveloperConfig } from '../config';
+import { logger } from '../utils';
 
 export interface UseErrorHandlerOptions {
   showNotification?: boolean;
@@ -31,9 +32,10 @@ export interface ErrorHandlerReturn {
   lastError: AppError | null;
 }
 
+const developerSettings = getDeveloperConfig();
 const defaultOptions: UseErrorHandlerOptions = {
   showNotification: true,
-  logToConsole: isDeveloperMode(),
+  logToConsole: developerSettings.mode || developerSettings.consoleLogging,
   fallbackMessage: '操作失败，请稍后重试'
 };
 
@@ -127,7 +129,7 @@ export function useErrorHandler(
     if (globalOptions.showNotification) {
       const message = getUserFriendlyMessage(appError);
       const variant = getNotificationVariant(appError.level);
-      
+
       enqueueSnackbar(message, {
         variant,
         persist: appError.level === ErrorLevel.CRITICAL,
@@ -136,12 +138,15 @@ export function useErrorHandler(
     }
 
     // 开发者模式下的额外日志
-    if (globalOptions.logToConsole && isDeveloperMode()) {
-      console.group(`🚨 错误处理 [${appError.category}]`);
-      console.error('错误详情:', appError);
-      console.error('原始错误:', error);
-      console.error('上下文:', context);
-      console.groupEnd();
+    const developerConfig = getDeveloperConfig();
+    const shouldLog = developerConfig.consoleLogging || (globalOptions.logToConsole && developerConfig.mode);
+
+    if (shouldLog) {
+      logger.group(`🚨 错误处理 [${appError.category}]`);
+      logger.error('错误详情:', appError);
+      logger.error('原始错误:', error);
+      logger.error('上下文:', context);
+      logger.groupEnd();
     }
   }, [
     globalOptions, 
@@ -192,9 +197,10 @@ export function useErrorHandler(
 
 // 全局错误处理Hook
 export function useGlobalErrorHandler(): ErrorHandlerReturn {
+  const globalDeveloperConfig = getDeveloperConfig();
   const errorHandler = useErrorHandler({
     showNotification: false, // 全局错误不显示通知
-    logToConsole: isDeveloperMode()
+    logToConsole: globalDeveloperConfig.mode || globalDeveloperConfig.consoleLogging
   });
 
   useEffect(() => {

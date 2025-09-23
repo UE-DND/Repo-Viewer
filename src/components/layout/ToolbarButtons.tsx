@@ -13,6 +13,7 @@ import { pulseAnimation, refreshAnimation } from "../../theme/animations";
 import { GitHubService } from "../../services/github";
 import axios from "axios";
 import { getGithubConfig } from '../../config';
+import { logger } from '../../utils';
 
 // 工具栏按钮组件
 const ToolbarButtons: React.FC = () => {
@@ -39,7 +40,7 @@ const ToolbarButtons: React.FC = () => {
         }
       } catch (error) {
         // 如果API请求失败，保持使用默认值或环境变量值
-        console.error("获取仓库信息失败:", error);
+        logger.error("获取仓库信息失败:", error);
       }
     };
 

@@ -14,13 +14,18 @@ import SEOProvider from "./contexts/SEOContext";
 import { getDeveloperConfig } from './config';
 
 // 开发者模式配置 - 控制调试信息显示
-const DEV_CONFIG = {
-  CONSOLE_LOGGING: getDeveloperConfig().consoleLogging,
-};
+const developerConfig = getDeveloperConfig();
+const allowConsoleOutput = developerConfig.mode || developerConfig.consoleLogging;
 
 // 初始化日志系统
-if (!DEV_CONFIG.CONSOLE_LOGGING) {
-  console.log = () => {}; // 禁用标准控制台日志
+if (!allowConsoleOutput) {
+  const noop = (..._args: unknown[]) => undefined;
+  console.log = noop;
+  console.info = noop;
+  console.debug = noop;
+  console.group = noop as typeof console.group;
+  console.groupCollapsed = noop as typeof console.groupCollapsed;
+  console.groupEnd = () => undefined;
 }
 
 

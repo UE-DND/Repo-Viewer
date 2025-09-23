@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { GitHubService } from '../../services/github/core/GitHubService';
 import { ProxyService } from '../../services/github/proxy/ProxyService';
+import { logger } from '../../utils';
 
 interface CacheStats {
   hits: number;
@@ -71,7 +72,7 @@ export const NetworkStatsDisplay: React.FC = () => {
       const [networkStats, proxyStats, cacheStats] = await Promise.all([
         // 获取网络请求统计
         GitHubService.getNetworkStats().catch((error) => {
-          console.warn('获取网络统计失败:', error);
+          logger.warn('获取网络统计失败:', error);
           return {
             batcher: {
               pendingRequests: 0,
@@ -100,7 +101,7 @@ export const NetworkStatsDisplay: React.FC = () => {
         cacheStats: cacheStats
       });
     } catch (error) {
-      console.error('获取网络统计失败:', error);
+      logger.error('获取网络统计失败:', error);
     } finally {
       setIsLoading(false);
     }

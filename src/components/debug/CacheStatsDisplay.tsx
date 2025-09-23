@@ -21,6 +21,7 @@ import {
   Memory as MemoryIcon
 } from '@mui/icons-material';
 import { GitHubService } from '../../services/github/core/GitHubService';
+import { logger } from '../../utils';
 import { CacheStats } from '../../services/github/cache/CacheManager';
 
 interface CacheStatsDisplayProps {
@@ -48,7 +49,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
       const cacheStats = GitHubService.getCacheStats();
       setStats(cacheStats);
     } catch (error) {
-      console.warn('获取缓存统计失败:', error);
+      logger.warn('获取缓存统计失败:', error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +57,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
 
   useEffect(() => {
     fetchStats();
-    
+
     if (autoRefresh) {
       const interval = setInterval(fetchStats, refreshInterval);
       return () => clearInterval(interval);
@@ -81,7 +82,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
     if (timestamp === 0) return '从未';
     const now = Date.now();
     const diff = now - timestamp;
-    
+
     if (diff < 60000) return '刚刚';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
@@ -150,7 +151,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
               </Typography>
             </Box>
           </Grid>
-          
+
           <Grid size={3}>
             <Box textAlign="center">
               <Typography variant="h4" color="success.main">
@@ -161,7 +162,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
               </Typography>
             </Box>
           </Grid>
-          
+
           <Grid size={3}>
             <Box textAlign="center">
               <Typography variant="h4" color="error.main">
@@ -172,7 +173,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
               </Typography>
             </Box>
           </Grid>
-          
+
           <Grid size={3}>
             <Box textAlign="center">
               <Typography variant="h4" color="info.main">
@@ -209,7 +210,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
 
         <Collapse in={expanded}>
           <Divider sx={{ my: 2 }} />
-          
+
           <Grid container spacing={3}>
             {/* 内容缓存统计 */}
             <Grid size={{ xs: 12, md: 6 }}>
@@ -220,7 +221,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                     内容缓存
                   </Typography>
                 </Box>
-                
+
                 <Grid container spacing={2}>
                   <Grid size={6}>
                     <Tooltip title="缓存项数量">
@@ -232,7 +233,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                       </Box>
                     </Tooltip>
                   </Grid>
-                  
+
                   <Grid size={6}>
                     <Tooltip title="命中率">
                       <Box>
@@ -243,7 +244,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                       </Box>
                     </Tooltip>
                   </Grid>
-                  
+
                   <Grid size={6}>
                     <Tooltip title="内存使用量">
                       <Box>
@@ -254,7 +255,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                       </Box>
                     </Tooltip>
                   </Grid>
-                  
+
                   <Grid size={6}>
                     <Tooltip title="最后清理时间">
                       <Box>
@@ -278,7 +279,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                     文件缓存
                   </Typography>
                 </Box>
-                
+
                 <Grid container spacing={2}>
                   <Grid size={6}>
                     <Tooltip title="缓存项数量">
@@ -290,7 +291,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                       </Box>
                     </Tooltip>
                   </Grid>
-                  
+
                   <Grid size={6}>
                     <Tooltip title="命中率">
                       <Box>
@@ -301,7 +302,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                       </Box>
                     </Tooltip>
                   </Grid>
-                  
+
                   <Grid size={6}>
                     <Tooltip title="内存使用量">
                       <Box>
@@ -312,7 +313,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
                       </Box>
                     </Tooltip>
                   </Grid>
-                  
+
                   <Grid size={6}>
                     <Tooltip title="最后清理时间">
                       <Box>
@@ -327,7 +328,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
               </Box>
             </Grid>
           </Grid>
-          
+
           <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="caption" color="text.secondary">
               💡 提示：高命中率（{'>'}80%）表示缓存效果良好。内存使用量会根据缓存策略自动管理。
