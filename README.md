@@ -6,7 +6,8 @@
 ██║  ██║███████╗██║     ╚██████╔╝       ╚████╔╝ ██║███████╗╚███╔███╔╝███████╗██║  ██║
 ╚═╝  ╚═╝╚══════╝╚═╝      ╚═════╝         ╚═══╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚══════╝╚═╝  ╚═╝
 ```
-***基于MD3设计语言的GitHub仓库浏览网页应用***
+
+***基于MD3设计风格的GitHub仓库浏览应用***
 
 ## 目录
 
@@ -18,6 +19,7 @@
   - [使用Vercel部署](#使用vercel部署)
 - [许可证](#许可证)
 - [贡献者](#贡献者)
+- [Vercel 加速支持](#vercel-加速支持)
 - [Stars](#stars)
 
 ## 主要功能
@@ -136,6 +138,10 @@ CONSOLE_LOGGING = true/false                          # 控制台日志
 <a href="https://github.com/UE-DND/Repo-Viewer/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=UE-DND/Repo-Viewer"/>
 </a>
+
+## Vercel 加速支持
+
+[xingpingcn/enhanced-FaaS-in-China](https://github.com/xingpingcn/enhanced-FaaS-in-China)
 
 ## Stars
 

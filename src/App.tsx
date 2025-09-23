@@ -7,7 +7,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { OptimizedAppContextProvider as AppContextProvider } from "./contexts/unified";
+import { AppContextProvider } from "./contexts/unified";
 import MainContent from "./components/layout/MainContent";
 import ToolbarButtons from "./components/layout/ToolbarButtons";
 import { SITE_TITLE } from "./constants";
