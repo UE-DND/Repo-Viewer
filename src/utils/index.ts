@@ -25,8 +25,11 @@ export * from './pdf/pdfLoading';
 // 导出渲染优化工具
 export * from './rendering/latexOptimizer';
 
-// 导出路由相关工具  
+// 导出路由相关工具
 export * from './routing/urlManager';
+
+// 导出G3曲线工具
+export * from '../theme/g3Curves';
 
 // 通用工具函数
 export const debounce = <F extends (...args: any[]) => any>(
@@ -41,4 +44,4 @@ export const debounce = <F extends (...args: any[]) => any>(
     }
     timeout = setTimeout(() => func(...args), waitFor);
   };
-}; 
+};

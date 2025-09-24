@@ -8,6 +8,7 @@ import {
   ListItemIcon,
 } from "@mui/material";
 import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
+import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
 
 // 文件列表骨架屏 - 显示多个文件列表项
 export const FileListSkeleton: React.FC<{
@@ -40,7 +41,7 @@ export const FileListSkeleton: React.FC<{
       sx={{
         width: "100%",
         bgcolor: "background.paper",
-        borderRadius: 2,
+        borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
         mb: 2,
         overflow: "hidden",
         boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
@@ -123,7 +124,7 @@ export const FileListItemSkeleton: React.FC<{
     >
       <Box
         sx={{
-          borderRadius: { xs: 2, sm: 3 },
+          borderRadius: g3BorderRadius(G3_PRESETS.fileListItem), // 使用文件列表项G3曲线
           py: { xs: 1, sm: 1.5 },
           pr: { xs: 6, sm: 8 },
           display: "flex",

@@ -15,6 +15,7 @@ import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { NavigationDirection } from "../../contexts/unified";
+import { g3Styles } from "../../utils";
 
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: Array<{ name: string; path: string }>;
@@ -142,7 +143,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
             px: { xs: 1.5, sm: 2 },
             py: { xs: 1, sm: 1.5 },
             bgcolor: "background.paper",
-            borderRadius: 2,
+            borderRadius: g3Styles.breadcrumb().borderRadius,
             boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.05)",
             "& .MuiBreadcrumbs-ol": {
               alignItems: "center",
@@ -166,7 +167,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
             "& .MuiBreadcrumbs-collapsed": {
               color: theme.palette.primary.main,
               backgroundColor: alpha(theme.palette.primary.main, 0.07),
-              borderRadius: 2,
+              borderRadius: g3Styles.breadcrumbItem().borderRadius,
               px: { xs: 0.5, sm: 1 },
               py: 0.2,
               mx: { xs: 0.25, sm: 0.5 },
@@ -221,7 +222,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                   alignItems: "center",
                   py: { xs: 0.25, sm: 0.5 },
                   px: { xs: 1, sm: 1.5 },
-                  borderRadius: { xs: 1.5, sm: 2 },
+                  borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: alpha(theme.palette.primary.main, 0.06),
                   fontWeight: 500,
                   height: { xs: "24px", sm: "32px" },
@@ -265,7 +266,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                   position: "relative",
                   px: { xs: 1, sm: 1.5 },
                   py: { xs: 0.25, sm: 0.5 },
-                  borderRadius: { xs: 1.5, sm: 2 },
+                  borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: isHome
                     ? alpha(theme.palette.primary.main, 0.08)
                     : "transparent",

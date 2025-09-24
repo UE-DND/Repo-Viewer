@@ -6,6 +6,7 @@ import {
   Paper,
 } from "@mui/material";
 import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
+import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
 
 // Markdown 预览骨架屏
 export const MarkdownPreviewSkeleton: React.FC<{
@@ -52,7 +53,7 @@ export const MarkdownPreviewSkeleton: React.FC<{
           px: { xs: 2, sm: 3, md: 4 },
           mt: 2,
           mb: 3,
-          borderRadius: 2,
+          borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
           bgcolor: "background.paper",
           overflowX: "auto",
           border: "1px solid",

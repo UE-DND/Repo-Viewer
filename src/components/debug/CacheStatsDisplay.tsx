@@ -20,6 +20,8 @@ import {
   Speed as SpeedIcon,
   Memory as MemoryIcon
 } from '@mui/icons-material';
+import { formatFileSize } from '../../utils/format/formatters';
+import { g3BorderRadius, G3_PRESETS } from '../../theme/g3Curves';
 import { GitHubService } from '../../services/github/core/GitHubService';
 import { logger } from '../../utils';
 import { CacheStats } from '../../services/github/cache/CacheManager';
@@ -66,13 +68,8 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
     return undefined;
   }, [autoRefresh, refreshInterval]);
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-  };
+  // 使用从formatters导入的formatFileSize函数，并重命名为formatBytes以保持兼容
+  const formatBytes = formatFileSize;
 
   const formatPercentage = (value: number): string => {
     return `${(value * 100).toFixed(1)}%`;
@@ -118,7 +115,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
     misses: stats.content.misses + stats.file.misses,
     size: stats.content.size + stats.file.size,
     memoryUsage: stats.content.memoryUsage + stats.file.memoryUsage,
-    hitRate: (stats.content.hits + stats.file.hits) / 
+    hitRate: (stats.content.hits + stats.file.hits) /
               Math.max(1, stats.content.hits + stats.file.hits + stats.content.misses + stats.file.misses)
   };
 
@@ -129,8 +126,8 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
           <Box display="flex" alignItems="center" gap={1}>
             <CachedIcon />
             <Typography variant="h6">缓存统计</Typography>
-            <Chip 
-              size="small" 
+            <Chip
+              size="small"
               label={`命中率 ${formatPercentage(totalStats.hitRate)}`}
               color={totalStats.hitRate >= 0.8 ? 'success' : totalStats.hitRate >= 0.6 ? 'warning' : 'error'}
             />
@@ -191,12 +188,12 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
             <SpeedIcon fontSize="small" />
             <Typography variant="body2">整体命中率</Typography>
           </Box>
-          <LinearProgress 
-            variant="determinate" 
+          <LinearProgress
+            variant="determinate"
             value={totalStats.hitRate * 100}
-            sx={{ 
-              height: 8, 
-              borderRadius: 4,
+            sx={{
+              height: 8,
+              borderRadius: g3BorderRadius(G3_PRESETS.button),
               backgroundColor: 'grey.200',
               '& .MuiLinearProgress-bar': {
                 backgroundColor: getHitRateColor(totalStats.hitRate)
@@ -329,7 +326,7 @@ export const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: g3BorderRadius(G3_PRESETS.card) }}>
             <Typography variant="caption" color="text.secondary">
               💡 提示：高命中率（{'>'}80%）表示缓存效果良好。内存使用量会根据缓存策略自动管理。
             </Typography>

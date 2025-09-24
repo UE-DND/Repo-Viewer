@@ -10,6 +10,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { CustomContentProps, useSnackbar } from "notistack";
 import { eventEmitter, EVENTS } from "../../utils/events/eventEmitter";
+import { g3BorderRadius, G3_PRESETS } from "../../theme/g3Curves";
 
 // 自定义Snackbar组件Props
 interface CustomSnackbarProps extends CustomContentProps {
@@ -113,7 +114,7 @@ const CustomSnackbar = memo(
             margin: { xs: "auto", sm: "initial" },
             minWidth: { sm: "344px" },
             alignItems: "center",
-            borderRadius: 2,
+            borderRadius: g3BorderRadius(G3_PRESETS.card),
           }}
           action={
             isDownloadRelated() ? (
@@ -141,7 +142,7 @@ const CustomSnackbar = memo(
                 sx={{
                   mt: 1,
                   height: 6,
-                  borderRadius: 1,
+                  borderRadius: g3BorderRadius(G3_PRESETS.button),
                   backgroundColor: (theme) =>
                     alpha(theme.palette.common.white, 0.3),
                   "& .MuiLinearProgress-bar": {
