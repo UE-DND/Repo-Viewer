@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getCurrentThemeName } from '../theme/index';
+import { logger } from '../utils';
 
 const themeIconMap: Record<string, string> = {
   '默认': '/icons/icon-pink.svg',
@@ -21,21 +22,21 @@ export const useDynamicIcon = () => {
     try {
       const currentTheme = getCurrentThemeName();
       const themePath = themeIconMap[currentTheme];
-      
+
       if (themePath) {
         setIconPath(themePath);
       } else {
         setIconPath('/icons/icon-pink.svg');
       }
     } catch (error) {
-      console.error('获取当前主题名称失败:', error);
+      logger.error('获取当前主题名称失败:', error);
       setIconPath('/icons/icon-pink.svg');
     }
   };
 
   useEffect(() => {
-    console.log('🎯 初始化动态图标系统...');
-    
+    logger.info('🎯 初始化动态图标系统...');
+
     // 初始化图标
     updateIcon();
 
@@ -50,7 +51,7 @@ export const useDynamicIcon = () => {
         if (mutation.type === 'attributes' && 
             (mutation.attributeName === 'data-theme' || 
              mutation.attributeName === 'class')) {
-          console.log('🔄 通过MutationObserver检测到主题变化');
+          logger.debug('🔄 通过MutationObserver检测到主题变化');
           updateIcon();
         }
       });
@@ -70,7 +71,7 @@ export const useDynamicIcon = () => {
     // 监听localStorage变化
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'colorMode' || e.key === 'themeData' || e.key === 'lastThemeColorDate') {
-        console.log('🔄 通过localStorage检测到主题变化:', e.key);
+        logger.debug('🔄 通过localStorage检测到主题变化:', e.key);
         setTimeout(updateIcon, 100);
       }
     };
@@ -106,14 +107,14 @@ export const useFaviconUpdater = () => {
       const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
       existingFavicons.forEach(link => {
         const linkElement = link as HTMLLinkElement;
-        console.log('🗑️ 移除现有的favicon:', linkElement.href);
+        logger.debug('🗑️ 移除现有的favicon:', linkElement.href);
         link.remove();
       });
-      
+
       // 强制等待一点时间确保DOM更新
       setTimeout(() => {
         const timestamp = Date.now();
-        
+
         // 创建主要的favicon链接
         const favicon = document.createElement('link');
         favicon.rel = 'icon';
@@ -128,8 +129,8 @@ export const useFaviconUpdater = () => {
         shortcutIcon.href = `${iconPath}?v=${timestamp}`;
         document.head.appendChild(shortcutIcon);
 
-        console.log('✅ Favicon已更新为:', `${iconPath}?v=${timestamp}`);
-        
+        logger.info('✅ Favicon已更新为:', `${iconPath}?v=${timestamp}`);
+
         // 强制触发浏览器重新加载favicon
         const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
         if (link) {

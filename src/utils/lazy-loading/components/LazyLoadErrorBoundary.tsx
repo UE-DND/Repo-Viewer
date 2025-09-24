@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import type { LazyLoadErrorBoundaryProps, LazyLoadErrorBoundaryState } from '../types';
+import { logger } from '../../logging/logger';
 
 /**
  * 简单的错误边界组件
@@ -20,7 +21,7 @@ export class LazyLoadErrorBoundary extends React.Component<
   }
 
   override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('懒加载组件错误:', error, errorInfo);
+    logger.error('懒加载组件错误:', error, errorInfo);
   }
 
   handleRetry = () => {

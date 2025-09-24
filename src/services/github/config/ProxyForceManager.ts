@@ -1,4 +1,5 @@
 import { getConfig, getAccessConfig, getRuntimeConfig, configManager } from '../../../config';
+import { logger } from '../../../utils';
 
 // 代理强制模式配置管理器，统一管理所有代理相关的配置逻辑
 export class ProxyForceManager {
@@ -34,7 +35,7 @@ export class ProxyForceManager {
 
       return false;
     } catch (error) {
-      console.warn('计算强制代理配置时出错，使用默认值false:', error);
+      logger.warn('计算强制代理配置时出错，使用默认值false:', error);
       return false;
     }
   }

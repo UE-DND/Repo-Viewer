@@ -57,7 +57,10 @@ export class ConfigManager {
       try {
         listener(newConfig, oldConfig);
       } catch (error) {
-        console.error('配置变更监听器执行失败:', error);
+        const developerConfig = this.getConfig().developer;
+        if (developerConfig.mode || developerConfig.consoleLogging) {
+          console.error('配置变更监听器执行失败:', error);
+        }
       }
     });
   }
@@ -65,6 +68,12 @@ export class ConfigManager {
   // 从环境变量加载配置
   private loadConfig(): Config {
     const env = typeof window !== 'undefined' ? import.meta.env : process.env;
+    const developerMode = EnvParser.parseBoolean(
+      resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')
+    );
+    const consoleLogging = EnvParser.parseBoolean(
+      resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'false')
+    );
 
     return {
       site: {
@@ -103,8 +112,8 @@ export class ConfigManager {
         useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'USE_TOKEN_MODE', 'false'))
       },
       developer: {
-        mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')),
-        consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'true'))
+        mode: developerMode,
+        consoleLogging
       },
       runtime: {
         isDev: env.DEV === true,

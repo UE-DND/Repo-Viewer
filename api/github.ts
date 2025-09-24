@@ -4,6 +4,51 @@ import axios from 'axios';
 // 配置常量
 const GITHUB_API_BASE = 'https://api.github.com';
 
+const parseBooleanFlag = (value?: string | null): boolean => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+};
+
+const resolveBooleanFlag = (keys: string[]): boolean =>
+  keys.some(key => parseBooleanFlag(process.env[key]));
+
+const developerModeEnabled = resolveBooleanFlag(['DEVELOPER_MODE', 'VITE_DEVELOPER_MODE']);
+const consoleLoggingEnabled = resolveBooleanFlag(['CONSOLE_LOGGING', 'VITE_CONSOLE_LOGGING']);
+
+type LogLevel = 'info' | 'warn' | 'error';
+
+const shouldLog = (level: LogLevel): boolean => {
+  switch (level) {
+    case 'info':
+      return developerModeEnabled;
+    case 'warn':
+    case 'error':
+      return developerModeEnabled || consoleLoggingEnabled;
+    default:
+      return developerModeEnabled;
+  }
+};
+
+const apiLogger = {
+  info: (...args: any[]) => {
+    if (shouldLog('info')) {
+      console.log('[API]', ...args);
+    }
+  },
+  warn: (...args: any[]) => {
+    if (shouldLog('warn')) {
+      console.warn('[API]', ...args);
+    }
+  },
+  error: (...args: any[]) => {
+    if (shouldLog('error')) {
+      console.error('[API]', ...args);
+    }
+  }
+};
+
 // GitHub Token管理器
 class GitHubTokenManager {
   private tokens: string[] = [];
@@ -35,9 +80,9 @@ class GitHubTokenManager {
         .filter((token): token is string => typeof token === 'string' && token.trim().length > 0);
       this.tokens = tokens;
 
-      console.log(`已加载 ${this.tokens.length} 个GitHub令牌`);
+      apiLogger.info(`已加载 ${this.tokens.length} 个GitHub令牌`);
     } catch (error) {
-      console.error('加载GitHub token失败:', error);
+      apiLogger.error('加载GitHub token失败:', error);
     }
   }
 
@@ -147,7 +192,7 @@ async function handleRequestWithRetry(requestFn: () => Promise<any>) {
   } catch (error: any) {
     // 检查是否是认证错误或速率限制错误
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      console.log(`令牌认证失败或达到限制，尝试轮换令牌...`);
+      apiLogger.warn(`令牌认证失败或达到限制，尝试轮换令牌...`);
       const currentToken = tokenManager.getCurrentToken();
       if (currentToken) {
         tokenManager.markTokenFailed(currentToken);
@@ -156,7 +201,7 @@ async function handleRequestWithRetry(requestFn: () => Promise<any>) {
       // 获取新令牌并重试
       const newToken = tokenManager.getNextToken();
       if (newToken && newToken !== currentToken) {
-        console.log(`已轮换到新令牌`);
+        apiLogger.info(`已轮换到新令牌`);
         return await requestFn(); // 使用新令牌重试
       }
     }
@@ -228,7 +273,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json(response.data);
       } catch (error: any) {
-        console.error('GitHub API请求失败:', error.message);
+        apiLogger.error('GitHub API请求失败:', error.message);
 
         return res.status(error.response?.status || 500).json({
           error: '获取内容失败',
@@ -300,7 +345,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(200).send(response.data);
         }
       } catch (error: any) {
-        console.error('获取文件内容失败:', error.message);
+        apiLogger.error('获取文件内容失败:', error.message);
         return res.status(error.response?.status || 500).json({
           error: '获取文件内容失败',
           message: error.message
@@ -344,7 +389,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json(response.data);
       } catch (error: any) {
-        console.error('GitHub搜索API请求失败:', error.message);
+        apiLogger.error('GitHub搜索API请求失败:', error.message);
         return res.status(error.response?.status || 500).json({
           error: '搜索失败',
           message: error.message
@@ -355,7 +400,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 未知操作
     return res.status(400).json({ error: '不支持的操作' });
   } catch (error: any) {
-    console.error('API请求处理错误:', error);
+    apiLogger.error('API请求处理错误:', error);
     let message = '处理请求时发生错误';
 
     if (error.response) {

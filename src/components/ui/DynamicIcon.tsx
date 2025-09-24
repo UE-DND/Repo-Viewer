@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDynamicIcon, useFaviconUpdater } from '../../hooks/useDynamicIcon';
+import { logger } from '../../utils';
 
 interface DynamicIconProps {
   className?: string;
@@ -20,7 +21,7 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({
 
   useEffect(() => {
     if (manageFavicon) {
-      console.log('🎨 动态favicon系统初始化完成');
+      logger.info('🎨 动态favicon系统初始化完成');
     }
   }, [manageFavicon]);
 
@@ -46,7 +47,7 @@ export const FaviconManager: React.FC = () => {
   
   // 添加调试信息
   React.useEffect(() => {
-    console.log('🔧 FaviconManager初始化完成');
+    logger.info('🔧 FaviconManager初始化完成');
   }, []);
   
   return null;
