@@ -2,7 +2,7 @@ import { GitHubTokenManager } from '../TokenManager';
 import { ProxyService } from '../proxy/ProxyService';
 import { ErrorManager } from '../../../utils/error/ErrorManager';
 import { GitHubError } from '../../../types/errors';
-import { USE_SERVER_API } from './GitHubConfig';
+import { shouldUseServerAPI } from '../config/ProxyForceManager';
 
 export class GitHubAuth {
   private static readonly tokenManager = new GitHubTokenManager();
@@ -24,7 +24,7 @@ export class GitHubAuth {
 
   // 获取请求头
   public static getAuthHeaders(): HeadersInit {
-    if (USE_SERVER_API) {
+    if (shouldUseServerAPI()) {
       // 使用服务端API时，不需要在前端添加认证头
       return {
         'Accept': 'application/vnd.github.v3+json',

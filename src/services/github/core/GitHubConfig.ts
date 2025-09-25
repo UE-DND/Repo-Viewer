@@ -1,5 +1,4 @@
 import { getGithubConfig, getAccessConfig } from '../../../config';
-import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 
 // 基础配置
 const githubConfig = getGithubConfig();
@@ -10,14 +9,8 @@ export const DEFAULT_BRANCH = githubConfig.repoBranch;
 // 运行时配置
 const accessConfig = getAccessConfig();
 
-// 是否使用服务端API（非开发环境）
-export const USE_SERVER_API = shouldUseServerAPI();
-
 // 模式设置
 export const USE_TOKEN_MODE = accessConfig.useTokenMode;
-
-// 强制使用服务端API代理所有请求
-export const FORCE_SERVER_PROXY = getForceServerProxy();
 
 // 工具函数
 export const isDevEnvironment = import.meta.env.DEV;
