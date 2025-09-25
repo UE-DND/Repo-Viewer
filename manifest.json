@@ -6,5 +6,13 @@
     "shortCommit": "1d4967b",
     "file": "indexes/feature_filesearch-1d4967b-index.json",
     "generatedAt": "2025-09-25T17:34:50Z"
+  },
+  "dev": {
+    "branch": "dev",
+    "sanitizedBranch": "dev",
+    "commit": "b619d8a402e77674f8beedfe3cd09d6bcff3d364",
+    "shortCommit": "b619d8a",
+    "file": "indexes/dev-b619d8a-index.json",
+    "generatedAt": "2025-09-25T17:42:01Z"
   }
 }
