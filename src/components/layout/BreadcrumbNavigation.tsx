@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import {
-  Home as HomeIcon,
+  HomeRounded as HomeIcon,
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
@@ -220,12 +220,12 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  py: { xs: 0.25, sm: 0.5 },
-                  px: { xs: 1, sm: 1.5 },
+                  py: { xs: 0.5, sm: 0.75 },
+                  px: { xs: 1.25, sm: 1.75 },
                   borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: alpha(theme.palette.primary.main, 0.06),
                   fontWeight: 500,
-                  height: { xs: "24px", sm: "32px" },
+                  height: { xs: "28px", sm: "36px" },
                   fontSize: { xs: "0.75rem", sm: "inherit" },
                   boxSizing: "border-box",
                   maxWidth: isSmallScreen ? "120px" : "250px",
@@ -264,8 +264,8 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                   display: "flex",
                   alignItems: "center",
                   position: "relative",
-                  px: { xs: 1, sm: 1.5 },
-                  py: { xs: 0.25, sm: 0.5 },
+                  px: { xs: 1.25, sm: 1.75 },
+                  py: { xs: 0.5, sm: 0.75 },
                   borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: isHome
                     ? alpha(theme.palette.primary.main, 0.08)
@@ -284,7 +284,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                   fontSize: { xs: "0.75rem", sm: "inherit" },
                   fontWeight: isHome ? 500 : 400,
                   transition: "all 0.2s",
-                  height: { xs: "24px", sm: "32px" },
+                  height: { xs: "28px", sm: "36px" },
                   boxSizing: "border-box",
                   whiteSpace: "nowrap",
                   maxWidth: isSmallScreen ? "90px" : "220px",

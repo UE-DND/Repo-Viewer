@@ -16,6 +16,7 @@ import {
   AlertTitle,
   Chip
 } from '@mui/material';
+import { g3BorderRadius, G3_PRESETS } from '../../theme/g3Curves';
 import {
   ErrorOutline,
   Refresh,
@@ -340,7 +341,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
                           overflow: 'auto',
                           backgroundColor: 'grey.100',
                           p: 1,
-                          borderRadius: 1,
+                          borderRadius: g3BorderRadius(G3_PRESETS.card),
                           mt: 1
                         }}
                       >
@@ -359,7 +360,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
                             overflow: 'auto',
                             backgroundColor: 'grey.100',
                             p: 1,
-                            borderRadius: 1,
+                            borderRadius: g3BorderRadius(G3_PRESETS.card),
                             mt: 1
                           }}
                         >

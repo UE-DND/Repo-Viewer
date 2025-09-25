@@ -71,6 +71,7 @@ export const createMarkdownStyles = (
     padding: "0.5em 0",
     overflowX: "auto",
     overflowY: "hidden",
+    borderRadius: g3BorderRadius(G3_PRESETS.card),
   },
 
   // 深色模式下的LaTeX样式调整
@@ -80,7 +81,7 @@ export const createMarkdownStyles = (
     },
     "& .katex-display": {
       background: alpha(theme.palette.background.paper, 0.4),
-      borderRadius: 1,
+      borderRadius: g3BorderRadius(G3_PRESETS.card),
     },
   }),
 
@@ -126,7 +127,7 @@ export const createMarkdownStyles = (
   "& code": {
     backgroundColor: alpha(theme.palette.primary.main, 0.05),
     padding: "0.2em 0.4em",
-    borderRadius: 1,
+    borderRadius: g3BorderRadius(G3_PRESETS.button),
     fontFamily: "monospace",
     fontSize: "85%",
   },
@@ -136,7 +137,7 @@ export const createMarkdownStyles = (
         ? alpha(theme.palette.common.black, 0.7)
         : alpha(theme.palette.common.black, 0.03),
     padding: 2,
-    borderRadius: 1,
+    borderRadius: g3BorderRadius(G3_PRESETS.card),
     overflowX: "auto",
     "& code": {
       backgroundColor: "transparent",

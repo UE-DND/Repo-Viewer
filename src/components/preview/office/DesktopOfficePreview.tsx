@@ -9,6 +9,7 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
+import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
@@ -183,7 +184,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
         position: "relative",
         overflow: "hidden",
         bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : "#f5f5f5",
-        borderRadius: 1,
+        borderRadius: g3BorderRadius(G3_PRESETS.card),
       }}
       style={style}
       className={`${className} ${fileType}-preview-container`}
