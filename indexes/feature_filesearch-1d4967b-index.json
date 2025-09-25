@@ -1,13 +1,13 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2025-09-21T08:50:41Z",
+  "generatedAt": "2025-09-25T17:34:50Z",
   "branch": "feature/filesearch",
   "repository": {
     "owner": "UE-DND",
     "name": "Repo-Viewer"
   },
   "summary": {
-    "totalFiles": 172,
+    "totalFiles": 167,
     "ignoredDirectories": [
       ".cache",
       ".git",
@@ -38,8 +38,8 @@
   },
   "source": {
     "branch": "feature/filesearch",
-    "commit": "68fbaf905f26029a2e1c3aad772d816d241eacdb",
-    "shortCommit": "68fbaf9"
+    "commit": "1d4967b1b351de4b953abfcdc5e113d3248af97a",
+    "shortCommit": "1d4967b"
   },
   "files": [
     {
@@ -48,7 +48,7 @@
       "directory": "",
       "extension": "",
       "size": 1154,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         ".editorconfig"
       ],
@@ -59,8 +59,8 @@
       "name": ".env.example",
       "directory": "",
       "extension": "example",
-      "size": 2926,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 3987,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         ".env.example"
       ],
@@ -72,7 +72,7 @@
       "directory": "",
       "extension": "",
       "size": 1904,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         ".gitattributes"
       ],
@@ -84,7 +84,7 @@
       "directory": "",
       "extension": "",
       "size": 200,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         ".gitignore"
       ],
@@ -96,7 +96,7 @@
       "directory": "",
       "extension": "",
       "size": 34523,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "LICENSE"
       ],
@@ -107,8 +107,8 @@
       "name": "README.md",
       "directory": "",
       "extension": "md",
-      "size": 5317,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 7330,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "README.md"
       ],
@@ -119,8 +119,8 @@
       "name": "github.ts",
       "directory": "api",
       "extension": "ts",
-      "size": 12418,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 12462,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "api",
         "github.ts"
@@ -128,12 +128,24 @@
       "stem": "github"
     },
     {
+      "path": "eslint.config.js",
+      "name": "eslint.config.js",
+      "directory": "",
+      "extension": "js",
+      "size": 909,
+      "lastModified": "2025-09-25T17:34:49Z",
+      "segments": [
+        "eslint.config.js"
+      ],
+      "stem": "eslint.config"
+    },
+    {
       "path": "index.html",
       "name": "index.html",
       "directory": "",
       "extension": "html",
       "size": 1722,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "index.html"
       ],
@@ -144,8 +156,8 @@
       "name": "package-lock.json",
       "directory": "",
       "extension": "json",
-      "size": 320046,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 331472,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "package-lock.json"
       ],
@@ -156,8 +168,8 @@
       "name": "package.json",
       "directory": "",
       "extension": "json",
-      "size": 1833,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1873,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "package.json"
       ],
@@ -169,7 +181,7 @@
       "directory": "",
       "extension": "js",
       "size": 81,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "postcss.config.js"
       ],
@@ -181,7 +193,7 @@
       "directory": "public",
       "extension": "js",
       "size": 361,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "check-token.js"
@@ -194,7 +206,7 @@
       "directory": "public",
       "extension": "svg",
       "size": 749,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icon.svg"
@@ -207,7 +219,7 @@
       "directory": "public/icons",
       "extension": "svg",
       "size": 736,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icons",
@@ -221,7 +233,7 @@
       "directory": "public/icons",
       "extension": "svg",
       "size": 751,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icons",
@@ -235,7 +247,7 @@
       "directory": "public/icons",
       "extension": "svg",
       "size": 736,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icons",
@@ -249,7 +261,7 @@
       "directory": "public/icons",
       "extension": "svg",
       "size": 736,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icons",
@@ -263,7 +275,7 @@
       "directory": "public/icons",
       "extension": "svg",
       "size": 763,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icons",
@@ -277,7 +289,7 @@
       "directory": "public/icons",
       "extension": "svg",
       "size": 736,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icons",
@@ -291,7 +303,7 @@
       "directory": "public/icons",
       "extension": "svg",
       "size": 751,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "icons",
@@ -305,7 +317,7 @@
       "directory": "public",
       "extension": "svg",
       "size": 1076,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "moeicp.svg"
@@ -318,7 +330,7 @@
       "directory": "public",
       "extension": "txt",
       "size": 117,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "robots.txt"
@@ -331,7 +343,7 @@
       "directory": "public",
       "extension": "xml",
       "size": 594,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "public",
         "sitemap.xml"
@@ -344,7 +356,7 @@
       "directory": "src",
       "extension": "tsx",
       "size": 5446,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "App.tsx"
@@ -356,8 +368,8 @@
       "name": "CacheStatsDisplay.tsx",
       "directory": "src/components/debug",
       "extension": "tsx",
-      "size": 11771,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 11644,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -371,8 +383,8 @@
       "name": "NetworkStatsDisplay.tsx",
       "directory": "src/components/debug",
       "extension": "tsx",
-      "size": 12297,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 12319,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -386,8 +398,8 @@
       "name": "FileList.tsx",
       "directory": "src/components/file",
       "extension": "tsx",
-      "size": 18422,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 18526,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -401,8 +413,8 @@
       "name": "FileListItem.tsx",
       "directory": "src/components/file",
       "extension": "tsx",
-      "size": 11348,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 11332,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -417,7 +429,7 @@
       "directory": "src/components/file",
       "extension": "tsx",
       "size": 1312,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -432,7 +444,7 @@
       "directory": "src/components/interactions",
       "extension": "tsx",
       "size": 4476,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -447,7 +459,7 @@
       "directory": "src/components/interactions",
       "extension": "ts",
       "size": 90,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -461,8 +473,8 @@
       "name": "BreadcrumbNavigation.tsx",
       "directory": "src/components/layout",
       "extension": "tsx",
-      "size": 13643,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 13763,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -477,7 +489,7 @@
       "directory": "src/components/layout/Footer",
       "extension": "tsx",
       "size": 3919,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -492,8 +504,8 @@
       "name": "MainContent.tsx",
       "directory": "src/components/layout",
       "extension": "tsx",
-      "size": 15377,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 15240,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -507,8 +519,8 @@
       "name": "ToolbarButtons.tsx",
       "directory": "src/components/layout",
       "extension": "tsx",
-      "size": 4921,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4958,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -523,7 +535,7 @@
       "directory": "src/components/preview/image",
       "extension": "tsx",
       "size": 6410,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -538,8 +550,8 @@
       "name": "ImageThumbnail.tsx",
       "directory": "src/components/preview/image",
       "extension": "tsx",
-      "size": 1635,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1736,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -554,8 +566,8 @@
       "name": "ImageToolbar.tsx",
       "directory": "src/components/preview/image",
       "extension": "tsx",
-      "size": 7968,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 8188,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -571,7 +583,7 @@
       "directory": "src/components/preview/image/hooks",
       "extension": "ts",
       "size": 3268,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -588,7 +600,7 @@
       "directory": "src/components/preview/image",
       "extension": "tsx",
       "size": 3206,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -604,7 +616,7 @@
       "directory": "src/components/preview/image",
       "extension": "ts",
       "size": 4340,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -619,8 +631,8 @@
       "name": "MarkdownPreview.tsx",
       "directory": "src/components/preview/markdown",
       "extension": "tsx",
-      "size": 6663,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 6639,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -635,8 +647,8 @@
       "name": "ImageErrorDisplay.tsx",
       "directory": "src/components/preview/markdown/components",
       "extension": "tsx",
-      "size": 1762,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1862,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -653,7 +665,7 @@
       "directory": "src/components/preview/markdown/components",
       "extension": "tsx",
       "size": 2610,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -670,7 +682,7 @@
       "directory": "src/components/preview/markdown/components",
       "extension": "tsx",
       "size": 842,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -687,7 +699,7 @@
       "directory": "src/components/preview/markdown/components",
       "extension": "ts",
       "size": 152,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -704,7 +716,7 @@
       "directory": "src/components/preview/markdown/config",
       "extension": "ts",
       "size": 57,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -721,7 +733,7 @@
       "directory": "src/components/preview/markdown/config",
       "extension": "ts",
       "size": 781,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -738,7 +750,7 @@
       "directory": "src/components/preview/markdown",
       "extension": "ts",
       "size": 842,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -754,7 +766,7 @@
       "directory": "src/components/preview/markdown/styles",
       "extension": "tsx",
       "size": 274,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -771,7 +783,7 @@
       "directory": "src/components/preview/markdown/styles",
       "extension": "ts",
       "size": 111,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -787,8 +799,8 @@
       "name": "markdownStyles.ts",
       "directory": "src/components/preview/markdown/styles",
       "extension": "ts",
-      "size": 4408,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4458,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -805,7 +817,7 @@
       "directory": "src/components/preview/markdown",
       "extension": "ts",
       "size": 283,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -821,7 +833,7 @@
       "directory": "src/components/preview/markdown/utils",
       "extension": "ts",
       "size": 6558,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -838,7 +850,7 @@
       "directory": "src/components/preview/markdown/utils",
       "extension": "ts",
       "size": 244,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -854,8 +866,8 @@
       "name": "latexUtils.ts",
       "directory": "src/components/preview/markdown/utils",
       "extension": "ts",
-      "size": 1490,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1533,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -871,8 +883,8 @@
       "name": "DesktopOfficePreview.tsx",
       "directory": "src/components/preview/office",
       "extension": "tsx",
-      "size": 11957,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 12099,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -887,8 +899,8 @@
       "name": "MobileOfficePreview.tsx",
       "directory": "src/components/preview/office",
       "extension": "tsx",
-      "size": 4866,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4966,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -904,7 +916,7 @@
       "directory": "src/components/preview/office",
       "extension": "tsx",
       "size": 1028,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -920,7 +932,7 @@
       "directory": "src/components/preview/office",
       "extension": "ts",
       "size": 354,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -936,7 +948,7 @@
       "directory": "src/components/preview/office",
       "extension": "ts",
       "size": 325,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -952,7 +964,7 @@
       "directory": "src/components/preview/office",
       "extension": "ts",
       "size": 605,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -968,7 +980,7 @@
       "directory": "src/components/preview/office",
       "extension": "ts",
       "size": 941,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -984,7 +996,7 @@
       "directory": "src/components/search",
       "extension": "tsx",
       "size": 3338,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -999,7 +1011,7 @@
       "directory": "src/components/search",
       "extension": "tsx",
       "size": 3659,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1014,7 +1026,7 @@
       "directory": "src/components/search",
       "extension": "ts",
       "size": 112,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1029,7 +1041,7 @@
       "directory": "src/components/seo",
       "extension": "tsx",
       "size": 1949,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1044,7 +1056,7 @@
       "directory": "src/components/seo",
       "extension": "tsx",
       "size": 2655,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1059,7 +1071,7 @@
       "directory": "src/components/seo",
       "extension": "tsx",
       "size": 537,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1073,8 +1085,8 @@
       "name": "CustomSnackbar.tsx",
       "directory": "src/components/ui",
       "extension": "tsx",
-      "size": 5009,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 5138,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1088,8 +1100,8 @@
       "name": "DynamicIcon.tsx",
       "directory": "src/components/ui",
       "extension": "tsx",
-      "size": 1155,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1194,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1103,8 +1115,8 @@
       "name": "EmptyState.tsx",
       "directory": "src/components/ui",
       "extension": "tsx",
-      "size": 5466,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 5565,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1118,8 +1130,8 @@
       "name": "ErrorBoundary.tsx",
       "directory": "src/components/ui",
       "extension": "tsx",
-      "size": 10999,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 11126,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1134,7 +1146,7 @@
       "directory": "src/components/ui",
       "extension": "tsx",
       "size": 797,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1149,7 +1161,7 @@
       "directory": "src/components/ui",
       "extension": "tsx",
       "size": 1348,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1164,7 +1176,7 @@
       "directory": "src/components/ui",
       "extension": "ts",
       "size": 430,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1178,8 +1190,8 @@
       "name": "FileListSkeleton.tsx",
       "directory": "src/components/ui/skeletons",
       "extension": "tsx",
-      "size": 4870,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 5052,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1194,8 +1206,8 @@
       "name": "ImagePreviewSkeleton.tsx",
       "directory": "src/components/ui/skeletons",
       "extension": "tsx",
-      "size": 4592,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4686,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1210,8 +1222,8 @@
       "name": "MarkdownPreviewSkeleton.tsx",
       "directory": "src/components/ui/skeletons",
       "extension": "tsx",
-      "size": 3816,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4702,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1226,8 +1238,8 @@
       "name": "OfficePreviewSkeleton.tsx",
       "directory": "src/components/ui/skeletons",
       "extension": "tsx",
-      "size": 3629,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 3729,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1243,7 +1255,7 @@
       "directory": "src/components/ui/skeletons",
       "extension": "ts",
       "size": 452,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1259,7 +1271,7 @@
       "directory": "src/components/ui/skeletons",
       "extension": "ts",
       "size": 1024,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "components",
@@ -1274,8 +1286,8 @@
       "name": "index.ts",
       "directory": "src/config/constants",
       "extension": "ts",
-      "size": 2565,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 2532,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "config",
@@ -1289,8 +1301,8 @@
       "name": "config-manager.ts",
       "directory": "src/config/core",
       "extension": "ts",
-      "size": 8362,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 8695,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "config",
@@ -1305,7 +1317,7 @@
       "directory": "src/config",
       "extension": "ts",
       "size": 974,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "config",
@@ -1318,8 +1330,8 @@
       "name": "index.ts",
       "directory": "src/config/types",
       "extension": "ts",
-      "size": 1759,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1760,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "config",
@@ -1334,7 +1346,7 @@
       "directory": "src/config/utils",
       "extension": "ts",
       "size": 1023,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "config",
@@ -1349,7 +1361,7 @@
       "directory": "src/config/utils",
       "extension": "ts",
       "size": 4123,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "config",
@@ -1363,8 +1375,8 @@
       "name": "env-parser.ts",
       "directory": "src/config/utils",
       "extension": "ts",
-      "size": 967,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 968,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "config",
@@ -1379,7 +1391,7 @@
       "directory": "src/constants",
       "extension": "ts",
       "size": 389,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "constants",
@@ -1393,7 +1405,7 @@
       "directory": "src/contexts",
       "extension": "tsx",
       "size": 1580,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
@@ -1407,7 +1419,7 @@
       "directory": "src/contexts/MetadataContext",
       "extension": "tsx",
       "size": 2613,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
@@ -1422,7 +1434,7 @@
       "directory": "src/contexts/SEOContext",
       "extension": "tsx",
       "size": 845,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
@@ -1436,8 +1448,8 @@
       "name": "AppContext.tsx",
       "directory": "src/contexts/github",
       "extension": "tsx",
-      "size": 538,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 529,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
@@ -1452,7 +1464,7 @@
       "directory": "src/contexts/github",
       "extension": "tsx",
       "size": 6164,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
@@ -1466,8 +1478,8 @@
       "name": "index.ts",
       "directory": "src/contexts/github",
       "extension": "ts",
-      "size": 634,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 279,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
@@ -1477,57 +1489,27 @@
       "stem": "index"
     },
     {
-      "path": "src/contexts/unified/OptimizedAppContext.tsx",
-      "name": "OptimizedAppContext.tsx",
+      "path": "src/contexts/unified/AppContext.tsx",
+      "name": "AppContext.tsx",
       "directory": "src/contexts/unified",
       "extension": "tsx",
-      "size": 616,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 6169,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
         "unified",
-        "OptimizedAppContext.tsx"
+        "AppContext.tsx"
       ],
-      "stem": "OptimizedAppContext"
-    },
-    {
-      "path": "src/contexts/unified/StateManagerProvider.tsx",
-      "name": "StateManagerProvider.tsx",
-      "directory": "src/contexts/unified",
-      "extension": "tsx",
-      "size": 1618,
-      "lastModified": "2025-09-21T08:50:40Z",
-      "segments": [
-        "src",
-        "contexts",
-        "unified",
-        "StateManagerProvider.tsx"
-      ],
-      "stem": "StateManagerProvider"
-    },
-    {
-      "path": "src/contexts/unified/compatibilityHooks.ts",
-      "name": "compatibilityHooks.ts",
-      "directory": "src/contexts/unified",
-      "extension": "ts",
-      "size": 8880,
-      "lastModified": "2025-09-21T08:50:40Z",
-      "segments": [
-        "src",
-        "contexts",
-        "unified",
-        "compatibilityHooks.ts"
-      ],
-      "stem": "compatibilityHooks"
+      "stem": "AppContext"
     },
     {
       "path": "src/contexts/unified/index.ts",
       "name": "index.ts",
       "directory": "src/contexts/unified",
       "extension": "ts",
-      "size": 730,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 175,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "contexts",
@@ -1535,86 +1517,6 @@
         "index.ts"
       ],
       "stem": "index"
-    },
-    {
-      "path": "src/contexts/unified/state/StateManager.ts",
-      "name": "StateManager.ts",
-      "directory": "src/contexts/unified/state",
-      "extension": "ts",
-      "size": 5815,
-      "lastModified": "2025-09-21T08:50:40Z",
-      "segments": [
-        "src",
-        "contexts",
-        "unified",
-        "state",
-        "StateManager.ts"
-      ],
-      "stem": "StateManager"
-    },
-    {
-      "path": "src/contexts/unified/state/hooks.ts",
-      "name": "hooks.ts",
-      "directory": "src/contexts/unified/state",
-      "extension": "ts",
-      "size": 3971,
-      "lastModified": "2025-09-21T08:50:40Z",
-      "segments": [
-        "src",
-        "contexts",
-        "unified",
-        "state",
-        "hooks.ts"
-      ],
-      "stem": "hooks"
-    },
-    {
-      "path": "src/contexts/unified/state/index.ts",
-      "name": "index.ts",
-      "directory": "src/contexts/unified/state",
-      "extension": "ts",
-      "size": 967,
-      "lastModified": "2025-09-21T08:50:40Z",
-      "segments": [
-        "src",
-        "contexts",
-        "unified",
-        "state",
-        "index.ts"
-      ],
-      "stem": "index"
-    },
-    {
-      "path": "src/contexts/unified/state/selectors.ts",
-      "name": "selectors.ts",
-      "directory": "src/contexts/unified/state",
-      "extension": "ts",
-      "size": 2782,
-      "lastModified": "2025-09-21T08:50:40Z",
-      "segments": [
-        "src",
-        "contexts",
-        "unified",
-        "state",
-        "selectors.ts"
-      ],
-      "stem": "selectors"
-    },
-    {
-      "path": "src/contexts/unified/state/types.ts",
-      "name": "types.ts",
-      "directory": "src/contexts/unified/state",
-      "extension": "ts",
-      "size": 1661,
-      "lastModified": "2025-09-21T08:50:40Z",
-      "segments": [
-        "src",
-        "contexts",
-        "unified",
-        "state",
-        "types.ts"
-      ],
-      "stem": "types"
     },
     {
       "path": "src/hooks/useDownload.ts",
@@ -1622,7 +1524,7 @@
       "directory": "src/hooks",
       "extension": "ts",
       "size": 10134,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "hooks",
@@ -1635,8 +1537,8 @@
       "name": "useDynamicIcon.ts",
       "directory": "src/hooks",
       "extension": "ts",
-      "size": 4290,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4296,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "hooks",
@@ -1649,8 +1551,8 @@
       "name": "useErrorHandler.ts",
       "directory": "src/hooks",
       "extension": "ts",
-      "size": 6555,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 6897,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "hooks",
@@ -1664,7 +1566,7 @@
       "directory": "src/hooks",
       "extension": "ts",
       "size": 20208,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "hooks",
@@ -1677,8 +1579,8 @@
       "name": "useGitHubContent.ts",
       "directory": "src/hooks",
       "extension": "ts",
-      "size": 9607,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 12060,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "hooks",
@@ -1691,8 +1593,8 @@
       "name": "useRefresh.ts",
       "directory": "src/hooks",
       "extension": "ts",
-      "size": 2564,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 3346,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "hooks",
@@ -1706,7 +1608,7 @@
       "directory": "src/hooks",
       "extension": "ts",
       "size": 5651,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "hooks",
@@ -1720,7 +1622,7 @@
       "directory": "src",
       "extension": "css",
       "size": 24766,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "index.css"
@@ -1732,8 +1634,8 @@
       "name": "main.tsx",
       "directory": "src",
       "extension": "tsx",
-      "size": 2459,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 2715,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "main.tsx"
@@ -1746,7 +1648,7 @@
       "directory": "src/providers",
       "extension": "tsx",
       "size": 1205,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "providers",
@@ -1760,7 +1662,7 @@
       "directory": "src/services",
       "extension": "ts",
       "size": 3721,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1774,7 +1676,7 @@
       "directory": "src/services",
       "extension": "ts",
       "size": 830,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1788,7 +1690,7 @@
       "directory": "src/services/github",
       "extension": "ts",
       "size": 3186,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1802,8 +1704,8 @@
       "name": "RequestBatcher.ts",
       "directory": "src/services/github",
       "extension": "ts",
-      "size": 7430,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 7447,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1818,7 +1720,7 @@
       "directory": "src/services/github",
       "extension": "ts",
       "size": 6776,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1833,7 +1735,7 @@
       "directory": "src/services/github/cache",
       "extension": "ts",
       "size": 11270,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1849,7 +1751,7 @@
       "directory": "src/services/github/cache",
       "extension": "ts",
       "size": 768,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1865,7 +1767,7 @@
       "directory": "src/services/github/cache",
       "extension": "ts",
       "size": 3136,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1881,7 +1783,7 @@
       "directory": "src/services/github/cache",
       "extension": "ts",
       "size": 9398,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1897,7 +1799,7 @@
       "directory": "src/services/github/cache",
       "extension": "ts",
       "size": 1004,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1913,7 +1815,7 @@
       "directory": "src/services/github/cache",
       "extension": "ts",
       "size": 552,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1928,8 +1830,8 @@
       "name": "ProxyForceManager.ts",
       "directory": "src/services/github/config",
       "extension": "ts",
-      "size": 3468,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 3551,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1944,8 +1846,8 @@
       "name": "index.ts",
       "directory": "src/services/github/config",
       "extension": "ts",
-      "size": 777,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 778,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1960,8 +1862,8 @@
       "name": "GitHubAuth.ts",
       "directory": "src/services/github/core",
       "extension": "ts",
-      "size": 2837,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 2860,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1976,8 +1878,8 @@
       "name": "GitHubConfig.ts",
       "directory": "src/services/github/core",
       "extension": "ts",
-      "size": 1824,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1828,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -1992,8 +1894,8 @@
       "name": "GitHubContentService.ts",
       "directory": "src/services/github/core",
       "extension": "ts",
-      "size": 6537,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 6988,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2009,7 +1911,7 @@
       "directory": "src/services/github/core",
       "extension": "ts",
       "size": 5859,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2024,8 +1926,8 @@
       "name": "GitHubSearchService.ts",
       "directory": "src/services/github/core",
       "extension": "ts",
-      "size": 6313,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 6282,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2040,8 +1942,8 @@
       "name": "GitHubService.ts",
       "directory": "src/services/github/core",
       "extension": "ts",
-      "size": 3711,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 3593,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2056,8 +1958,8 @@
       "name": "GitHubStatsService.ts",
       "directory": "src/services/github/core",
       "extension": "ts",
-      "size": 819,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 911,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2072,8 +1974,8 @@
       "name": "ProxyConfig.ts",
       "directory": "src/services/github/proxy",
       "extension": "ts",
-      "size": 667,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 599,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2088,8 +1990,8 @@
       "name": "ProxyHealthManager.ts",
       "directory": "src/services/github/proxy",
       "extension": "ts",
-      "size": 4864,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4902,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2104,8 +2006,8 @@
       "name": "ProxyService.ts",
       "directory": "src/services/github/proxy",
       "extension": "ts",
-      "size": 4924,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 4921,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2120,8 +2022,8 @@
       "name": "ProxyUrlTransformer.ts",
       "directory": "src/services/github/proxy",
       "extension": "ts",
-      "size": 8220,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 8617,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2137,7 +2039,7 @@
       "directory": "src/services/github/schemas",
       "extension": "ts",
       "size": 4586,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2153,7 +2055,7 @@
       "directory": "src/services/github/schemas",
       "extension": "ts",
       "size": 5067,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2169,7 +2071,7 @@
       "directory": "src/services/github/schemas",
       "extension": "ts",
       "size": 757,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2185,7 +2087,7 @@
       "directory": "src/services",
       "extension": "ts",
       "size": 9714,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "services",
@@ -2199,7 +2101,7 @@
       "directory": "src/theme",
       "extension": "ts",
       "size": 1546,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "theme",
@@ -2208,12 +2110,26 @@
       "stem": "animations"
     },
     {
+      "path": "src/theme/g3Curves.ts",
+      "name": "g3Curves.ts",
+      "directory": "src/theme",
+      "extension": "ts",
+      "size": 3360,
+      "lastModified": "2025-09-25T17:34:49Z",
+      "segments": [
+        "src",
+        "theme",
+        "g3Curves.ts"
+      ],
+      "stem": "g3Curves"
+    },
+    {
       "path": "src/theme/index.ts",
       "name": "index.ts",
       "directory": "src/theme",
       "extension": "ts",
-      "size": 12471,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 13035,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "theme",
@@ -2227,7 +2143,7 @@
       "directory": "src/types",
       "extension": "ts",
       "size": 3976,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "types",
@@ -2240,8 +2156,8 @@
       "name": "index.ts",
       "directory": "src/types",
       "extension": "ts",
-      "size": 3227,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 3327,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "types",
@@ -2255,7 +2171,7 @@
       "directory": "src/types",
       "extension": "ts",
       "size": 1357,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "types",
@@ -2268,8 +2184,8 @@
       "name": "token-helper.ts",
       "directory": "src/utils/auth",
       "extension": "ts",
-      "size": 3379,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 3354,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2283,8 +2199,8 @@
       "name": "ErrorManager.ts",
       "directory": "src/utils/error",
       "extension": "ts",
-      "size": 10229,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 10323,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2298,8 +2214,8 @@
       "name": "eventEmitter.ts",
       "directory": "src/utils/events",
       "extension": "ts",
-      "size": 1412,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1458,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2314,7 +2230,7 @@
       "directory": "src/utils/files",
       "extension": "ts",
       "size": 2883,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2329,7 +2245,7 @@
       "directory": "src/utils/format",
       "extension": "ts",
       "size": 685,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2343,8 +2259,8 @@
       "name": "index.ts",
       "directory": "src/utils",
       "extension": "ts",
-      "size": 1079,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1137,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2358,7 +2274,7 @@
       "directory": "src/utils/lazy-loading/components",
       "extension": "tsx",
       "size": 686,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2373,8 +2289,8 @@
       "name": "LazyLoadErrorBoundary.tsx",
       "directory": "src/utils/lazy-loading/components",
       "extension": "tsx",
-      "size": 2108,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 2256,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2390,7 +2306,7 @@
       "directory": "src/utils/lazy-loading/core",
       "extension": "tsx",
       "size": 1298,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2406,7 +2322,7 @@
       "directory": "src/utils/lazy-loading",
       "extension": "ts",
       "size": 708,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2421,7 +2337,7 @@
       "directory": "src/utils/lazy-loading/presets",
       "extension": "tsx",
       "size": 806,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2437,7 +2353,7 @@
       "directory": "src/utils/lazy-loading",
       "extension": "ts",
       "size": 641,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2451,8 +2367,8 @@
       "name": "preloadUtils.ts",
       "directory": "src/utils/lazy-loading/utils",
       "extension": "ts",
-      "size": 2034,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 2074,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2468,7 +2384,7 @@
       "directory": "src/utils/lazy-loading/utils",
       "extension": "ts",
       "size": 3127,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2483,8 +2399,8 @@
       "name": "logger.ts",
       "directory": "src/utils/logging",
       "extension": "ts",
-      "size": 1075,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1258,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2498,8 +2414,8 @@
       "name": "proxyHelper.ts",
       "directory": "src/utils/network",
       "extension": "ts",
-      "size": 1093,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "size": 1132,
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2514,7 +2430,7 @@
       "directory": "src/utils/pdf",
       "extension": "ts",
       "size": 10490,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2529,7 +2445,7 @@
       "directory": "src/utils/rendering",
       "extension": "ts",
       "size": 6140,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2544,7 +2460,7 @@
       "directory": "src/utils/routing",
       "extension": "ts",
       "size": 4072,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "utils",
@@ -2559,7 +2475,7 @@
       "directory": "src",
       "extension": "ts",
       "size": 2219,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "src",
         "vite-env.d.ts"
@@ -2572,7 +2488,7 @@
       "directory": "",
       "extension": "js",
       "size": 160,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "tailwind.config.js"
       ],
@@ -2584,7 +2500,7 @@
       "directory": "",
       "extension": "json",
       "size": 10890,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "tsconfig.json"
       ],
@@ -2596,7 +2512,7 @@
       "directory": "",
       "extension": "json",
       "size": 317,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "vercel.json"
       ],
@@ -2608,7 +2524,7 @@
       "directory": "",
       "extension": "ts",
       "size": 7750,
-      "lastModified": "2025-09-21T08:50:40Z",
+      "lastModified": "2025-09-25T17:34:49Z",
       "segments": [
         "vite.config.ts"
       ],

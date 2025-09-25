@@ -2,9 +2,9 @@
   "feature_filesearch": {
     "branch": "feature/filesearch",
     "sanitizedBranch": "feature_filesearch",
-    "commit": "68fbaf905f26029a2e1c3aad772d816d241eacdb",
-    "shortCommit": "68fbaf9",
-    "file": "indexes/feature_filesearch-68fbaf9-index.json",
-    "generatedAt": "2025-09-21T08:50:41Z"
+    "commit": "1d4967b1b351de4b953abfcdc5e113d3248af97a",
+    "shortCommit": "1d4967b",
+    "file": "indexes/feature_filesearch-1d4967b-index.json",
+    "generatedAt": "2025-09-25T17:34:50Z"
   }
 }
