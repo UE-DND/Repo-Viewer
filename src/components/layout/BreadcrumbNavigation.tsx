@@ -10,11 +10,12 @@ import {
   Tooltip,
 } from "@mui/material";
 import {
-  Home as HomeIcon,
+  HomeRounded as HomeIcon,
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import { NavigationDirection } from "../../contexts/unified";
+import { g3Styles } from "../../utils";
 
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: Array<{ name: string; path: string }>;
@@ -57,7 +58,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
     // 检查是否有上级目录可返回
     const canGoUp = breadcrumbSegments.length > 1;
 
-    // 创建一个统一的Home按钮样式结构，完全统一图标位置
+    // 创建一个统一的Home按钮样式结构
     const renderHomeContent = (isLast: boolean) => (
       <>
         <Box
@@ -67,12 +68,12 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
             alignItems: "center",
             justifyContent: "center",
             color: theme.palette.primary.main,
-            mr: 0.5, // 统一的右边距
-            width: { xs: 20, sm: 24 }, // 固定宽度确保图标位置稳定
-            height: { xs: 20, sm: 24 }, // 固定高度确保图标位置稳定
+            mr: 0.5,
+            width: { xs: 20, sm: 24 },
+            height: { xs: 20, sm: 24 },
             borderRadius: "50%",
             flexShrink: 0,
-            position: "relative", // 使用相对定位以便更精确控制
+            position: "relative",
             transition: "all 0.2s",
             ...(isLast
               ? {}
@@ -84,14 +85,13 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
           }}
           data-oid=".e0qa-0"
         >
-          {/* 固定图标大小和位置，确保在所有状态下完全相同 */}
           <HomeIcon
             sx={{
               fontSize: { xs: "0.9rem", sm: "1.1rem" },
               position: "absolute",
               top: "50%",
               left: "50%",
-              transform: "translate(-50%, -50%)", // 精确居中
+              transform: "translate(-50%, -50%)",
             }}
             data-oid="xxu.9dy"
           />
@@ -122,6 +122,8 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
           position: "relative",
           display: "flex",
           alignItems: "center",
+          overflow: "visible",
+          zIndex: 1,
         }}
         data-oid="zmb:p06"
       >
@@ -141,19 +143,22 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
             px: { xs: 1.5, sm: 2 },
             py: { xs: 1, sm: 1.5 },
             bgcolor: "background.paper",
-            borderRadius: 2,
+            borderRadius: g3Styles.breadcrumb().borderRadius,
             boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.05)",
             "& .MuiBreadcrumbs-ol": {
               alignItems: "center",
               flexWrap: "nowrap",
               width: "100%",
+              overflow: "visible",
+              position: "relative",
             },
             "& .MuiBreadcrumbs-li": {
               whiteSpace: "nowrap",
               maxWidth: isSmallScreen ? "90px" : "200px",
-              overflow: "hidden",
+              overflow: "visible",
               textOverflow: "ellipsis",
               display: "inline-block",
+              position: "relative",
               fontSize: { xs: "0.75rem", sm: "inherit" },
             },
             "& .MuiBreadcrumbs-separator": {
@@ -162,12 +167,14 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
             "& .MuiBreadcrumbs-collapsed": {
               color: theme.palette.primary.main,
               backgroundColor: alpha(theme.palette.primary.main, 0.07),
-              borderRadius: 2,
+              borderRadius: g3Styles.breadcrumbItem().borderRadius,
               px: { xs: 0.5, sm: 1 },
               py: 0.2,
               mx: { xs: 0.25, sm: 0.5 },
               fontWeight: 500,
               fontSize: { xs: "0.7rem", sm: "0.75rem" },
+              position: "relative",
+              zIndex: 1,
               "&:hover": {
                 backgroundColor: alpha(theme.palette.primary.main, 0.12),
                 transform: "scale(1.05)",
@@ -175,9 +182,10 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
               },
             },
             overflowX: "auto",
+            overflowY: "visible",
             whiteSpace: "nowrap",
             scrollbarWidth: "thin",
-            msOverflowStyle: "none" /* IE and Edge */,
+            msOverflowStyle: "none",
             "&::-webkit-scrollbar": {
               height: "4px",
             },
@@ -212,12 +220,12 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  py: { xs: 0.25, sm: 0.5 },
-                  px: { xs: 1, sm: 1.5 },
-                  borderRadius: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.5, sm: 0.75 },
+                  px: { xs: 1.25, sm: 1.75 },
+                  borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: alpha(theme.palette.primary.main, 0.06),
                   fontWeight: 500,
-                  height: { xs: "24px", sm: "32px" },
+                  height: { xs: "28px", sm: "36px" },
                   fontSize: { xs: "0.75rem", sm: "inherit" },
                   boxSizing: "border-box",
                   maxWidth: isSmallScreen ? "120px" : "250px",
@@ -250,15 +258,15 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  // 设置导航方向为后退
                   handleBreadcrumbClick(segment.path, "backward");
                 }}
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  px: { xs: 1, sm: 1.5 },
-                  py: { xs: 0.25, sm: 0.5 },
-                  borderRadius: { xs: 1.5, sm: 2 },
+                  position: "relative",
+                  px: { xs: 1.25, sm: 1.75 },
+                  py: { xs: 0.5, sm: 0.75 },
+                  borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: isHome
                     ? alpha(theme.palette.primary.main, 0.08)
                     : "transparent",
@@ -270,13 +278,13 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                       ? theme.palette.primary.main
                       : alpha(theme.palette.primary.main, 0.9),
                     transform: "translateY(-1px)",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                     transition: "all 0.2s",
                   },
                   fontSize: { xs: "0.75rem", sm: "inherit" },
                   fontWeight: isHome ? 500 : 400,
                   transition: "all 0.2s",
-                  height: { xs: "24px", sm: "32px" },
+                  height: { xs: "28px", sm: "36px" },
                   boxSizing: "border-box",
                   whiteSpace: "nowrap",
                   maxWidth: isSmallScreen ? "90px" : "220px",

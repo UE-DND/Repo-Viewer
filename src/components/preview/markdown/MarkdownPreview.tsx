@@ -25,6 +25,7 @@ import {
 import { checkLatexCount, createLatexCodeHandler } from "./utils/latexUtils";
 import { MarkdownImage } from "./components/MarkdownImage";
 import { MarkdownLink } from "./components/MarkdownLink";
+import { logger } from '../../../utils';
 
 // 导入骨架屏组件
 import { MarkdownPreviewSkeleton } from "../../ui/skeletons";
@@ -61,7 +62,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     useEffect(() => {
       if (shouldRender && readmeContent && latexCount > 0) {
         loadKatexStyles().catch((error) => {
-          console.error('加载 KaTeX 样式失败:', error);
+          logger.error('加载 KaTeX 样式失败:', error);
         });
       }
     }, [shouldRender, readmeContent, latexCount]);
@@ -142,7 +143,6 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
     if (loadingReadme) {
       return (
-        // 使用 Markdown 预览骨架屏替代加载指示器
         <MarkdownPreviewSkeleton
           isSmallScreen={isSmallScreen}
           data-oid="8h5-fe5"

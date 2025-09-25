@@ -1,3 +1,5 @@
+import { logger } from '../logging/logger';
+
 // 创建全局事件发布器
 interface EventMap {
   [key: string]: Array<(data: any) => void>;
@@ -9,19 +11,19 @@ export const eventEmitter = {
   dispatch(event: string, data: any): void {
     if (!this.events[event]) return;
     this.events[event].forEach(callback => callback(data));
-    console.log(`事件分发: ${event}`);
+    logger.debug(`事件分发: ${event}`);
   },
   subscribe(event: string, callback: (data: any) => void): () => void {
     if (!this.events[event]) this.events[event] = [];
     this.events[event].push(callback);
-    console.log(`事件订阅: ${event}, 当前订阅者数量: ${this.events[event].length}`);
+    logger.debug(`事件订阅: ${event}, 当前订阅者数量: ${this.events[event].length}`);
     return () => {
       const list = this.events[event] ?? [];
       this.events[event] = list.filter(cb => cb !== callback);
-      console.log(`取消事件订阅: ${event}, 剩余订阅者数量: ${this.events[event].length}`);
+      logger.debug(`取消事件订阅: ${event}, 剩余订阅者数量: ${this.events[event].length}`);
     }
   },
-  
+
   // 兼容旧版API
   on(event: string, callback: (data: any) => void) {
     return this.subscribe(event, callback);
@@ -40,4 +42,4 @@ export const eventEmitter = {
 export const EVENTS = {
   REFRESH_CONTENT: 'refresh_content',
   CANCEL_DOWNLOAD: 'CANCEL_DOWNLOAD'
-}; 
+};

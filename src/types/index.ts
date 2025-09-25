@@ -1,20 +1,20 @@
-import { OptionsObject as NotistackOptionsObject } from "notistack";
+import { OptionsObject as NotistackOptionsObject } from 'notistack';
 
-export * from "./errors";
-export * from "./search";
+export * from './errors';
+export * from './search';
 
 // Office文件类型枚举
 export enum OfficeFileType {
-  WORD = "word",
-  EXCEL = "excel",
-  PPT = "ppt",
+  WORD = 'word',
+  EXCEL = 'excel',
+  PPT = 'ppt',
 }
 
 // 定义GitHub仓库内容项的接口
 export interface GitHubContent {
   name: string;
   path: string;
-  type: "file" | "dir";
+  type: 'file' | 'dir';
   sha: string;
   size?: number;
   download_url: string | null;
@@ -69,17 +69,22 @@ export interface PreviewState {
 
 // 定义预览操作类型
 export type PreviewAction =
-  | { type: "RESET_PREVIEW" }
-  | { type: "SET_MD_PREVIEW"; content: string | null; item: GitHubContent | null }
-  | { type: "SET_MD_LOADING"; loading: boolean }
-  | { type: "SET_IMAGE_PREVIEW"; url: string | null; item: GitHubContent | null }
-  | { type: "SET_IMAGE_LOADING"; loading: boolean }
-  | { type: "SET_IMAGE_ERROR"; error: string | null }
-  | { type: "SET_IMAGE_FULLSCREEN"; fullscreen: boolean }
-  | { type: "SET_OFFICE_PREVIEW"; url: string | null; item: GitHubContent | null; fileType: OfficeFileType | null }
-  | { type: "SET_OFFICE_LOADING"; loading: boolean }
-  | { type: "SET_OFFICE_ERROR"; error: string | null }
-  | { type: "SET_OFFICE_FULLSCREEN"; fullscreen: boolean };
+  | { type: 'RESET_PREVIEW' }
+  // Markdown预览操作 (仅用于README文件)
+  | { type: 'SET_MD_PREVIEW'; content: string | null; item: GitHubContent | null }
+  | { type: 'SET_MD_LOADING'; loading: boolean }
+
+  // 图像预览操作
+  | { type: 'SET_IMAGE_PREVIEW'; url: string | null; item: GitHubContent | null }
+  | { type: 'SET_IMAGE_LOADING'; loading: boolean }
+  | { type: 'SET_IMAGE_ERROR'; error: string | null }
+  | { type: 'SET_IMAGE_FULLSCREEN'; fullscreen: boolean }
+
+  // Office预览操作
+  | { type: 'SET_OFFICE_PREVIEW'; url: string | null; item: GitHubContent | null; fileType: OfficeFileType | null }
+  | { type: 'SET_OFFICE_LOADING'; loading: boolean }
+  | { type: 'SET_OFFICE_ERROR'; error: string | null }
+  | { type: 'SET_OFFICE_FULLSCREEN'; fullscreen: boolean };
 
 // 定义下载状态接口
 export interface DownloadState {
@@ -93,13 +98,13 @@ export interface DownloadState {
 
 // 定义下载操作类型
 export type DownloadAction =
-  | { type: "SET_DOWNLOADING_FILE"; path: string | null }
-  | { type: "SET_DOWNLOADING_FOLDER"; path: string | null }
-  | { type: "SET_FOLDER_PROGRESS"; progress: number }
-  | { type: "SET_PROCESSING_FILES"; count: number }
-  | { type: "SET_TOTAL_FILES"; count: number }
-  | { type: "CANCEL_DOWNLOAD" }
-  | { type: "RESET_DOWNLOAD_STATE" };
+  | { type: 'SET_DOWNLOADING_FILE'; path: string | null }
+  | { type: 'SET_DOWNLOADING_FOLDER'; path: string | null }
+  | { type: 'SET_FOLDER_PROGRESS'; progress: number }
+  | { type: 'SET_PROCESSING_FILES'; count: number }
+  | { type: 'SET_TOTAL_FILES'; count: number }
+  | { type: 'CANCEL_DOWNLOAD' }
+  | { type: 'RESET_DOWNLOAD_STATE' };
 
 // 定义应用状态接口
 export interface AppState {

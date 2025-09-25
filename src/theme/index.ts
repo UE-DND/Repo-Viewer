@@ -1,4 +1,5 @@
 import { createTheme, alpha, PaletteMode } from '@mui/material/styles';
+import { g3BorderRadius, G3_PRESETS } from './g3Curves';
 
 // 主题色配置
 const md3Themes = [
@@ -58,7 +59,7 @@ const md3Themes = [
       },
       secondary: {
         main: '#90CAF9',
-        light: '#E3F2FD', 
+        light: '#E3F2FD',
         dark: '#64B5F6',
         contrastText: '#002159',
       }
@@ -284,7 +285,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       ...(mode === 'light' ? lightPalette : darkPalette),
     },
     shape: {
-      borderRadius: 16, 
+      borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
     },
     typography: {
       fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -294,7 +295,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
         lineHeight: 1.2,
         letterSpacing: '-0.01562em',
         '@media (max-width:600px)': {
-          fontSize: '2rem', 
+          fontSize: '2rem',
         },
       },
       h6: {
@@ -303,11 +304,11 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
         lineHeight: 1.6,
         letterSpacing: '0.0075em',
         '@media (max-width:600px)': {
-          fontSize: '1.1rem', 
+          fontSize: '1.1rem',
         },
       },
       button: {
-        textTransform: 'none', 
+        textTransform: 'none',
         fontWeight: 500,
       },
       body1: {
@@ -325,11 +326,11 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: 20, 
+            borderRadius: g3BorderRadius(G3_PRESETS.button),
             padding: '10px 24px',
-            boxShadow: 'none', 
+            boxShadow: 'none',
             '@media (max-width:600px)': {
-              padding: '8px 16px', 
+              padding: '8px 16px',
               fontSize: '0.8rem',
             },
           },
@@ -343,8 +344,8 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       MuiAppBar: {
         styleOverrides: {
           root: ({ theme }: { theme: any }) => ({
-            boxShadow: 'none', 
-            backgroundColor: theme.palette.mode === 'light' ? '#FFFBFE' : '#1C1B1F', 
+            boxShadow: 'none',
+            backgroundColor: theme.palette.mode === 'light' ? '#FFFBFE' : '#1C1B1F',
             color: theme.palette.mode === 'light' ? '#1C1B1F' : '#E6E1E5',
           }),
         },
@@ -352,13 +353,13 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       MuiCard: {
         styleOverrides: {
           root: ({ theme }: { theme: any }) => ({
-            borderRadius: 20, 
+            borderRadius: g3BorderRadius(G3_PRESETS.card),
             padding: 16,
-            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)', 
+            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
             backgroundColor: theme.palette.mode === 'light' ? '#FFFFFF' : '#2D2C34',
             '@media (max-width:600px)': {
-              padding: 12, 
-              borderRadius: 16,
+              padding: 12,
+              borderRadius: g3BorderRadius({...G3_PRESETS.card, radius: 16}),
             },
           }),
         },
@@ -366,25 +367,26 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       MuiPaper: {
         styleOverrides: {
           rounded: {
-            borderRadius: 16, 
+            borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
             '@media (max-width:600px)': {
-              borderRadius: 12, 
+              borderRadius: g3BorderRadius({...G3_PRESETS.fileListContainer, radius: 12}),
             },
           },
           elevation1: {
-            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)', 
+            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
           },
         },
       },
       MuiListItem: {
         styleOverrides: {
           root: {
-            borderRadius: 12, 
-            margin: '4px 0', 
-            overflow: 'visible', 
+            borderRadius: g3BorderRadius(G3_PRESETS.fileListItem),
+            margin: '4px 0',
+            overflow: 'visible',
             '@media (max-width:600px)': {
-              margin: '2px 0', 
-              minHeight: '36px', 
+              margin: '2px 0',
+              minHeight: '36px',
+              borderRadius: g3BorderRadius({...G3_PRESETS.fileListItem, radius: 8}),
             },
           },
         },
@@ -392,14 +394,14 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       MuiListItemButton: {
         styleOverrides: {
           root: ({ theme }: { theme: any }) => ({
-            borderRadius: 12, 
-            transition: 'background-color 0.3s ease', 
+            borderRadius: g3BorderRadius(G3_PRESETS.fileListItem),
+            transition: 'background-color 0.3s ease',
             '&:hover': {
               backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.08 : 0.16),
             },
             '@media (max-width:600px)': {
-              borderRadius: 8, 
-              py: 0.75, 
+              borderRadius: g3BorderRadius({...G3_PRESETS.fileListItem, radius: 8}),
+              py: 0.75,
             },
           }),
         },
@@ -408,7 +410,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
         styleOverrides: {
           root: {
             '@media (max-width:600px)': {
-              minWidth: '32px', 
+              minWidth: '32px',
             },
           },
         },
@@ -416,11 +418,11 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       MuiIconButton: {
         styleOverrides: {
           root: {
-            borderRadius: '50%', 
+            borderRadius: '50%',
             '@media (max-width:600px)': {
-              padding: 8, 
+              padding: 8,
               '& .MuiSvgIcon-root': {
-                fontSize: '1.25rem', 
+                fontSize: '1.25rem',
               },
             },
           },
@@ -429,10 +431,10 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       MuiDialog: {
         styleOverrides: {
           paper: {
-            borderRadius: 28, 
+            borderRadius: g3BorderRadius(G3_PRESETS.dialog),
             padding: 0,
             '@media (max-width:600px)': {
-              borderRadius: 20, 
+              borderRadius: g3BorderRadius({...G3_PRESETS.dialog, radius: 20}),
             },
           },
         },
@@ -443,7 +445,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
             fontSize: '1.25rem',
             fontWeight: 500,
             '@media (max-width:600px)': {
-              fontSize: '1.1rem', 
+              fontSize: '1.1rem',
               padding: '16px',
             },
           },
@@ -454,7 +456,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
           root: {
             padding: 24,
             '@media (max-width:600px)': {
-              padding: 16, 
+              padding: 16,
             },
           },
         },
@@ -464,7 +466,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
           root: {
             padding: '12px 24px',
             '@media (max-width:600px)': {
-              padding: '8px 16px', 
+              padding: '8px 16px',
             },
           },
         },
@@ -475,7 +477,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
             '& .MuiBreadcrumbs-separator': {
               margin: '0 8px',
               '@media (max-width:600px)': {
-                margin: '0 4px', 
+                margin: '0 4px',
               },
             },
           },
@@ -485,7 +487,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
         styleOverrides: {
           root: {
             '@media (max-width:600px)': {
-              fontSize: '1.25rem', 
+              fontSize: '1.25rem',
             },
             '&.MuiSvgIcon-fontSizeSmall': {
               '@media (max-width:600px)': {
@@ -499,7 +501,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
         styleOverrides: {
           root: {
             '@media (max-width:600px)': {
-              minHeight: '56px', 
+              minHeight: '56px',
               padding: '0 16px',
             },
           },
@@ -512,13 +514,13 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
           tooltip: ({ theme }: { theme: any }) => ({
             backgroundColor: alpha(theme.palette.grey[700], 0.92),
             color: '#fff',
-            borderRadius: theme.shape.borderRadius * 0.5,
+            borderRadius: g3BorderRadius(G3_PRESETS.tooltip),
             padding: '6px 12px',
             fontSize: theme.typography.pxToRem(12),
             maxWidth: 300,
           }),
           popper: {
-            transition: 'none !important', 
+            transition: 'none !important',
           }
         },
       },
@@ -543,4 +545,4 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
   return createTheme(themeConfig);
 };
 const materialYouTheme = createMaterialYouTheme('light');
-export default materialYouTheme; 
+export default materialYouTheme;

@@ -1,11 +1,11 @@
 import { getConfig, getAccessConfig, getRuntimeConfig, configManager } from '../../../config';
+import { logger } from '../../../utils';
 
 // 代理强制模式配置管理器，统一管理所有代理相关的配置逻辑
 export class ProxyForceManager {
   private static _forceServerProxy: boolean | null = null;
 
   // 获取是否强制使用服务端代理
-
   public static getForceServerProxy(): boolean {
     if (this._forceServerProxy === null) {
       this._forceServerProxy = this.calculateForceServerProxy();
@@ -22,19 +22,23 @@ export class ProxyForceManager {
   private static calculateForceServerProxy(): boolean {
     try {
       const runtimeConfig = getRuntimeConfig();
+      const accessConfig = getAccessConfig();
 
       // 生产环境：始终强制使用服务端代理（保护令牌、统一出口）
       if (!runtimeConfig.isDev) {
         return true;
       }
 
-      // 开发环境：统一不强制使用服务端代理
-      // 原因：Vite 开发服务器不会执行 Vercel 函数（/api/*），
-      // 强制走服务端会导致返回 index.html 字符串，触发响应验证失败。
+      // 开发环境启用 Token 模式时，优先走服务端代理以保护令牌
+      if (accessConfig.useTokenMode) {
+        logger.info('Token 模式已启用，优先使用服务端代理以保护令牌');
+        return true;
+      }
 
+      // 其余情况保持直连
       return false;
     } catch (error) {
-      console.warn('计算强制代理配置时出错，使用默认值false:', error);
+      logger.warn('计算强制代理配置时出错，使用默认值 false:', error);
       return false;
     }
   }
@@ -54,9 +58,9 @@ export class ProxyForceManager {
     if (!runtimeConfig.isDev) {
       reason = '生产环境，强制使用服务端代理';
     } else if (accessConfig.useTokenMode) {
-      reason = '开发环境但启用Token模式，强制使用服务端代理';
+      reason = '开发环境启用 Token 模式，尝试使用服务端代理';
     } else {
-      reason = '开发环境且未启用Token模式，不强制使用服务端代理';
+      reason = '开发环境且未启用 Token 模式，采用直连模式';
     }
 
     return {
@@ -69,7 +73,6 @@ export class ProxyForceManager {
 
   // 检查是否应该使用服务端API
   public static shouldUseServerAPI(): boolean {
-    // 基础的强制代理检查
     if (this.getForceServerProxy()) {
       return true;
     }
@@ -78,7 +81,6 @@ export class ProxyForceManager {
     // - 网络环境检测
     // - 用户偏好设置
     // - 特定功能需求等
-
     return false;
   }
 

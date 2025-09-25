@@ -25,6 +25,7 @@ export class ConfigManager {
     return this.instance;
   }
 
+  // 获取配置
   getConfig(): Config {
     if (!this.config) {
       this.config = this.loadConfig();
@@ -32,6 +33,7 @@ export class ConfigManager {
     return this.config;
   }
 
+  // 重新加载配置
   reloadConfig(): Config {
     const oldConfig = this.config;
     this.config = this.loadConfig();
@@ -43,23 +45,35 @@ export class ConfigManager {
     return this.config;
   }
 
+  // 配置变更监听
   onConfigChange(listener: ConfigChangeListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
 
+  // 通知配置变更
   private notifyConfigChange(newConfig: Config, oldConfig: Config): void {
     this.listeners.forEach(listener => {
       try {
         listener(newConfig, oldConfig);
       } catch (error) {
-        console.error('配置变更监听器执行失败:', error);
+        const developerConfig = this.getConfig().developer;
+        if (developerConfig.mode || developerConfig.consoleLogging) {
+          console.error('配置变更监听器执行失败:', error);
+        }
       }
     });
   }
 
+  // 从环境变量加载配置
   private loadConfig(): Config {
     const env = typeof window !== 'undefined' ? import.meta.env : process.env;
+    const developerMode = EnvParser.parseBoolean(
+      resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')
+    );
+    const consoleLogging = EnvParser.parseBoolean(
+      resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'false')
+    );
 
     return {
       site: {
@@ -99,6 +113,7 @@ export class ConfigManager {
         imageProxyUrl: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
         imageProxyUrlBackup1: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
         imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2),
+        // 代理超时配置 - 内部默认值（毫秒）
         healthCheckTimeout: 5000,
         validationTimeout: 10000,
         healthCheckInterval: 30000,
@@ -108,8 +123,8 @@ export class ConfigManager {
         useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'USE_TOKEN_MODE', 'false'))
       },
       developer: {
-        mode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')),
-        consoleLogging: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'true'))
+        mode: developerMode,
+        consoleLogging
       },
       runtime: {
         isDev: env.DEV === true,
@@ -119,15 +134,18 @@ export class ConfigManager {
     };
   }
 
+  // 加载 Token 配置
   private loadTokens(env: Record<string, any>): Config['tokens'] {
     const tokens: string[] = [];
 
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
+      // 检查不带数字的版本
       const baseToken = env[prefix];
       if (baseToken && EnvParser.validateToken(baseToken)) {
         tokens.push(baseToken.trim());
       }
 
+      // 检查带数字的版本
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
         const tokenKey = `${prefix}${i}`;
         const token = env[tokenKey];
@@ -144,16 +162,19 @@ export class ConfigManager {
     };
   }
 
+  // 获取用于 Vite define 的 PAT 对象
   getPATsForViteDefine(env?: Record<string, any>): Record<string, string> {
     const envSource = env || process.env;
     const patEnvVars: Record<string, string> = {};
 
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
+      // 检查不带数字的版本
       const baseToken = envSource[prefix];
       if (baseToken && EnvParser.validateToken(baseToken)) {
         patEnvVars[`process.env.${prefix}`] = JSON.stringify(baseToken);
       }
 
+      // 检查带数字的版本
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
         const tokenKey = `${prefix}${i}`;
         const token = envSource[tokenKey];
@@ -166,11 +187,12 @@ export class ConfigManager {
     return patEnvVars;
   }
 
+  // 获取调试信息
   getDebugInfo(): ConfigDebugInfo {
     const config = this.getConfig();
     const env = typeof window !== 'undefined' ? import.meta.env : process.env;
 
-    const tokenSources: Array<{ key: string; hasValue: boolean; isValid: boolean }> = [];
+    const tokenSources: Array<{key: string; hasValue: boolean; isValid: boolean}> = [];
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
       const baseToken = env[prefix];
       tokenSources.push({
@@ -201,22 +223,21 @@ export class ConfigManager {
         tokenMode: config.access.useTokenMode,
         tokenCount: config.tokens.totalCount
       },
-      envVarStatus: {
-        VITE_SITE_TITLE: hasEnvValue(env, ['VITE_SITE_TITLE']),
-        VITE_GITHUB_REPO_OWNER: hasEnvValue(env, ['VITE_GITHUB_REPO_OWNER']),
-        GITHUB_REPO_OWNER: hasEnvValue(env, ['GITHUB_REPO_OWNER']),
-        VITE_GITHUB_REPO_NAME: hasEnvValue(env, ['VITE_GITHUB_REPO_NAME']),
-        GITHUB_REPO_NAME: hasEnvValue(env, ['GITHUB_REPO_NAME']),
-        VITE_DEVELOPER_MODE: hasEnvValue(env, ['VITE_DEVELOPER_MODE']),
-        VITE_USE_TOKEN_MODE: hasEnvValue(env, ['VITE_USE_TOKEN_MODE']),
-        VITE_SEARCH_INDEX_ENABLED: hasEnvValue(env, ['VITE_SEARCH_INDEX_ENABLED']),
-        VITE_SEARCH_INDEX_BASE_PATH: hasEnvValue(env, ['VITE_SEARCH_INDEX_BASE_PATH'])
-      },
-      tokenSources: tokenSources.filter(source => source.hasValue)
+      envVarStatus: Object.keys(ENV_CHECK_KEYS).reduce<Record<string, boolean>>((acc, key) => {
+        acc[key] = hasEnvValue(env, ENV_CHECK_KEYS[key]);
+        return acc;
+      }, {}),
+      tokenSources
     };
   }
 }
 
-// 导出配置管理器实例
+const ENV_CHECK_KEYS: Record<string, string[]> = {
+  SITE_TITLE: ['SITE_TITLE', 'VITE_SITE_TITLE'],
+  GITHUB_REPO_OWNER: ['GITHUB_REPO_OWNER', 'VITE_GITHUB_REPO_OWNER'],
+  GITHUB_REPO_NAME: ['GITHUB_REPO_NAME', 'VITE_GITHUB_REPO_NAME']
+};
+
 export const configManager = ConfigManager.getInstance();
 
+export default configManager;

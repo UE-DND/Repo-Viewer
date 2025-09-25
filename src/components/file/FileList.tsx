@@ -5,6 +5,7 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import { motion } from "framer-motion";
 import FileListItem from "./FileListItem";
 import { GitHubContent } from "../../types";
+import { g3Styles } from "../../utils";
 
 // 添加CSS优化，提高动画性能
 const optimizedAnimationStyle = {
@@ -489,7 +490,7 @@ const FileList = React.memo<FileListProps>(
     const containerStyle = {
       width: "100%",
       bgcolor: "background.paper",
-      borderRadius: 2,
+      borderRadius: g3Styles.fileListContainer().borderRadius, // 应用G3曲线样式
       mb: 2,
       overflow: "hidden",
       boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",

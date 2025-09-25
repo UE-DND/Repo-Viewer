@@ -1,3 +1,5 @@
+import { logger } from '../../utils';
+
 export class RequestBatcher {
   private batchedRequests: Map<string, {
     resolve: (value: any) => void;
@@ -46,7 +48,7 @@ export class RequestBatcher {
     });
 
     if (expiredKeys.length > 0) {
-      console.debug(`清理了 ${expiredKeys.length} 个过期的请求指纹`);
+      logger.debug(`清理了 ${expiredKeys.length} 个过期的请求指纹`);
     }
   }
 
@@ -69,7 +71,7 @@ export class RequestBatcher {
     this.requestFingerprints.clear();
   }
 
-  // 将请求放入批处理队列（增强版）
+  // 将请求放入批处理队列
   public enqueue<T>(
     key: string,
     executeRequest: () => Promise<T>,
@@ -96,14 +98,14 @@ export class RequestBatcher {
       if (cachedResult && (Date.now() - cachedResult.timestamp < this.fingerprintTTL)) {
         // 增加命中次数
         cachedResult.hitCount++;
-        console.debug(`请求去重命中: ${key}，命中次数: ${cachedResult.hitCount}`);
+        logger.debug(`请求去重命中: ${key}，命中次数: ${cachedResult.hitCount}`);
         return Promise.resolve(cachedResult.result);
       }
     }
 
     // 检查是否有相同的请求正在进行
     if (this.pendingRequests.has(key)) {
-      console.debug(`请求合并: ${key}`);
+      logger.debug(`请求合并: ${key}`);
       return this.pendingRequests.get(key) as Promise<T>;
     }
 
@@ -194,7 +196,7 @@ export class RequestBatcher {
 
       } catch (error: any) {
         lastError = error;
-        console.warn(`请求失败 (尝试 ${retryCount + 1}/${this.maxRetries + 1}): ${key}`, error.message);
+        logger.warn(`请求失败 (尝试 ${retryCount + 1}/${this.maxRetries + 1}): ${key}`, error.message);
 
         // 如果不是最后一次重试，等待一段时间
         if (retryCount < this.maxRetries) {
@@ -205,7 +207,7 @@ export class RequestBatcher {
     }
 
     // 所有重试都失败了
-    console.error(`请求最终失败: ${key}`, lastError);
+    logger.error(`请求最终失败: ${key}`, lastError);
     queue.forEach(request => {
       request.retryCount++;
       request.reject(lastError);
@@ -234,7 +236,7 @@ export class RequestBatcher {
   // 清除所有缓存
   public clearCache(): void {
     this.requestFingerprints.clear();
-    console.debug('已清除请求指纹缓存');
+    logger.debug('已清除请求指纹缓存');
   }
 
   // 强制取消所有等待的请求
@@ -246,6 +248,6 @@ export class RequestBatcher {
     }
     this.batchedRequests.clear();
     this.pendingRequests.clear();
-    console.debug('已取消所有等待的请求');
+    logger.debug('已取消所有等待的请求');
   }
 }

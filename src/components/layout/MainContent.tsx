@@ -12,19 +12,19 @@ import FileList from "../file/FileList";
 import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "../../utils/lazy-loading";
 import ErrorDisplay from "../ui/ErrorDisplay";
 import FullScreenPreview from "../file/FullScreenPreview";
-import { 
-  useContentContext, 
-  usePreviewContext, 
+import {
+  useContentContext,
+  usePreviewContext,
   useDownloadContext,
-  useSearch,
-  NavigationDirection
+  NavigationDirection,
 } from "../../contexts/unified";
+import { useSearch } from "../../contexts/github";
+import { FileListSkeleton } from "../ui/skeletons";
 import { getPreviewFromUrl } from "../../utils/routing/urlManager";
 import { logger } from "../../utils";
 import DynamicSEO from "../seo/DynamicSEO";
 import ScrollToTopFab from "../interactions/ScrollToTopFab";
 import EmptyState from "../ui/EmptyState";
-import { FileListSkeleton } from "../ui/skeletons";
 import { SearchBar, SearchResults } from "../search";
 import { SearchResult } from "../../types";
 
@@ -98,34 +98,32 @@ const MainContent: React.FC = () => {
   }, [contents]);
 
   // 生成面包屑导航路径段
-  const generateBreadcrumbSegments = () => {
+  const breadcrumbSegments = useMemo(() => {
     const segments = [{ name: "Home", path: "" }];
 
     if (currentPath) {
       const pathParts = currentPath.split("/");
       let currentSegmentPath = "";
 
-      for (let i = 0; i < pathParts.length; i++) {
-        currentSegmentPath += (i === 0 ? "" : "/") + pathParts[i];
+      for (const part of pathParts) {
+        currentSegmentPath += currentSegmentPath ? `/${part}` : part;
         segments.push({
-          name: pathParts[i] || "",
+          name: part || "",
           path: currentSegmentPath,
         });
       }
     }
 
     return segments;
-  };
-
-  const breadcrumbSegments = generateBreadcrumbSegments();
+  }, [currentPath]);
 
   // 处理面包屑点击
-  const handleBreadcrumbClick = (
+  const handleBreadcrumbClick = useCallback((
     path: string,
     direction: NavigationDirection = "backward",
   ) => {
     navigateTo(path, direction);
-  };
+  }, [navigateTo]);
 
   // 处理文件/文件夹点击
   const handleItemClick = (item: any) => {
@@ -204,12 +202,12 @@ const MainContent: React.FC = () => {
 
   // 自动调整面包屑显示
   useEffect(() => {
-    const breadcrumbSegments = generateBreadcrumbSegments();
+    const segmentCount = breadcrumbSegments.length;
 
     // 在移动端，使用更激进的折叠策略
     if (isSmallScreen) {
       // 路径段数超过3个时，在移动端强制折叠
-      if (breadcrumbSegments.length > 3) {
+      if (segmentCount > 3) {
         setBreadcrumbsMaxItems(3);
       } else {
         setBreadcrumbsMaxItems(0); // 少于或等于3个时不折叠
@@ -219,7 +217,7 @@ const MainContent: React.FC = () => {
 
     // 桌面端逻辑
     // 如果面包屑项目少于或等于3个，不需要限制
-    if (breadcrumbSegments.length <= 3) {
+    if (segmentCount <= 3) {
       setBreadcrumbsMaxItems(0); // 0表示不限制
       return;
     }
@@ -245,7 +243,7 @@ const MainContent: React.FC = () => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [currentPath, isSmallScreen, generateBreadcrumbSegments]);
+  }, [breadcrumbSegments, isSmallScreen]);
 
   // 处理从 URL 加载预览
   useEffect(() => {
@@ -369,7 +367,6 @@ const MainContent: React.FC = () => {
         repoName={repoName}
         data-oid="8ov3blv"
       />
-
       <SearchBar />
 
       {isSearchActive ? (
@@ -464,14 +461,12 @@ const MainContent: React.FC = () => {
                 </Box>
               )}
 
-              {/* PDF 预览已改为浏览器原生打开，不在应用内渲染 */}
-
               {/* 图像预览 */}
               {previewState.previewingImageItem && previewState.imagePreviewUrl && (
                 <LazyImagePreview
                   imageUrl={previewState.imagePreviewUrl}
                   fileName={previewState.previewingImageItem.name}
-                  isFullScreen
+                  isFullScreen={true}
                   onClose={closePreview}
                   lazyLoad={false}
                   data-oid="yfv5ld-"
@@ -489,7 +484,7 @@ const MainContent: React.FC = () => {
                       fileName={previewState.previewingOfficeItem.name}
                       isFullScreen={previewState.isOfficeFullscreen}
                       onClose={closePreview}
-                      data-oid="yfv5ld-"
+                      data-oid="-vdkwr8"
                     />
                   </FullScreenPreview>
                 )}

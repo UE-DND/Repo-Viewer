@@ -4,13 +4,13 @@ import { logger } from '../../../utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
-import {
+import { 
   USE_TOKEN_MODE,
   getApiUrl
 } from './GitHubConfig';
 import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubContentsResponse } from '../schemas/apiSchemas';
-import {
+import { 
   transformGitHubContentsResponse,
   filterAndNormalizeGitHubContents,
   validateGitHubContentsArray
@@ -18,7 +18,7 @@ import {
 
 export class GitHubContentService {
   private static readonly batcher = new RequestBatcher();
-
+  
   // 缓存初始化状态
   private static cacheInitialized = false;
 
@@ -31,6 +31,7 @@ export class GitHubContentService {
         logger.info('GitHubContentService: 缓存系统初始化完成');
       } catch (error) {
         logger.warn('GitHubContentService: 缓存系统初始化失败，使用同步缓存', error);
+        // 即使初始化失败，也标记为已初始化以避免重复尝试
         this.cacheInitialized = true;
       }
     }
@@ -52,12 +53,13 @@ export class GitHubContentService {
     try {
       let rawData: unknown;
 
-      // 根据环境决定使用服务端API还是直接调用GitHub API
-      if (shouldUseServerAPI()) {
+  // 根据环境决定使用服务端API还是直接调用GitHub API（运行时判定）
+  if (shouldUseServerAPI()) {
         const response = await axios.get(`/api/github?action=getContents&path=${encodeURIComponent(path)}`);
         rawData = response.data;
         logger.debug(`通过服务端API获取内容: ${path}`);
       } else {
+        // 原始直接请求GitHub API的代码
         const apiUrl = getApiUrl(path);
 
         // 使用批处理器处理请求
@@ -75,7 +77,7 @@ export class GitHubContentService {
 
           return result.json();
         }, {
-          priority: 'high',
+          priority: 'high', // 内容获取优先级高
           method: 'GET',
           headers: GitHubAuth.getAuthHeaders() as Record<string, string>
         });
@@ -93,7 +95,7 @@ export class GitHubContentService {
 
       // 转换为内部模型
       const rawContents = transformGitHubContentsResponse(validation.data);
-
+      
       // 过滤和标准化内容
       const contents = filterAndNormalizeGitHubContents(rawContents, {
         excludeHidden: true,
@@ -104,6 +106,7 @@ export class GitHubContentService {
       const contentValidation = validateGitHubContentsArray(contents);
       if (!contentValidation.isValid) {
         logger.warn(`内容数据验证存在问题: ${path}`, contentValidation.invalidItems);
+        // 不阻止执行，但记录警告
       }
 
       // 使用异步缓存并包含版本信息
@@ -121,6 +124,7 @@ export class GitHubContentService {
   public static async getFileContent(fileUrl: string): Promise<string> {
     await this.ensureCacheInitialized();
 
+    // 添加缓存键
     const cacheKey = `file:${fileUrl}`;
     const fileCache = CacheManager.getFileCache();
 
@@ -134,20 +138,22 @@ export class GitHubContentService {
     try {
       let response: Response;
 
-      // 通过服务端API获取文件内容
       if (getForceServerProxy()) {
+        // 通过服务端API获取文件内容
         const serverApiUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(fileUrl)}`;
         response = await fetch(serverApiUrl);
       } else {
-        // 使用令牌模式，通过添加认证头直接请求
+        // 开发环境或令牌模式，通过 Vite 代理获取文件内容
+        // 将 raw.githubusercontent.com URL 转换为本地代理路径
         let proxyUrl: string;
         if (fileUrl.includes('raw.githubusercontent.com')) {
+          // 转换为 /github-raw 代理路径
           proxyUrl = fileUrl.replace('https://raw.githubusercontent.com', '/github-raw');
         } else {
+          // 其他情况保持原样（可能已经是代理路径）
           proxyUrl = fileUrl;
         }
-
-        // 开发环境，直接请求
+        
         response = await fetch(proxyUrl, {
           headers: USE_TOKEN_MODE ? GitHubAuth.getAuthHeaders() : {}
         });
@@ -178,7 +184,7 @@ export class GitHubContentService {
   // 生成文件版本
   private static generateFileVersion(fileUrl: string, content: string): string {
     const contentLength = content.length;
-    const urlHash = fileUrl.split('/').slice(-2).join('-');
+    const urlHash = fileUrl.split('/').slice(-2).join('-'); // 取文件名和父目录
     return `${urlHash}-${contentLength}-${Date.now()}`;
   }
 

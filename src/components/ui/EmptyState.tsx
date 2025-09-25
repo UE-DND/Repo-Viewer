@@ -2,12 +2,13 @@ import React from "react";
 import {
   Box,
   Typography,
-  Button,
   useTheme,
   alpha,
   Paper,
   Stack,
+  Button,
 } from "@mui/material";
+import { g3BorderRadius, G3_PRESETS } from '../../theme/g3Curves';
 import { scaleInAnimation } from "../../theme/animations";
 import {
   FolderOpen as FolderOpenIcon,
@@ -148,7 +149,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   // 按钮样式
   const buttonSize = isSmallScreen ? "medium" : "large";
   const buttonStyles = {
-    borderRadius: 3,
+    borderRadius: g3BorderRadius(G3_PRESETS.button),
     px: isSmallScreen ? 2 : 3,
     py: isSmallScreen ? 1 : 1.5,
     fontWeight: 500,

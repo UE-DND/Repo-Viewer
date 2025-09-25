@@ -10,13 +10,13 @@ export const DEFAULT_BRANCH = githubConfig.repoBranch;
 // 运行时配置
 const accessConfig = getAccessConfig();
 
-// 是否使用服务端API（运行时判定）
+// 是否使用服务端 API（运行时判定）
 export const USE_SERVER_API = shouldUseServerAPI();
 
 // 模式设置
 export const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
-// 强制使用服务端API代理所有请求
+// 强制使用服务端 API 代理所有请求
 export const FORCE_SERVER_PROXY = getForceServerProxy();
 
 // 工具函数
@@ -43,7 +43,7 @@ export async function getConfig(): Promise<ConfigInfo> {
   };
 }
 
-// 获取API URL
+// 获取 API URL
 export function getApiUrl(path: string): string {
   const safePath = path.replace(/^\/+/, '');
   const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${safePath}?ref=${DEFAULT_BRANCH}`;

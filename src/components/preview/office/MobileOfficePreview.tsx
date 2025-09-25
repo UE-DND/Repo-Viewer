@@ -9,13 +9,14 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
+import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
+import { OfficePreviewProps } from "./types";
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
   Download as DownloadIcon,
   Info as InfoIcon,
 } from "@mui/icons-material";
-import { OfficePreviewProps } from './types';
 import { getFileTypeName, generatePreviewUrl } from './utils';
 
 interface MobileOfficePreviewProps extends OfficePreviewProps {}
@@ -59,7 +60,7 @@ const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
         position: "relative",
         overflow: "hidden",
         bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : "#f5f5f5",
-        borderRadius: 1,
+        borderRadius: g3BorderRadius(G3_PRESETS.card),
       }}
       style={style}
       className={`${className} ${fileType}-preview-container`}
