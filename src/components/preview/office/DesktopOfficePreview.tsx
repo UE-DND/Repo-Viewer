@@ -9,6 +9,7 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
+import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
@@ -19,6 +20,7 @@ import { OfficePreviewSkeleton } from "../../ui/skeletons";
 import { OfficePreviewProps } from './types';
 import { getFileTypeName, generatePreviewUrl } from './utils';
 import { IFRAME_LOAD_TIMEOUT, SKELETON_EXIT_TIMEOUT } from './constants';
+import { logger } from '../../../utils';
 
 interface DesktopOfficePreviewProps extends OfficePreviewProps {}
 
@@ -57,17 +59,17 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
 
   // iframe加载事件处理
   const handleIframeLoad = useCallback(() => {
-    console.log(`${getFileTypeName(fileType)}预览iframe加载完成:`, actualPreviewUrl);
-    console.log("当前加载状态:", loading);
+    logger.info(`${getFileTypeName(fileType)}预览iframe加载完成:`, actualPreviewUrl);
+    logger.debug("当前加载状态:", loading);
     isIframeLoadedRef.current = true;
     setLoading(false);
-    console.log("已设置加载状态为 false");
+    logger.debug("已设置加载状态为 false");
   }, [actualPreviewUrl, fileType, loading]);
 
   // 添加 useEffect 钩子检查 iframe 加载状态
   useEffect(() => {
     if (isIframeLoadedRef.current) {
-      console.log("iframe 已加载，确保 loading 状态为 false");
+      logger.debug("iframe 已加载，确保 loading 状态为 false");
       setLoading(false);
     }
 
@@ -84,7 +86,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     // 如果正在加载，设置一个超时处理
     if (loading) {
       const timeoutId = setTimeout(() => {
-        console.log("强制退出骨架屏：超时");
+        logger.warn("强制退出骨架屏：超时");
         setLoading(false);
       }, SKELETON_EXIT_TIMEOUT);
 
@@ -97,11 +99,11 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
 
   // 处理iframe加载错误
   const handleIframeError = useCallback(() => {
-    console.error(`${getFileTypeName(fileType)}预览iframe加载失败:`, actualPreviewUrl);
+    logger.error(`${getFileTypeName(fileType)}预览iframe加载失败:`, actualPreviewUrl);
 
     // 如果主预览失败但还未尝试备用预览，切换到备用预览
     if (!useBackupPreview && !triedBackup) {
-      console.log("尝试使用备用预览方式");
+      logger.info("尝试使用备用预览方式");
       setUseBackupPreview(true);
       setTriedBackup(true);
       setLoading(true);
@@ -109,7 +111,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     }
 
     // 如果备用预览也失败，显示错误
-    console.error(`${getFileTypeName(fileType)}预览所有方式都失败`);
+    logger.error(`${getFileTypeName(fileType)}预览所有方式都失败`);
     setError(
       `无法加载${getFileTypeName(fileType)}文档预览，可能是网络问题导致无法访问微软预览服务`,
     );
@@ -152,7 +154,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     timeoutRef.current = setTimeout(() => {
       // 如果仍在加载状态
       if (loadingRef.current) {
-        console.log("预览加载超时");
+        logger.warn("预览加载超时");
         setError("加载预览超时，请尝试使用下载按钮下载文件");
         setLoading(false);
       }
@@ -182,7 +184,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
         position: "relative",
         overflow: "hidden",
         bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : "#f5f5f5",
-        borderRadius: 1,
+        borderRadius: g3BorderRadius(G3_PRESETS.card),
       }}
       style={style}
       className={`${className} ${fileType}-preview-container`}

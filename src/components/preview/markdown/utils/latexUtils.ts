@@ -1,5 +1,6 @@
 import React from "react";
 import { countLatexElements } from "../../../../utils/rendering/latexOptimizer";
+import { logger } from '../../../../utils';
 
 /**
  * 检测LaTeX公式数量
@@ -16,7 +17,7 @@ export const checkLatexCount = (
 
       // 如果公式数量很多，在控制台提示
       if (count > 50) {
-        console.warn(`检测到${count}个LaTeX公式，已启用性能优化模式`);
+        logger.warn(`检测到${count}个LaTeX公式，已启用性能优化模式`);
       }
     }
   }, 500);

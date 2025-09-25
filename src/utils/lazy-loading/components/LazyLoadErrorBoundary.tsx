@@ -1,6 +1,8 @@
 import React from 'react';
 import { Box } from '@mui/material';
+import { g3BorderRadius, G3_PRESETS } from '../../../theme/g3Curves';
 import type { LazyLoadErrorBoundaryProps, LazyLoadErrorBoundaryState } from '../types';
+import { logger } from '../../logging/logger';
 
 /**
  * 简单的错误边界组件
@@ -20,7 +22,7 @@ export class LazyLoadErrorBoundary extends React.Component<
   }
 
   override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('懒加载组件错误:', error, errorInfo);
+    logger.error('懒加载组件错误:', error, errorInfo);
   }
 
   handleRetry = () => {
@@ -59,7 +61,7 @@ export class LazyLoadErrorBoundary extends React.Component<
               backgroundColor: 'primary.main',
               color: 'primary.contrastText',
               border: 'none',
-              borderRadius: 1,
+              borderRadius: g3BorderRadius(G3_PRESETS.button),
               cursor: 'pointer',
               fontSize: '0.875rem',
               fontWeight: 500,
