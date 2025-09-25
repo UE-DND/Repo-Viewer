@@ -6,7 +6,6 @@ export class ProxyForceManager {
   private static _forceServerProxy: boolean | null = null;
 
   // 获取是否强制使用服务端代理
-
   public static getForceServerProxy(): boolean {
     if (this._forceServerProxy === null) {
       this._forceServerProxy = this.calculateForceServerProxy();
@@ -25,15 +24,18 @@ export class ProxyForceManager {
       const runtimeConfig = getRuntimeConfig();
       const accessConfig = getAccessConfig();
 
+      // 生产环境：始终强制使用服务端代理（保护令牌、统一出口）
       if (!runtimeConfig.isDev) {
         return true;
       }
 
+      // 开发环境启用 Token 模式时，优先走服务端代理以保护令牌
       if (accessConfig.useTokenMode) {
         logger.info('Token 模式已启用，优先使用服务端代理以保护令牌');
         return true;
       }
 
+      // 其余情况保持直连
       return false;
     } catch (error) {
       logger.warn('计算强制代理配置时出错，使用默认值 false:', error);
@@ -71,7 +73,6 @@ export class ProxyForceManager {
 
   // 检查是否应该使用服务端API
   public static shouldUseServerAPI(): boolean {
-    // 基础的强制代理检查
     if (this.getForceServerProxy()) {
       return true;
     }
@@ -80,7 +81,6 @@ export class ProxyForceManager {
     // - 网络环境检测
     // - 用户偏好设置
     // - 特定功能需求等
-
     return false;
   }
 
@@ -105,6 +105,9 @@ export const getForceServerProxy = () => ProxyForceManager.getForceServerProxy()
 export const shouldUseServerAPI = () => ProxyForceManager.shouldUseServerAPI();
 export const getRequestStrategy = () => ProxyForceManager.getRequestStrategy();
 export const refreshProxyConfig = () => ProxyForceManager.refreshConfig();
+
+// 向后兼容的常量导出
+export const FORCE_SERVER_PROXY = getForceServerProxy();
 
 // 配置变更监听（静态注册，避免动态/静态混用警告）
 configManager.onConfigChange(() => {

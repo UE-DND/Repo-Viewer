@@ -25,6 +25,14 @@ export interface Config {
       enabled: boolean;
       hiddenFolders: string[];
     };
+    search: {
+      enabled: boolean;
+      basePath: string;
+      fallbackRawUrl: string;
+      maxResults: number;
+      branch: string;
+      manifestPath: string;
+    };
   };
   proxy: {
     imageProxyUrl: string;

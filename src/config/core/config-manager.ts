@@ -96,6 +96,17 @@ export class ConfigManager {
         hideDownload: {
           enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'HIDE_MAIN_FOLDER_DOWNLOAD', 'false')),
           hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HIDE_DOWNLOAD_FOLDERS', ''))
+        },
+        search: {
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'SEARCH_INDEX_ENABLED', CONFIG_DEFAULTS.SEARCH_INDEX_ENABLED)),
+          basePath: resolveEnvWithMapping(env, 'SEARCH_INDEX_BASE_PATH', CONFIG_DEFAULTS.SEARCH_INDEX_BASE_PATH),
+          fallbackRawUrl: resolveEnvWithMapping(env, 'SEARCH_INDEX_FALLBACK_RAW_URL', CONFIG_DEFAULTS.SEARCH_INDEX_FALLBACK_RAW_URL),
+          maxResults: EnvParser.parseInteger(
+            resolveEnvWithMapping(env, 'SEARCH_INDEX_MAX_RESULTS', CONFIG_DEFAULTS.SEARCH_INDEX_MAX_RESULTS),
+            200
+          ),
+          branch: resolveEnvWithMapping(env, 'SEARCH_INDEX_BRANCH', CONFIG_DEFAULTS.SEARCH_INDEX_BRANCH),
+          manifestPath: resolveEnvWithMapping(env, 'SEARCH_INDEX_MANIFEST_PATH', CONFIG_DEFAULTS.SEARCH_INDEX_MANIFEST_PATH)
         }
       },
       proxy: {
@@ -103,10 +114,10 @@ export class ConfigManager {
         imageProxyUrlBackup1: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
         imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2),
         // 代理超时配置 - 内部默认值（毫秒）
-        healthCheckTimeout: 5000,    // 健康检查超时：5秒
-        validationTimeout: 10000,    // 代理验证超时：10秒
-        healthCheckInterval: 30000,  // 健康检查间隔：30秒
-        recoveryTime: 300000         // 代理恢复时间：5分钟
+        healthCheckTimeout: 5000,
+        validationTimeout: 10000,
+        healthCheckInterval: 30000,
+        recoveryTime: 300000
       },
       access: {
         useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'USE_TOKEN_MODE', 'false'))
@@ -123,7 +134,7 @@ export class ConfigManager {
     };
   }
 
-  // 加载Token配置
+  // 加载 Token 配置
   private loadTokens(env: Record<string, any>): Config['tokens'] {
     const tokens: string[] = [];
 
@@ -181,10 +192,8 @@ export class ConfigManager {
     const config = this.getConfig();
     const env = typeof window !== 'undefined' ? import.meta.env : process.env;
 
-    // 生成token源信息
     const tokenSources: Array<{key: string; hasValue: boolean; isValid: boolean}> = [];
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
-      // 检查不带数字的版本
       const baseToken = env[prefix];
       tokenSources.push({
         key: prefix,
@@ -192,7 +201,6 @@ export class ConfigManager {
         isValid: EnvParser.validateToken(baseToken)
       });
 
-      // 检查带数字的版本
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
         const tokenKey = `${prefix}${i}`;
         const token = env[tokenKey];
@@ -215,21 +223,21 @@ export class ConfigManager {
         tokenMode: config.access.useTokenMode,
         tokenCount: config.tokens.totalCount
       },
-      envVarStatus: {
-        VITE_SITE_TITLE: hasEnvValue(env, ['VITE_SITE_TITLE']),
-        VITE_GITHUB_REPO_OWNER: hasEnvValue(env, ['VITE_GITHUB_REPO_OWNER']),
-        GITHUB_REPO_OWNER: hasEnvValue(env, ['GITHUB_REPO_OWNER']),
-        VITE_GITHUB_REPO_NAME: hasEnvValue(env, ['VITE_GITHUB_REPO_NAME']),
-        GITHUB_REPO_NAME: hasEnvValue(env, ['GITHUB_REPO_NAME']),
-        VITE_GITHUB_REPO_BRANCH: hasEnvValue(env, ['VITE_GITHUB_REPO_BRANCH']),
-        GITHUB_REPO_BRANCH: hasEnvValue(env, ['GITHUB_REPO_BRANCH']),
-        VITE_DEVELOPER_MODE: hasEnvValue(env, ['VITE_DEVELOPER_MODE']),
-        VITE_USE_TOKEN_MODE: hasEnvValue(env, ['VITE_USE_TOKEN_MODE'])
-      },
-      tokenSources: tokenSources.filter(source => source.hasValue)
+      envVarStatus: Object.keys(ENV_CHECK_KEYS).reduce<Record<string, boolean>>((acc, key) => {
+        acc[key] = hasEnvValue(env, ENV_CHECK_KEYS[key]);
+        return acc;
+      }, {}),
+      tokenSources
     };
   }
 }
 
-// 导出配置管理器实例
+const ENV_CHECK_KEYS: Record<string, string[]> = {
+  SITE_TITLE: ['SITE_TITLE', 'VITE_SITE_TITLE'],
+  GITHUB_REPO_OWNER: ['GITHUB_REPO_OWNER', 'VITE_GITHUB_REPO_OWNER'],
+  GITHUB_REPO_NAME: ['GITHUB_REPO_NAME', 'VITE_GITHUB_REPO_NAME']
+};
+
 export const configManager = ConfigManager.getInstance();
+
+export default configManager;

@@ -10,4 +10,4 @@ export { GitHubAuth } from './github/core/GitHubAuth';
 export { GitHubSearchService } from './github/core/GitHubSearchService';
 export { GitHubPrefetchService } from './github/core/GitHubPrefetchService';
 export { GitHubStatsService } from './github/core/GitHubStatsService';
-export * from './github/core/GitHubConfig'; 
+export * from './github/core/GitHubConfig';

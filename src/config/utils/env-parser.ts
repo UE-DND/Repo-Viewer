@@ -18,6 +18,14 @@ export class EnvParser {
     if (!value) return [];
     return value.split(',').filter(Boolean).map(item => item.trim());
   }
+  /**
+   * 解析整数
+   */
+  static parseInteger(value: string | undefined, defaultValue: number): number {
+    if (!value) return defaultValue;
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : defaultValue;
+  }
 
   /**
    * 验证Token格式

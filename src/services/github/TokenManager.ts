@@ -13,6 +13,7 @@ const isDevEnvironment = import.meta.env.DEV;
 // 模式设置
 const USE_TOKEN_MODE = isTokenMode();
 
+// GitHub PAT 相关配置
 export class GitHubTokenManager {
   private tokens: string[] = [];
   private currentIndex: number = 0;

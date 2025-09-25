@@ -4,7 +4,8 @@ export {
   getForceServerProxy,
   shouldUseServerAPI,
   getRequestStrategy,
-  refreshProxyConfig
+  refreshProxyConfig,
+  FORCE_SERVER_PROXY // 向后兼容的常量
 } from './ProxyForceManager';
 
 // 重新导出便捷函数，确保向后兼容
