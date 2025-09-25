@@ -67,7 +67,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="60%"
           height={isSmallScreen ? 32 : 40}
           animation="wave"
-          sx={{ mb: 2, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 2,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="umqge2l"
         />
 
@@ -77,7 +81,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="40%"
           height={isSmallScreen ? 24 : 32}
           animation="wave"
-          sx={{ mb: 3, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 3,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="dpvya_k"
         />
 
@@ -87,7 +95,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="100%"
           height={isSmallScreen ? 16 : 20}
           animation="wave"
-          sx={{ mb: 1, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 1,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="kcl3c2g"
         />
 
@@ -96,7 +108,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="95%"
           height={isSmallScreen ? 16 : 20}
           animation="wave"
-          sx={{ mb: 1, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 1,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="ofcg4gg"
         />
 
@@ -105,7 +121,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="98%"
           height={isSmallScreen ? 16 : 20}
           animation="wave"
-          sx={{ mb: 3, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 3,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="lr2nssc"
         />
 
@@ -115,7 +135,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="100%"
           height={isSmallScreen ? 80 : 100}
           animation="wave"
-          sx={{ mb: 3, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 3,
+            borderRadius: g3BorderRadius(G3_PRESETS.card),
+            ...skeletonStyles,
+          }}
           data-oid="-e4b85x"
         />
 
@@ -125,7 +149,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="90%"
           height={isSmallScreen ? 16 : 20}
           animation="wave"
-          sx={{ mb: 1, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 1,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="qx9pw9p"
         />
 
@@ -134,7 +162,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="100%"
           height={isSmallScreen ? 16 : 20}
           animation="wave"
-          sx={{ mb: 1, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 1,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="fqv1uav"
         />
 
@@ -143,7 +175,11 @@ export const MarkdownPreviewSkeleton: React.FC<{
           width="92%"
           height={isSmallScreen ? 16 : 20}
           animation="wave"
-          sx={{ mb: 3, borderRadius: 1, ...skeletonStyles }}
+          sx={{
+            mb: 3,
+            borderRadius: g3BorderRadius(G3_PRESETS.breadcrumbItem),
+            ...skeletonStyles,
+          }}
           data-oid="k11:d_g"
         />
       </Paper>

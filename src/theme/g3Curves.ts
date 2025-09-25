@@ -12,8 +12,6 @@ export interface G3CurveConfig {
   radius: number;
   /** 曲率平滑度 (0-1，越大越平滑) */
   smoothness?: number;
-  /** 是否使用clip-path实现更精确的G3曲线 */
-  useClipPath?: boolean;
 }
 
 /**
@@ -22,7 +20,6 @@ export interface G3CurveConfig {
 const DEFAULT_G3_CONFIG: Required<G3CurveConfig> = {
   radius: 16,
   smoothness: 0.6,
-  useClipPath: false,
 };
 
 export function createG3BorderRadius(config: G3CurveConfig): string {
@@ -31,50 +28,16 @@ export function createG3BorderRadius(config: G3CurveConfig): string {
   return `${Math.round(adjustedRadius)}px`;
 }
 
-export function createG3ClipPath(config: G3CurveConfig): string {
-  const { radius, smoothness = DEFAULT_G3_CONFIG.smoothness } = config;
-
-  // 计算控制点
-  const controlPoint1 = smoothness * 0.8;
-  const controlPoint2 = 1 - smoothness * 0.5;
-
-  // 生成近似曲线路径
-  const path = `polygon(
-    ${radius}px 0%,
-    calc(100% - ${radius}px) 0%,
-    calc(100% - ${radius * controlPoint1}px) ${radius * (1 - controlPoint2)}px,
-    100% ${radius}px,
-    100% calc(100% - ${radius}px),
-    calc(100% - ${radius * (1 - controlPoint2)}px) calc(100% - ${radius * controlPoint1}px),
-    calc(100% - ${radius}px) 100%,
-    ${radius}px 100%,
-    ${radius * controlPoint1}px calc(100% - ${radius * (1 - controlPoint2)}px),
-    0% calc(100% - ${radius}px),
-    0% ${radius}px,
-    ${radius * (1 - controlPoint2)}px ${radius * controlPoint1}px
-  )`;
-
-  return path;
-}
-
 // 生成样式对象
 export function createG3Style(config: G3CurveConfig): React.CSSProperties {
-  const { useClipPath = DEFAULT_G3_CONFIG.useClipPath, radius, smoothness = DEFAULT_G3_CONFIG.smoothness } = config;
-
-  if (useClipPath) {
-    return {
-      clipPath: createG3ClipPath(config),
-      borderRadius: 0,
-    };
-  } else {
-    const g3Radius = createG3BorderRadius(config);
-    return {
-      borderRadius: g3Radius,
-      '--g3-radius': `${radius}px`,
-      '--g3-smoothness': smoothness.toString(),
-      transition: 'border-radius 0.2s ease-out, box-shadow 0.2s ease-out',
-    } as React.CSSProperties;
-  }
+  const { radius, smoothness = DEFAULT_G3_CONFIG.smoothness } = config;
+  const g3Radius = createG3BorderRadius(config);
+  return {
+    borderRadius: g3Radius,
+    '--g3-radius': `${radius}px`,
+    '--g3-smoothness': smoothness.toString(),
+    transition: 'border-radius 0.2s ease-out, box-shadow 0.2s ease-out',
+  } as React.CSSProperties;
 }
 
 // 预定义的曲线配置
@@ -83,63 +46,60 @@ export const G3_PRESETS = {
   fileListItem: {
     radius: 14,
     smoothness: 0.8,
-    useClipPath: false,
   } as G3CurveConfig,
 
   // 文件列表容器
   fileListContainer: {
     radius: 20,
     smoothness: 0.8,
-    useClipPath: false,
   } as G3CurveConfig,
 
   // 卡片
   card: {
     radius: 20,
     smoothness: 0.5,
-    useClipPath: false,
   } as G3CurveConfig,
 
   // 按钮
   button: {
     radius: 24,
     smoothness: 0.8,
-    useClipPath: false,
   } as G3CurveConfig,
 
   // 对话框
   dialog: {
     radius: 28,
     smoothness: 0.4,
-    useClipPath: false,
   } as G3CurveConfig,
 
   // 图片
   image: {
     radius: 16,
     smoothness: 0.6,
-    useClipPath: false,
   } as G3CurveConfig,
 
   // 面包屑导航
   breadcrumb: {
-    radius: 22,
-    smoothness: 0.7,
-    useClipPath: false,
+    radius: 20,
+    smoothness: 0.8,
   } as G3CurveConfig,
 
   // 面包屑项
   breadcrumbItem: {
     radius: 12,
-    smoothness: 0.6,
-    useClipPath: false,
+    smoothness: 0.8,
   } as G3CurveConfig,
 
   // 提示框
   tooltip: {
     radius: 16,
     smoothness: 0.5,
-    useClipPath: false,
+  } as G3CurveConfig,
+
+  // 骨架线条
+  skeletonLine: {
+    radius: 8,
+    smoothness: 0.8,
   } as G3CurveConfig,
 } as const;
 
@@ -153,6 +113,7 @@ export const g3Styles = {
   breadcrumb: () => createG3Style(G3_PRESETS.breadcrumb),
   breadcrumbItem: () => createG3Style(G3_PRESETS.breadcrumbItem),
   tooltip: () => createG3Style(G3_PRESETS.tooltip),
+  skeletonLine: () => createG3Style(G3_PRESETS.skeletonLine),
 };
 
 // 响应式曲线工具函数

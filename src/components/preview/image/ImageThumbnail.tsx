@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Button, useTheme } from '@mui/material';
+import { g3BorderRadius, G3_PRESETS } from '../../../theme/g3Curves';
 import type { ImageThumbnailProps } from './types';
 
 /**
@@ -37,7 +38,7 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
           cursor: 'pointer',
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: 1,
+          borderRadius: g3BorderRadius(G3_PRESETS.image),
           '&:hover': {
             boxShadow: theme.shadows[2],
           },

@@ -7,10 +7,10 @@ import {
   ListItem,
   ListItemIcon,
 } from "@mui/material";
-import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
 import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
+import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
 
-// 文件列表骨架屏 - 显示多个文件列表项
+// 文件列表骨架屏
 export const FileListSkeleton: React.FC<{
   itemCount?: number;
   isSmallScreen?: boolean;
@@ -165,12 +165,12 @@ export const FileListItemSkeleton: React.FC<{
             />
           </ListItemIcon>
           <Skeleton
-            variant="text"
+            variant="rectangular"
             width="70%"
-            height={isSmallScreen ? 20 : 24}
+            height={isSmallScreen ? 24 : 28}
             animation="wave"
             sx={{
-              borderRadius: "1",
+              borderRadius: g3BorderRadius(G3_PRESETS.skeletonLine),
               fontSize: { xs: "0.8rem", sm: "0.875rem" },
               fontWeight: 400,
               width: "100%",
