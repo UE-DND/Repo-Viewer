@@ -15,6 +15,7 @@ import {
   Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
 import type { ImageToolbarProps } from './types';
+import { g3BorderRadius, G3_PRESETS } from '../../../theme/g3Curves';
 
 /**
  * 图片预览工具栏组件
@@ -55,7 +56,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 100, // 确保工具栏始终在最上层
+        zIndex: 100,
         height: '72px',
         paddingTop: '12px',
         paddingBottom: '12px',
@@ -68,7 +69,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           width: 'calc(100% - 48px)',
           right: '24px',
           left: '24px',
-          borderRadius: '16px',
+          borderRadius: g3BorderRadius(G3_PRESETS.card),
           bottom: '16px',
           border: '1px solid',
           borderColor: alpha(theme.palette.divider, 0.1),
@@ -97,7 +98,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             '&:hover': {
               bgcolor: alpha(theme.palette.primary.main, 0.2),
             },
-            borderRadius: '12px',
+            borderRadius: g3BorderRadius(G3_PRESETS.button),
             padding: isSmallScreen ? '8px' : '10px',
             height: isSmallScreen ? '40px' : '48px',
             width: isSmallScreen ? '40px' : '48px',
@@ -120,7 +121,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             '&:hover': {
               bgcolor: alpha(theme.palette.primary.main, 0.2),
             },
-            borderRadius: '12px',
+            borderRadius: g3BorderRadius(G3_PRESETS.button),
             padding: isSmallScreen ? '8px' : '10px',
             width: isSmallScreen ? '64px' : '80px',
             minWidth: isSmallScreen ? '64px' : '80px',
@@ -152,7 +153,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             '&:hover': {
               bgcolor: alpha(theme.palette.primary.main, 0.2),
             },
-            borderRadius: '12px',
+            borderRadius: g3BorderRadius(G3_PRESETS.button),
             padding: isSmallScreen ? '8px' : '10px',
             height: isSmallScreen ? '40px' : '48px',
             width: isSmallScreen ? '40px' : '48px',
@@ -175,7 +176,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             '&:hover': {
               bgcolor: alpha(theme.palette.primary.main, 0.2),
             },
-            borderRadius: '12px',
+            borderRadius: g3BorderRadius(G3_PRESETS.button),
             padding: isSmallScreen ? '8px' : '10px',
             height: isSmallScreen ? '40px' : '48px',
             width: isSmallScreen ? '40px' : '48px',
@@ -198,7 +199,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             '&:hover': {
               bgcolor: alpha(theme.palette.primary.main, 0.2),
             },
-            borderRadius: '12px',
+            borderRadius: g3BorderRadius(G3_PRESETS.button),
             padding: isSmallScreen ? '8px' : '10px',
             height: isSmallScreen ? '40px' : '48px',
             width: isSmallScreen ? '40px' : '48px',
@@ -222,7 +223,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
               '&:hover': {
                 bgcolor: alpha(theme.palette.primary.main, 0.2),
               },
-              borderRadius: '12px',
+              borderRadius: g3BorderRadius(G3_PRESETS.button),
               padding: isSmallScreen ? '8px' : '10px',
               height: isSmallScreen ? '40px' : '48px',
               width: isSmallScreen ? '40px' : '48px',

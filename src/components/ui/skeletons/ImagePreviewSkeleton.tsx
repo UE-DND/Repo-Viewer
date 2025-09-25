@@ -6,6 +6,7 @@ import {
   alpha,
 } from "@mui/material";
 import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
+import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
 
 // 图片预览骨架屏
 export const ImagePreviewSkeleton: React.FC<{
@@ -90,7 +91,7 @@ export const ImagePreviewSkeleton: React.FC<{
           justifyContent: "center",
           alignItems: "center",
           position: "relative",
-          pb: "72px", // 为底部控制栏留出空间
+          pb: "72px",
         }}
         data-oid="494nx3n"
       >
@@ -99,7 +100,7 @@ export const ImagePreviewSkeleton: React.FC<{
           width={isSmallScreen ? "80%" : "60%"}
           height={isSmallScreen ? "50%" : "60%"}
           animation="wave"
-          sx={{ borderRadius: 1, ...skeletonStyles }}
+          sx={{ borderRadius: g3BorderRadius(G3_PRESETS.image), ...skeletonStyles }}
           data-oid="g91oyf4"
         />
       </Box>
@@ -154,7 +155,7 @@ export const ImagePreviewSkeleton: React.FC<{
             width={isSmallScreen ? 64 : 80}
             height={isSmallScreen ? 40 : 48}
             animation="wave"
-            sx={{ borderRadius: "12px", ...skeletonStyles }}
+            sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button), ...skeletonStyles }}
             data-oid="4d6i3x4"
           />
 

@@ -17,15 +17,18 @@ import {
   FileOperationError
 } from '../../types/errors';
 import { logger } from '../logging/logger';
-import { isDeveloperMode } from '../../config';
+import { getDeveloperConfig } from '../../config';
 
 class ErrorManagerClass {
   private errorHistory: AppError[] = [];
   private readonly maxHistorySize = 100;
   private sessionId: string = this.generateSessionId();
-  
+
   private config: ErrorHandlerConfig = {
-    enableConsoleLogging: isDeveloperMode(),
+    enableConsoleLogging: (() => {
+      const developerConfig = getDeveloperConfig();
+      return developerConfig.mode || developerConfig.consoleLogging;
+    })(),
     enableErrorReporting: false, // 生产环境可开启
     maxErrorsPerSession: 50,
     retryAttempts: 3,
@@ -137,7 +140,7 @@ class ErrorManagerClass {
     context?: Record<string, any>
   ): GitHubError {
     const apiError = this.createAPIError(message, statusCode, endpoint, method, context);
-    
+
     const rateLimitProps = rateLimitInfo
       ? {
           ...(typeof rateLimitInfo.remaining === 'number' ? { rateLimitRemaining: rateLimitInfo.remaining } : {}),
@@ -229,12 +232,12 @@ class ErrorManagerClass {
   public handleAPIError(error: any, endpoint: string, method: string): APIError | GitHubError {
     const statusCode = error.response?.status || 0;
     const message = error.response?.data?.message || error.message || '网络请求失败';
-    
+
     // GitHub API特定处理
     if (endpoint.includes('api.github.com') || endpoint.includes('github')) {
       const rateLimitRemaining = error.response?.headers['x-ratelimit-remaining'];
       const rateLimitReset = error.response?.headers['x-ratelimit-reset'];
-      
+
       return this.createGitHubError(
         message,
         statusCode,
@@ -274,7 +277,7 @@ class ErrorManagerClass {
   // 添加到错误历史
   private addToHistory(error: AppError): void {
     this.errorHistory.unshift(error);
-    
+
     // 限制历史记录大小
     if (this.errorHistory.length > this.maxHistorySize) {
       this.errorHistory = this.errorHistory.slice(0, this.maxHistorySize);
@@ -286,7 +289,7 @@ class ErrorManagerClass {
     if (!this.config.enableConsoleLogging) return;
 
     const logMessage = `[${error.category}] ${error.code}: ${error.message}`;
-    
+
     switch (error.level) {
       case ErrorLevel.CRITICAL:
         logger.error(logMessage, error);
@@ -314,9 +317,9 @@ class ErrorManagerClass {
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(error)
       // });
-      
-      if (isDeveloperMode()) {
-        console.log('错误上报 (开发模式):', error);
+
+      if (getDeveloperConfig().mode) {
+        logger.info('错误上报 (开发模式):', error);
       }
     } catch (reportingError) {
       logger.warn('错误上报失败:', reportingError);
@@ -326,11 +329,11 @@ class ErrorManagerClass {
   // 获取错误历史
   public getErrorHistory(category?: ErrorCategory, limit = 20): AppError[] {
     let history = this.errorHistory;
-    
+
     if (category) {
       history = history.filter(error => error.category === category);
     }
-    
+
     return history.slice(0, limit);
   }
 

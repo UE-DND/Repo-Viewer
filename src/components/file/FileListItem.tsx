@@ -18,7 +18,7 @@ import {
 } from "@mui/icons-material";
 
 // 导入必要的变量和函数
-import { getFileIcon, logger } from "../../utils";
+import { getFileIcon, logger, g3Styles } from "../../utils";
 import { GitHubContent } from "../../types";
 
 import { getFeaturesConfig } from '../../config';
@@ -76,7 +76,7 @@ const FileListItem = memo<FileListItemProps>(
       HOMEPAGE_FILTER_ENABLED &&
       HOMEPAGE_ALLOWED_FOLDERS.includes(item.name);
 
-    // 检查是否需要隐藏下载按钮（独立逻辑）
+    // 检查是否需要隐藏下载按钮
     const shouldHideDownloadButton = React.useMemo(() => {
       return (
         currentPath === "" &&
@@ -151,7 +151,7 @@ const FileListItem = memo<FileListItemProps>(
           minHeight: { xs: "40px", sm: "48px" },
           display: "flex",
           alignItems: "flex-start",
-          justifyContent: "center" /* 居中ListItem内的内容 */,
+          justifyContent: "center",
         }}
         secondaryAction={
           !shouldHideDownloadButton ? (
@@ -173,7 +173,7 @@ const FileListItem = memo<FileListItemProps>(
                     bgcolor: "background.paper",
                     color: "text.primary",
                     boxShadow: 3,
-                    borderRadius: 2,
+                    borderRadius: g3Styles.tooltip().borderRadius,
                     p: 1.5,
                     border: "1px solid",
                     borderColor: "divider",
@@ -275,7 +275,7 @@ const FileListItem = memo<FileListItemProps>(
           disableRipple={disableRipple}
           disableTouchRipple={disableTouchRipple}
           sx={{
-            borderRadius: 2, // 与外部容器保持一致的圆角
+            borderRadius: g3Styles.fileListItem().borderRadius,
             transition:
               "transform 0.1s ease-in-out, background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out",
             "&:hover": {

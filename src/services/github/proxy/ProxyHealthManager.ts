@@ -1,5 +1,6 @@
 import { getProxyConfig } from '../../../config';
 import { PROXY_SERVICES } from './ProxyConfig';
+import { logger } from '../../../utils';
 
 const proxyConfig = getProxyConfig();
 
@@ -51,7 +52,7 @@ export class ProxyHealthManager {
       health.consecutiveFailures = 0;
       health.responseTime = responseTime;
       health.lastSuccessTime = Date.now();
-      console.debug(`代理成功: ${proxyUrl}, 响应时间: ${responseTime}ms`);
+      logger.debug(`代理成功: ${proxyUrl}, 响应时间: ${responseTime}ms`);
     }
   }
 
@@ -62,7 +63,7 @@ export class ProxyHealthManager {
       health.consecutiveFailures++;
       health.lastFailure = Date.now();
       health.isHealthy = health.consecutiveFailures < this.MAX_FAILURES;
-      console.warn(`代理失败: ${proxyUrl}, 连续失败: ${health.consecutiveFailures}`);
+      logger.warn(`代理失败: ${proxyUrl}, 连续失败: ${health.consecutiveFailures}`);
     }
   }
 
@@ -152,7 +153,7 @@ export class ProxyHealthManager {
     // 重新启动健康检查
     this.startHealthCheck();
 
-    console.info('代理健康管理器已重置，所有状态已清空并重新初始化');
+    logger.info('代理健康管理器已重置，所有状态已清空并重新初始化');
   }
 }
 

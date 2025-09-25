@@ -1,3 +1,4 @@
+import { logger } from '../logging/logger';
 // 导入GitHubService以使用其多代理机制
 import { GitHubService } from '../../services/github';
 
@@ -13,13 +14,13 @@ export const getProxiedUrl = (url: string): string => {
         const proxiedUrl = GitHubService.transformImageUrl(url, '', true);
         return proxiedUrl || url;
       } catch (error) {
-        console.error('代理URL转换失败:', error);
+        logger.error('代理URL转换失败:', error);
         return url;
       }
     }
     return url;
   }
-  
+
   // 开发环境下转换URL
   if (url.includes('raw.githubusercontent.com')) {
     // 替换为本地代理URL
@@ -28,6 +29,6 @@ export const getProxiedUrl = (url: string): string => {
     // 替换为本地API代理
     return url.replace('https://api.github.com', '/github-api');
   }
-  
+
   return url;
-}; 
+};

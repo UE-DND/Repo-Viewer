@@ -1,4 +1,5 @@
 import { Theme, alpha } from "@mui/material";
+import { g3BorderRadius, G3_PRESETS } from "../../../../theme/g3Curves";
 
 export const createMarkdownStyles = (
   theme: Theme,
@@ -8,19 +9,19 @@ export const createMarkdownStyles = (
   px: { xs: 2, sm: 3, md: 4 },
   mt: 2,
   mb: 3,
-  borderRadius: 2, // 与文件列表容器保持一致的圆角（theme.shape.borderRadius * 2）
+  borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
   bgcolor: "background.paper",
   overflowX: "auto",
   border: "1px solid",
   borderColor: "divider",
-  
+
   // 主题切换时的过渡效果
   "&.theme-transition-katex .katex-display, &.theme-transition-katex .katex": {
     visibility: "hidden",
     opacity: 0,
     transition: "visibility 0s, opacity 0.3s linear",
   },
-  
+
   // 大量公式时的特殊优化
   ...(latexCount > 50 && {
     "& .katex": {
@@ -32,16 +33,14 @@ export const createMarkdownStyles = (
       willChange: "transform",
     },
   }),
-  
+
   "& img": {
     maxWidth: "100%",
-    borderRadius: 1,
+    borderRadius: g3BorderRadius(G3_PRESETS.image),
     my: 2,
-    // 修改图片过渡效果，确保主题切换时不会闪烁
     transition: theme.transitions.create(["opacity", "filter"], {
       duration: theme.transitions.duration.standard,
     }),
-    // 使用filter而不是opacity，在主题切换时不会重置
     filter: "brightness(1)",
     "&:not(.loaded)": {
       opacity: 0.7,
@@ -56,7 +55,7 @@ export const createMarkdownStyles = (
       transition: "none !important",
     },
   },
-  
+
   // LaTeX公式样式
   "& .math": {
     fontSize: "1.1em",
@@ -72,8 +71,9 @@ export const createMarkdownStyles = (
     padding: "0.5em 0",
     overflowX: "auto",
     overflowY: "hidden",
+    borderRadius: g3BorderRadius(G3_PRESETS.card),
   },
-  
+
   // 深色模式下的LaTeX样式调整
   ...(theme.palette.mode === "dark" && {
     "& .katex": {
@@ -81,10 +81,10 @@ export const createMarkdownStyles = (
     },
     "& .katex-display": {
       background: alpha(theme.palette.background.paper, 0.4),
-      borderRadius: 1,
+      borderRadius: g3BorderRadius(G3_PRESETS.card),
     },
   }),
-  
+
   "& p": {
     "& > a + a, & > a + img, & > img + a, & > img + img": {
       marginLeft: 1,
@@ -107,7 +107,7 @@ export const createMarkdownStyles = (
       },
     },
   },
-  
+
   "& h1": {
     borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
     pb: 1,
@@ -123,11 +123,11 @@ export const createMarkdownStyles = (
     mt: 2,
     fontSize: { xs: "1rem", sm: "1.25rem" },
   },
-  
+
   "& code": {
     backgroundColor: alpha(theme.palette.primary.main, 0.05),
     padding: "0.2em 0.4em",
-    borderRadius: 1,
+    borderRadius: g3BorderRadius(G3_PRESETS.button),
     fontFamily: "monospace",
     fontSize: "85%",
   },
@@ -137,7 +137,7 @@ export const createMarkdownStyles = (
         ? alpha(theme.palette.common.black, 0.7)
         : alpha(theme.palette.common.black, 0.03),
     padding: 2,
-    borderRadius: 1,
+    borderRadius: g3BorderRadius(G3_PRESETS.card),
     overflowX: "auto",
     "& code": {
       backgroundColor: "transparent",
@@ -145,14 +145,14 @@ export const createMarkdownStyles = (
       fontSize: "90%",
     },
   },
-  
+
   "& blockquote": {
     borderLeft: `4px solid ${alpha(theme.palette.primary.main, 0.3)}`,
     pl: 2,
     ml: 0,
     color: theme.palette.text.secondary,
   },
-  
+
   "& table": {
     borderCollapse: "collapse",
     width: "100%",
@@ -171,7 +171,7 @@ export const createMarkdownStyles = (
       backgroundColor: alpha(theme.palette.primary.main, 0.02),
     },
   },
-  
+
   "& a": {
     color: theme.palette.primary.main,
     textDecoration: "none",
@@ -179,7 +179,7 @@ export const createMarkdownStyles = (
       textDecoration: "underline",
     },
   },
-  
+
   "& ul, & ol": {
     pl: 3,
   },

@@ -5,6 +5,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
+import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
 
 // Office 文档预览骨架屏
 export const OfficePreviewSkeleton: React.FC<{
@@ -42,7 +43,7 @@ export const OfficePreviewSkeleton: React.FC<{
         display: "flex",
         flexDirection: "column",
         bgcolor: theme.palette.mode === "dark" ? "#1a1a1a" : "#f5f5f5",
-        borderRadius: 1,
+        borderRadius: g3BorderRadius(G3_PRESETS.card),
         ...getContainerTransitionStyles(isExiting),
       }}
       data-oid="mmtnv4s"

@@ -5,6 +5,8 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
+import { g3BorderRadius, G3_PRESETS } from "../../../../theme/g3Curves";
+
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
@@ -25,7 +27,7 @@ export const ImageErrorDisplay: React.FC<ImageErrorDisplayProps> = ({
         position: "relative",
         margin: "1em 0",
         border: `1px dashed ${theme.palette.error.main}`,
-        borderRadius: "4px",
+        borderRadius: g3BorderRadius(G3_PRESETS.card),
         padding: "16px",
         display: "flex",
         flexDirection: "column",
