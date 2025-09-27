@@ -118,7 +118,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
       <Box
         ref={breadcrumbsContainerRef}
         sx={{
-          mb: { xs: 2, sm: 3 },
+          mb: { xs: 1.5, sm: 2.25 },
           position: "relative",
           display: "flex",
           alignItems: "center",
@@ -127,7 +127,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
         }}
         data-oid="zmb:p06"
       >
-        <Breadcrumbs
+  <Breadcrumbs
           aria-label="breadcrumb"
           separator={
             <ChevronRightIcon
@@ -140,8 +140,8 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
           itemsBeforeCollapse={isSmallScreen ? 1 : 2}
           itemsAfterCollapse={isSmallScreen ? 1 : 2}
           sx={{
-            px: { xs: 1.5, sm: 2 },
-            py: { xs: 1, sm: 1.5 },
+            px: { xs: 1, sm: 1.5 },
+            py: { xs: 0.75, sm: 1.1 },
             bgcolor: "background.paper",
             borderRadius: g3Styles.breadcrumb().borderRadius,
             boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.05)",
@@ -206,7 +206,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
               },
             }),
             flexGrow: 1,
-            mr: { xs: 1, sm: 2 },
+            mr: { xs: 0.75, sm: 1.5 },
           }}
           data-oid="v5dla3."
         >

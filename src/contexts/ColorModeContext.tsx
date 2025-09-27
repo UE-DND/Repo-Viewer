@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useMemo, ReactNode } from "react";
 import { PaletteMode, useMediaQuery } from "@mui/material";
 
