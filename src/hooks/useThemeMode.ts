@@ -5,7 +5,7 @@ import { removeLatexElements, restoreLatexElements } from '../utils/rendering/la
 
 const shouldUseDarkMode = (): boolean => {
   const currentHour = new Date().getHours();
-  return currentHour >= 18 || currentHour < 6; 
+  return currentHour >= 18 || currentHour < 6;
 };
 
 const getTimeBasedMode = (): PaletteMode => {
@@ -17,10 +17,10 @@ const shouldRefreshThemeColor = (): boolean => {
   const lastThemeColorDate = localStorage.getItem('lastThemeColorDate');
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
-  
+
   if (!lastThemeColorDate || lastThemeColorDate !== todayStr) {
     const daysSince1970 = Math.floor(today.getTime() / (24 * 60 * 60 * 1000));
-    
+
     if (daysSince1970 % 2 === 0) {
       localStorage.setItem('lastThemeColorDate', todayStr);
       return true;
@@ -28,7 +28,7 @@ const shouldRefreshThemeColor = (): boolean => {
       localStorage.setItem('lastThemeColorDate', todayStr);
     }
   }
-  
+
   return false;
 };
 
@@ -39,7 +39,7 @@ export const useThemeMode = () => {
       try {
         const { mode, timestamp, isAutoMode } = JSON.parse(savedThemeData);
         const currentTime = new Date().getTime();
-        const oneHour = 60 * 60 * 1000; 
+        const oneHour = 60 * 60 * 1000;
         if (currentTime - timestamp < oneHour) {
           if (isAutoMode === false) {
             return mode;
@@ -58,7 +58,7 @@ export const useThemeMode = () => {
       try {
         const { isAutoMode, timestamp } = JSON.parse(savedThemeData);
         const currentTime = new Date().getTime();
-        const oneHour = 60 * 60 * 1000; 
+        const oneHour = 60 * 60 * 1000;
         if (currentTime - timestamp < oneHour) {
           return isAutoMode !== undefined ? isAutoMode : true;
         }
@@ -66,11 +66,11 @@ export const useThemeMode = () => {
         return true;
       }
     }
-    return true; 
+    return true;
   });
 
   const [isTransitioning, setIsTransitioning] = useState(false);
-  
+
   useEffect(() => {
     if (shouldRefreshThemeColor()) {
       logger.info('每隔一天更新主题色');
@@ -87,7 +87,7 @@ export const useThemeMode = () => {
         setMode(timeBasedMode);
       }
     }
-  }, []);
+  }, [isAutoMode, mode]);
 
   document.documentElement.setAttribute('data-theme-change-only', 'false');
 
@@ -98,51 +98,51 @@ export const useThemeMode = () => {
       isAutoMode
     });
     localStorage.setItem('themeData', themeData);
-    
+
     removeLatexElements();
-    
+
     setTimeout(() => {
       document.documentElement.setAttribute('data-theme-change-only', 'true');
-      
+
       setIsTransitioning(true);
       document.body.classList.add('theme-transition');
       document.documentElement.setAttribute('data-theme', mode);
-      
+
       const transitionTimeout = setTimeout(() => {
         document.body.classList.remove('theme-transition');
-        
+
         setTimeout(() => {
           setIsTransitioning(false);
-          
+
           document.documentElement.setAttribute('data-theme-change-only', 'false');
-          
+
           setTimeout(() => {
             restoreLatexElements();
           }, 100);
         }, 50);
       }, 600);
-      
+
       return () => clearTimeout(transitionTimeout);
     }, 10);
-    
+
     return () => {};
   }, [mode, isAutoMode]);
 
   useEffect(() => {
     if (!isAutoMode) return;
-    
+
     const now = new Date();
     const nextHour = new Date(now);
     nextHour.setHours(now.getHours() + 1, 0, 0, 0);
     const timeToNextHour = nextHour.getTime() - now.getTime();
-    
+
     const checkTimeTimer = setTimeout(() => {
       const newTimeBasedMode = getTimeBasedMode();
       if (isAutoMode && newTimeBasedMode !== mode) {
         logger.info(`自动切换主题模式: ${mode} -> ${newTimeBasedMode}`);
         setMode(newTimeBasedMode);
       }
-      
+
       const hourlyTimer = setInterval(() => {
         const newTimeBasedMode = getTimeBasedMode();
         if (isAutoMode && newTimeBasedMode !== mode) {
@@ -150,10 +150,10 @@ export const useThemeMode = () => {
           setMode(newTimeBasedMode);
         }
       }, 3600000);
-      
+
       return () => clearInterval(hourlyTimer);
     }, timeToNextHour);
-    
+
     return () => clearTimeout(checkTimeTimer);
   }, [isAutoMode, mode]);
 

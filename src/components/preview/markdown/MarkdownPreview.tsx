@@ -130,9 +130,10 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
     // 清理图片加载计时器
     useEffect(() => {
+      const imageState = imageStateRef.current;
       return () => {
         // 组件卸载时清理所有计时器
-        imageStateRef.current.imageTimers.forEach((timer) => {
+        imageState.imageTimers.forEach((timer) => {
           window.clearTimeout(timer);
         });
       };

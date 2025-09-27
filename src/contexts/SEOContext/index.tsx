@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useMetadata, MetadataProvider } from "../MetadataContext";
 import { useCallback } from "react";
 

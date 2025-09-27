@@ -1,8 +1,8 @@
 import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
 import { useTheme } from '@mui/material';
-import { 
-  PreviewState, 
-  PreviewAction, 
+import {
+  PreviewState,
+  PreviewAction,
   GitHubContent,
   OfficeFileType
 } from '../types';
@@ -32,46 +32,46 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
   switch (action.type) {
     case 'RESET_PREVIEW':
       return initialPreviewState;
-      
+
     case 'SET_MD_PREVIEW':
       return {
         ...state,
         previewContent: action.content,
         previewingItem: action.item
       };
-      
+
     case 'SET_MD_LOADING':
       return {
         ...state,
         loadingPreview: action.loading
       };
-      
-      
+
+
     case 'SET_IMAGE_PREVIEW':
       return {
         ...state,
         imagePreviewUrl: action.url,
         previewingImageItem: action.item
       };
-      
+
     case 'SET_IMAGE_LOADING':
       return {
         ...state,
         loadingImagePreview: action.loading
       };
-      
+
     case 'SET_IMAGE_ERROR':
       return {
         ...state,
         imageError: action.error
       };
-      
+
     case 'SET_IMAGE_FULLSCREEN':
       return {
         ...state,
         isImageFullscreen: action.fullscreen
       };
-      
+
     case 'SET_OFFICE_PREVIEW':
       return {
         ...state,
@@ -79,25 +79,25 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
         previewingOfficeItem: action.item,
         officeFileType: action.fileType
       };
-      
+
     case 'SET_OFFICE_LOADING':
       return {
         ...state,
         loadingOfficePreview: action.loading
       };
-      
+
     case 'SET_OFFICE_ERROR':
       return {
         ...state,
         officeError: action.error
       };
-      
+
     case 'SET_OFFICE_FULLSCREEN':
       return {
         ...state,
         isOfficeFullscreen: action.fullscreen
       };
-      
+
     default:
       return state;
   }
@@ -114,21 +114,21 @@ export const useFilePreview = (
   const currentPreviewItemRef = useRef<GitHubContent | null>(null);
   const hasActivePreviewRef = useRef<boolean>(false);
   const isHandlingNavigationRef = useRef<boolean>(false);
-  
+
   useEffect(() => {
     const hasActivePreview = !!(
-      previewState.previewingItem || 
-      previewState.previewingImageItem || 
+      previewState.previewingItem ||
+      previewState.previewingImageItem ||
       previewState.previewingOfficeItem
     );
     hasActivePreviewRef.current = hasActivePreview;
     logger.debug(`预览状态更新: ${hasActivePreview ? '活跃' : '非活跃'}`);
   }, [
-    previewState.previewingItem, 
-    previewState.previewingImageItem, 
+    previewState.previewingItem,
+    previewState.previewingImageItem,
     previewState.previewingOfficeItem
   ]);
-  
+
   useEffect(() => {
     const previewPath = getPreviewFromUrl();
     if (previewPath) {
@@ -147,21 +147,46 @@ export const useFilePreview = (
       };
     }
   }, []);
-  
+
+  // Office预览加载函数
+  const loadOfficePreview = useCallback((item: GitHubContent, fileType: OfficeFileType) => {
+    if (!item.download_url) return;
+
+    dispatch({ type: 'SET_OFFICE_LOADING', loading: true });
+    dispatch({ type: 'SET_OFFICE_ERROR', error: null });
+
+    try {
+      // 直接使用GitHub原始文件URL
+      const originalUrl = item.download_url;
+
+      dispatch({
+        type: 'SET_OFFICE_PREVIEW',
+        url: originalUrl,
+        item,
+        fileType
+      });
+    } catch (error: any) {
+      dispatch({ type: 'SET_OFFICE_ERROR', error: error.message });
+      onError(`加载${fileType}文件失败: ${error.message}`);
+    } finally {
+      dispatch({ type: 'SET_OFFICE_LOADING', loading: false });
+    }
+  }, [onError]);
+
   const selectFile = useCallback(async (item: GitHubContent) => {
     if (!item.download_url) {
       onError('无法获取文件下载链接');
       return;
     }
-    
+
     logger.debug(`正在选择文件预览: ${item.path}`);
     currentPreviewItemRef.current = item;
     const dirPath = item.path.split('/').slice(0, -1).join('/');
     const fileName = item.path.split('/').pop() || '';
     logger.debug(`使用简化的文件名作为预览参数: ${fileName}`);
-    
+
     dispatch({ type: 'RESET_PREVIEW' });
-    
+
     try {
       let proxyUrl = item.download_url;
       if (getForceServerProxy()) {
@@ -169,14 +194,14 @@ export const useFilePreview = (
       } else {
         proxyUrl = GitHubService.transformImageUrl(item.download_url, item.path, useTokenMode) || item.download_url;
       }
-    
+
     const fileNameLower = item.name.toLowerCase();
-    
+
     if (isMarkdownFile(fileNameLower)) {
         if (fileNameLower === 'readme.md') {
           updateUrlWithHistory(dirPath, item.path);
           dispatch({ type: 'SET_MD_LOADING', loading: true });
-          
+
           try {
             const content = await GitHubService.getFileContent(item.download_url);
             dispatch({ type: 'SET_MD_PREVIEW', content, item });
@@ -189,7 +214,7 @@ export const useFilePreview = (
           onError('已禁用Markdown文件预览功能，如需查看内容请下载文件');
           logger.info(`阻止加载非README的Markdown文件: ${item.path}`);
         }
-      } 
+      }
       else if (isPdfFile(fileNameLower)) {
         try {
           let newTab: Window | null = window.open('', '_blank');
@@ -224,7 +249,7 @@ export const useFilePreview = (
               // 将 abortController 设置到新标签页的全局变量中
               (newTab as any).abortController = abortController;
 
-              const resp = await fetch(item.download_url, { 
+              const resp = await fetch(item.download_url, {
                 mode: 'cors',
                 signal: abortController.signal
               });
@@ -246,14 +271,14 @@ export const useFilePreview = (
                   chunks.push(value);
                   loaded += value.byteLength;
                   const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
-                  
+
                   // 更新文本进度
                   if (progressEl) {
                     progressEl.textContent = total > 0
                       ? `已下载 ${formatBytes(loaded)} / ${formatBytes(total)} (${pct}%)`
                       : `已下载 ${formatBytes(loaded)}`;
                   }
-                  
+
                   // 更新圆形进度条
                   if (progressCircle && total > 0 && pct !== null) {
                     progressCircle.classList.add('determinate');
@@ -296,15 +321,15 @@ export const useFilePreview = (
           } else {
             try {
               const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-              
+
               if (newTab.document.getElementById('status')) {
                 newTab.document.getElementById('status')!.textContent = '正在载入预览';
               }
-              
+
               if (newTab.document.getElementById('progress')) {
                 newTab.document.getElementById('progress')!.textContent = '若等待时间过长，请尝试直接下载';
               }
-              
+
               const cancelBtn = newTab.document.getElementById('cancel-btn');
               if (cancelBtn) cancelBtn.style.display = 'none';
               setTimeout(() => {
@@ -325,17 +350,17 @@ export const useFilePreview = (
         }
         // 对于原生预览，不在应用内维护预览状态，也不使用预览参数
         return;
-      } 
+      }
       else if (isImageFile(fileNameLower)) {
         // 图片预览
         dispatch({ type: 'SET_IMAGE_LOADING', loading: true });
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });
-        
+
         try {
           // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
           updateUrlWithHistory(dirPath, item.path);
-          dispatch({ 
-            type: 'SET_IMAGE_PREVIEW', 
+          dispatch({
+            type: 'SET_IMAGE_PREVIEW',
             url: proxyUrl,
             item
           });
@@ -366,144 +391,121 @@ export const useFilePreview = (
     } catch (error: any) {
       onError(`预览文件失败: ${error.message}`);
     }
-  }, [onError, useTokenMode, muiTheme]);
+  }, [onError, useTokenMode, muiTheme, loadOfficePreview]);
 
-  // Office预览加载函数
-  const loadOfficePreview = useCallback((item: GitHubContent, fileType: OfficeFileType) => {
-    if (!item.download_url) return;
-    
-    dispatch({ type: 'SET_OFFICE_LOADING', loading: true });
-    dispatch({ type: 'SET_OFFICE_ERROR', error: null });
-    
-    try {
-      // 直接使用GitHub原始文件URL
-      const originalUrl = item.download_url;
-      
-      dispatch({ 
-        type: 'SET_OFFICE_PREVIEW', 
-        url: originalUrl,
-        item,
-        fileType
-      });
-    } catch (error: any) {
-      dispatch({ type: 'SET_OFFICE_ERROR', error: error.message });
-      onError(`加载${fileType}文件失败: ${error.message}`);
-    } finally {
-      dispatch({ type: 'SET_OFFICE_LOADING', loading: false });
-    }
-  }, [onError]);
-  
+
+
   // 加载Markdown预览 (仅用于README文件)
-  
-  
+
+
   // 关闭预览
   const closePreview = useCallback(() => {
     logger.debug('关闭预览组件');
-    
+
     // 获取当前预览的项目
     const currentItem = currentPreviewItemRef.current;
-    
+
     if (currentItem) {
       // 从路径中提取目录部分
       const dirPath = currentItem.path.split('/').slice(0, -1).join('/');
-      
+
       logger.debug(`关闭预览 ${currentItem.path}，返回到目录 ${dirPath}`);
-      
+
       // 更新 URL，移除预览参数 - 始终创建新的历史条目
       updateUrlWithHistory(dirPath);
-      
+
       // 重置当前预览项目引用
       currentPreviewItemRef.current = null;
     } else {
       logger.warn('尝试关闭预览，但没有当前预览项目');
     }
-    
+
     // 重置预览状态
     dispatch({ type: 'RESET_PREVIEW' });
     hasActivePreviewRef.current = false;
   }, []);
-  
-  
+
+
   // 图像全屏切换
   const toggleImageFullscreen = useCallback(() => {
     dispatch({ type: 'SET_IMAGE_FULLSCREEN', fullscreen: !previewState.isImageFullscreen });
   }, [previewState.isImageFullscreen]);
-  
+
   // Office全屏切换
   const toggleOfficeFullscreen = useCallback(() => {
     dispatch({ type: 'SET_OFFICE_FULLSCREEN', fullscreen: !previewState.isOfficeFullscreen });
   }, [previewState.isOfficeFullscreen]);
-  
-  
+
+
   // 图像错误处理
   const handleImageError = useCallback((error: string) => {
     dispatch({ type: 'SET_IMAGE_ERROR', error });
     dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
     onError(`图像加载失败: ${error}`);
   }, [onError]);
-  
+
   // Office错误处理
   const handleOfficeError = useCallback((error: string) => {
     dispatch({ type: 'SET_OFFICE_ERROR', error });
     dispatch({ type: 'SET_OFFICE_LOADING', loading: false });
     onError(`Office文档加载失败: ${error}`);
   }, [onError]);
-  
+
   // 监听浏览器历史导航事件，处理预览的后退操作
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       logger.debug('检测到浏览器后退/前进按钮操作');
-      
+
       // 防止重复处理
       if (isHandlingNavigationRef.current) {
         logger.debug('已在处理导航事件，跳过');
         return;
       }
-      
+
       isHandlingNavigationRef.current = true;
-      
+
       try {
         // 从历史状态中获取预览信息
         const state = event.state as { path?: string; preview?: string } | null;
         logger.debug(`历史状态: ${JSON.stringify(state)}`);
-        
+
         // 当前是否有预览打开 - 使用 ref 值，确保最新状态
         const hasActivePreview = hasActivePreviewRef.current;
         logger.debug(`当前预览状态: ${hasActivePreview ? '活跃' : '非活跃'}`);
-        
+
         // 检查 URL 是否包含预览参数
         const urlHasPreview = hasPreviewParam();
         const previewPath = getPreviewFromUrl();
         logger.debug(`URL 预览参数: ${urlHasPreview ? previewPath : '无'}`);
-        
+
         // 如果当前有预览，但 URL 不再包含预览参数，则关闭预览（后退操作）
         if (hasActivePreview && !urlHasPreview) {
           logger.debug('检测到后退关闭预览操作');
-          
+
           // 重置预览状态
           dispatch({ type: 'RESET_PREVIEW' });
           currentPreviewItemRef.current = null;
           hasActivePreviewRef.current = false;
-          
+
           logger.debug('预览已关闭');
           return;
         }
-        
+
         // 如果 URL 包含预览参数，但当前没有预览或预览的是不同文件，则尝试打开预览（前进操作）
         if (urlHasPreview && previewPath) {
           const currentPreviewName = currentPreviewItemRef.current?.name;
           const currentPreviewPath = currentPreviewItemRef.current?.path;
-          
+
           // 检查文件名是否匹配
-          if (!hasActivePreview || 
-              (currentPreviewName !== previewPath && 
+          if (!hasActivePreview ||
+              (currentPreviewName !== previewPath &&
                !currentPreviewPath?.endsWith(`/${previewPath}`))) {
             logger.debug(`检测到前进打开预览操作: ${previewPath}`);
-            
+
             // 使用回调函数查找文件项
             if (findFileItemByPath) {
               const fileItem = findFileItemByPath(previewPath);
-              
+
               if (fileItem) {
                 logger.debug(`找到预览文件项: ${fileItem.path}`);
                 // 更新预览引用并打开预览
@@ -523,18 +525,18 @@ export const useFilePreview = (
         isHandlingNavigationRef.current = false;
       }
     };
-    
+
     // 添加历史导航事件监听器
     window.addEventListener('popstate', handlePopState);
     logger.debug('已添加 popstate 事件监听器');
-    
+
     // 组件卸载时移除监听器
     return () => {
       window.removeEventListener('popstate', handlePopState);
       logger.debug('已移除 popstate 事件监听器');
     };
   }, [selectFile, findFileItemByPath]);
-  
+
   return {
     previewState,
     useTokenMode,
@@ -547,4 +549,4 @@ export const useFilePreview = (
     handleOfficeError,
     currentPreviewItemRef
   };
-}; 
+};
