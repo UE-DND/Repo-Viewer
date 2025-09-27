@@ -36,5 +36,5 @@ export const useSEO = () => {
 };
 
 // 导出MetadataProvider作为SEOProvider以保持向后兼容
-export const SEOProvider = MetadataProvider;
-export default SEOProvider;
+export { MetadataProvider as SEOProvider };
+export default MetadataProvider;

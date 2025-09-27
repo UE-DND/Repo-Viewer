@@ -157,7 +157,7 @@ export const useThemeMode = () => {
     return () => clearTimeout(checkTimeTimer);
   }, [isAutoMode, mode]);
 
-  const colorMode = useMemo(
+  return useMemo(
     () => ({
       toggleColorMode: () => {
         if (!isTransitioning) {
@@ -185,6 +185,4 @@ export const useThemeMode = () => {
     }),
     [mode, isAutoMode, isTransitioning],
   );
-
-  return colorMode;
 };

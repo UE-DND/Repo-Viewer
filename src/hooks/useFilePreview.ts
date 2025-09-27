@@ -312,8 +312,7 @@ export const useFilePreview = (
               // 使用统一的错误页面模板
               const loaderEl = newTab.document.getElementById('loader');
               if (loaderEl) {
-                const errorHTML = generatePDFErrorHTML(item.name, (e && e.message) || '未知错误', item.download_url, themeColors);
-                loaderEl.innerHTML = errorHTML;
+                loaderEl.innerHTML = generatePDFErrorHTML(item.name, (e && e.message) || '未知错误', item.download_url, themeColors);
               } else {
                 newTab.location.replace(item.download_url);
               }
@@ -339,8 +338,7 @@ export const useFilePreview = (
               const loaderEl = newTab.document.getElementById('loader');
               if (loaderEl) {
                 const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-                const errorHTML = generatePDFErrorHTML(item.name, '加载失败，请直接打开', proxyUrl, themeColors);
-                loaderEl.innerHTML = errorHTML;
+                loaderEl.innerHTML = generatePDFErrorHTML(item.name, '加载失败，请直接打开', proxyUrl, themeColors);
               }
             }
           }

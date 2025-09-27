@@ -30,10 +30,8 @@ if (!allowConsoleOutput) {
 // 在应用加载后设置LaTeX优化监听器
 document.addEventListener("DOMContentLoaded", () => {
   // 设置LaTeX优化
-  const cleanup = setupLatexOptimization();
-
   // 记录到窗口对象上，以防需要手动清理
-  (window as any).__latexOptimizerCleanup = cleanup;
+  (window as any).__latexOptimizerCleanup = setupLatexOptimization();
 
   logger.debug("LaTeX渲染优化已启用");
 });

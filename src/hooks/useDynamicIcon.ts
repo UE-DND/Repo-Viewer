@@ -48,8 +48,8 @@ export const useDynamicIcon = () => {
     // 监听主题变化
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && 
-            (mutation.attributeName === 'data-theme' || 
+        if (mutation.type === 'attributes' &&
+            (mutation.attributeName === 'data-theme' ||
              mutation.attributeName === 'class')) {
           logger.debug('🔄 通过MutationObserver检测到主题变化');
           updateIcon();
@@ -134,7 +134,7 @@ export const useFaviconUpdater = () => {
         // 强制触发浏览器重新加载favicon
         const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
         if (link) {
-          link.href = link.href;
+          link.setAttribute('href', link.href);
         }
       }, 10);
     };
