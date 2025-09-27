@@ -12,9 +12,9 @@ import FileList from "../file/FileList";
 import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "../../utils/lazy-loading";
 import ErrorDisplay from "../ui/ErrorDisplay";
 import FullScreenPreview from "../file/FullScreenPreview";
-import { 
-  useContentContext, 
-  usePreviewContext, 
+import {
+  useContentContext,
+  usePreviewContext,
   useDownloadContext,
   NavigationDirection
 } from "../../contexts/unified";
@@ -209,12 +209,11 @@ const MainContent: React.FC = () => {
         currentPreviewItemRef.current = fileItem;
 
         // 避免重复加载已经打开的预览
-        const hasActivePreview = !!(
+        const hasActivePreview =
           previewState.previewingItem?.path === fileItem.path ||
           previewState.previewingPdfItem?.path === fileItem.path ||
           previewState.previewingImageItem?.path === fileItem.path ||
-          previewState.previewingOfficeItem?.path === fileItem.path
-        );
+          previewState.previewingOfficeItem?.path === fileItem.path;
 
         if (!hasActivePreview) {
           logger.debug(`预览文件未打开，正在加载: ${fileItem.path}`);

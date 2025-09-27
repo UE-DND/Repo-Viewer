@@ -17,11 +17,11 @@ import {
 } from './CachePersistence';
 
 export class AdvancedCache<K, V> {
-  private cache: Map<K, CacheItemMeta>;
-  private config: CacheConfig;
-  private stats: CacheStats;
+  private readonly cache: Map<K, CacheItemMeta>;
+  private readonly config: CacheConfig;
+  private readonly stats: CacheStats;
   private cleanupTimer: ReturnType<typeof setInterval> | null = null;
-  private dbName: string;
+  private readonly dbName: string;
   private db: IDBDatabase | null = null;
 
   constructor(config: CacheConfig) {
