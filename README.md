@@ -1,4 +1,4 @@
-```
+```txt
 ██████╗ ███████╗██████╗  ██████╗       ██╗   ██╗██╗███████╗██╗    ██╗███████╗██████╗ 
 ██╔══██╗██╔════╝██╔══██╗██╔═══██╗      ██║   ██║██║██╔════╝██║    ██║██╔════╝██╔══██╗
 ██████╔╝█████╗  ██████╔╝██║   ██║█████╗██║   ██║██║█████╗  ██║ █╗ ██║█████╗  ██████╔╝
@@ -135,9 +135,7 @@ CONSOLE_LOGGING = true/false                          # 控制台日志
 
 ## 贡献者
 
-<a href="https://github.com/UE-DND/Repo-Viewer/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=UE-DND/Repo-Viewer"/>
-</a>
+[![贡献者](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
 
 ## Vercel 加速支持
 

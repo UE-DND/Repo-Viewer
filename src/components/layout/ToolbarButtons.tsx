@@ -7,7 +7,7 @@ import {
   Refresh as RefreshIcon,
   GitHub as GitHubIcon,
 } from "@mui/icons-material";
-import { ColorModeContext } from "../../contexts/ColorModeContext";
+import { ColorModeContext } from "../../contexts/colorModeContext";
 import { useRefresh } from "../../hooks/useRefresh";
 import { pulseAnimation, refreshAnimation } from "../../theme/animations";
 import { GitHubService } from "../../services/github";
@@ -46,7 +46,7 @@ const ToolbarButtons: React.FC = () => {
 
     fetchRepoInfo();
   }, []);
-        
+
   // 处理刷新按钮点击
   const onRefreshClick = useCallback(() => {
     if (isRefreshing) return; // 防止重复点击

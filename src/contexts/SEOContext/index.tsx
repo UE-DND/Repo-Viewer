@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useMetadata, MetadataProvider } from "../MetadataContext";
+import { MetadataProvider } from "../MetadataContext";
+import { useMetadata } from "../MetadataContext/context";
 import { useCallback } from "react";
 
 // 导入需要的类型

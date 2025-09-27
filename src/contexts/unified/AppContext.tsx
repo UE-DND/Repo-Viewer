@@ -1,57 +1,17 @@
 import { useSnackbar } from "notistack";
-import {
-  createContext, ReactNode, useCallback, useContext, useMemo, type Context,
-} from "react";
+import { ReactNode, useCallback, useMemo } from "react";
 import { useDownload } from "../../hooks/useDownload";
 import { useFilePreview } from "../../hooks/useFilePreview";
 import { useGitHubContent } from "../../hooks/useGitHubContent";
-import type { GitHubContent } from "../../types";
-
-export type NavigationDirection = "forward" | "backward" | "none";
-
-type ContentHookResult = ReturnType<typeof useGitHubContent>;
-type PreviewHookResult = ReturnType<typeof useFilePreview>;
-type DownloadHookResult = ReturnType<typeof useDownload>;
-
-interface ContentContextValue {
-  currentPath: ContentHookResult["currentPath"];
-  contents: ContentHookResult["contents"];
-  readmeContent: ContentHookResult["readmeContent"];
-  loading: ContentHookResult["loading"];
-  loadingReadme: ContentHookResult["loadingReadme"];
-  readmeLoaded: ContentHookResult["readmeLoaded"];
-  error: ContentHookResult["error"];
-  navigationDirection: ContentHookResult["navigationDirection"];
-  repoOwner: ContentHookResult["repoOwner"];
-  repoName: ContentHookResult["repoName"];
-  setCurrentPath: ContentHookResult["setCurrentPath"];
-  navigateTo: (path: string, direction?: NavigationDirection) => void;
-  refresh: () => void;
-  handleRetry: () => void;
-  findFileItemByPath: (pathOrFileName: string) => GitHubContent | undefined;
-}
-
-interface PreviewContextValue {
-  previewState: PreviewHookResult["previewState"] & {
-    previewingPdfItem: PreviewHookResult["previewState"]["previewingItem"] | null;
-  };
-  currentPreviewItemRef: PreviewHookResult["currentPreviewItemRef"];
-  selectFile: PreviewHookResult["selectFile"];
-  closePreview: PreviewHookResult["closePreview"];
-  toggleImageFullscreen: PreviewHookResult["toggleImageFullscreen"];
-  handleImageError: PreviewHookResult["handleImageError"];
-}
-
-interface DownloadContextValue {
-  downloadState: DownloadHookResult["downloadState"];
-  downloadFile: DownloadHookResult["downloadFile"];
-  downloadFolder: DownloadHookResult["downloadFolder"];
-  cancelDownload: DownloadHookResult["cancelDownload"];
-}
-
-const ContentContext = createContext<ContentContextValue | null>(null);
-const PreviewContext = createContext<PreviewContextValue | null>(null);
-const DownloadContext = createContext<DownloadContextValue | null>(null);
+import {
+  ContentContext,
+  PreviewContext,
+  DownloadContext,
+  type ContentContextValue,
+  type PreviewContextValue,
+  type DownloadContextValue,
+  type NavigationDirection,
+} from "./context";
 
 interface AppContextProviderProps {
   children: ReactNode;
@@ -181,6 +141,8 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
     ],
   );
 
+
+
   return (
     <ContentContext.Provider value={contentValue}>
       <PreviewContext.Provider value={previewValue}>
@@ -191,20 +153,3 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
     </ContentContext.Provider>
   );
 }
-
-function useRequiredContext<T>(context: Context<T | null>, name: string): T {
-  const value = useContext(context);
-  if (!value) {
-    throw new Error(`${name} 必须在 AppContextProvider 内部使用`);
-  }
-  return value;
-}
-
-export const useContentContext = (): ContentContextValue =>
-  useRequiredContext(ContentContext, "useContentContext");
-
-export const usePreviewContext = (): PreviewContextValue =>
-  useRequiredContext(PreviewContext, "usePreviewContext");
-
-export const useDownloadContext = (): DownloadContextValue =>
-  useRequiredContext(DownloadContext, "useDownloadContext");
