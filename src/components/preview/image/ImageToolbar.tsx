@@ -90,7 +90,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
       >
         {/* 缩小按钮 */}
         <IconButton
-          onClick={zoomOut}
+          onClick={() => {
+            zoomOut();
+          }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
           sx={{
@@ -113,7 +115,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
 
         {/* 缩放比例显示和重置按钮 */}
         <IconButton
-          onClick={resetTransform}
+          onClick={() => {
+            resetTransform();
+          }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
           sx={{
@@ -145,7 +149,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
 
         {/* 放大按钮 */}
         <IconButton
-          onClick={zoomIn}
+          onClick={() => {
+            zoomIn();
+          }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
           sx={{
