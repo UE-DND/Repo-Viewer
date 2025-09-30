@@ -172,30 +172,37 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
           data-oid=":p7j.31"
         >
           {shouldRender && !isThemeChanging && (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeRaw, [rehypeKatex, katexOptions]]}
-              components={{
-                a: ({ href, children, ...props }) => (
-                  <MarkdownLink href={href} {...props}>
-                    {children}
-                  </MarkdownLink>
-                ),
-                img: ({ src, alt, ...props }) => (
-                  <MarkdownImage
-                    src={src}
-                    alt={alt}
-                    previewingItem={previewingItem || null}
-                    imageState={imageStateRef.current}
-                    {...props}
-                  />
-                ),
-                code: latexCodeHandler,
-              }}
-              data-oid="53g570v"
+            <Box
+              className="markdown-body"
+              data-color-mode={theme.palette.mode}
+              data-light-theme="light"
+              data-dark-theme="dark"
             >
-              {readmeContent}
-            </ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeRaw, [rehypeKatex, katexOptions]]}
+                components={{
+                  a: ({ href, children, ...props }) => (
+                    <MarkdownLink href={href} {...props}>
+                      {children}
+                    </MarkdownLink>
+                  ),
+                  img: ({ src, alt, ...props }) => (
+                    <MarkdownImage
+                      src={src}
+                      alt={alt}
+                      previewingItem={previewingItem || null}
+                      imageState={imageStateRef.current}
+                      {...props}
+                    />
+                  ),
+                  code: latexCodeHandler,
+                }}
+                data-oid="53g570v"
+              >
+                {readmeContent}
+              </ReactMarkdown>
+            </Box>
           )}
 
           {/* 加载中或切换主题时显示 */}

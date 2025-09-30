@@ -1,19 +1,184 @@
 import { Theme, alpha } from "@mui/material";
 import { g3BorderRadius, G3_PRESETS } from "../../../../theme/g3Curves";
 
-export const createMarkdownStyles = (
-  theme: Theme,
-  latexCount: number
-) => ({
-  py: 2,
-  px: { xs: 2, sm: 3, md: 4 },
+const SYSTEM_FONT =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'";
+const MONO_FONT =
+  "var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace)";
+
+export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
+  const isDark = theme.palette.mode === "dark";
+  const textColor = isDark ? "var(--fgColor-default)" : theme.palette.common.black;
+  const secondaryTextColor = isDark
+    ? alpha(theme.palette.common.white, 0.7)
+    : theme.palette.text.secondary;
+  const primary = theme.palette.primary.main;
+  const blockquoteBorderColor = alpha(primary, isDark ? 0.55 : 0.4);
+  const blockquoteBackground = alpha(primary, isDark ? 0.18 : 0.08);
+  const codeSurfaceColor = alpha(primary, isDark ? 0.22 : 0.12);
+  const codeBorderColor = alpha(primary, isDark ? 0.45 : 0.28);
+  const dividerColor = alpha(
+    isDark ? theme.palette.common.white : theme.palette.common.black,
+    isDark ? 0.2 : 0.15,
+  );
+  const tableHeaderBackground = alpha(primary, isDark ? 0.2 : 0.1);
+  const tableStripeBackground = alpha(
+    isDark ? theme.palette.common.white : theme.palette.common.black,
+    isDark ? 0.08 : 0.05,
+  );
+
+  return {
+  position: "relative",
+  py: { xs: 2.5, sm: 3 },
+  px: { xs: 2.5, sm: 4 },
   mt: 2,
   mb: 3,
   borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
   bgcolor: "background.paper",
-  overflowX: "auto",
   border: "1px solid",
   borderColor: "divider",
+  boxShadow: `0 10px 30px ${alpha(
+    theme.palette.common.black,
+    theme.palette.mode === "dark" ? 0.3 : 0.08,
+  )}`,
+
+  "& .markdown-body": {
+    color: textColor,
+    backgroundColor: "transparent",
+    fontSize: "1rem",
+    lineHeight: 1.7,
+    wordBreak: "break-word",
+    fontFamily: SYSTEM_FONT,
+    boxSizing: "border-box",
+    transition: theme.transitions.create(["color", "background-color"], {
+      duration: theme.transitions.duration.standard,
+    }),
+  },
+
+  "& .markdown-body :where(h1, h2, h3, h4, h5, h6)": {
+    color: textColor,
+  },
+
+  "& .markdown-body p": {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+  },
+
+  "& .markdown-body ul, & .markdown-body ol": {
+    listStylePosition: "outside",
+    paddingLeft: "2em",
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+  },
+
+  "& .markdown-body ul": {
+    listStyleType: "disc",
+  },
+
+  "& .markdown-body ol": {
+    listStyleType: "decimal",
+  },
+
+  "& .markdown-body ul ul, & .markdown-body ul ol, & .markdown-body ol ul, & .markdown-body ol ol": {
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+    paddingLeft: "1.8em",
+  },
+
+  "& .markdown-body ol ol, & .markdown-body ul ol": {
+    listStyleType: "lower-roman",
+  },
+
+  "& .markdown-body ul ul ol, & .markdown-body ul ol ol, & .markdown-body ol ul ol, & .markdown-body ol ol ol": {
+    listStyleType: "lower-alpha",
+  },
+
+  "& .markdown-body li": {
+    marginTop: theme.spacing(0.75),
+    marginBottom: theme.spacing(0.75),
+  },
+
+  "& .markdown-body li > p": {
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+  },
+
+  "& .markdown-body blockquote": {
+    margin: theme.spacing(2, 0),
+    padding: theme.spacing(0.1, 2),
+    borderLeft: `4px solid ${blockquoteBorderColor}`,
+    backgroundColor: blockquoteBackground,
+    color: secondaryTextColor,
+    borderRadius: `0 ${g3BorderRadius(G3_PRESETS.card)} ${g3BorderRadius(G3_PRESETS.card)} 0`,
+  },
+
+  "& .markdown-body hr": {
+    border: 0,
+    borderTop: `1px solid ${dividerColor}`,
+    margin: theme.spacing(3, 0),
+  },
+
+  "& .markdown-body table": {
+    width: "100%",
+    borderCollapse: "collapse",
+    borderSpacing: 0,
+    display: "block",
+    overflowX: "auto",
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+  },
+
+  "& .markdown-body table th, & .markdown-body table td": {
+    padding: theme.spacing(1),
+    border: `1px solid ${dividerColor}`,
+    textAlign: "left",
+    color: textColor,
+  },
+
+  "& .markdown-body table th": {
+    fontWeight: 600,
+    backgroundColor: tableHeaderBackground,
+  },
+
+  "& .markdown-body table tbody tr:nth-of-type(2n)": {
+    backgroundColor: tableStripeBackground,
+  },
+
+  "& .markdown-body pre": {
+    marginTop: theme.spacing(0),
+    marginBottom: theme.spacing(0),
+    padding: 0,
+    overflowX: "auto",
+    borderRadius: g3BorderRadius(G3_PRESETS.card),
+    backgroundColor: "transparent",
+    border: 0,
+  },
+
+  "& .markdown-body pre > code": {
+    display: "block",
+    fontFamily: MONO_FONT,
+    fontSize: "0.875rem",
+    lineHeight: 1.55,
+    backgroundColor: codeSurfaceColor, // 行间代码块背景色
+    borderRadius: "inherit",
+    border: `1px solid ${codeBorderColor}`,
+    padding: theme.spacing(1.5, 1.75),
+    color: textColor,
+    boxSizing: "border-box",
+    whiteSpace: "pre",
+  },
+
+  "& .markdown-body :not(pre) > code": {
+    fontFamily: MONO_FONT,
+    fontSize: "0.875em",
+    backgroundColor: codeSurfaceColor,
+    borderRadius: "6px",
+    padding: "0.2em 0.4em",
+    color: textColor,
+    border: 0,
+    boxDecorationBreak: "clone",
+    whiteSpace: "break-spaces",
+  },
 
   // 主题切换时的过渡效果
   "&.theme-transition-katex .katex-display, &.theme-transition-katex .katex": {
@@ -24,49 +189,53 @@ export const createMarkdownStyles = (
 
   // 大量公式时的特殊优化
   ...(latexCount > 50 && {
-    "& .katex": {
+    "& .markdown-body .katex": {
       contain: "paint layout style",
       willChange: "transform",
     },
-    "& .katex-display": {
+    "& .markdown-body .katex-display": {
       contain: "paint layout style",
       willChange: "transform",
     },
   }),
 
-  "& img": {
+  "& .markdown-body img": {
     maxWidth: "100%",
     borderRadius: g3BorderRadius(G3_PRESETS.image),
-    my: 2,
+    marginTop: theme.spacing(0),
+    marginBottom: theme.spacing(0),
     transition: theme.transitions.create(["opacity", "filter"], {
       duration: theme.transitions.duration.standard,
     }),
     filter: "brightness(1)",
-    "&:not(.loaded)": {
-      opacity: 0.7,
-      filter: "brightness(0.95)",
-      transform: "scale(0.98)",
-    },
-    "&.failed": {
-      filter: "grayscale(0.5) brightness(0.9)",
-      border: `1px dashed ${theme.palette.error.main}`,
-    },
-    "&.theme-transition": {
-      transition: "none !important",
-    },
+  },
+
+  "& .markdown-body img:not(.loaded)": {
+    opacity: 0.7,
+    filter: "brightness(0.95)",
+    transform: "scale(0.98)",
+  },
+
+  "& .markdown-body img.failed": {
+    filter: "grayscale(0.5) brightness(0.9)",
+    border: `1px dashed ${theme.palette.error.main}`,
+  },
+
+  "& .markdown-body img.theme-transition": {
+    transition: "none !important",
   },
 
   // LaTeX公式样式
-  "& .math": {
-    fontSize: "1.1em",
+  "& .markdown-body .math": {
+    fontSize: "1.08em",
     margin: "0.5em 0",
   },
-  "& .math-inline": {
+  "& .markdown-body .math-inline": {
     display: "inline-flex",
     alignItems: "center",
     margin: "0 0.25em",
   },
-  "& .katex-display": {
+  "& .markdown-body .katex-display": {
     margin: "1em 0",
     padding: "0.5em 0",
     overflowX: "auto",
@@ -76,111 +245,13 @@ export const createMarkdownStyles = (
 
   // 深色模式下的LaTeX样式调整
   ...(theme.palette.mode === "dark" && {
-    "& .katex": {
-      color: "#E6E1E5",
+    "& .markdown-body .katex": {
+      color: "#e6e1e5",
     },
-    "& .katex-display": {
+    "& .markdown-body .katex-display": {
       background: alpha(theme.palette.background.paper, 0.4),
       borderRadius: g3BorderRadius(G3_PRESETS.card),
     },
   }),
-
-  "& p": {
-    "& > a + a, & > a + img, & > img + a, & > img + img": {
-      marginLeft: 1,
-      marginTop: 0,
-      marginBottom: 0,
-    },
-    // 识别连续的徽章图片链接，将其设置为弹性布局
-    '&:has(a > img[src*="img.shields.io"]), &:has(img[src*="img.shields.io"])': {
-      display: "flex",
-      flexWrap: "wrap",
-      alignItems: "center",
-      gap: 1,
-      "& > a, & > img": {
-        display: "inline-flex",
-        marginTop: "4px",
-        marginBottom: "4px",
-      },
-      "& img": {
-        margin: 0,
-      },
-    },
-  },
-
-  "& h1": {
-    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-    pb: 1,
-    fontSize: { xs: "1.5rem", sm: "1.8rem" },
-  },
-  "& h2": {
-    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-    pb: 1,
-    mt: 3,
-    fontSize: { xs: "1.25rem", sm: "1.5rem" },
-  },
-  "& h3, h4, h5, h6": {
-    mt: 2,
-    fontSize: { xs: "1rem", sm: "1.25rem" },
-  },
-
-  "& code": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.05),
-    padding: "0.2em 0.4em",
-    borderRadius: g3BorderRadius(G3_PRESETS.button),
-    fontFamily: "monospace",
-    fontSize: "85%",
-  },
-  "& pre": {
-    backgroundColor:
-      theme.palette.mode === "dark"
-        ? alpha(theme.palette.common.black, 0.7)
-        : alpha(theme.palette.common.black, 0.03),
-    padding: 2,
-    borderRadius: g3BorderRadius(G3_PRESETS.card),
-    overflowX: "auto",
-    "& code": {
-      backgroundColor: "transparent",
-      padding: 0,
-      fontSize: "90%",
-    },
-  },
-
-  "& blockquote": {
-    borderLeft: `4px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-    pl: 2,
-    ml: 0,
-    color: theme.palette.text.secondary,
-  },
-
-  "& table": {
-    borderCollapse: "collapse",
-    width: "100%",
-    my: 2,
-    "& th": {
-      backgroundColor: alpha(theme.palette.primary.main, 0.05),
-      textAlign: "left",
-      padding: "8px 16px",
-      fontWeight: 500,
-    },
-    "& td": {
-      padding: "8px 16px",
-      borderBottom: `1px solid ${theme.palette.divider}`,
-    },
-    "& tr:nth-of-type(even)": {
-      backgroundColor: alpha(theme.palette.primary.main, 0.02),
-    },
-  },
-
-  "& a": {
-    color: theme.palette.primary.main,
-    textDecoration: "none",
-    "&:hover": {
-      textDecoration: "underline",
-    },
-  },
-
-  "& ul, & ol": {
-    pl: 3,
-  },
-});
+  };
+};
