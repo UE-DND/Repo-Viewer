@@ -6,6 +6,5 @@ export interface MarkdownPreviewProps {
   isSmallScreen: boolean;
   onClose?: () => void;
   previewingItem?: GitHubContent | null;
-  isReadme?: boolean;
   lazyLoad?: boolean;
 }

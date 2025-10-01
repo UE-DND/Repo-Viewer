@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import "github-markdown-css/github-markdown-light.css";
+import "github-markdown-css/github-markdown.css";
 import { logger } from "./utils";
 import ThemeProvider from "./providers/ThemeProvider";
 import { setupLatexOptimization } from "./utils/rendering/latexOptimizer";

@@ -32,7 +32,6 @@ const MainContent: React.FC = () => {
 
   // 创建引用
   const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
-  // PDF 预览已改为浏览器原生新标签页打开，不再需要 PDF 容器引用
 
   // 自动计算面包屑最大项目数
   const [breadcrumbsMaxItems, setBreadcrumbsMaxItems] = useState<number>(0); // 0表示不限制
@@ -378,14 +377,53 @@ const MainContent: React.FC = () => {
                 readmeContent={readmeContent}
                 loadingReadme={false}
                 isSmallScreen={isSmallScreen}
-                isReadme={true}
                 lazyLoad={false}
                 data-oid="6nohd:r"
               />
             </Box>
           )}
 
-          {/* PDF 预览已改为浏览器原生打开，不在应用内渲染 */}
+          {/* Markdown文件预览（非README） */}
+          {previewState.previewingItem && previewState.previewContent && (
+            <Box
+              sx={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: theme.zIndex.modal + 100,
+                bgcolor: "background.default",
+                overflow: "auto",
+                p: { xs: 2, sm: 3, md: 4 },
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  closePreview();
+                }
+              }}
+              data-oid="md-preview-fs"
+            >
+              <Box
+                sx={{
+                  maxWidth: "1200px",
+                  mx: "auto",
+                  width: "100%",
+                }}
+                data-oid="md-preview-container"
+              >
+                <LazyMarkdownPreview
+                  readmeContent={previewState.previewContent}
+                  loadingReadme={previewState.loadingPreview}
+                  isSmallScreen={isSmallScreen}
+                  previewingItem={previewState.previewingItem}
+                  onClose={closePreview}
+                  lazyLoad={false}
+                  data-oid="md-file-preview"
+                />
+              </Box>
+            </Box>
+          )}
 
           {/* 图像预览 */}
           {previewState.previewingImageItem && previewState.imagePreviewUrl && (

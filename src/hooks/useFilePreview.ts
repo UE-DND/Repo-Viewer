@@ -198,21 +198,16 @@ export const useFilePreview = (
     const fileNameLower = item.name.toLowerCase();
 
     if (isMarkdownFile(fileNameLower)) {
-        if (fileNameLower === 'readme.md') {
-          updateUrlWithHistory(dirPath, item.path);
-          dispatch({ type: 'SET_MD_LOADING', loading: true });
+        updateUrlWithHistory(dirPath, item.path);
+        dispatch({ type: 'SET_MD_LOADING', loading: true });
 
-          try {
-            const content = await GitHubService.getFileContent(item.download_url);
-            dispatch({ type: 'SET_MD_PREVIEW', content, item });
-          } catch (error: any) {
-            onError(`加载Markdown文件失败: ${error.message}`);
-          } finally {
-            dispatch({ type: 'SET_MD_LOADING', loading: false });
-          }
-        } else {
-          onError('已禁用Markdown文件预览功能，如需查看内容请下载文件');
-          logger.info(`阻止加载非README的Markdown文件: ${item.path}`);
+        try {
+          const content = await GitHubService.getFileContent(item.download_url);
+          dispatch({ type: 'SET_MD_PREVIEW', content, item });
+        } catch (error: any) {
+          onError(`加载Markdown文件失败: ${error.message}`);
+        } finally {
+          dispatch({ type: 'SET_MD_LOADING', loading: false });
         }
       }
       else if (isPdfFile(fileNameLower)) {

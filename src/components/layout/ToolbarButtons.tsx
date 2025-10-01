@@ -76,8 +76,26 @@ const ToolbarButtons: React.FC = () => {
   // 处理GitHub按钮点击
   const onGitHubClick = useCallback(() => {
     const { repoOwner, repoName } = repoInfo;
-    const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
-    window.open(repoUrl, "_blank");
+    
+    // 从当前URL获取路径
+    const pathname = window.location.pathname.slice(1); // 移除开头的 '/'
+    const hash = window.location.hash;
+    
+    // 构造GitHub URL
+    let githubUrl = `https://github.com/${repoOwner}/${repoName}`;
+    
+    // 检查是否有预览文件（hash中包含 #preview=文件名）
+    const previewMatch = hash.match(/#preview=(.+)/);
+    if (previewMatch?.[1] && pathname) {
+      // 预览文件：拼接路径 + 文件名
+      const fileName = decodeURIComponent(previewMatch[1]);
+      githubUrl += `/blob/main/${pathname}/${fileName}`;
+    } else if (pathname) {
+      // 浏览目录：使用当前路径
+      githubUrl += `/tree/main/${pathname}`;
+    }
+    
+    window.open(githubUrl, "_blank");
   }, [repoInfo]);
   return (
     <Box sx={{ display: "flex", gap: 1 }} data-oid="7:zr_jb">

@@ -89,7 +89,86 @@ export default defineConfig(({ mode }) => {
   const requestLogger = new RequestLoggerMiddleware(logger);
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: 'vercel-api-handler',
+        configureServer(server) {
+          server.middlewares.use(async (req, res, next) => {
+
+            if (req.url?.startsWith('/api/github')) {
+              try {
+                logger.log('处理 API 请求:', req.url);
+
+                const module = await import('./api/github');
+                const handler = module.default;
+
+                const urlParts = req.url.split('?');
+                const query: Record<string, string | string[]> = {};
+
+                if (urlParts.length > 1) {
+                  const params = new URLSearchParams(urlParts[1]);
+                  params.forEach((value, key) => {
+                    const existing = query[key];
+                    if (existing) {
+                      query[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];
+                    } else {
+                      query[key] = value;
+                    }
+                  });
+                }
+
+                const vercelReq = {
+                  query,
+                  body: undefined,
+                  headers: req.headers,
+                  method: req.method
+                } as any;
+
+                const vercelRes = {
+                  status: (code: number) => {
+                    res.statusCode = code;
+                    return vercelRes;
+                  },
+                  json: (data: any) => {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(data));
+                    return vercelRes;
+                  },
+                  send: (data: any) => {
+                    if (Buffer.isBuffer(data)) {
+                      res.end(data);
+                    } else {
+                      res.end(data);
+                    }
+                    return vercelRes;
+                  },
+                  setHeader: (name: string, value: string | number) => {
+                    res.setHeader(name, value);
+                    return vercelRes;
+                  }
+                } as any;
+
+                await handler(vercelReq, vercelRes);
+                logger.log('API 请求处理完成');
+              } catch (error) {
+                logger.error('API handler error:', error);
+                if (!res.headersSent) {
+                  res.statusCode = 500;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({
+                    error: 'Internal server error',
+                    message: error instanceof Error ? error.message : 'Unknown error'
+                  }));
+                }
+              }
+            } else {
+              next();
+            }
+          });
+        }
+      }
+    ],
     build: {
       chunkSizeWarningLimit: 2000,
       rollupOptions: {
