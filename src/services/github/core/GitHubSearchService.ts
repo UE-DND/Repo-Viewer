@@ -3,14 +3,14 @@ import { GitHubContent } from '../../../types';
 import { logger } from '../../../utils';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
-import { 
+import {
   GITHUB_API_BASE,
   GITHUB_REPO_OWNER,
   GITHUB_REPO_NAME
 } from './GitHubConfig';
 import { shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubSearchResponse } from '../schemas/apiSchemas';
-import { 
+import {
   transformGitHubSearchResponse,
   filterAndNormalizeGitHubContents
 } from '../schemas/dataTransformers';
@@ -38,9 +38,9 @@ export class GitHubSearchService {
         query += ` extension:${fileTypeFilter}`;
       }
 
-      let rawSearchResults: unknown;
+    let rawSearchResults: unknown;
 
-  if (shouldUseServerAPI()) {
+    if (shouldUseServerAPI()) {
         // 使用服务端API执行搜索
         const response = await axios.get(`/api/github?action=search&q=${encodeURIComponent(query)}`);
         rawSearchResults = response.data;
@@ -54,7 +54,7 @@ export class GitHubSearchService {
 
         // 使用增强批处理器处理请求
         const fetchUrl = urlWithParams.toString();
-        const response = await this.batcher.enqueue(fetchUrl, async () => {
+        rawSearchResults = await this.batcher.enqueue(fetchUrl, async () => {
           logger.debug(`搜索API请求: ${fetchUrl}`);
           const result = await fetch(fetchUrl, {
             method: 'GET',
@@ -71,8 +71,6 @@ export class GitHubSearchService {
           method: 'GET',
           headers: GitHubAuth.getAuthHeaders() as Record<string, string>
         });
-
-        rawSearchResults = response;
         logger.debug(`直接请求GitHub API搜索: ${query}`);
       }
 
@@ -85,14 +83,12 @@ export class GitHubSearchService {
 
       // 转换搜索结果为内部模型
       const searchContents = transformGitHubSearchResponse(validation.data);
-      
+
       // 过滤和标准化搜索结果
-      const results = filterAndNormalizeGitHubContents(searchContents, {
+      return filterAndNormalizeGitHubContents(searchContents, {
         excludeHidden: false, // 搜索结果可能包含隐藏文件
         includeOnlyTypes: ['file'] // 搜索结果通常只包含文件
       });
-
-      return results;
     } catch (error: any) {
       logger.error(`搜索失败: ${searchTerm}`, error);
       throw new Error(`搜索失败: ${error.message}`);
@@ -113,7 +109,7 @@ export class GitHubSearchService {
     try {
       // 动态导入避免循环依赖
       const { GitHubContentService } = await import('./GitHubContentService');
-      
+
       // 首先获取当前目录的内容
       const contents = await GitHubContentService.getContents(currentPath);
 

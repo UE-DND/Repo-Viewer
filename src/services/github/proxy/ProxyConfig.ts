@@ -8,8 +8,7 @@ const proxyConfig = getProxyConfig();
 // 模式设置
 export const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
-// 强制使用服务端API代理所有请求 - 使用统一的ProxyForceManager
-export const FORCE_SERVER_PROXY = getForceServerProxy();
+export const isForceServerProxyEnabled = () => getForceServerProxy();
 
 // 定义多个代理服务URL
 export const PROXY_SERVICES = [

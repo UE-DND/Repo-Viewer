@@ -50,7 +50,7 @@ export const useRefresh = () => {
     }
   }, [loading]);
 
-  const handleRefresh = useCallback(() => {
+  return useCallback(() => {
     const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
     if (isThemeChangeOnly) {
       logger.info('检测到主题切换操作，跳过内容刷新');
@@ -90,6 +90,4 @@ export const useRefresh = () => {
       }, 3000);
     }, 10);
   }, [refresh]);
-
-  return handleRefresh;
 };

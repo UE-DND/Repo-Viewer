@@ -4,13 +4,13 @@ import { logger } from '../../../utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
-import { 
+import {
   USE_TOKEN_MODE,
   getApiUrl
 } from './GitHubConfig';
 import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubContentsResponse } from '../schemas/apiSchemas';
-import { 
+import {
   transformGitHubContentsResponse,
   filterAndNormalizeGitHubContents,
   validateGitHubContentsArray
@@ -18,7 +18,7 @@ import {
 
 export class GitHubContentService {
   private static readonly batcher = new RequestBatcher();
-  
+
   // 缓存初始化状态
   private static cacheInitialized = false;
 
@@ -53,17 +53,16 @@ export class GitHubContentService {
     try {
       let rawData: unknown;
 
-  // 根据环境决定使用服务端API还是直接调用GitHub API（运行时判定）
-  if (shouldUseServerAPI()) {
-        const response = await axios.get(`/api/github?action=getContents&path=${encodeURIComponent(path)}`);
-        rawData = response.data;
+      // 根据环境决定使用服务端API还是直接调用GitHub API（运行时判定）
+      if (shouldUseServerAPI()) {
+        rawData = (await axios.get(`/api/github?action=getContents&path=${encodeURIComponent(path)}`)).data;
         logger.debug(`通过服务端API获取内容: ${path}`);
       } else {
         // 原始直接请求GitHub API的代码
         const apiUrl = getApiUrl(path);
 
         // 使用批处理器处理请求
-        const response = await this.batcher.enqueue(apiUrl, async () => {
+        rawData = await this.batcher.enqueue(apiUrl, async () => {
           logger.debug(`API请求: ${apiUrl}`);
           const result = await fetch(apiUrl, {
             method: 'GET',
@@ -82,7 +81,6 @@ export class GitHubContentService {
           headers: GitHubAuth.getAuthHeaders() as Record<string, string>
         });
 
-        rawData = response;
         logger.debug(`直接请求GitHub API获取内容: ${path}`);
       }
 
@@ -95,7 +93,7 @@ export class GitHubContentService {
 
       // 转换为内部模型
       const rawContents = transformGitHubContentsResponse(validation.data);
-      
+
       // 过滤和标准化内容
       const contents = filterAndNormalizeGitHubContents(rawContents, {
         excludeHidden: true,
@@ -136,13 +134,13 @@ export class GitHubContentService {
     }
 
     try {
-      let response: Response;
+      const response = await (async () => {
+        if (getForceServerProxy()) {
+          // 通过服务端API获取文件内容
+          const serverApiUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(fileUrl)}`;
+          return fetch(serverApiUrl);
+        }
 
-      if (getForceServerProxy()) {
-        // 通过服务端API获取文件内容
-        const serverApiUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(fileUrl)}`;
-        response = await fetch(serverApiUrl);
-      } else {
         // 开发环境或令牌模式，通过 Vite 代理获取文件内容
         // 将 raw.githubusercontent.com URL 转换为本地代理路径
         let proxyUrl: string;
@@ -153,11 +151,11 @@ export class GitHubContentService {
           // 其他情况保持原样（可能已经是代理路径）
           proxyUrl = fileUrl;
         }
-        
-        response = await fetch(proxyUrl, {
+
+        return fetch(proxyUrl, {
           headers: USE_TOKEN_MODE ? GitHubAuth.getAuthHeaders() : {}
         });
-      }
+      })();
 
       if (!response.ok) {
         throw GitHubAuth.handleApiError(response, fileUrl, 'GET');

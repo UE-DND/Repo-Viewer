@@ -29,7 +29,7 @@ export const useGitHubContent = () => {
         logger.debug(`从URL获取路径: ${urlPath}`);
         return urlPath;
       }
-      
+
       // 如果URL中没有路径，返回空字符串（根路径）
       return '';
     } catch (e) {
@@ -73,6 +73,50 @@ export const useGitHubContent = () => {
     setError(message);
     logger.error(message);
   }, []);
+
+  // 加载README内容
+  const loadReadmeContent = useCallback(async (readmeItem: GitHubContent, requestId?: number) => {
+    if (!readmeItem || !readmeItem.download_url) return;
+
+    const readmeDir = readmeItem.path.includes('/')
+      ? readmeItem.path.split('/').slice(0, -1).join('/')
+      : '';
+
+    setLoadingReadme(true);
+    setReadmeContent(null);
+    setReadmeLoaded(false); // 重置加载状态
+
+    try {
+      const content = await GitHubService.getFileContent(readmeItem.download_url);
+
+      if (requestId && activeRequestIdRef.current !== requestId) {
+        logger.debug(`忽略过期的 README 响应: ${readmeItem.path}`);
+        return;
+      }
+
+      if (currentPathRef.current !== readmeDir) {
+        logger.debug(`README 路径已变更，忽略: ${readmeItem.path}`);
+        return;
+      }
+
+      setReadmeContent(content);
+      setReadmeLoaded(true); // 设置为已加载完成
+    } catch (e: any) {
+      if (requestId && activeRequestIdRef.current !== requestId) {
+        logger.debug(`忽略过期的 README 错误: ${readmeItem.path}`);
+        return;
+      }
+
+      logger.error(`加载README失败:`, e);
+      displayError(`加载 README 失败: ${e.message}`);
+      setReadmeContent(null);
+      setReadmeLoaded(true); // 出错时也设置为已加载完成
+    } finally {
+      if (!requestId || activeRequestIdRef.current === requestId) {
+        setLoadingReadme(false);
+      }
+    }
+  }, [displayError]);
 
   // 加载目录内容
   const loadContents = useCallback(async (path: string) => {
@@ -169,51 +213,9 @@ export const useGitHubContent = () => {
         }
       }
     }
-  }, [displayError]);
+  }, [displayError, loadReadmeContent]);
 
-  // 加载README内容
-  const loadReadmeContent = useCallback(async (readmeItem: GitHubContent, requestId?: number) => {
-    if (!readmeItem || !readmeItem.download_url) return;
 
-    const readmeDir = readmeItem.path.includes('/')
-      ? readmeItem.path.split('/').slice(0, -1).join('/')
-      : '';
-
-    setLoadingReadme(true);
-    setReadmeContent(null);
-    setReadmeLoaded(false); // 重置加载状态
-
-    try {
-      const content = await GitHubService.getFileContent(readmeItem.download_url);
-
-      if (requestId && activeRequestIdRef.current !== requestId) {
-        logger.debug(`忽略过期的 README 响应: ${readmeItem.path}`);
-        return;
-      }
-
-      if (currentPathRef.current !== readmeDir) {
-        logger.debug(`README 路径已变更，忽略: ${readmeItem.path}`);
-        return;
-      }
-
-      setReadmeContent(content);
-      setReadmeLoaded(true); // 设置为已加载完成
-    } catch (e: any) {
-      if (requestId && activeRequestIdRef.current !== requestId) {
-        logger.debug(`忽略过期的 README 错误: ${readmeItem.path}`);
-        return;
-      }
-
-      logger.error(`加载README失败:`, e);
-      displayError(`加载 README 失败: ${e.message}`);
-      setReadmeContent(null);
-      setReadmeLoaded(true); // 出错时也设置为已加载完成
-    } finally {
-      if (!requestId || activeRequestIdRef.current === requestId) {
-        setLoadingReadme(false);
-      }
-    }
-  }, [displayError]);
 
   const applyCurrentPath = useCallback((path: string, direction: NavigationDirection = 'none') => {
     if (isRefreshInProgressRef.current && refreshTargetPathRef.current) {
@@ -237,10 +239,10 @@ export const useGitHubContent = () => {
     if (currentPath !== null) {
       // 检查是否是仅主题切换的操作，如果是则不重新加载内容
       const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
-      
+
       if (!isThemeChangeOnly) {
         loadContents(currentPath);
-        
+
         // 只有在非初始加载时更新URL
         if (!isInitialLoad.current) {
           // 使用历史API更新URL，并添加历史记录
@@ -259,7 +261,7 @@ export const useGitHubContent = () => {
       }
     }
   }, [currentPath, refreshTrigger, loadContents]);
-  
+
   // 监听浏览器历史导航事件
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
@@ -269,11 +271,11 @@ export const useGitHubContent = () => {
       }
 
       logger.debug('内容管理器: 检测到历史导航事件');
-      
+
       // 从历史状态中获取路径
       const state = event.state as { path?: string; preview?: string } | null;
       logger.debug(`历史状态: ${JSON.stringify(state)}`);
-      
+
       if (state && state.path !== undefined) {
         logger.debug(`历史导航事件，路径: ${state.path}`);
         // 更新当前路径，但不添加新的历史记录
@@ -291,7 +293,7 @@ export const useGitHubContent = () => {
         }
       }
     };
-    
+
     // 处理标题点击导航到首页事件
     const handleNavigateToHome = () => {
       if (isRefreshInProgressRef.current) {
@@ -302,13 +304,13 @@ export const useGitHubContent = () => {
       logger.debug('接收到返回首页事件，正在导航到首页');
       applyCurrentPath('', 'backward');
     };
-    
+
     // 添加历史导航事件监听器
     window.addEventListener('popstate', handlePopState);
-    
+
     // 添加导航到首页事件监听器
     window.addEventListener('navigate-to-home', handleNavigateToHome as EventListener);
-    
+
     // 组件卸载时清理
     return () => {
       window.removeEventListener('popstate', handlePopState);
@@ -325,7 +327,7 @@ export const useGitHubContent = () => {
     logger.debug('触发内容刷新');
   }, []);
 
-  
+
 
   return {
     currentPath,

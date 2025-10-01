@@ -75,10 +75,9 @@ class GitHubTokenManager {
       });
 
       // 收集所有有效的PAT
-      const tokens = patKeys
+      this.tokens = patKeys
         .map(key => process.env[key])
         .filter((token): token is string => typeof token === 'string' && token.trim().length > 0);
-      this.tokens = tokens;
 
       apiLogger.info(`已加载 ${this.tokens.length} 个GitHub令牌`);
     } catch (error) {

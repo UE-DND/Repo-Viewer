@@ -1,21 +1,6 @@
-import React, { createContext, useState, useMemo, ReactNode } from "react";
-import { PaletteMode, useMediaQuery } from "@mui/material";
-
-// 颜色模式上下文类型
-interface ColorModeContextType {
-  toggleColorMode: () => void;
-  toggleAutoMode: () => void;
-  mode: PaletteMode;
-  isAutoMode: boolean;
-}
-
-// 创建颜色模式上下文
-export const ColorModeContext = createContext<ColorModeContextType>({
-  toggleColorMode: () => {},
-  toggleAutoMode: () => {},
-  mode: "light",
-  isAutoMode: false,
-});
+import React, { useMemo, useState, type ReactNode } from "react";
+import { type PaletteMode, useMediaQuery } from "@mui/material";
+import { ColorModeContext } from "./colorModeContext";
 
 // 颜色模式提供者组件Props
 interface ColorModeProviderProps {

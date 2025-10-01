@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Box,
   Skeleton,
   useTheme,
 } from "@mui/material";
-import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
+import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
 import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
 
 // Office 文档预览骨架屏
@@ -15,25 +15,7 @@ export const OfficePreviewSkeleton: React.FC<{
 }> = ({ isSmallScreen = false, visible = true, onExited }) => {
   const theme = useTheme();
   const skeletonStyles = getSkeletonStyles(theme);
-  const [isExiting, setIsExiting] = useState(!visible);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (!visible && !isExiting) {
-      setIsExiting(true);
-      timer = setTimeout(() => {
-        if (onExited) onExited();
-      }, 300);
-    } else if (visible && isExiting) {
-      setIsExiting(false);
-    }
-
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-    };
-  }, [visible, isExiting, onExited]);
+  const isExiting = useSkeletonVisibility(visible, onExited);
 
   return (
     <Box

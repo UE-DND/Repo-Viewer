@@ -28,20 +28,24 @@ export const checkLatexCount = (
  */
 export const createLatexCodeHandler = () => {
   return ({
-    node,
     inline,
-    className,
+    className = "",
     children,
     ...props
   }: any) => {
-    const match = /language-(\w+)/.exec(className || "");
+    const match = /language-(\w+)/.exec(className);
+    const language = match?.[1]?.toLowerCase();
     const isLatexBlock =
-      !inline &&
-      (match?.[1] === "math" ||
-        match?.[1] === "latex" ||
-        match?.[1] === "tex");
+      !inline && Boolean(language && ["math", "latex", "tex"].includes(language));
 
-    // 处理特殊的LaTeX代码块
+    const childText = React.Children.toArray(children)
+      .map((child) => (typeof child === "string" ? child : ""))
+      .join("");
+    const normalizedContent = childText.replace(/\n$/, "");
+    const hasLineBreak = normalizedContent.includes("\n");
+    const shouldRenderAsBlock =
+      !isLatexBlock && !inline && (Boolean(language) || hasLineBreak);
+
     if (isLatexBlock) {
       return React.createElement(
         "div",
@@ -54,10 +58,33 @@ export const createLatexCodeHandler = () => {
       );
     }
 
-    // 普通代码块
+    if (shouldRenderAsBlock) {
+      return React.createElement(
+        "pre",
+        {
+          className: className || undefined,
+          tabIndex: 0,
+          "data-language": language || undefined,
+          "data-oid": "b48y9g3"
+        },
+        React.createElement(
+          "code",
+          {
+            className,
+            ...props
+          },
+          normalizedContent
+        )
+      );
+    }
+
     return React.createElement(
       "code",
-      { className, ...props, "data-oid": "nzwnmt7" },
+      {
+        className: className || undefined,
+        ...props,
+        "data-oid": "nzwnmt7"
+      },
       children
     );
   };

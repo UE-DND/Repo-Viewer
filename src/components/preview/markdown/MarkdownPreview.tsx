@@ -10,7 +10,10 @@ import {
   Paper,
   CircularProgress,
   useTheme,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
 // 导入拆分的模块
 import { MarkdownPreviewProps } from "./types";
@@ -36,6 +39,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     loadingReadme,
     isSmallScreen,
     previewingItem,
+    onClose,
     lazyLoad = true,
   }) => {
     const theme = useTheme();
@@ -130,9 +134,10 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
     // 清理图片加载计时器
     useEffect(() => {
+      const imageState = imageStateRef.current;
       return () => {
         // 组件卸载时清理所有计时器
-        imageStateRef.current.imageTimers.forEach((timer) => {
+        imageState.imageTimers.forEach((timer) => {
           window.clearTimeout(timer);
         });
       };
@@ -163,6 +168,41 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         {/* 添加全局样式组件 */}
         {markdownGlobalStyles}
 
+        {/* 关闭按钮 */}
+        {onClose && (
+          <Tooltip title="关闭预览" placement="left">
+            <IconButton
+              onClick={onClose}
+              sx={{
+                position: "fixed",
+                top: { xs: 34, sm: 38 },
+                right: { xs: 16, sm: 24 },
+                zIndex: theme.zIndex.modal + 10,
+                bgcolor: "background.paper",
+                boxShadow: theme.shadows[4],
+                width: { xs: 36, sm: 40 },
+                height: { xs: 36, sm: 40 },
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  boxShadow: theme.shadows[6],
+                },
+                "&:active": {
+                  boxShadow: theme.shadows[8],
+                },
+                transition: theme.transitions.create(
+                  ["background-color", "box-shadow", "transform"],
+                  {
+                    duration: theme.transitions.duration.short,
+                  }
+                ),
+              }}
+              data-oid="md-close-btn"
+            >
+              <CloseIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
+            </IconButton>
+          </Tooltip>
+        )}
+
         <Paper
           square
           elevation={0}
@@ -171,30 +211,37 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
           data-oid=":p7j.31"
         >
           {shouldRender && !isThemeChanging && (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeRaw, [rehypeKatex, katexOptions]]}
-              components={{
-                a: ({ href, children, ...props }) => (
-                  <MarkdownLink href={href} {...props}>
-                    {children}
-                  </MarkdownLink>
-                ),
-                img: ({ src, alt, ...props }) => (
-                  <MarkdownImage
-                    src={src}
-                    alt={alt}
-                    previewingItem={previewingItem || null}
-                    imageState={imageStateRef.current}
-                    {...props}
-                  />
-                ),
-                code: latexCodeHandler,
-              }}
-              data-oid="53g570v"
+            <Box
+              className="markdown-body"
+              data-color-mode={theme.palette.mode}
+              data-light-theme="light"
+              data-dark-theme="dark"
             >
-              {readmeContent}
-            </ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeRaw, [rehypeKatex, katexOptions]]}
+                components={{
+                  a: ({ href, children, ...props }) => (
+                    <MarkdownLink href={href} {...props}>
+                      {children}
+                    </MarkdownLink>
+                  ),
+                  img: ({ src, alt, ...props }) => (
+                    <MarkdownImage
+                      src={src}
+                      alt={alt}
+                      previewingItem={previewingItem || null}
+                      imageState={imageStateRef.current}
+                      {...props}
+                    />
+                  ),
+                  code: latexCodeHandler,
+                }}
+                data-oid="53g570v"
+              >
+                {readmeContent}
+              </ReactMarkdown>
+            </Box>
           )}
 
           {/* 加载中或切换主题时显示 */}

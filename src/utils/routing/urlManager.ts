@@ -16,17 +16,17 @@ export function getPathFromUrl(): string {
   try {
     // 首先尝试从路径段获取
     let pathname = window.location.pathname;
-    
+
     // 移除开头的斜杠
     if (pathname.startsWith('/')) {
       pathname = pathname.substring(1);
     }
-    
+
     // 如果路径段不为空，直接返回解码后的路径
     if (pathname && pathname !== '/') {
       return decodeURIComponent(pathname);
     }
-    
+
     // 向后兼容：如果路径段为空，尝试从查询参数获取
     const urlParams = new URLSearchParams(window.location.search);
     const path = urlParams.get(URL_PARAMS.PATH) || '';
@@ -46,18 +46,17 @@ export function getPreviewFromUrl(): string {
     // 检查是否使用了查询参数格式的预览
     const urlParams = new URLSearchParams(window.location.search);
     const previewParam = urlParams.get(URL_PARAMS.PREVIEW);
-    
+
     if (previewParam) {
       return decodeURIComponent(previewParam);
     }
-    
+
     // 如果没有查询参数，检查是否有 #preview 哈希标记
     const hash = window.location.hash;
     if (hash && hash.startsWith('#preview=')) {
-      const fileName = decodeURIComponent(hash.substring('#preview='.length));
-      return fileName;
+      return decodeURIComponent(hash.substring('#preview='.length));
     }
-    
+
     return '';
   } catch (error) {
     logger.error('解析 URL 预览参数失败:', error);
@@ -74,17 +73,16 @@ export function getPreviewFromUrl(): string {
 export function buildUrlWithParams(path: string, preview?: string): string {
   // 将路径编码为 URL 路径段
   const encodedPath = path ? encodeURI(path) : '';
-  
+
   // 基础 URL 是路径
   let url = `/${encodedPath}`;
-  
+
   // 如果有预览参数，添加为哈希部分，但仅使用文件名
   if (preview) {
     // 从路径中提取文件名
-    const fileName = preview.split('/').pop() || '';
-    url += `#preview=${encodeURI(fileName)}`;
+    url += `#preview=${encodeURI(preview.split('/').pop() || '')}`;
   }
-  
+
   return url;
 }
 
@@ -129,7 +127,7 @@ export function hasPreviewParam(): boolean {
     if (urlParams.has(URL_PARAMS.PREVIEW)) {
       return true;
     }
-    
+
     // 检查哈希部分
     const hash = window.location.hash;
     return hash.startsWith('#preview=');
@@ -145,4 +143,4 @@ export function hasPreviewParam(): boolean {
  */
 export function isValidAppUrl(): boolean {
   return true; // 所有路径现在都是有效的应用 URL
-} 
+}

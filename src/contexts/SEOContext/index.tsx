@@ -1,4 +1,6 @@
-import { useMetadata, MetadataProvider } from "../MetadataContext";
+/* eslint-disable react-refresh/only-export-components */
+import { MetadataProvider } from "../MetadataContext";
+import { useMetadata } from "../MetadataContext/context";
 import { useCallback } from "react";
 
 // 导入需要的类型
@@ -34,5 +36,5 @@ export const useSEO = () => {
 };
 
 // 导出MetadataProvider作为SEOProvider以保持向后兼容
-export const SEOProvider = MetadataProvider;
-export default SEOProvider;
+export { MetadataProvider as SEOProvider };
+export default MetadataProvider;

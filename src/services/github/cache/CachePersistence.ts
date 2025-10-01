@@ -8,6 +8,37 @@ export interface PersistenceHandles {
 
 export const buildDbName = (storageKey: string) => `RepoViewerCache_${storageKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
+const ensureObjectStore = (db: IDBDatabase, storageKey: string) => {
+  if (db.objectStoreNames.contains(storageKey)) return;
+  const store = db.createObjectStore(storageKey, { keyPath: 'key' });
+  store.createIndex('timestamp', 'timestamp', { unique: false });
+  store.createIndex('lastAccess', 'lastAccess', { unique: false });
+  logger.debug(`创建IndexedDB object store: ${storageKey}`);
+};
+
+const withObjectStore = <T>(
+  db: IDBDatabase | null,
+  config: CacheConfig,
+  mode: IDBTransactionMode,
+  fallback: T,
+  executor: (store: IDBObjectStore, resolve: (value: T) => void, transaction: IDBTransaction) => void,
+): Promise<T> => {
+  return new Promise((resolve) => {
+    if (!db) return resolve(fallback);
+    try {
+      if (!db.objectStoreNames.contains(config.storageKey)) return resolve(fallback);
+      const transaction = db.transaction([config.storageKey], mode);
+      const store = transaction.objectStore(config.storageKey);
+      const resolveWithFallback = () => resolve(fallback);
+      transaction.onerror = resolveWithFallback;
+      transaction.onabort = resolveWithFallback;
+      executor(store, resolve, transaction);
+    } catch {
+      resolve(fallback);
+    }
+  });
+};
+
 export async function initIndexedDB(handles: PersistenceHandles, config: CacheConfig): Promise<void> {
   return new Promise((resolve, reject) => {
     const versionRequest = indexedDB.open(handles.dbName);
@@ -35,12 +66,7 @@ export async function initIndexedDB(handles: PersistenceHandles, config: CacheCo
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         try {
-          if (!db.objectStoreNames.contains(config.storageKey)) {
-            const store = db.createObjectStore(config.storageKey, { keyPath: 'key' });
-            store.createIndex('timestamp', 'timestamp', { unique: false });
-            store.createIndex('lastAccess', 'lastAccess', { unique: false });
-            logger.debug(`创建IndexedDB object store: ${config.storageKey}`);
-          }
+          ensureObjectStore(db, config.storageKey);
         } catch (error) {
           logger.warn('创建IndexedDB object store失败', error);
           throw error;
@@ -65,12 +91,7 @@ export async function initIndexedDB(handles: PersistenceHandles, config: CacheCo
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         try {
-          if (!db.objectStoreNames.contains(config.storageKey)) {
-            const store = db.createObjectStore(config.storageKey, { keyPath: 'key' });
-            store.createIndex('timestamp', 'timestamp', { unique: false });
-            store.createIndex('lastAccess', 'lastAccess', { unique: false });
-            logger.debug(`创建IndexedDB object store: ${config.storageKey}`);
-          }
+          ensureObjectStore(db, config.storageKey);
         } catch (error) {
           logger.warn('创建IndexedDB object store失败', error);
           throw error;
@@ -104,92 +125,42 @@ export async function deleteDatabase(dbName: string): Promise<void> {
 }
 
 export function loadItemFromIndexedDB(db: IDBDatabase | null, config: CacheConfig, key: string): Promise<CacheItemMeta | undefined> {
-  return new Promise((resolve) => {
-    if (!db) return resolve(undefined);
-    try {
-      if (!db.objectStoreNames.contains(config.storageKey)) return resolve(undefined);
-      const transaction = db.transaction([config.storageKey], 'readonly');
-      const store = transaction.objectStore(config.storageKey);
-      const request = store.get(key);
-      request.onsuccess = () => resolve(request.result ? request.result.data : undefined);
-      request.onerror = () => resolve(undefined);
-      transaction.onerror = () => resolve(undefined);
-      transaction.onabort = () => resolve(undefined);
-    } catch {
-      resolve(undefined);
-    }
+  return withObjectStore(db, config, 'readonly', undefined, (store, resolve) => {
+    const request = store.get(key);
+    request.onsuccess = () => resolve(request.result ? request.result.data : undefined);
+    request.onerror = () => resolve(undefined);
   });
 }
 
 export function saveItemToIndexedDB(db: IDBDatabase | null, config: CacheConfig, key: string, item: CacheItemMeta): Promise<void> {
-  return new Promise((resolve) => {
-    if (!db) return resolve();
-    try {
-      if (!db.objectStoreNames.contains(config.storageKey)) return resolve();
-      const transaction = db.transaction([config.storageKey], 'readwrite');
-      const store = transaction.objectStore(config.storageKey);
-      const request = store.put({ key, data: item, timestamp: item.timestamp, lastAccess: item.lastAccess });
-      request.onsuccess = () => resolve();
-      request.onerror = () => resolve();
-      transaction.onerror = () => resolve();
-      transaction.onabort = () => resolve();
-    } catch {
-      resolve();
-    }
+  return withObjectStore(db, config, 'readwrite', undefined, (store, resolve) => {
+    const request = store.put({ key, data: item, timestamp: item.timestamp, lastAccess: item.lastAccess });
+    request.onsuccess = () => resolve(undefined);
+    request.onerror = () => resolve(undefined);
   });
 }
 
 export function deleteItemFromIndexedDB(db: IDBDatabase | null, config: CacheConfig, key: string): Promise<void> {
-  return new Promise((resolve) => {
-    if (!db) return resolve();
-    try {
-      if (!db.objectStoreNames.contains(config.storageKey)) return resolve();
-      const transaction = db.transaction([config.storageKey], 'readwrite');
-      const store = transaction.objectStore(config.storageKey);
-      const request = store.delete(key);
-      request.onsuccess = () => resolve();
-      request.onerror = () => resolve();
-      transaction.onerror = () => resolve();
-      transaction.onabort = () => resolve();
-    } catch {
-      resolve();
-    }
+  return withObjectStore(db, config, 'readwrite', undefined, (store, resolve) => {
+    const request = store.delete(key);
+    request.onsuccess = () => resolve(undefined);
+    request.onerror = () => resolve(undefined);
   });
 }
 
 export function clearIndexedDB(db: IDBDatabase | null, config: CacheConfig): Promise<void> {
-  return new Promise((resolve) => {
-    if (!db) return resolve();
-    try {
-      if (!db.objectStoreNames.contains(config.storageKey)) return resolve();
-      const transaction = db.transaction([config.storageKey], 'readwrite');
-      const store = transaction.objectStore(config.storageKey);
-      const request = store.clear();
-      request.onsuccess = () => resolve();
-      request.onerror = () => resolve();
-      transaction.onerror = () => resolve();
-      transaction.onabort = () => resolve();
-    } catch {
-      resolve();
-    }
+  return withObjectStore(db, config, 'readwrite', undefined, (store, resolve) => {
+    const request = store.clear();
+    request.onsuccess = () => resolve(undefined);
+    request.onerror = () => resolve(undefined);
   });
 }
 
 export function loadAllFromIndexedDB(db: IDBDatabase | null, config: CacheConfig): Promise<Array<{ key: string; data: CacheItemMeta; timestamp: number }>> {
-  return new Promise((resolve) => {
-    if (!db) return resolve([]);
-    try {
-      if (!db.objectStoreNames.contains(config.storageKey)) return resolve([]);
-      const transaction = db.transaction([config.storageKey], 'readonly');
-      const store = transaction.objectStore(config.storageKey);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => resolve([]);
-      transaction.onerror = () => resolve([]);
-      transaction.onabort = () => resolve([]);
-    } catch {
-      resolve([]);
-    }
+  return withObjectStore(db, config, 'readonly', [] as Array<{ key: string; data: CacheItemMeta; timestamp: number }>, (store, resolve) => {
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => resolve([]);
   });
 }
 
