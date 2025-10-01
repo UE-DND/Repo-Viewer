@@ -8,13 +8,10 @@ const MONO_FONT =
 
 export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
   const isDark = theme.palette.mode === "dark";
-  const textColor = isDark ? "var(--fgColor-default)" : theme.palette.common.black;
-  const secondaryTextColor = isDark
-    ? alpha(theme.palette.common.white, 0.7)
-    : theme.palette.text.secondary;
+  const textColor = theme.palette.text.primary;
+  const secondaryTextColor = theme.palette.text.secondary;
   const primary = theme.palette.primary.main;
   const blockquoteBorderColor = alpha(primary, isDark ? 0.55 : 0.4);
-  const blockquoteBackground = alpha(primary, isDark ? 0.18 : 0.08);
   const codeSurfaceColor = alpha(primary, isDark ? 0.22 : 0.12);
   const codeBorderColor = alpha(primary, isDark ? 0.45 : 0.28);
   const dividerColor = alpha(
@@ -37,14 +34,10 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
   bgcolor: "background.paper",
   border: "1px solid",
   borderColor: "divider",
-  boxShadow: `0 10px 30px ${alpha(
-    theme.palette.common.black,
-    theme.palette.mode === "dark" ? 0.3 : 0.08,
-  )}`,
 
   "& .markdown-body": {
-    color: textColor,
-    backgroundColor: "transparent",
+    color: `${textColor} !important`,
+    backgroundColor: "transparent !important",
     fontSize: "1rem",
     lineHeight: 1.7,
     wordBreak: "break-word",
@@ -55,13 +48,41 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
     }),
   },
 
+  "& .markdown-body *": {
+    borderColor: `${dividerColor} !important`,
+  },
+
   "& .markdown-body :where(h1, h2, h3, h4, h5, h6)": {
     color: textColor,
+  },
+
+  "& .markdown-body a": {
+    color: primary,
+    textDecoration: "none",
+    "&:hover": {
+      textDecoration: "underline",
+    },
+  },
+
+  "& .markdown-body strong": {
+    color: textColor,
+    fontWeight: 600,
+  },
+
+  "& .markdown-body em": {
+    color: textColor,
+    fontStyle: "italic",
+  },
+
+  "& .markdown-body del": {
+    color: secondaryTextColor,
+    textDecoration: "line-through",
   },
 
   "& .markdown-body p": {
     marginTop: theme.spacing(2),
     marginBottom: theme.spacing(2),
+    color: textColor,
   },
 
   "& .markdown-body ul, & .markdown-body ol": {
@@ -96,6 +117,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
   "& .markdown-body li": {
     marginTop: theme.spacing(0.75),
     marginBottom: theme.spacing(0.75),
+    color: textColor,
   },
 
   "& .markdown-body li > p": {
@@ -104,12 +126,11 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
   },
 
   "& .markdown-body blockquote": {
-    margin: theme.spacing(2, 0),
-    padding: theme.spacing(0.1, 2),
+    padding: theme.spacing(0, 2),
     borderLeft: `4px solid ${blockquoteBorderColor}`,
-    backgroundColor: blockquoteBackground,
     color: secondaryTextColor,
-    borderRadius: `0 ${g3BorderRadius(G3_PRESETS.card)} ${g3BorderRadius(G3_PRESETS.card)} 0`,
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
   },
 
   "& .markdown-body hr": {
@@ -132,22 +153,49 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
     padding: theme.spacing(1),
     border: `1px solid ${dividerColor}`,
     textAlign: "left",
-    color: textColor,
+    color: `${textColor} !important`,
+    backgroundColor: `${theme.palette.background.paper} !important`,
   },
 
   "& .markdown-body table th": {
     fontWeight: 600,
-    backgroundColor: tableHeaderBackground,
+    backgroundColor: `${tableHeaderBackground} !important`,
+  },
+
+  "& .markdown-body table tbody tr": {
+    backgroundColor: `${theme.palette.background.paper} !important`,
   },
 
   "& .markdown-body table tbody tr:nth-of-type(2n)": {
-    backgroundColor: tableStripeBackground,
+    backgroundColor: `${tableStripeBackground} !important`,
+  },
+
+  "& .markdown-body table tbody tr:nth-of-type(2n) td": {
+    backgroundColor: `${tableStripeBackground} !important`,
+  },
+
+  "& .markdown-body table tbody tr:nth-of-type(odd) td": {
+    backgroundColor: `${theme.palette.background.paper} !important`,
+  },
+
+  // 支持内联样式的 table
+  "& .markdown-body table[style*='border: none']": {
+    border: "none !important",
+    backgroundColor: "transparent !important",
+  },
+
+  "& .markdown-body table[style*='border: none'] th, & .markdown-body table[style*='border: none'] td": {
+    border: "none !important",
+    backgroundColor: "transparent !important",
+  },
+
+  "& .markdown-body table[style*='border: none'] tbody tr": {
+    backgroundColor: "transparent !important",
   },
 
   "& .markdown-body pre": {
     marginTop: theme.spacing(0),
     marginBottom: theme.spacing(0),
-    padding: 0,
     overflowX: "auto",
     borderRadius: g3BorderRadius(G3_PRESETS.card),
     backgroundColor: "transparent",

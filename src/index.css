@@ -29,7 +29,7 @@ body::after {
   pointer-events: none;
   z-index: -1;
   transition: opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0);
-  will-change: opacity; 
+  will-change: opacity;
 }
 body.theme-transition::after {
   opacity: 0.8;
@@ -46,18 +46,18 @@ body.theme-transition::after {
 }
 body.theme-transition .MuiContainer-root {
   transform: scale(0.98);
-  will-change: transform; 
+  will-change: transform;
 }
 body.theme-transition .MuiAppBar-root {
   transform: translateY(-2px);
-  will-change: transform; 
+  will-change: transform;
 }
 body.theme-transition .file-list-container {
   transform: scale(0.98) !important;
   opacity: 0.4 !important;
   transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
               opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
-  will-change: transform, opacity; 
+  will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   -webkit-perspective: 1000;
@@ -68,7 +68,7 @@ body.theme-transition .readme-container {
   opacity: 0.2 !important;
   transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
               opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
-  will-change: transform, opacity; 
+  will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   -webkit-perspective: 1000;
@@ -79,7 +79,7 @@ body.theme-transition .MuiBreadcrumbs-root {
   opacity: 0.7 !important;
   transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
               opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
-  will-change: transform, opacity; 
+  will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   -webkit-perspective: 1000;
@@ -88,11 +88,11 @@ body.theme-transition .MuiBreadcrumbs-root {
 body.theme-transition .MuiLinearProgress-root {
   opacity: 1 !important;
   transition: opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
-  will-change: opacity; 
+  will-change: opacity;
 }
 .MuiTouchRipple-ripple {
   transition-duration: 550ms !important;
-  will-change: transform, opacity; 
+  will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   transform: translateZ(0);
@@ -115,13 +115,13 @@ body.theme-transition .MuiLinearProgress-root {
 .no-transition * {
   transition: none !important;
 }
-input, select, textarea, 
+input, select, textarea,
 *:active, *:focus {
   transition-duration: 0ms !important;
 }
 body {
-  margin: 0; 
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif; 
+  margin: 0;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -172,13 +172,13 @@ body {
   background: transparent;
 }
 .pdf-page-shadow {
-  box-shadow: none !important; 
+  box-shadow: none !important;
 }
 .pdf-page-shadow canvas {
   margin: 0;
   display: block;
-  box-sizing: content-box; 
-  background-color: white; 
+  box-sizing: content-box;
+  background-color: white;
 }
 .active-pdf-page {
   position: relative;
@@ -377,21 +377,21 @@ body {
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
     transition: scrollbar-color 0.8s ease; /* 增加过渡时间 */
   }
-  
+
   .virtual-file-list:not(.is-scrolling) {
     scrollbar-color: transparent transparent; /* 完全透明的滚动条 */
     transition: scrollbar-color 0.8s ease; /* 平滑过渡 */
   }
-  
+
   .virtual-file-list.is-scrolling {
     scrollbar-width: thin;
   }
-  
+
   [data-theme="dark"] .virtual-file-list {
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     transition: scrollbar-color 0.8s ease; /* 增加过渡时间 */
   }
-  
+
   [data-theme="dark"] .virtual-file-list:not(.is-scrolling) {
     scrollbar-color: transparent transparent; /* 完全透明的滚动条 */
     transition: scrollbar-color 0.8s ease; /* 平滑过渡 */
@@ -590,7 +590,7 @@ html:not([data-theme="dark"]) .katex-display {
   .katex {
     font-size: 1em;
   }
-  
+
   .katex-display {
     padding: 0.3em;
     margin: 0.7em 0;
@@ -600,8 +600,8 @@ html:not([data-theme="dark"]) .katex-display {
 
 /* 刷新内容时使用与主题切换相同的动画效果 */
 body.refreshing .file-list-container {
-  transform: scale(0.99) !important; /* 比主题切换更柔和的缩放 */
-  opacity: 0.5 !important; /* 比主题切换更高的透明度 */
+  transform: scale(0.99) !important;
+  opacity: 0.5 !important;
   transition: transform 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
               opacity 700ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
   will-change: transform, opacity;
@@ -741,4 +741,4 @@ html[data-theme-change-only="true"] .readme-container .MuiPaper-root {
 /* 确保README容器中的加载指示器不显示 */
 .readme-container .MuiCircularProgress-root {
   display: none !important;
-} 
+}

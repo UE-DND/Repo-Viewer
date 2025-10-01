@@ -80,14 +80,14 @@ export const G3_PRESETS = {
 
   // 面包屑导航
   breadcrumb: {
-    radius: 20,
-    smoothness: 0.8,
+    radius: 28,
+    smoothness: 1.0,
   } as G3CurveConfig,
 
   // 面包屑项
   breadcrumbItem: {
-    radius: 12,
-    smoothness: 0.8,
+    radius: 28,
+    smoothness: 1.0,
   } as G3CurveConfig,
 
   // 提示框

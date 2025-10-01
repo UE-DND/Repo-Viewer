@@ -140,8 +140,8 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
           itemsBeforeCollapse={isSmallScreen ? 1 : 2}
           itemsAfterCollapse={isSmallScreen ? 1 : 2}
           sx={{
-            px: { xs: 1, sm: 1.5 },
-            py: { xs: 0.75, sm: 1.1 },
+            px: { xs: 1, sm: 1.2 },
+            py: { xs: 0.75, sm: 1. },
             bgcolor: "background.paper",
             borderRadius: g3Styles.breadcrumb().borderRadius,
             boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.05)",
