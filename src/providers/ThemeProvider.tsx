@@ -2,7 +2,7 @@ import React, { useMemo, ReactNode } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { createMaterialYouTheme } from "../theme";
-import { ColorModeContext } from "../contexts/ColorModeContext";
+import { ColorModeContext } from "../contexts/colorModeContext";
 import { useThemeMode } from "../hooks/useThemeMode";
 
 interface ThemeProviderProps {

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { alpha } from "@mui/material";
 import { fadeAnimation, fadeOutAnimation } from "../../../theme/animations";
 
@@ -30,3 +31,25 @@ export const getContainerTransitionStyles = (isExiting: boolean) => ({
   visibility: isExiting ? "hidden" : "visible",
   transitionDelay: isExiting ? "0s" : "0.1s",
 });
+
+export const useSkeletonVisibility = (visible: boolean, onExited?: () => void) => {
+  const [isExiting, setIsExiting] = useState(!visible);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (!visible && !isExiting) {
+      setIsExiting(true);
+      timer = setTimeout(() => {
+        onExited?.();
+      }, 300);
+    } else if (visible && isExiting) {
+      setIsExiting(false);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [visible, isExiting, onExited]);
+
+  return isExiting;
+};

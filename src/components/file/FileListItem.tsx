@@ -27,7 +27,7 @@ import { getFeaturesConfig } from '../../config';
 const featuresConfig = getFeaturesConfig();
 const HOMEPAGE_FILTER_ENABLED = featuresConfig.homepageFilter.enabled;
 const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
-const HIDE_MAIN_FOLDER_DOWNLOAD = featuresConfig.hideDownload.enabled; 
+const HIDE_MAIN_FOLDER_DOWNLOAD = featuresConfig.hideDownload.enabled;
 const HIDE_DOWNLOAD_FOLDERS = featuresConfig.hideDownload.hiddenFolders;
 
 interface FileListItemProps {
@@ -167,7 +167,7 @@ const FileListItem = memo<FileListItemProps>(
               placement="left"
               enterDelay={300}
               leaveDelay={0}
-              componentsProps={{
+              slotProps={{
                 tooltip: {
                   sx: {
                     bgcolor: "background.paper",

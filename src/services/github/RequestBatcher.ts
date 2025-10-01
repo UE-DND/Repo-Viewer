@@ -1,7 +1,7 @@
 import { logger } from '../../utils';
 
 export class RequestBatcher {
-  private batchedRequests: Map<string, {
+  private readonly batchedRequests: Map<string, {
     resolve: (value: any) => void;
     reject: (reason: any) => void;
     timestamp: number;
@@ -10,20 +10,20 @@ export class RequestBatcher {
   }[]> = new Map();
 
   // 进行中的请求
-  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private readonly pendingRequests: Map<string, Promise<any>> = new Map();
 
   // 请求指纹缓存（用于去重）
-  private requestFingerprints: Map<string, {
+  private readonly requestFingerprints: Map<string, {
     result: any;
     timestamp: number;
     hitCount: number;
   }> = new Map();
 
   private batchTimeout: number | null = null;
-  private batchDelay = 20; // 批处理延迟毫秒
-  private maxRetries = 3; // 最大重试次数
-  private fingerprintTTL = 5 * 60 * 1000; // 指纹缓存5分钟
-  private cleanupInterval: number;
+  private readonly batchDelay = 20; // 批处理延迟毫秒
+  private readonly maxRetries = 3; // 最大重试次数
+  private readonly fingerprintTTL = 5 * 60 * 1000; // 指纹缓存5分钟
+  private readonly cleanupInterval: number;
 
   constructor() {
     // 定期清理过期的指纹缓存

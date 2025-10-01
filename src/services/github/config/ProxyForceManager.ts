@@ -23,19 +23,20 @@ export class ProxyForceManager {
   private static calculateForceServerProxy(): boolean {
     try {
       const runtimeConfig = getRuntimeConfig();
+      const accessConfig = getAccessConfig();
 
-      // 生产环境：始终强制使用服务端代理（保护令牌、统一出口）
       if (!runtimeConfig.isDev) {
         return true;
       }
 
-      // 开发环境：统一不强制使用服务端代理
-      // 原因：Vite 开发服务器不会执行 Vercel 函数（/api/*），
-      // 强制走服务端会导致返回 index.html 字符串，触发响应验证失败。
+      if (accessConfig.useTokenMode) {
+        logger.info('Token 模式已启用，优先使用服务端代理以保护令牌');
+        return true;
+      }
 
       return false;
     } catch (error) {
-      logger.warn('计算强制代理配置时出错，使用默认值false:', error);
+      logger.warn('计算强制代理配置时出错，使用默认值 false:', error);
       return false;
     }
   }
@@ -55,9 +56,9 @@ export class ProxyForceManager {
     if (!runtimeConfig.isDev) {
       reason = '生产环境，强制使用服务端代理';
     } else if (accessConfig.useTokenMode) {
-      reason = '开发环境但启用Token模式，强制使用服务端代理';
+      reason = '开发环境启用 Token 模式，尝试使用服务端代理';
     } else {
-      reason = '开发环境且未启用Token模式，不强制使用服务端代理';
+      reason = '开发环境且未启用 Token 模式，采用直连模式';
     }
 
     return {
@@ -104,9 +105,6 @@ export const getForceServerProxy = () => ProxyForceManager.getForceServerProxy()
 export const shouldUseServerAPI = () => ProxyForceManager.shouldUseServerAPI();
 export const getRequestStrategy = () => ProxyForceManager.getRequestStrategy();
 export const refreshProxyConfig = () => ProxyForceManager.refreshConfig();
-
-// 向后兼容的常量导出
-export const FORCE_SERVER_PROXY = getForceServerProxy();
 
 // 配置变更监听（静态注册，避免动态/静态混用警告）
 configManager.onConfigChange(() => {

@@ -7,7 +7,6 @@ import {
   alpha,
 } from "@mui/material";
 import { KeyboardArrowUp as ArrowUpIcon } from "@mui/icons-material";
-import { floatAnimation } from "../../theme/animations";
 
 interface ScrollToTopFabProps {
   /** 显示按钮的滚动阈值（像素） */
@@ -49,7 +48,7 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
     const animateScroll = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / scrollDuration, 1);
-      
+
       // 使用缓动函数（ease-out）
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
       const currentScrollTop = startScrollTop * (1 - easeOutQuart);
@@ -77,7 +76,7 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    
+
     // 初始检查
     checkScrollPosition();
 
@@ -99,26 +98,17 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
     "&:hover": {
       backgroundColor: alpha(theme.palette.primary.main, 0.9),
       boxShadow: theme.shadows[8],
-      transform: "scale(1.05)",
-      animation: `${floatAnimation} 2s ease-in-out infinite`,
     },
     "&:active": {
       transform: "scale(0.95)",
+      boxShadow: theme.shadows[6],
     },
-    transition: theme.transitions.create(
-      ["background-color", "box-shadow", "transform"],
-      {
-        duration: theme.transitions.duration.short,
-        easing: theme.transitions.easing.easeInOut,
-      }
-    ),
-    // 移动端适配
+    transition: "background-color 650ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 800ms cubic-bezier(0.4, 0, 0.2, 1), transform 500ms cubic-bezier(0.4, 0, 0.2, 1)",
     ...(isSmallScreen && {
       width: 48,
       height: 48,
       minHeight: 48,
     }),
-    // 自定义样式
     ...sx,
   };
 
@@ -140,7 +130,7 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
         disabled={isScrolling}
         sx={fabStyles}
       >
-        <ArrowUpIcon 
+        <ArrowUpIcon
           fontSize={isSmallScreen ? "medium" : "large"}
           sx={{
             transition: theme.transitions.create("transform", {

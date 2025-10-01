@@ -40,7 +40,7 @@ interface ErrorBoundaryState {
   retryCount: number;
 }
 
-interface ErrorBoundaryProps {
+export interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ComponentType<ErrorFallbackProps>;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
@@ -50,7 +50,7 @@ interface ErrorBoundaryProps {
   componentName?: string;
 }
 
-interface ErrorFallbackProps {
+export interface ErrorFallbackProps {
   error: Error;
   errorInfo: ErrorInfo;
   resetError: () => void;
@@ -81,7 +81,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     const { onError, componentName = 'Unknown' } = this.props;
-    
+
     // 创建组件错误并交给ErrorManager处理
     const componentError = ErrorManager.createComponentError(
       componentName,
@@ -115,7 +115,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       const hasResetKeyChanged = resetKeys.some(
         (key, idx) => prevProps.resetKeys?.[idx] !== key
       );
-      
+
       if (hasResetKeyChanged) {
         this.resetError();
       }
@@ -255,12 +255,12 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
           <Stack spacing={2} alignItems="center">
             {/* 错误图标和标题 */}
             <Box sx={{ textAlign: 'center' }}>
-              <ErrorOutline 
-                sx={{ 
-                  fontSize: isPageLevel ? 64 : 48, 
+              <ErrorOutline
+                sx={{
+                  fontSize: isPageLevel ? 64 : 48,
                   color: 'error.main',
                   mb: 1
-                }} 
+                }}
               />
               <Typography variant={isPageLevel ? 'h4' : 'h6'} gutterBottom>
                 {getErrorTitle()}
@@ -275,7 +275,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
 
             {/* 重试次数显示 */}
             {retryCount > 0 && (
-              <Chip 
+              <Chip
                 label={`已重试 ${retryCount} 次`}
                 color="warning"
                 size="small"
@@ -283,9 +283,9 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
             )}
 
             {/* 操作按钮 */}
-            <Stack 
-              direction="row" 
-              spacing={2} 
+            <Stack
+              direction="row"
+              spacing={2}
               sx={{ width: '100%' }}
               justifyContent="center"
             >
@@ -297,7 +297,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
               >
                 重试
               </Button>
-              
+
               {isPageLevel && (
                 <>
                   <Button
@@ -328,7 +328,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
                 >
                   {showDetails ? '隐藏' : '显示'}技术详情
                 </Button>
-                
+
                 <Collapse in={showDetails}>
                   <Box sx={{ mt: 2 }}>
                     <Alert severity="info">
@@ -379,26 +379,12 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
   );
 };
 
-// 高阶组件：为组件包装错误边界
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryConfig?: Omit<ErrorBoundaryProps, 'children'>
-) {
-  const WrappedComponent = (props: P) => (
-    <ErrorBoundary {...errorBoundaryConfig}>
-      <Component {...props} />
-    </ErrorBoundary>
-  );
 
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
-  return WrappedComponent;
-}
 
 // 页面级错误边界
 export const PageErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ErrorBoundary 
-    level="page" 
+  <ErrorBoundary
+    level="page"
     componentName="PageLevel"
     resetOnPropsChange={true}
   >
@@ -407,12 +393,12 @@ export const PageErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ chi
 );
 
 // 功能模块级错误边界
-export const FeatureErrorBoundary: React.FC<{ 
+export const FeatureErrorBoundary: React.FC<{
   children: React.ReactNode;
   featureName: string;
 }> = ({ children, featureName }) => (
-  <ErrorBoundary 
-    level="feature" 
+  <ErrorBoundary
+    level="feature"
     componentName={featureName}
     resetOnPropsChange={true}
   >

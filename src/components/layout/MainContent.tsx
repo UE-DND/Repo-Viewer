@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
 import {
   Container,
   useTheme,
@@ -12,9 +12,9 @@ import FileList from "../file/FileList";
 import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "../../utils/lazy-loading";
 import ErrorDisplay from "../ui/ErrorDisplay";
 import FullScreenPreview from "../file/FullScreenPreview";
-import { 
-  useContentContext, 
-  usePreviewContext, 
+import {
+  useContentContext,
+  usePreviewContext,
   useDownloadContext,
   NavigationDirection
 } from "../../contexts/unified";
@@ -32,7 +32,6 @@ const MainContent: React.FC = () => {
 
   // 创建引用
   const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
-  // PDF 预览已改为浏览器原生新标签页打开，不再需要 PDF 容器引用
 
   // 自动计算面包屑最大项目数
   const [breadcrumbsMaxItems, setBreadcrumbsMaxItems] = useState<number>(0); // 0表示不限制
@@ -79,34 +78,32 @@ const MainContent: React.FC = () => {
   }, [contents]);
 
   // 生成面包屑导航路径段
-  const generateBreadcrumbSegments = () => {
+  const breadcrumbSegments = useMemo(() => {
     const segments = [{ name: "Home", path: "" }];
 
     if (currentPath) {
       const pathParts = currentPath.split("/");
       let currentSegmentPath = "";
 
-      for (let i = 0; i < pathParts.length; i++) {
-        currentSegmentPath += (i === 0 ? "" : "/") + pathParts[i];
+      for (const part of pathParts) {
+        currentSegmentPath += currentSegmentPath ? `/${part}` : part;
         segments.push({
-          name: pathParts[i] || "",
+          name: part || "",
           path: currentSegmentPath,
         });
       }
     }
 
     return segments;
-  };
-
-  const breadcrumbSegments = generateBreadcrumbSegments();
+  }, [currentPath]);
 
   // 处理面包屑点击
-  const handleBreadcrumbClick = (
+  const handleBreadcrumbClick = useCallback((
     path: string,
     direction: NavigationDirection = "backward",
   ) => {
     navigateTo(path, direction);
-  };
+  }, [navigateTo]);
 
   // 处理文件/文件夹点击
   const handleItemClick = (item: any) => {
@@ -141,12 +138,12 @@ const MainContent: React.FC = () => {
 
   // 自动调整面包屑显示
   useEffect(() => {
-    const breadcrumbSegments = generateBreadcrumbSegments();
+    const segmentCount = breadcrumbSegments.length;
 
     // 在移动端，使用更激进的折叠策略
     if (isSmallScreen) {
       // 路径段数超过3个时，在移动端强制折叠
-      if (breadcrumbSegments.length > 3) {
+      if (segmentCount > 3) {
         setBreadcrumbsMaxItems(3);
       } else {
         setBreadcrumbsMaxItems(0); // 少于或等于3个时不折叠
@@ -156,7 +153,7 @@ const MainContent: React.FC = () => {
 
     // 桌面端逻辑
     // 如果面包屑项目少于或等于3个，不需要限制
-    if (breadcrumbSegments.length <= 3) {
+    if (segmentCount <= 3) {
       setBreadcrumbsMaxItems(0); // 0表示不限制
       return;
     }
@@ -182,7 +179,7 @@ const MainContent: React.FC = () => {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [currentPath, isSmallScreen, generateBreadcrumbSegments]);
+  }, [breadcrumbSegments, isSmallScreen]);
 
   // 处理从 URL 加载预览
   useEffect(() => {
@@ -211,12 +208,11 @@ const MainContent: React.FC = () => {
         currentPreviewItemRef.current = fileItem;
 
         // 避免重复加载已经打开的预览
-        const hasActivePreview = !!(
+        const hasActivePreview =
           previewState.previewingItem?.path === fileItem.path ||
           previewState.previewingPdfItem?.path === fileItem.path ||
           previewState.previewingImageItem?.path === fileItem.path ||
-          previewState.previewingOfficeItem?.path === fileItem.path
-        );
+          previewState.previewingOfficeItem?.path === fileItem.path;
 
         if (!hasActivePreview) {
           logger.debug(`预览文件未打开，正在加载: ${fileItem.path}`);
@@ -381,14 +377,53 @@ const MainContent: React.FC = () => {
                 readmeContent={readmeContent}
                 loadingReadme={false}
                 isSmallScreen={isSmallScreen}
-                isReadme={true}
                 lazyLoad={false}
                 data-oid="6nohd:r"
               />
             </Box>
           )}
 
-          {/* PDF 预览已改为浏览器原生打开，不在应用内渲染 */}
+          {/* Markdown文件预览（非README） */}
+          {previewState.previewingItem && previewState.previewContent && (
+            <Box
+              sx={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: theme.zIndex.modal + 100,
+                bgcolor: "background.default",
+                overflow: "auto",
+                p: { xs: 2, sm: 3, md: 4 },
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  closePreview();
+                }
+              }}
+              data-oid="md-preview-fs"
+            >
+              <Box
+                sx={{
+                  maxWidth: "1200px",
+                  mx: "auto",
+                  width: "100%",
+                }}
+                data-oid="md-preview-container"
+              >
+                <LazyMarkdownPreview
+                  readmeContent={previewState.previewContent}
+                  loadingReadme={previewState.loadingPreview}
+                  isSmallScreen={isSmallScreen}
+                  previewingItem={previewState.previewingItem}
+                  onClose={closePreview}
+                  lazyLoad={false}
+                  data-oid="md-file-preview"
+                />
+              </Box>
+            </Box>
+          )}
 
           {/* 图像预览 */}
           {previewState.previewingImageItem && previewState.imagePreviewUrl && (
