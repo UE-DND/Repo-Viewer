@@ -18,7 +18,7 @@
     "@types/react-dom": "^19.1.2",
     "@types/react-virtualized-auto-sizer": "^1.0.4",
     "@types/react-window": "^1.8.8",
-    "@vercel/node": "^5.1.14",
+    "@vercel/node": "^5.3.24",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.9.1",
@@ -63,6 +63,11 @@
     "react-helmet-async": {
       "react": "^19.0.0",
       "react-dom": "^19.0.0"
+    },
+    "@vercel/node": {
+      "esbuild": "^0.25.0",
+      "path-to-regexp": "^6.3.0",
+      "undici": "^5.29.0"
     }
   }
 }
