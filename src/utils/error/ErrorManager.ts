@@ -15,9 +15,9 @@ import {
   GitHubError,
   ComponentError,
   FileOperationError
-} from '../../types/errors';
+} from '@/types/errors';
 import { logger } from '../logging/logger';
-import { getDeveloperConfig } from '../../config';
+import { getDeveloperConfig } from '@/config';
 
 class ErrorManagerClass {
   private errorHistory: AppError[] = [];

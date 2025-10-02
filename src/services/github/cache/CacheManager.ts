@@ -1,4 +1,4 @@
-import { logger } from '../../../utils';
+import { logger } from '@/utils';
 import type { CacheStats } from './CacheTypes';
 import { AdvancedCache, LRUCache } from './AdvancedCache';
 import { CONTENT_CACHE_CONFIG, FILE_CACHE_CONFIG } from './CacheConfig';

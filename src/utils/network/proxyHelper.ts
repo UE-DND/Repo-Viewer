@@ -1,6 +1,6 @@
 import { logger } from '../logging/logger';
 // 导入GitHubService以使用其多代理机制
-import { GitHubService } from '../../services/github';
+import { GitHubService } from '@/services/github';
 
 // 获取处理过的URL，解决CORS问题
 export const getProxiedUrl = (url: string): string => {

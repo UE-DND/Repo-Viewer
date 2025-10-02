@@ -5,8 +5,7 @@ import {
   alpha,
   useTheme,
 } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "../../../../theme/g3Curves";
-
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import RefreshIcon from "@mui/icons-material/Refresh";
 

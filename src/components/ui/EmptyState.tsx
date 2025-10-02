@@ -8,8 +8,8 @@ import {
   Stack,
   Button,
 } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from '../../theme/g3Curves';
-import { scaleInAnimation } from "../../theme/animations";
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
+import { scaleInAnimation } from "@/theme/animations";
 import {
   FolderOpen as FolderOpenIcon,
   CloudOff as CloudOffIcon,

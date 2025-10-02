@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSEO } from "../../contexts/SEOContext";
+import { useSEO } from "@/contexts/SEOContext";
 import SEO from "./SEO";
 
 interface DynamicSEOProps {

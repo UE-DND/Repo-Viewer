@@ -5,17 +5,17 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { ErrorManager } from '../utils/error/ErrorManager';
+import { ErrorManager } from '@/utils/error/ErrorManager';
 import { 
   AppError, 
   ErrorLevel, 
-  ErrorCategory, 
+  ErrorCategory,
   GitHubError, 
   NetworkError, 
   FileOperationError 
-} from '../types/errors';
-import { getDeveloperConfig } from '../config';
-import { logger } from '../utils';
+} from '@/types/errors';
+import { getDeveloperConfig } from '@/config';
+import { logger } from '@/utils';
 
 export interface UseErrorHandlerOptions {
   showNotification?: boolean;

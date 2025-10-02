@@ -1,7 +1,7 @@
 import { GitHubTokenManager } from '../TokenManager';
 import { ProxyService } from '../proxy/ProxyService';
-import { ErrorManager } from '../../../utils/error/ErrorManager';
-import { GitHubError } from '../../../types/errors';
+import { ErrorManager } from '@/utils/error/ErrorManager';
+import { GitHubError } from '@/types/errors';
 import { shouldUseServerAPI } from '../config/ProxyForceManager';
 
 export class GitHubAuth {

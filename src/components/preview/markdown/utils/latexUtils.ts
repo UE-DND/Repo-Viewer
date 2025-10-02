@@ -1,6 +1,6 @@
 import React from "react";
-import { countLatexElements } from "../../../../utils/rendering/latexOptimizer";
-import { logger } from '../../../../utils';
+import { countLatexElements } from "@/utils/rendering/latexOptimizer";
+import { logger } from '@/utils';
 
 /**
  * 检测LaTeX公式数量

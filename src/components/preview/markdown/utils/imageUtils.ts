@@ -1,6 +1,6 @@
-import { GitHubService } from "../../../../services/github/core/GitHubService";
-import { GitHubContent } from "../../../../types";
-import { logger } from "../../../../utils";
+import { GitHubService } from "@/services/github/core/GitHubService";
+import { GitHubContent } from "@/types";
+import { logger } from "@/utils";
 
 export interface ImageLoadingState {
   loadedImages: Set<string>;

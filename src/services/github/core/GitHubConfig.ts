@@ -1,4 +1,4 @@
-import { getGithubConfig, getAccessConfig } from '../../../config';
+import { getGithubConfig, getAccessConfig } from '@/config';
 
 // 基础配置
 const githubConfig = getGithubConfig();

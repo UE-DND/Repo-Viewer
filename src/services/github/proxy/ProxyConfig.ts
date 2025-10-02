@@ -1,4 +1,4 @@
-import { getAccessConfig, getProxyConfig } from '../../../config';
+import { getAccessConfig, getProxyConfig } from '@/config';
 import { getForceServerProxy } from '../config/ProxyForceManager';
 
 // 获取配置

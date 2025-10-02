@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { alpha } from "@mui/material";
-import { fadeAnimation, fadeOutAnimation } from "../../../theme/animations";
+import { fadeAnimation, fadeOutAnimation } from "@/theme/animations";
 
 // 获取骨架屏样式，使用当前主题颜色
 export const getSkeletonStyles = (theme: any) => ({

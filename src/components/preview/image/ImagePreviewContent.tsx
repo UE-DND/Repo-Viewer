@@ -9,14 +9,10 @@ import {
 } from '@mui/material';
 import { Replay as ReplayIcon } from '@mui/icons-material';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { ImagePreviewSkeleton } from '../../ui/skeletons';
+import { ImagePreviewSkeleton } from '@/components/ui/skeletons';
 import ImageToolbar from './ImageToolbar';
 import type { ImagePreviewContentProps } from './types';
 
-/**
- * 图片预览内容组件
- * 包含图片显示、缩放、旋转等核心功能
- */
 const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   imageUrl,
   fileName,

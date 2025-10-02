@@ -9,7 +9,7 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { OfficePreviewProps } from "./types";
 import {
   Close as CloseIcon,
@@ -21,10 +21,6 @@ import { getFileTypeName, generatePreviewUrl } from './utils';
 
 interface MobileOfficePreviewProps extends OfficePreviewProps {}
 
-/**
- * 移动端Office文档预览组件
- * 针对移动设备优化的Office文档预览界面
- */
 const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
   fileUrl,
   fileType,
@@ -66,7 +62,6 @@ const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
       className={`${className} ${fileType}-preview-container`}
       data-oid="d6q8zg3"
     >
-      {/* 标题栏 */}
       <Box
         sx={{
           display: "flex",

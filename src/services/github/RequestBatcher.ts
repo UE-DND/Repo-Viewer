@@ -1,4 +1,4 @@
-import { logger } from '../../utils';
+import { logger } from '@/utils';
 
 export class RequestBatcher {
   private readonly batchedRequests: Map<string, {

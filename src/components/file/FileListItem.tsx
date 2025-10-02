@@ -16,14 +16,10 @@ import {
   Download as DownloadIcon,
   Cancel as CancelIcon,
 } from "@mui/icons-material";
+import { getFileIcon, logger, g3Styles } from "@/utils";
+import { GitHubContent } from "@/types";
+import { getFeaturesConfig } from '@/config';
 
-// 导入必要的变量和函数
-import { getFileIcon, logger, g3Styles } from "../../utils";
-import { GitHubContent } from "../../types";
-
-import { getFeaturesConfig } from '../../config';
-
-// 从统一配置获取配置
 const featuresConfig = getFeaturesConfig();
 const HOMEPAGE_FILTER_ENABLED = featuresConfig.homepageFilter.enabled;
 const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
@@ -43,7 +39,6 @@ interface FileListItemProps {
   contents?: GitHubContent[];
 }
 
-// 使用memo来优化FileListItem组件，避免不必要的重复渲染
 const FileListItem = memo<FileListItemProps>(
   ({
     item,
@@ -57,14 +52,12 @@ const FileListItem = memo<FileListItemProps>(
     currentPath,
     contents = [], // 提供默认空数组值
   }) => {
-    // 使用useTheme代替直接传递theme
     const theme = useTheme();
 
     const isDownloading = downloadingPath === item.path;
     const isFolderDownloading = downloadingFolderPath === item.path;
     const isItemDownloading = isDownloading || isFolderDownloading;
 
-    // 优化：缓存图标组件的引用
     const IconComponent = React.useMemo(() => {
       return item.type === "dir" ? FolderIcon : getFileIcon(item.name);
     }, [item.type, item.name]);
@@ -86,7 +79,7 @@ const FileListItem = memo<FileListItemProps>(
       );
     }, [currentPath, item.type, item.name]);
 
-    // 记录调试信息 - 仅在开发模式下执行
+    // 调试信息
     React.useEffect(() => {
       if (import.meta.env.DEV) {
         if (currentPath === "" && item.type === "dir") {
@@ -113,7 +106,6 @@ const FileListItem = memo<FileListItemProps>(
       };
     }, [contents.length]);
 
-    // 点击处理函数，避免每次渲染都创建新函数
     const handleFileItemClick = React.useCallback(() => {
       handleItemClick(item);
     }, [handleItemClick, item]);

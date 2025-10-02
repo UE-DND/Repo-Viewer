@@ -1,4 +1,4 @@
-import { GitHubContent } from '../../../types';
+import { GitHubContent } from '@/types';
 import type { 
   GitHubContentItem, 
   GitHubContentsResponse, 

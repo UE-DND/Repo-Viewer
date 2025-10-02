@@ -7,7 +7,7 @@ import {
   ListItem,
   ListItemIcon,
 } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
 
 // 文件列表骨架屏

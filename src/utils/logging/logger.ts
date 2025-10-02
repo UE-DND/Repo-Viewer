@@ -1,4 +1,4 @@
-import { getDeveloperConfig } from '../../config';
+import { getDeveloperConfig } from '@/config';
 
 // 开发者日志
 const shouldLog = (level: 'log' | 'info' | 'debug' | 'warn' | 'error' | 'group' | 'groupEnd'): boolean => {

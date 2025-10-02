@@ -7,16 +7,16 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { AppContextProvider } from "./contexts/unified";
-import MainContent from "./components/layout/MainContent";
-import ToolbarButtons from "./components/layout/ToolbarButtons";
-import { SITE_TITLE } from "./constants";
-import { GitHubService } from "./services/github";
-import { logger } from "./utils";
-import SEO from "./components/seo/SEO";
-import Footer from "./components/layout/Footer";
-import { FaviconManager } from "./components/ui/DynamicIcon";
-import { PageErrorBoundary, FeatureErrorBoundary } from "./components/ui/ErrorBoundary";
+import { AppContextProvider } from "@/contexts/unified";
+import MainContent from "@/components/layout/MainContent";
+import ToolbarButtons from "@/components/layout/ToolbarButtons";
+import { SITE_TITLE } from "@/constants";
+import { GitHubService } from "@/services/github";
+import { logger } from "@/utils";
+import SEO from "@/components/seo/SEO";
+import Footer from "@/components/layout/Footer";
+import { FaviconManager } from "@/components/ui/DynamicIcon";
+import { PageErrorBoundary, FeatureErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 // 优化后的App组件
 const App = React.memo(() => {

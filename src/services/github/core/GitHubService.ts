@@ -1,14 +1,11 @@
-import { GitHubContent } from '../../../types';
+import { GitHubContent } from '@/types';
 import { GitHubAuth } from './GitHubAuth';
 import { GitHubSearchService } from './GitHubSearchService';
 import { GitHubPrefetchService } from './GitHubPrefetchService';
 import { GitHubStatsService } from './GitHubStatsService';
 import { getConfig, ConfigInfo } from './GitHubConfig';
 
-// GitHub API服务类 - 重构后的主类，整合各个功能模块
 export class GitHubService {
-  // === 认证和配置相关方法 ===
-  
   // 获取GitHub PAT总数
   public static getTokenCount(): number {
     return GitHubAuth.getTokenCount();
@@ -29,16 +26,14 @@ export class GitHubService {
     return getConfig();
   }
 
-  // === 内容获取相关方法 ===
-  
   // 获取目录内容
   public static async getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
     const { GitHubContentService } = await import('./GitHubContentService');
     const contents = await GitHubContentService.getContents(path, signal);
-    
+
     // 预加载相关内容
     GitHubPrefetchService.prefetchRelatedContent(contents).catch(() => {});
-    
+
     return contents;
   }
 
@@ -48,8 +43,6 @@ export class GitHubService {
     return GitHubContentService.getFileContent(fileUrl);
   }
 
-  // === 搜索相关方法 ===
-  
   // 使用GitHub API进行搜索
   public static async searchWithGitHubApi(
     searchTerm: string,
@@ -69,8 +62,6 @@ export class GitHubService {
     return GitHubSearchService.searchFiles(searchTerm, currentPath, recursive, fileTypeFilter);
   }
 
-  // === 预加载相关方法 ===
-  
   // 智能预取目录内容
   public static prefetchContents(path: string, priority: 'high' | 'medium' | 'low' = 'low'): void {
     GitHubPrefetchService.prefetchContents(path, priority);
@@ -81,8 +72,6 @@ export class GitHubService {
     return GitHubPrefetchService.batchPrefetchContents(paths, maxConcurrency);
   }
 
-  // === 代理和图片处理相关方法 ===
-  
   // 标记代理服务失败
   public static markProxyServiceFailed(proxyUrl: string): void {
     GitHubAuth.markProxyServiceFailed(proxyUrl);
@@ -103,8 +92,6 @@ export class GitHubService {
     return GitHubAuth.transformImageUrl(src, markdownFilePath, useTokenMode);
   }
 
-  // === 统计和调试相关方法 ===
-  
   // 清除缓存和重置网络状态
   public static async clearCache(): Promise<void> {
     return GitHubStatsService.clearCache();

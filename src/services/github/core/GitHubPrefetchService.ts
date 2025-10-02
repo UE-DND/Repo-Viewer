@@ -1,5 +1,5 @@
-import { GitHubContent } from '../../../types';
-import { logger } from '../../../utils';
+import { GitHubContent } from '@/types';
+import { logger } from '@/utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';

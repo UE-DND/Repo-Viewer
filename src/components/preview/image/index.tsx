@@ -1,15 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
-import FullScreenPreview from '../../file/FullScreenPreview';
+import FullScreenPreview from '@/components/file/FullScreenPreview';
 import ImageThumbnail from './ImageThumbnail';
 import ImagePreviewContent from './ImagePreviewContent';
 import { useImagePreview } from './hooks/useImagePreview';
 import type { ImagePreviewProps, ImageToolbarProps } from './types';
 
-/**
- * 统一的图片预览组件
- * 支持缩放、平移、旋转等操作，可选缩略图模式
- */
 const ImagePreview: React.FC<ImagePreviewProps> = ({
   imageUrl,
   fileName = '未知文件',
@@ -24,7 +20,6 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // 使用自定义Hook管理状态和逻辑
   const {
     loading,
     error,
@@ -68,7 +63,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     scale,
     isSmallScreen,
     fullScreenMode,
-    zoomIn: () => {}, // 这些会在ImagePreviewContent中被重写
+    zoomIn: () => {},
     zoomOut: () => {},
     resetTransform: () => {},
     handleRotateLeft,

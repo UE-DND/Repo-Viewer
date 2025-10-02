@@ -1,8 +1,8 @@
 import { useSnackbar } from "notistack";
 import { ReactNode, useCallback, useMemo } from "react";
-import { useDownload } from "../../hooks/useDownload";
-import { useFilePreview } from "../../hooks/useFilePreview";
-import { useGitHubContent } from "../../hooks/useGitHubContent";
+import { useDownload } from "@/hooks/useDownload";
+import { useFilePreview } from "@/hooks/useFilePreview";
+import { useGitHubContent } from "@/hooks/useGitHubContent";
 import {
   ContentContext,
   PreviewContext,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { PaletteMode } from '@mui/material';
-import { logger } from '../utils';
-import { removeLatexElements, restoreLatexElements } from '../utils/rendering/latexOptimizer';
+import { logger } from '@/utils';
+import { removeLatexElements, restoreLatexElements } from '@/utils/rendering/latexOptimizer';
 
 const shouldUseDarkMode = (): boolean => {
   const currentHour = new Date().getHours();

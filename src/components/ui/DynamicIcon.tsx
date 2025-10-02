@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useDynamicIcon, useFaviconUpdater } from '../../hooks/useDynamicIcon';
-import { logger } from '../../utils';
+import { useDynamicIcon, useFaviconUpdater } from '@/hooks/useDynamicIcon';
+import { logger } from '@/utils';
 
 interface DynamicIconProps {
   className?: string;

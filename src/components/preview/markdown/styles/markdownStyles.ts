@@ -1,5 +1,5 @@
 import { Theme, alpha } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "../../../../theme/g3Curves";
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 const SYSTEM_FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'";

@@ -48,8 +48,6 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
     const animateScroll = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / scrollDuration, 1);
-
-      // 使用缓动函数（ease-out）
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
       const currentScrollTop = startScrollTop * (1 - easeOutQuart);
 
@@ -70,23 +68,18 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
     let timeoutId: NodeJS.Timeout;
 
     const handleScroll = () => {
-      // 使用防抖来优化性能
       clearTimeout(timeoutId);
       timeoutId = setTimeout(checkScrollPosition, 10);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-
-    // 初始检查
     checkScrollPosition();
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
       clearTimeout(timeoutId);
     };
   }, [checkScrollPosition]);
 
-  // MD3风格的按钮样式
   const fabStyles = {
     position: "fixed" as const,
     bottom: isSmallScreen ? 16 : 24,

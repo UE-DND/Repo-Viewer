@@ -1,11 +1,7 @@
-/**
- * 统一错误类型定义
- */
-
 // 错误级别枚举
 export enum ErrorLevel {
   INFO = 'info',
-  WARNING = 'warning', 
+  WARNING = 'warning',
   ERROR = 'error',
   CRITICAL = 'critical'
 }
@@ -13,7 +9,7 @@ export enum ErrorLevel {
 // 错误类别枚举
 export enum ErrorCategory {
   NETWORK = 'network',
-  API = 'api', 
+  API = 'api',
   AUTH = 'auth',
   VALIDATION = 'validation',
   FILE_OPERATION = 'file_operation',
@@ -98,9 +94,9 @@ export interface SystemError extends BaseError {
 }
 
 // 错误联合类型
-export type AppError = 
-  | APIError 
-  | NetworkError 
+export type AppError =
+  | APIError
+  | NetworkError
   | GitHubError
   | FileOperationError
   | ComponentError

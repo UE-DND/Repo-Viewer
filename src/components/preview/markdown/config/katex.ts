@@ -1,4 +1,4 @@
-import { logger } from "../../../../utils";
+import { logger } from "@/utils";
 
 // LaTeX错误处理函数
 export const handleKatexError = (message: string) => {

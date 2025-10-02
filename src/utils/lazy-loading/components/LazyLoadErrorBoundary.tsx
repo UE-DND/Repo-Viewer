@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import { g3BorderRadius, G3_PRESETS } from '../../../theme/g3Curves';
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import type { LazyLoadErrorBoundaryProps, LazyLoadErrorBoundaryState } from '../types';
 import { logger } from '../../logging/logger';
 

@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { getSiteConfig } from "../../config";
+import { getSiteConfig } from "@/config";
 
 export interface MetadataContextType {
   title: string;

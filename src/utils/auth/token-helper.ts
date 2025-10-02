@@ -1,4 +1,4 @@
-import { GitHubService } from '../../services/github';
+import { GitHubService } from '@/services/github';
 import { logger } from '../logging/logger';
 import axios from 'axios';
 

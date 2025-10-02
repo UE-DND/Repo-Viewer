@@ -4,10 +4,9 @@ import { FixedSizeList, ListChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { motion } from "framer-motion";
 import FileListItem from "./FileListItem";
-import { GitHubContent } from "../../types";
-import { g3Styles } from "../../utils";
+import { GitHubContent } from "@/types";
+import { g3Styles } from "@/utils";
 
-// 添加CSS优化，提高动画性能
 const optimizedAnimationStyle = {
   willChange: "opacity, transform",
   backfaceVisibility: "hidden" as "hidden",

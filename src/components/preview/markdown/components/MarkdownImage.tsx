@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { GitHubContent } from "../../../../types";
+import { GitHubContent } from "@/types";
 import {
   transformImageSrc,
   handleImageError,
@@ -76,10 +76,8 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
       loading="lazy"
       className={isImageLoaded ? "loaded" : isImageFailed ? "failed" : ""}
       onLoad={(e) => {
-        // 添加loaded类以触发淡入效果
         e.currentTarget.classList.add("loaded");
         e.currentTarget.style.opacity = "1";
-        
         handleImageLoad(imgSrc, imageState, setIsImageLoaded);
       }}
       onError={(e) => {
@@ -89,7 +87,6 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
           imageState,
           setIsImageFailed
         );
-        
         if (newSrc && newSrc !== imgSrc) {
           e.currentTarget.src = newSrc;
         }

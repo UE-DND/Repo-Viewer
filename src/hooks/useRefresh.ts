@@ -1,7 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { useContentContext } from '../contexts/unified';
-import { removeLatexElements, restoreLatexElements } from '../utils/rendering/latexOptimizer';
-import { logger } from '../utils';
+import { useContentContext } from '@/contexts/unified';
+import { removeLatexElements, restoreLatexElements } from '@/utils/rendering/latexOptimizer';
+import { logger } from '@/utils';
 
 const MIN_ANIMATION_DURATION = 600;
 

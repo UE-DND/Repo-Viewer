@@ -4,7 +4,6 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
-
 import {
   Box,
   Paper,
@@ -14,24 +13,20 @@ import {
   Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-
-// 导入拆分的模块
 import { MarkdownPreviewProps } from "./types";
 import { katexOptions } from "./config/katex";
-import { loadKatexStyles } from "../../../utils/lazy-loading";
+import { loadKatexStyles } from "@/utils/lazy-loading";
 import { markdownGlobalStyles } from "./styles/globalStyles";
 import { createMarkdownStyles } from "./styles/markdownStyles";
 import {
-  createImageLoadingState,
   ImageLoadingState,
+  createImageLoadingState,
 } from "./utils/imageUtils";
 import { checkLatexCount, createLatexCodeHandler } from "./utils/latexUtils";
 import { MarkdownImage } from "./components/MarkdownImage";
 import { MarkdownLink } from "./components/MarkdownLink";
-import { logger } from '../../../utils';
-
-// 导入骨架屏组件
-import { MarkdownPreviewSkeleton } from "../../ui/skeletons";
+import { logger } from "@/utils";
+import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 
 const MarkdownPreview = memo<MarkdownPreviewProps>(
   ({

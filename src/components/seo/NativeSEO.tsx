@@ -1,5 +1,5 @@
 import React from "react";
-import { useMetadata } from "../../contexts/MetadataContext/context";
+import { useMetadata } from "@/contexts/MetadataContext/context";
 
 // 基础SEO组件属性类型
 interface NativeSEOProps {

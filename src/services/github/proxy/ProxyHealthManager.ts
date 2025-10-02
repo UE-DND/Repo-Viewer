@@ -1,6 +1,6 @@
-import { getProxyConfig } from '../../../config';
+import { getProxyConfig } from '@/config';
 import { PROXY_SERVICES } from './ProxyConfig';
-import { logger } from '../../../utils';
+import { logger } from '@/utils';
 
 const proxyConfig = getProxyConfig();
 

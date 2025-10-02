@@ -10,26 +10,24 @@ import {
   CardContent,
   Typography,
   Button,
-  Collapse,
   Stack,
   Alert,
   AlertTitle,
-  Chip
+  Chip,
+  Collapse
 } from '@mui/material';
-import { g3BorderRadius, G3_PRESETS } from '../../theme/g3Curves';
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import {
   ErrorOutline,
   Refresh,
-  ExpandMore,
-  ExpandLess,
   BugReport,
-  Home
+  Home,
+  ExpandLess,
+  ExpandMore
 } from '@mui/icons-material';
-import { ErrorManager } from '../../utils/error/ErrorManager';
-// 移除未使用的类型导入
-import { isDeveloperMode } from '../../config';
+import { ErrorManager } from '@/utils/error/ErrorManager';
+import { isDeveloperMode } from '@/config';
 
-// 统一使用 React.ErrorInfo 类型
 type ErrorInfo = React.ErrorInfo;
 
 interface ErrorBoundaryState {

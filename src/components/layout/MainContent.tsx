@@ -6,24 +6,23 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import BreadcrumbNavigation from "./BreadcrumbNavigation";
-import FileList from "../file/FileList";
-// 使用懒加载的预览组件，降低首屏加载体积
-import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "../../utils/lazy-loading";
-import ErrorDisplay from "../ui/ErrorDisplay";
-import FullScreenPreview from "../file/FullScreenPreview";
+import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
+import FileList from "@/components/file/FileList";
+import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "@/utils/lazy-loading";
+import ErrorDisplay from "@/components/ui/ErrorDisplay";
+import FullScreenPreview from "@/components/file/FullScreenPreview";
 import {
   useContentContext,
   usePreviewContext,
   useDownloadContext,
   NavigationDirection
-} from "../../contexts/unified";
-import { FileListSkeleton } from "../ui/skeletons";
-import { getPreviewFromUrl } from "../../utils/routing/urlManager";
-import { logger } from "../../utils";
-import DynamicSEO from "../seo/DynamicSEO";
-import ScrollToTopFab from "../interactions/ScrollToTopFab";
-import EmptyState from "../ui/EmptyState";
+} from "@/contexts/unified";
+import { FileListSkeleton } from "@/components/ui/skeletons";
+import { getPreviewFromUrl } from "@/utils/routing/urlManager";
+import { logger } from "@/utils";
+import DynamicSEO from "@/components/seo/DynamicSEO";
+import ScrollToTopFab from "@/components/interactions/ScrollToTopFab";
+import EmptyState from "@/components/ui/EmptyState";
 
 const MainContent: React.FC = () => {
   // 获取主题和响应式布局
@@ -33,7 +32,7 @@ const MainContent: React.FC = () => {
   // 创建引用
   const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
 
-  // 自动计算面包屑最大项目数
+  // 计算面包屑最大项目数
   const [breadcrumbsMaxItems, setBreadcrumbsMaxItems] = useState<number>(0); // 0表示不限制
 
   // 从上下文获取数据和方法

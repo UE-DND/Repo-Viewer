@@ -5,12 +5,12 @@ import {
   PreviewAction,
   GitHubContent,
   OfficeFileType
-} from '../types';
-import { GitHubService } from '../services/github';
-import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger } from '../utils';
-import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '../utils/routing/urlManager';
-import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '../utils/pdf/pdfLoading';
-import { getForceServerProxy } from '../services/github/config/ProxyForceManager';
+} from '@/types';
+import { GitHubService } from '@/services/github';
+import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger } from '@/utils';
+import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
+import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '@/utils/pdf/pdfLoading';
+import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 
 const initialPreviewState: PreviewState = {
   previewContent: null,

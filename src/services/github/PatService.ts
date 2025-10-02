@@ -1,4 +1,4 @@
-import { configManager } from '../../config';
+import { configManager } from '@/config';
 import { GitHubTokenManager } from './TokenManager';
 
 /**

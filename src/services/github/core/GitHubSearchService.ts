@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { GitHubContent } from '../../../types';
-import { logger } from '../../../utils';
+import { GitHubContent } from '@/types';
+import { logger } from '@/utils';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
 import {

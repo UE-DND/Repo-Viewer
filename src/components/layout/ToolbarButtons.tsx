@@ -1,19 +1,18 @@
 import { useContext, useState, useCallback, useEffect } from "react";
 import { Box, IconButton, Tooltip, useTheme } from "@mui/material";
-
 import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   Refresh as RefreshIcon,
   GitHub as GitHubIcon,
 } from "@mui/icons-material";
-import { ColorModeContext } from "../../contexts/colorModeContext";
-import { useRefresh } from "../../hooks/useRefresh";
-import { pulseAnimation, refreshAnimation } from "../../theme/animations";
-import { GitHubService } from "../../services/github";
+import { ColorModeContext } from "@/contexts/colorModeContext";
+import { useRefresh } from "@/hooks/useRefresh";
+import { pulseAnimation, refreshAnimation } from "@/theme/animations";
+import { GitHubService } from "@/services/github";
 import axios from "axios";
-import { getGithubConfig } from '../../config';
-import { logger } from '../../utils';
+import { getGithubConfig } from '@/config';
+import { logger } from '@/utils';
 
 // 工具栏按钮组件
 const ToolbarButtons: React.FC = () => {
@@ -76,14 +75,14 @@ const ToolbarButtons: React.FC = () => {
   // 处理GitHub按钮点击
   const onGitHubClick = useCallback(() => {
     const { repoOwner, repoName } = repoInfo;
-    
+
     // 从当前URL获取路径
     const pathname = window.location.pathname.slice(1); // 移除开头的 '/'
     const hash = window.location.hash;
-    
+
     // 构造GitHub URL
     let githubUrl = `https://github.com/${repoOwner}/${repoName}`;
-    
+
     // 检查是否有预览文件（hash中包含 #preview=文件名）
     const previewMatch = hash.match(/#preview=(.+)/);
     if (previewMatch?.[1] && pathname) {
@@ -94,7 +93,7 @@ const ToolbarButtons: React.FC = () => {
       // 浏览目录：使用当前路径
       githubUrl += `/tree/main/${pathname}`;
     }
-    
+
     window.open(githubUrl, "_blank");
   }, [repoInfo]);
   return (

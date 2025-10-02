@@ -1,7 +1,6 @@
 import React from "react";
 import { Box, Typography, Link, Container, useTheme } from "@mui/material";
 
-// 声明全局变量类型
 declare const __APP_VERSION__: string;
 
 const Footer: React.FC = () => {

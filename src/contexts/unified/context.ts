@@ -1,5 +1,5 @@
 import { createContext, useContext, type Context, type RefObject } from "react";
-import type { GitHubContent, PreviewState, DownloadState } from "../../types";
+import type { GitHubContent, PreviewState, DownloadState } from "@/types";
 
 export type NavigationDirection = "forward" | "backward" | "none";
 

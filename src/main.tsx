@@ -1,14 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import App from "@/App";
+import "@/index.css";
 import "github-markdown-css/github-markdown.css";
-import { logger } from "./utils";
-import ThemeProvider from "./providers/ThemeProvider";
-import { setupLatexOptimization } from "./utils/rendering/latexOptimizer";
-import SEOProvider from "./contexts/SEOContext";
-import { ResponsiveSnackbarProvider } from "./components/ui/ResponsiveSnackbarProvider";
-import { getDeveloperConfig } from "./config";
+import { logger } from "@/utils";
+import ThemeProvider from "@/providers/ThemeProvider";
+import { setupLatexOptimization } from "@/utils/rendering/latexOptimizer";
+import SEOProvider from "@/contexts/SEOContext";
+import { ResponsiveSnackbarProvider } from "@/components/ui/ResponsiveSnackbarProvider";
+import { getDeveloperConfig } from "@/config";
 
 // 开发者模式配置 - 控制调试信息显示
 const developerConfig = getDeveloperConfig();

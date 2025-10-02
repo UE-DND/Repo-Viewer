@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getCurrentThemeName } from '../theme/index';
-import { logger } from '../utils';
+import { getCurrentThemeName } from '@/theme/index';
+import { logger } from '@/utils';
 
 const themeIconMap: Record<string, string> = {
   '默认': '/icons/icon-pink.svg',

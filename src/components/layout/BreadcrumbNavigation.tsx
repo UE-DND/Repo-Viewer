@@ -14,8 +14,8 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
-import { NavigationDirection } from "../../contexts/unified";
-import { g3Styles } from "../../utils";
+import { NavigationDirection } from "@/contexts/unified";
+import { g3Styles } from "@/utils";
 
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: Array<{ name: string; path: string }>;

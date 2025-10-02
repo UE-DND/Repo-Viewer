@@ -5,10 +5,10 @@ import {
   DownloadState,
   DownloadAction,
   GitHubContent
-} from '../types';
-import { GitHubService } from '../services/github';
-import { logger } from '../utils';
-import { getForceServerProxy } from '../services/github/config/ProxyForceManager';
+} from '@/types';
+import { GitHubService } from '@/services/github';
+import { logger } from '@/utils';
+import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 
 // 下载状态初始值
 const initialDownloadState: DownloadState = {
