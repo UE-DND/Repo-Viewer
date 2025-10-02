@@ -1,21 +1,24 @@
 import React, { useState } from "react";
-import { GitHubContent } from "@/types";
+import type { GitHubContent } from "@/types";
 import {
   transformImageSrc,
   handleImageError,
   handleImageLoad,
-  ImageLoadingState,
   tryDirectImageLoad,
 } from "../utils/imageUtils";
+import type { ImageLoadingState } from "../utils/imageUtils";
 import { ImageErrorDisplay } from "./ImageErrorDisplay";
 
-interface MarkdownImageProps {
-  src?: string | undefined;
-  alt?: string | undefined;
+interface MarkdownImageProps
+  extends Omit<
+    React.ImgHTMLAttributes<HTMLImageElement>,
+    "src" | "alt" | "style" | "onLoad" | "onError"
+  > {
+  src?: string;
+  alt?: string;
   style?: React.CSSProperties | undefined;
   previewingItem: GitHubContent | null;
   imageState: ImageLoadingState;
-  [key: string]: any;
 }
 
 export const MarkdownImage: React.FC<MarkdownImageProps> = ({
@@ -26,41 +29,57 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
   imageState,
   ...rest
 }) => {
+  const normalizedSrc = typeof src === "string" ? src.trim() : "";
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isImageFailed, setIsImageFailed] = useState(
-    imageState.failedImages.has(src || "")
+    normalizedSrc.length > 0 && imageState.failedImages.has(normalizedSrc)
   );
 
   const { imgSrc, originalSrc } = transformImageSrc(src, previewingItem);
-  const imgId = `img-${imgSrc.replace(/[^a-zA-Z0-9]/g, "-")}`;
+  const sanitizedImgSrc = imgSrc.trim();
+  const sanitizedOriginalSrc = originalSrc.trim();
+  const stateKey =
+    sanitizedImgSrc.length > 0
+      ? sanitizedImgSrc
+      : sanitizedOriginalSrc.length > 0
+      ? sanitizedOriginalSrc
+      : originalSrc;
+  const elementIdSource =
+    stateKey.length > 0 ? stateKey : "fallback-placeholder";
+  const imgId = `img-${elementIdSource.replace(/[^a-zA-Z0-9]/g, "-")}`;
+  const resolvedImgSrc = stateKey.length > 0 ? stateKey : undefined;
 
-  const handleRetry = () => {
-    // 重置失败状态
+  const handleRetry = (): void => {
     setIsImageFailed(false);
-    // 从失败缓存中移除
-    imageState.failedImages.delete(imgSrc || "");
 
-    // 尝试使用备选加载方式
+    const trimmedStateKey = stateKey.trim();
+    if (trimmedStateKey.length > 0) {
+      imageState.failedImages.delete(trimmedStateKey);
+    }
+
     const directSrc = tryDirectImageLoad(imgSrc);
-    if (directSrc) {
-      // 使用直接URL加载
-      const imgElement = document.getElementById(imgId)?.querySelector("img");
-      if (imgElement) {
-        imgElement.src = directSrc;
+    if (directSrc !== null && directSrc.trim().length > 0) {
+      const imageElement = document.getElementById(imgId);
+      if (imageElement instanceof HTMLImageElement) {
+        imageElement.src = directSrc;
       }
     } else {
-      // 强制重新渲染以触发图片重新加载
       window.location.reload();
     }
   };
 
   if (isImageFailed) {
-    return <ImageErrorDisplay imgSrc={imgSrc} onRetry={handleRetry} />;
+    return (
+      <ImageErrorDisplay
+        imgSrc={stateKey.length > 0 ? stateKey : originalSrc}
+        onRetry={handleRetry}
+      />
+    );
   }
 
   return (
     <img
-      src={imgSrc}
+      src={resolvedImgSrc}
       id={imgId}
       style={{
         maxWidth: "100%",
@@ -69,26 +88,30 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
         transition: "opacity 0.3s ease",
         display: "block",
         margin: "1em auto",
-        ...style
+        ...style,
       }}
-      alt={alt || "图片"}
+      alt={alt ?? "图片"}
       {...rest}
       loading="lazy"
-      className={isImageLoaded ? "loaded" : isImageFailed ? "failed" : ""}
-      onLoad={(e) => {
-        e.currentTarget.classList.add("loaded");
-        e.currentTarget.style.opacity = "1";
-        handleImageLoad(imgSrc, imageState, setIsImageLoaded);
+      className={isImageLoaded ? "loaded" : undefined}
+      onLoad={(event) => {
+        event.currentTarget.classList.add("loaded");
+        event.currentTarget.style.opacity = "1";
+        handleImageLoad(stateKey, imageState, setIsImageLoaded);
       }}
-      onError={(e) => {
+      onError={(event) => {
         const newSrc = handleImageError(
-          imgSrc,
+          stateKey,
           originalSrc,
           imageState,
           setIsImageFailed
         );
-        if (newSrc && newSrc !== imgSrc) {
-          e.currentTarget.src = newSrc;
+        if (
+          newSrc !== null &&
+          newSrc.trim().length > 0 &&
+          newSrc !== stateKey
+        ) {
+          event.currentTarget.src = newSrc;
         }
       }}
       data-oid="1jtw89v"

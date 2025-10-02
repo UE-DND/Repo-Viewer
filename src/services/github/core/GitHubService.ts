@@ -1,118 +1,141 @@
-import { GitHubContent } from '@/types';
+import type { GitHubContent } from '@/types';
 import { GitHubAuth } from './GitHubAuth';
 import { GitHubSearchService } from './GitHubSearchService';
 import { GitHubPrefetchService } from './GitHubPrefetchService';
 import { GitHubStatsService } from './GitHubStatsService';
-import { getConfig, ConfigInfo } from './GitHubConfig';
+import { getConfig, type ConfigInfo } from './GitHubConfig';
 
-export class GitHubService {
-  // 获取GitHub PAT总数
-  public static getTokenCount(): number {
-    return GitHubAuth.getTokenCount();
-  }
+// GitHub服务，使用模块导出而非类
 
-  // 检查是否配置了有效token
-  public static hasToken(): boolean {
-    return GitHubAuth.hasToken();
-  }
-
-  // 设置本地token（开发环境使用）
-  public static setLocalToken(token: string): void {
-    GitHubAuth.setLocalToken(token);
-  }
-
-  // 获取配置信息
-  public static async getConfig(): Promise<ConfigInfo> {
-    return getConfig();
-  }
-
-  // 获取目录内容
-  public static async getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
-    const { GitHubContentService } = await import('./GitHubContentService');
-    const contents = await GitHubContentService.getContents(path, signal);
-
-    // 预加载相关内容
-    GitHubPrefetchService.prefetchRelatedContent(contents).catch(() => {});
-
-    return contents;
-  }
-
-  // 获取文件内容
-  public static async getFileContent(fileUrl: string): Promise<string> {
-    const { GitHubContentService } = await import('./GitHubContentService');
-    return GitHubContentService.getFileContent(fileUrl);
-  }
-
-  // 使用GitHub API进行搜索
-  public static async searchWithGitHubApi(
-    searchTerm: string,
-    currentPath: string = '',
-    fileTypeFilter?: string
-  ): Promise<GitHubContent[]> {
-    return GitHubSearchService.searchWithGitHubApi(searchTerm, currentPath, fileTypeFilter);
-  }
-
-  // 搜索文件
-  public static async searchFiles(
-    searchTerm: string,
-    currentPath: string = '',
-    recursive: boolean = false,
-    fileTypeFilter?: string
-  ): Promise<GitHubContent[]> {
-    return GitHubSearchService.searchFiles(searchTerm, currentPath, recursive, fileTypeFilter);
-  }
-
-  // 智能预取目录内容
-  public static prefetchContents(path: string, priority: 'high' | 'medium' | 'low' = 'low'): void {
-    GitHubPrefetchService.prefetchContents(path, priority);
-  }
-
-  // 批量预加载多个路径
-  public static async batchPrefetchContents(paths: string[], maxConcurrency: number = 3): Promise<void> {
-    return GitHubPrefetchService.batchPrefetchContents(paths, maxConcurrency);
-  }
-
-  // 标记代理服务失败
-  public static markProxyServiceFailed(proxyUrl: string): void {
-    GitHubAuth.markProxyServiceFailed(proxyUrl);
-  }
-
-  // 获取当前使用的代理服务
-  public static getCurrentProxyService(): string {
-    return GitHubAuth.getCurrentProxyService();
-  }
-
-  // 重置失败的代理服务记录
-  public static resetFailedProxyServices(): void {
-    GitHubAuth.resetFailedProxyServices();
-  }
-
-  // 转换相对图片URL为绝对URL
-  public static transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean): string | undefined {
-    return GitHubAuth.transformImageUrl(src, markdownFilePath, useTokenMode);
-  }
-
-  // 清除缓存和重置网络状态
-  public static async clearCache(): Promise<void> {
-    return GitHubStatsService.clearCache();
-  }
-
-  // 获取缓存统计
-  public static getCacheStats() {
-    return GitHubStatsService.getCacheStats();
-  }
-
-  // 获取网络请求统计
-  public static async getNetworkStats() {
-    return GitHubStatsService.getNetworkStats();
-  }
-
-  // 获取批处理器（用于调试）
-  public static async getBatcher() {
-    const { GitHubContentService } = await import('./GitHubContentService');
-    return GitHubContentService.getBatcher();
-  }
+// 获取GitHub PAT总数
+export function getTokenCount(): number {
+  return GitHubAuth.getTokenCount();
 }
 
-// 重新导出类型和配置
+// 检查是否配置了有效token
+export function hasToken(): boolean {
+  return GitHubAuth.hasToken();
+}
+
+// 设置本地token（开发环境使用）
+export function setLocalToken(token: string): void {
+  GitHubAuth.setLocalToken(token);
+}
+
+// 获取配置信息
+export function getGitHubConfig(): ConfigInfo {
+  return getConfig();
+}
+
+// 获取目录内容
+export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
+  const { getContents: getContentsImpl } = await import('./GitHubContentService');
+  const contents = await getContentsImpl(path, signal);
+
+  // 预加载相关内容
+  void GitHubPrefetchService.prefetchRelatedContent(contents).catch(() => {
+    // 忽略预加载错误
+  });
+
+  return contents;
+}
+
+// 获取文件内容
+export async function getFileContent(fileUrl: string): Promise<string> {
+  const { getFileContent: getFileContentImpl } = await import('./GitHubContentService');
+  return getFileContentImpl(fileUrl);
+}
+
+// 使用GitHub API进行搜索
+export async function searchWithGitHubApi(
+  searchTerm: string,
+  currentPath = '',
+  fileTypeFilter?: string
+): Promise<GitHubContent[]> {
+  return GitHubSearchService.searchWithGitHubApi(searchTerm, currentPath, fileTypeFilter);
+}
+
+// 搜索文件
+export async function searchFiles(
+  searchTerm: string,
+  currentPath = '',
+  recursive = false,
+  fileTypeFilter?: string
+): Promise<GitHubContent[]> {
+  return GitHubSearchService.searchFiles(searchTerm, currentPath, recursive, fileTypeFilter);
+}
+
+// 智能预取目录内容
+export function prefetchContents(path: string, priority: 'high' | 'medium' | 'low' = 'low'): void {
+  GitHubPrefetchService.prefetchContents(path, priority);
+}
+
+// 批量预加载多个路径
+export async function batchPrefetchContents(paths: string[], maxConcurrency = 3): Promise<void> {
+  return GitHubPrefetchService.batchPrefetchContents(paths, maxConcurrency);
+}
+
+// 标记代理服务失败
+export function markProxyServiceFailed(proxyUrl: string): void {
+  GitHubAuth.markProxyServiceFailed(proxyUrl);
+}
+
+// 获取当前使用的代理服务
+export function getCurrentProxyService(): string {
+  return GitHubAuth.getCurrentProxyService();
+}
+
+// 重置失败的代理服务记录
+export function resetFailedProxyServices(): void {
+  GitHubAuth.resetFailedProxyServices();
+}
+
+// 转换相对图片URL为绝对URL
+export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean): string | undefined {
+  return GitHubAuth.transformImageUrl(src, markdownFilePath, useTokenMode);
+}
+
+// 清除缓存和重置网络状态
+export async function clearCache(): Promise<void> {
+  return GitHubStatsService.clearCache();
+}
+
+// 获取缓存统计
+export function getCacheStats(): ReturnType<typeof GitHubStatsService.getCacheStats> {
+  return GitHubStatsService.getCacheStats();
+}
+
+// 获取网络请求统计
+export async function getNetworkStats(): Promise<ReturnType<typeof GitHubStatsService.getNetworkStats>> {
+  return GitHubStatsService.getNetworkStats();
+}
+
+// 获取批处理器（用于调试）
+export async function getBatcher(): Promise<unknown> {
+  const { getBatcher: getBatcherImpl } = await import('./GitHubContentService');
+  return getBatcherImpl();
+}
+
+// 为了向后兼容，导出一个包含所有函数的对象
+export const GitHubService = {
+  getTokenCount,
+  hasToken,
+  setLocalToken,
+  getConfig: getGitHubConfig,
+  getContents,
+  getFileContent,
+  searchWithGitHubApi,
+  searchFiles,
+  prefetchContents,
+  batchPrefetchContents,
+  markProxyServiceFailed,
+  getCurrentProxyService,
+  resetFailedProxyServices,
+  transformImageUrl,
+  clearCache,
+  getCacheStats,
+  getNetworkStats,
+  getBatcher
+} as const;
+
 export type { ConfigInfo } from './GitHubConfig';

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GitHubContent } from '@/types';
+import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
@@ -16,38 +16,38 @@ import {
   validateGitHubContentsArray
 } from '../schemas/dataTransformers';
 
-export class GitHubContentService {
-  private static readonly batcher = new RequestBatcher();
+// GitHub内容服务，使用模块导出而非类
+const batcher = new RequestBatcher();
 
-  // 缓存初始化状态
-  private static cacheInitialized = false;
+// 缓存初始化状态
+let cacheInitialized = false;
 
-  // 确保缓存初始化
-  private static async ensureCacheInitialized(): Promise<void> {
-    if (!this.cacheInitialized) {
-      try {
-        await CacheManager.initialize();
-        this.cacheInitialized = true;
-        logger.info('GitHubContentService: 缓存系统初始化完成');
-      } catch (error) {
-        logger.warn('GitHubContentService: 缓存系统初始化失败，使用同步缓存', error);
-        // 即使初始化失败，也标记为已初始化以避免重复尝试
-        this.cacheInitialized = true;
-      }
+// 确保缓存初始化
+async function ensureCacheInitialized(): Promise<void> {
+  if (!cacheInitialized) {
+    try {
+      await CacheManager.initialize();
+      cacheInitialized = true;
+      logger.info('GitHubContentService: 缓存系统初始化完成');
+    } catch (error) {
+      logger.warn('GitHubContentService: 缓存系统初始化失败，使用同步缓存', error);
+      // 即使初始化失败，也标记为已初始化以避免重复尝试
+      cacheInitialized = true;
     }
   }
+}
 
-  // 获取目录内容
-  public static async getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
-    await this.ensureCacheInitialized();
+// 获取目录内容
+export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
+  await ensureCacheInitialized();
 
     const cacheKey = `contents_${path}`;
     const contentCache = CacheManager.getContentCache();
     const cachedContents = await contentCache.get(cacheKey);
 
-    if (cachedContents) {
+    if (cachedContents !== null && cachedContents !== undefined) {
       logger.debug(`已从缓存中获取内容: ${path}`);
-      return cachedContents;
+      return cachedContents as GitHubContent[];
     }
 
     try {
@@ -62,19 +62,20 @@ export class GitHubContentService {
         const apiUrl = getApiUrl(path);
 
         // 使用批处理器处理请求
-        rawData = await this.batcher.enqueue(apiUrl, async () => {
+        rawData = await batcher.enqueue(apiUrl, async () => {
           logger.debug(`API请求: ${apiUrl}`);
           const result = await fetch(apiUrl, {
             method: 'GET',
             headers: GitHubAuth.getAuthHeaders(),
-            signal: signal || null
+            signal: signal ?? null
           });
 
           if (!result.ok) {
-            throw GitHubAuth.handleApiError(result, apiUrl, 'GET');
+            const error = new Error(`HTTP ${result.status.toString()}: ${result.statusText}`);
+            throw error;
           }
 
-          return result.json();
+          return result.json() as Promise<unknown>;
         }, {
           priority: 'high', // 内容获取优先级高
           method: 'GET',
@@ -108,19 +109,20 @@ export class GitHubContentService {
       }
 
       // 使用异步缓存并包含版本信息
-      const version = this.generateContentVersion(path, contents);
+      const version = generateContentVersion(path, contents);
       await contentCache.set(cacheKey, contents, version);
 
       return contents;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
       logger.error(`获取内容失败: ${path}`, error);
-      throw new Error(`获取内容失败: ${error.message}`);
+      throw new Error(`获取内容失败: ${errorMessage}`);
     }
-  }
+}
 
-  // 获取文件内容
-  public static async getFileContent(fileUrl: string): Promise<string> {
-    await this.ensureCacheInitialized();
+// 获取文件内容
+export async function getFileContent(fileUrl: string): Promise<string> {
+  await ensureCacheInitialized();
 
     // 添加缓存键
     const cacheKey = `file:${fileUrl}`;
@@ -128,7 +130,7 @@ export class GitHubContentService {
 
     // 检查缓存
     const cachedContent = await fileCache.get(cacheKey);
-    if (cachedContent) {
+    if (cachedContent !== undefined) {
       logger.debug(`从缓存获取文件内容: ${fileUrl}`);
       return cachedContent;
     }
@@ -158,41 +160,53 @@ export class GitHubContentService {
       })();
 
       if (!response.ok) {
-        throw GitHubAuth.handleApiError(response, fileUrl, 'GET');
+        const error = new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
+        throw error;
       }
 
       const content = await response.text();
 
       // 缓存文件内容（异步）
-      const version = this.generateFileVersion(fileUrl, content);
+      const version = generateFileVersion(fileUrl, content);
       await fileCache.set(cacheKey, content, version);
       return content;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
       logger.error(`获取文件内容失败: ${fileUrl}`, error);
-      throw new Error(`获取文件内容失败: ${error.message}`);
+      throw new Error(`获取文件内容失败: ${errorMessage}`);
     }
-  }
-
-  // 生成内容版本
-  private static generateContentVersion(path: string, contents: GitHubContent[]): string {
-    const contentHash = contents.map(item => `${item.name}-${item.sha || item.size}`).join('|');
-    return `${path}-${Date.now()}-${contentHash.slice(0, 8)}`;
-  }
-
-  // 生成文件版本
-  private static generateFileVersion(fileUrl: string, content: string): string {
-    const contentLength = content.length;
-    const urlHash = fileUrl.split('/').slice(-2).join('-'); // 取文件名和父目录
-    return `${urlHash}-${contentLength}-${Date.now()}`;
-  }
-
-  // 获取批处理器（用于调试）
-  public static getBatcher() {
-    return this.batcher;
-  }
-
-  // 清除批处理器缓存
-  public static clearBatcherCache(): void {
-    this.batcher.clearCache();
-  }
 }
+
+// 生成内容版本
+function generateContentVersion(path: string, contents: GitHubContent[]): string {
+  const contentHash = contents.map(item => {
+    const identifier = item.sha !== '' ? item.sha : (item.size !== undefined ? item.size.toString() : 'unknown');
+    return `${item.name}-${identifier}`;
+  }).join('|');
+  return `${path}-${Date.now().toString()}-${contentHash.slice(0, 8)}`;
+}
+
+// 生成文件版本
+function generateFileVersion(fileUrl: string, content: string): string {
+  const contentLength = content.length;
+  const urlHash = fileUrl.split('/').slice(-2).join('-'); // 取文件名和父目录
+  return `${urlHash}-${contentLength.toString()}-${Date.now().toString()}`;
+}
+
+// 获取批处理器（用于调试）
+export function getBatcher(): RequestBatcher {
+  return batcher;
+}
+
+// 清除批处理器缓存
+export function clearBatcherCache(): void {
+  batcher.clearCache();
+}
+
+// 为了向后兼容，导出一个包含所有函数的对象
+export const GitHubContentService = {
+  getContents,
+  getFileContent,
+  getBatcher,
+  clearBatcherCache
+} as const;

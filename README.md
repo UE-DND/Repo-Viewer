@@ -33,7 +33,7 @@
 2. **安装依赖**
 
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
 
 3. **创建环境配置**
@@ -122,7 +122,15 @@ CONSOLE_LOGGING = true/false                          # 控制台日志
 
 ## 许可证
 
-本项目基于AGPL-3.0许可证开源。详见[LICENSE](LICENSE)文件。
+本项目使用 **AGPL-3.0** 许可证。
+
+- ✅ 可以自由使用、修改和分发
+- ✅ 必须开源修改后的代码
+- ✅ 必须保留原作者版权信息
+- ⚠️ **网络部署也需要开源**
+- ⚠️ 修改后的版本必须使用相同的 AGPL-3.0 许可证
+
+详见 [LICENSE](LICENSE) 文件了解完整条款。
 
 ## 贡献者
 

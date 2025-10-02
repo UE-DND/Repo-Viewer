@@ -17,8 +17,8 @@ import {
   Cancel as CancelIcon,
 } from "@mui/icons-material";
 import { getFileIcon, logger, g3Styles } from "@/utils";
-import { GitHubContent } from "@/types";
-import { getFeaturesConfig } from '@/config';
+import type { GitHubContent } from "@/types";
+import { getFeaturesConfig } from "@/config";
 
 const featuresConfig = getFeaturesConfig();
 const HOMEPAGE_FILTER_ENABLED = featuresConfig.homepageFilter.enabled;
@@ -84,7 +84,7 @@ const FileListItem = memo<FileListItemProps>(
       if (import.meta.env.DEV) {
         if (currentPath === "" && item.type === "dir") {
           logger.debug(
-            `首页文件夹 ${item.name}: 是主文件夹=${isMainFolder}, 隐藏下载按钮=${shouldHideDownloadButton}`,
+            `首页文件夹 ${item.name}: 是主文件夹=${String(isMainFolder)}, 隐藏下载按钮=${String(shouldHideDownloadButton)}`,
           );
         }
       }

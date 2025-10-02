@@ -24,7 +24,7 @@ export interface BaseError {
   level: ErrorLevel;
   category: ErrorCategory;
   timestamp: number;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   stack?: string;
   userId?: string;
   sessionId?: string;
@@ -66,7 +66,7 @@ export interface FileOperationError extends BaseError {
 export interface ComponentError extends BaseError {
   category: ErrorCategory.COMPONENT;
   componentName: string;
-  props?: Record<string, any>;
+  props?: Record<string, unknown>;
   errorBoundary?: string;
 }
 
@@ -81,7 +81,7 @@ export interface AuthError extends BaseError {
 export interface ValidationError extends BaseError {
   category: ErrorCategory.VALIDATION;
   field: string;
-  value: any;
+  value: unknown;
   expectedType?: string;
 }
 
@@ -146,7 +146,7 @@ export interface ErrorContext {
   timestamp?: number;
   component?: string;
   action?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // 错误处理配置

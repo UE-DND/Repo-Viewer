@@ -47,7 +47,7 @@ export const DownloadContext = createContext<DownloadContextValue | null>(null);
 
 function useRequiredContext<T>(context: Context<T | null>, name: string): T {
   const value = useContext(context);
-  if (!value) {
+  if (value === null) {
     throw new Error(`${name} 必须在 AppContextProvider 内部使用`);
   }
   return value;

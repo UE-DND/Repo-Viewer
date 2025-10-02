@@ -1,23 +1,25 @@
 import { logger } from '@/utils';
 
+interface BatchedRequest<T = unknown> {
+  resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
+  timestamp: number;
+  priority: 'high' | 'medium' | 'low';
+  retryCount: number;
+}
+
 export class RequestBatcher {
-  private readonly batchedRequests: Map<string, {
-    resolve: (value: any) => void;
-    reject: (reason: any) => void;
-    timestamp: number;
-    priority: 'high' | 'medium' | 'low';
-    retryCount: number;
-  }[]> = new Map();
+  private readonly batchedRequests = new Map<string, BatchedRequest[]>();
 
   // 进行中的请求
-  private readonly pendingRequests: Map<string, Promise<any>> = new Map();
+  private readonly pendingRequests = new Map<string, Promise<unknown>>();
 
   // 请求指纹缓存（用于去重）
-  private readonly requestFingerprints: Map<string, {
-    result: any;
+  private readonly requestFingerprints = new Map<string, {
+    result: unknown;
     timestamp: number;
     hitCount: number;
-  }> = new Map();
+  }>();
 
   private batchTimeout: number | null = null;
   private readonly batchDelay = 20; // 批处理延迟毫秒
@@ -48,22 +50,22 @@ export class RequestBatcher {
     });
 
     if (expiredKeys.length > 0) {
-      logger.debug(`清理了 ${expiredKeys.length} 个过期的请求指纹`);
+      logger.debug(`清理了 ${expiredKeys.length.toString()} 个过期的请求指纹`);
     }
   }
 
   // 生成请求指纹（用于去重）
-  private generateFingerprint(key: string, method: string = 'GET', headers?: Record<string, string>): string {
-    const headerStr = headers ? JSON.stringify(headers) : '';
+  private generateFingerprint(key: string, method = 'GET', headers?: Record<string, string>): string {
+    const headerStr = headers !== undefined ? JSON.stringify(headers) : '';
     return `${method}:${key}:${headerStr}`;
   }
 
   // 销毁批处理器
   public destroy(): void {
-    if (this.cleanupInterval) {
+    if (this.cleanupInterval !== 0 && !isNaN(this.cleanupInterval)) {
       clearInterval(this.cleanupInterval);
     }
-    if (this.batchTimeout) {
+    if (this.batchTimeout !== null && this.batchTimeout !== 0 && !isNaN(this.batchTimeout)) {
       clearTimeout(this.batchTimeout);
     }
     this.batchedRequests.clear();
@@ -95,11 +97,11 @@ export class RequestBatcher {
     // 检查是否可以去重
     if (!skipDeduplication) {
       const cachedResult = this.requestFingerprints.get(fingerprint);
-      if (cachedResult && (Date.now() - cachedResult.timestamp < this.fingerprintTTL)) {
+      if (cachedResult !== undefined && (Date.now() - cachedResult.timestamp < this.fingerprintTTL)) {
         // 增加命中次数
         cachedResult.hitCount++;
-        logger.debug(`请求去重命中: ${key}，命中次数: ${cachedResult.hitCount}`);
-        return Promise.resolve(cachedResult.result);
+        logger.debug(`请求去重命中: ${key}，命中次数: ${cachedResult.hitCount.toString()}`);
+        return Promise.resolve(cachedResult.result as T);
       }
     }
 
@@ -115,17 +117,21 @@ export class RequestBatcher {
         this.batchedRequests.set(key, []);
 
         // 设置超时以批量处理请求
-        if (this.batchTimeout === null) {
-          this.batchTimeout = window.setTimeout(() => this.processBatch(), this.batchDelay);
-        }
+        this.batchTimeout ??= window.setTimeout(() => {
+          this.processBatch();
+        }, this.batchDelay);
       }
 
       // 添加到队列
-      const queue = this.batchedRequests.get(key)!;
+      const queue = this.batchedRequests.get(key);
+      if (queue === undefined) {
+        reject(new Error(`队列不存在: ${key}`));
+        return;
+      }
       const isFirstRequest = queue.length === 0;
 
       queue.push({
-        resolve,
+        resolve: resolve as (value: unknown) => void,
         reject,
         timestamp: Date.now(),
         priority,
@@ -134,7 +140,7 @@ export class RequestBatcher {
 
       // 如果是队列中的第一个请求，执行它
       if (isFirstRequest) {
-        this.executeWithRetry(key, executeRequest, fingerprint, skipDeduplication);
+        void this.executeWithRetry(key, executeRequest, fingerprint, skipDeduplication);
       }
     });
   }
@@ -166,8 +172,8 @@ export class RequestBatcher {
     fingerprint: string,
     skipDeduplication: boolean
   ): Promise<void> {
-    const queue = this.batchedRequests.get(key) || [];
-    let lastError: any = null;
+    const queue = this.batchedRequests.get(key) ?? [];
+    let lastError: unknown = null;
 
     // 按优先级排序
     queue.sort((a, b) => {
@@ -190,13 +196,16 @@ export class RequestBatcher {
         }
 
         // 所有批处理请求都收到相同的结果
-        queue.forEach(request => request.resolve(result));
+        queue.forEach(request => {
+          request.resolve(result);
+        });
         this.batchedRequests.delete(key);
         return;
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastError = error;
-        logger.warn(`请求失败 (尝试 ${retryCount + 1}/${this.maxRetries + 1}): ${key}`, error.message);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.warn(`请求失败 (尝试 ${(retryCount + 1).toString()}/${(this.maxRetries + 1).toString()}): ${key}`, errorMessage);
 
         // 如果不是最后一次重试，等待一段时间
         if (retryCount < this.maxRetries) {
@@ -223,7 +232,7 @@ export class RequestBatcher {
   }
 
   // 获取批处理器状态
-  public getStats() {
+  public getStats(): { pendingRequests: number; batchedRequests: number; fingerprintCache: number; fingerprintHits: number } {
     return {
       pendingRequests: this.pendingRequests.size,
       batchedRequests: this.batchedRequests.size,

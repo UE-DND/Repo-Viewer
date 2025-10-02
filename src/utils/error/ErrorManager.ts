@@ -1,13 +1,6 @@
-/**
- * 统一错误管理器
- * 负责错误捕获、处理、记录和上报
- */
-
-import { 
-  AppError, 
-  BaseError, 
-  ErrorLevel, 
-  ErrorCategory, 
+import type {
+  AppError,
+  BaseError,
   ErrorContext,
   ErrorHandlerConfig,
   APIError,
@@ -16,6 +9,7 @@ import {
   ComponentError,
   FileOperationError
 } from '@/types/errors';
+import { ErrorLevel, ErrorCategory } from '@/types/errors';
 import { logger } from '../logging/logger';
 import { getDeveloperConfig } from '@/config';
 
@@ -37,7 +31,7 @@ class ErrorManagerClass {
 
   // 生成会话ID
   private generateSessionId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now().toString()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   // 获取基础错误上下文
@@ -56,7 +50,7 @@ class ErrorManagerClass {
     message: string,
     level: ErrorLevel,
     category: ErrorCategory,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): BaseError {
     return {
       code,
@@ -79,11 +73,11 @@ class ErrorManagerClass {
     } else {
       // 转换普通Error为AppError
       appError = this.createBaseError(
-        error.name || 'UnknownError',
-        error.message || '未知错误',
+        error.name.length > 0 ? error.name : 'UnknownError',
+        error.message.length > 0 ? error.message : '未知错误',
         ErrorLevel.ERROR,
         ErrorCategory.SYSTEM,
-        { 
+        {
           ...context,
           stack: error.stack,
           originalError: error.constructor.name
@@ -99,7 +93,7 @@ class ErrorManagerClass {
 
     // 上报错误（如果启用）
     if (this.config.enableErrorReporting) {
-      this.reportError(appError);
+      void this.reportError(appError);
     }
 
     return appError;
@@ -111,10 +105,10 @@ class ErrorManagerClass {
     statusCode: number,
     endpoint: string,
     method: string,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): APIError {
     const baseError = this.createBaseError(
-      `API_ERROR_${statusCode}`,
+      `API_ERROR_${statusCode.toString()}`,
       message,
       this.getErrorLevelByStatusCode(statusCode),
       ErrorCategory.API,
@@ -137,11 +131,11 @@ class ErrorManagerClass {
     endpoint: string,
     method: string,
     rateLimitInfo?: { remaining: number; reset: number },
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): GitHubError {
     const apiError = this.createAPIError(message, statusCode, endpoint, method, context);
 
-    const rateLimitProps = rateLimitInfo
+    const rateLimitProps = rateLimitInfo !== undefined
       ? {
           ...(typeof rateLimitInfo.remaining === 'number' ? { rateLimitRemaining: rateLimitInfo.remaining } : {}),
           ...(typeof rateLimitInfo.reset === 'number' ? { rateLimitReset: rateLimitInfo.reset } : {}),
@@ -161,7 +155,7 @@ class ErrorManagerClass {
     url: string,
     timeout = false,
     retryCount = 0,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): NetworkError {
     const baseError = this.createBaseError(
       timeout ? 'NETWORK_TIMEOUT' : 'NETWORK_ERROR',
@@ -184,8 +178,8 @@ class ErrorManagerClass {
   public createComponentError(
     componentName: string,
     message: string,
-    props?: Record<string, any>,
-    context?: Record<string, any>
+    props?: Record<string, unknown>,
+    context?: Record<string, unknown>
   ): ComponentError {
     const baseError = this.createBaseError(
       'COMPONENT_ERROR',
@@ -209,7 +203,7 @@ class ErrorManagerClass {
     operation: 'read' | 'write' | 'download' | 'compress' | 'parse',
     message: string,
     fileSize?: number,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): FileOperationError {
     const baseError = this.createBaseError(
       `FILE_${operation.toUpperCase()}_ERROR`,
@@ -229,14 +223,24 @@ class ErrorManagerClass {
   }
 
   // 处理API错误响应
-  public handleAPIError(error: any, endpoint: string, method: string): APIError | GitHubError {
-    const statusCode = error.response?.status || 0;
-    const message = error.response?.data?.message || error.message || '网络请求失败';
+  public handleAPIError(error: unknown, endpoint: string, method: string): APIError | GitHubError {
+    const errorObj = error as {
+      response?: {
+        status?: number;
+        data?: { message?: string };
+        headers?: Record<string, string>;
+      };
+      message?: string;
+      config?: { data?: unknown };
+    };
+
+    const statusCode = errorObj.response?.status ?? 0;
+    const message = errorObj.response?.data?.message ?? errorObj.message ?? '网络请求失败';
 
     // GitHub API特定处理
     if (endpoint.includes('api.github.com') || endpoint.includes('github')) {
-      const rateLimitRemaining = error.response?.headers['x-ratelimit-remaining'];
-      const rateLimitReset = error.response?.headers['x-ratelimit-reset'];
+      const rateLimitRemaining = errorObj.response?.headers?.['x-ratelimit-remaining'];
+      const rateLimitReset = errorObj.response?.headers?.['x-ratelimit-reset'];
 
       return this.createGitHubError(
         message,
@@ -244,33 +248,39 @@ class ErrorManagerClass {
         endpoint,
         method,
         rateLimitRemaining !== undefined ? {
-          remaining: parseInt(rateLimitRemaining),
-          reset: parseInt(rateLimitReset || '0')
+          remaining: parseInt(rateLimitRemaining, 10),
+          reset: parseInt(rateLimitReset ?? '0', 10)
         } : undefined,
         {
-          requestData: error.config?.data,
-          responseData: error.response?.data
+          requestData: errorObj.config?.data,
+          responseData: errorObj.response?.data
         }
       );
     }
 
     return this.createAPIError(message, statusCode, endpoint, method, {
-      requestData: error.config?.data,
-      responseData: error.response?.data
+      requestData: errorObj.config?.data,
+      responseData: errorObj.response?.data
     });
   }
 
   // 根据状态码确定错误级别
   private getErrorLevelByStatusCode(statusCode: number): ErrorLevel {
-    if (statusCode >= 500) return ErrorLevel.CRITICAL;
-    if (statusCode >= 400) return ErrorLevel.ERROR;
-    if (statusCode >= 300) return ErrorLevel.WARNING;
+    if (statusCode >= 500) {
+      return ErrorLevel.CRITICAL;
+    }
+    if (statusCode >= 400) {
+      return ErrorLevel.ERROR;
+    }
+    if (statusCode >= 300) {
+      return ErrorLevel.WARNING;
+    }
     return ErrorLevel.INFO;
   }
 
   // 检查是否为AppError
-  private isAppError(error: any): error is AppError {
-    return error && typeof error === 'object' && 
+  private isAppError(error: unknown): error is AppError {
+    return error !== null && typeof error === 'object' &&
            'code' in error && 'category' in error && 'level' in error;
   }
 
@@ -286,7 +296,9 @@ class ErrorManagerClass {
 
   // 记录错误日志
   private logError(error: AppError): void {
-    if (!this.config.enableConsoleLogging) return;
+    if (!this.config.enableConsoleLogging) {
+      return;
+    }
 
     const logMessage = `[${error.category}] ${error.code}: ${error.message}`;
 
@@ -301,6 +313,9 @@ class ErrorManagerClass {
         logger.warn(logMessage, error);
         break;
       case ErrorLevel.INFO:
+        logger.info(logMessage, error);
+        break;
+      default:
         logger.info(logMessage, error);
         break;
     }
@@ -321,6 +336,9 @@ class ErrorManagerClass {
       if (getDeveloperConfig().mode) {
         logger.info('错误上报 (开发模式):', error);
       }
+
+      // 添加 await 以满足 async 函数要求
+      await Promise.resolve();
     } catch (reportingError) {
       logger.warn('错误上报失败:', reportingError);
     }
@@ -330,7 +348,7 @@ class ErrorManagerClass {
   public getErrorHistory(category?: ErrorCategory, limit = 20): AppError[] {
     let history = this.errorHistory;
 
-    if (category) {
+    if (category !== undefined) {
       history = history.filter(error => error.category === category);
     }
 
@@ -355,7 +373,7 @@ class ErrorManagerClass {
     };
 
     this.errorHistory.forEach(error => {
-      stats[error.category] = (stats[error.category] || 0) + 1;
+      stats[error.category] = stats[error.category] + 1;
     });
 
     return stats;
@@ -378,7 +396,8 @@ export const ErrorManager = new ErrorManagerClass();
 
 // 全局错误处理
 window.addEventListener('error', (event) => {
-  ErrorManager.captureError(event.error, {
+  const error = event.error instanceof Error ? event.error : new Error(String(event.error));
+  ErrorManager.captureError(error, {
     component: 'window',
     action: 'global_error',
     metadata: {
@@ -391,7 +410,8 @@ window.addEventListener('error', (event) => {
 
 // 未处理的Promise拒绝
 window.addEventListener('unhandledrejection', (event) => {
-  ErrorManager.captureError(new Error(event.reason), {
+  const errorMessage = typeof event.reason === 'string' ? event.reason : String(event.reason);
+  ErrorManager.captureError(new Error(errorMessage), {
     component: 'window',
     action: 'unhandled_promise_rejection'
   });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Typography,
@@ -10,7 +10,7 @@ import {
   Paper,
 } from "@mui/material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
-import { OfficePreviewProps } from "./types";
+import type { OfficePreviewProps } from "./types";
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
@@ -19,7 +19,7 @@ import {
 } from "@mui/icons-material";
 import { getFileTypeName, generatePreviewUrl } from './utils';
 
-interface MobileOfficePreviewProps extends OfficePreviewProps {}
+type MobileOfficePreviewProps = OfficePreviewProps;
 
 const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
   fileUrl,
@@ -32,7 +32,7 @@ const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
   const theme = useTheme();
 
   // 处理下载文件
-  const handleDownload = () => {
+  const handleDownload = (): void => {
     const a = document.createElement("a");
     a.href = fileUrl;
     a.download = fileName;
@@ -41,10 +41,17 @@ const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
   };
 
   // 在新窗口中打开
-  const handleOpenInNewWindow = () => {
+  const handleOpenInNewWindow = (): void => {
     const previewUrl = generatePreviewUrl(fileUrl);
     window.open(previewUrl, "_blank");
   };
+
+  const containerClassName = [
+    typeof className === "string" && className.trim().length > 0 ? className : null,
+    `${fileType}-preview-container`,
+  ]
+    .filter((value): value is string => value !== null)
+    .join(" ");
 
   return (
     <Box
@@ -59,7 +66,7 @@ const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
         borderRadius: g3BorderRadius(G3_PRESETS.card),
       }}
       style={style}
-      className={`${className} ${fileType}-preview-container`}
+      className={containerClassName}
       data-oid="d6q8zg3"
     >
       <Box
@@ -88,7 +95,7 @@ const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
           {fileName}
         </Typography>
 
-        {onClose && (
+        {typeof onClose === "function" ? (
           <Tooltip title="关闭" data-oid="xx6ol5c">
             <IconButton
               onClick={onClose}
@@ -106,7 +113,7 @@ const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
               <CloseIcon fontSize="small" data-oid="tgccf_d" />
             </IconButton>
           </Tooltip>
-        )}
+        ) : null}
       </Box>
 
       {/* 移动端提示界面 */}

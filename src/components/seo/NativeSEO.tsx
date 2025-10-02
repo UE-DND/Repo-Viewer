@@ -26,11 +26,22 @@ const NativeSEO: React.FC<NativeSEOProps> = ({
   // 从Metadata上下文获取当前SEO状态
   const metadata = useMetadata();
 
+  const normalizeString = (value?: string): string =>
+    typeof value === "string" ? value.trim() : "";
+
   // 使用传入的值，如果没有则使用上下文中的默认值
-  const metaTitle = title || metadata.title;
-  const metaDescription = description || metadata.description;
-  const metaKeywords = keywords || metadata.keywords;
-  const metaOgImage = ogImage || metadata.ogImage;
+  const normalizedTitle = normalizeString(title);
+  const normalizedDescription = normalizeString(description);
+  const normalizedKeywords = normalizeString(keywords);
+  const normalizedOgImage = normalizeString(ogImage);
+
+  const metaTitle = normalizedTitle.length > 0 ? normalizedTitle : metadata.title;
+  const metaDescription =
+    normalizedDescription.length > 0 ? normalizedDescription : metadata.description;
+  const metaKeywords =
+    normalizedKeywords.length > 0 ? normalizedKeywords : metadata.keywords;
+  const metaOgImage =
+    normalizedOgImage.length > 0 ? normalizedOgImage : metadata.ogImage;
 
   // 确保ogImage是完整URL
   const fullOgImageUrl = metaOgImage.startsWith("http")
@@ -38,16 +49,18 @@ const NativeSEO: React.FC<NativeSEOProps> = ({
     : `${window.location.origin}${metaOgImage}`;
 
   // 获取当前规范URL（canonical）
-  const canonicalUrl = canonical || window.location.href;
+  const normalizedCanonical = normalizeString(canonical);
+  const canonicalUrl =
+    normalizedCanonical.length > 0 ? normalizedCanonical : window.location.href;
 
   return (
     <>
       {/* React 19原生元标签支持 */}
       <title data-oid="49bkxr2">{metaTitle}</title>
       <meta name="description" content={metaDescription} data-oid="fj1dqmk" />
-      {metaKeywords && (
+      {metaKeywords.length > 0 ? (
         <meta name="keywords" content={metaKeywords} data-oid="m:_df6k" />
-      )}
+      ) : null}
 
       {/* 规范链接和索引控制 */}
       <link rel="canonical" href={canonicalUrl} data-oid="2kjm6oq" />

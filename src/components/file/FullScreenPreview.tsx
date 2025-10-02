@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import type { FC, ReactNode } from "react";
 import { Box, useTheme } from "@mui/material";
 
 interface FullScreenPreviewProps {
@@ -8,7 +8,7 @@ interface FullScreenPreviewProps {
   disablePadding?: boolean;
 }
 
-const FullScreenPreview: React.FC<FullScreenPreviewProps> = ({
+const FullScreenPreview: FC<FullScreenPreviewProps> = ({
   children,
   onClose,
   backgroundColor,
@@ -25,7 +25,7 @@ const FullScreenPreview: React.FC<FullScreenPreviewProps> = ({
         right: 0,
         bottom: 0,
         zIndex: theme.zIndex.modal + 100,
-        backgroundColor: backgroundColor || theme.palette.background.default,
+        backgroundColor: backgroundColor ?? theme.palette.background.default,
         display: "flex",
         flexDirection: "column",
         overflow: "auto",

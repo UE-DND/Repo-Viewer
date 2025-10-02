@@ -32,9 +32,9 @@ export const DEFAULT_METADATA = {
 
 export const MetadataContext = createContext<MetadataContextType | null>(null);
 
-export const useMetadata = () => {
+export const useMetadata = (): MetadataContextType => {
   const context = useContext(MetadataContext);
-  if (!context) {
+  if (context === null) {
     throw new Error("useMetadata必须在MetadataProvider内部使用");
   }
   return context;

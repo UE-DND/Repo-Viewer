@@ -30,6 +30,14 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   onTransformed,
 }) => {
   const theme = useTheme();
+  const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
+  const displayFileName = normalizedFileName ?? '未知文件';
+  const altText = normalizedFileName ?? '图片预览';
+  const hasError = error;
+  const rotationTransform = `rotate(${String(rotation)}deg)`;
+  const containerClassName = [className, 'image-preview-container']
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join(' ');
 
   return (
     <Box
@@ -42,7 +50,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         overflow: 'hidden',
         bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5',
       }}
-      className={`${className} image-preview-container`}
+      className={containerClassName.length > 0 ? containerClassName : 'image-preview-container'}
       style={style}
       data-oid="j_s1bp2"
     >
@@ -64,7 +72,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
           }}
           data-oid="5q_.d-t"
         >
-          {fileName || '未知文件'}
+          {displayFileName}
         </Typography>
       )}
 
@@ -101,7 +109,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         )}
 
         {/* 错误状态显示 */}
-        {error && (
+        {hasError && (
           <Box
             sx={{
               display: 'flex',
@@ -120,7 +128,6 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
           >
             <Typography
               color="error"
-              variant="body1"
               sx={{ mb: 2 }}
               data-oid="tex3zwr"
             >
@@ -128,7 +135,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
             </Typography>
             <IconButton
               onClick={() => {
-                if (toolbarProps.setError) {
+                if (typeof toolbarProps.setError === 'function') {
                   toolbarProps.setError(false);
                 }
               }}
@@ -139,7 +146,6 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                   bgcolor: alpha(theme.palette.primary.main, 0.2),
                 },
               }}
-              data-oid="198ze-v"
             >
               <ReplayIcon data-oid=":znocig" />
             </IconButton>
@@ -152,9 +158,9 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
           minScale={0.1}
           maxScale={5}
           centerOnInit={true}
-          wheel={{ disabled: error }}
-          pinch={{ disabled: error }}
-          panning={{ disabled: error }}
+          wheel={{ disabled: hasError }}
+          pinch={{ disabled: hasError }}
+          panning={{ disabled: hasError }}
           onTransformed={(ref) => {
             onTransformed(ref.state.scale);
           }}
@@ -178,13 +184,13 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                 }}
                 data-oid=":ze-2ev"
               >
-                {!error && (
+                {!hasError && (
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      transform: `rotate(${rotation}deg)`,
+                      transform: rotationTransform,
                       transition: 'transform 0.3s ease',
                       transformOrigin: 'center center',
                       width: '100%',
@@ -196,7 +202,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                     <img
                       ref={imgRef}
                       src={shouldLoad ? imageUrl : ''}
-                      alt={fileName || '图片预览'}
+                      alt={altText}
                       className={!loading ? 'loaded' : ''}
                       style={{
                         maxWidth: '90%',

@@ -8,7 +8,7 @@ const proxyConfig = getProxyConfig();
 // 模式设置
 export const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
-export const isForceServerProxyEnabled = () => getForceServerProxy();
+export const isForceServerProxyEnabled = (): boolean => getForceServerProxy();
 
 // 定义多个代理服务URL
 export const PROXY_SERVICES = [

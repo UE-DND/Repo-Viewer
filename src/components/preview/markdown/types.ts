@@ -1,4 +1,4 @@
-import { GitHubContent } from "@/types";
+import type { GitHubContent } from "@/types";
 
 export interface MarkdownPreviewProps {
   readmeContent: string | null;

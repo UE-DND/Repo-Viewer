@@ -19,6 +19,8 @@ export const ImageErrorDisplay: React.FC<ImageErrorDisplayProps> = ({
   onRetry,
 }) => {
   const theme = useTheme();
+  const trimmedSrc = imgSrc.trim();
+  const displaySrc = trimmedSrc.length > 0 ? imgSrc : "未知图片路径";
 
   return (
     <div
@@ -61,7 +63,7 @@ export const ImageErrorDisplay: React.FC<ImageErrorDisplayProps> = ({
         }}
         data-oid="dcz6qln"
       >
-        {imgSrc || "未知图片路径"}
+        {displaySrc}
       </Typography>
       <Button
         startIcon={<RefreshIcon data-oid="d5-tho9" />}

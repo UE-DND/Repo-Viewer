@@ -6,9 +6,11 @@ import ImagePreviewContent from './ImagePreviewContent';
 import { useImagePreview } from './hooks/useImagePreview';
 import type { ImagePreviewProps, ImageToolbarProps } from './types';
 
+const NOOP: () => void = () => undefined;
+
 const ImagePreview: React.FC<ImagePreviewProps> = ({
   imageUrl,
-  fileName = '未知文件',
+  fileName,
   onClose,
   isFullScreen = false,
   thumbnailMode = false,
@@ -19,6 +21,8 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
+  const displayFileName = normalizedFileName ?? '未知文件';
 
   const {
     loading,
@@ -51,8 +55,11 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     if (typeof radius === 'number') {
       return radius * 2;
     }
-    if (radius) {
-      return `calc(${radius} * 2)`;
+    if (typeof radius === 'string') {
+      const trimmedRadius = radius.trim();
+      if (trimmedRadius.length > 0) {
+        return `calc(${trimmedRadius} * 2)`;
+      }
     }
     return radius;
   }, [theme.shape.borderRadius]);
@@ -63,9 +70,9 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     scale,
     isSmallScreen,
     fullScreenMode,
-    zoomIn: () => {},
-    zoomOut: () => {},
-    resetTransform: () => {},
+    zoomIn: NOOP,
+    zoomOut: NOOP,
+    resetTransform: NOOP,
     handleRotateLeft,
     handleRotateRight,
     toggleFullScreen,
@@ -76,7 +83,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   // 预览内容组件的Props
   const previewContentProps = {
     imageUrl,
-    fileName,
+    fileName: displayFileName,
     rotation,
     loading,
     error,
@@ -96,7 +103,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     return (
       <ImageThumbnail
         imageUrl={imageUrl}
-        fileName={fileName}
+        fileName={displayFileName}
         thumbnailSize={thumbnailSize}
         shouldLoad={shouldLoad}
         onOpenPreview={handleOpenPreview}

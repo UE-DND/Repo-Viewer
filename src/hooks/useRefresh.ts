@@ -5,7 +5,7 @@ import { logger } from '@/utils';
 
 const MIN_ANIMATION_DURATION = 600;
 
-export const useRefresh = () => {
+export const useRefresh = (): (() => void) => {
   const { refresh, loading, currentPath } = useContentContext();
   const refreshTimerRef = useRef<number | null>(null);
   const refreshingRef = useRef<boolean>(false);
@@ -22,7 +22,7 @@ export const useRefresh = () => {
       logger.info('内容加载完成，计算动画剩余时间');
       const elapsedTime = Date.now() - startTimeRef.current;
       const remainingTime = Math.max(MIN_ANIMATION_DURATION - elapsedTime, 0);
-      logger.debug(`加载用时: ${elapsedTime}ms, 剩余动画时间: ${remainingTime}ms`);
+      logger.debug(`加载用时: ${elapsedTime.toString()}ms, 剩余动画时间: ${remainingTime.toString()}ms`);
 
       const timeoutId = window.setTimeout(() => {
         document.body.classList.remove('theme-transition');
@@ -43,7 +43,7 @@ export const useRefresh = () => {
         }, 50);
       }, remainingTime + 50);
 
-      if (refreshTimerRef.current) {
+      if (refreshTimerRef.current !== null) {
         window.clearTimeout(refreshTimerRef.current);
       }
       refreshTimerRef.current = timeoutId;

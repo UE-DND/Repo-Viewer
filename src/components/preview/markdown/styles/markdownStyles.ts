@@ -1,4 +1,5 @@
-import { Theme, alpha } from "@mui/material";
+import type { Theme, SxProps } from "@mui/material";
+import { alpha } from "@mui/material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 const SYSTEM_FONT =
@@ -6,7 +7,7 @@ const SYSTEM_FONT =
 const MONO_FONT =
   "var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace)";
 
-export const createMarkdownStyles = (theme: Theme, latexCount: number) => {
+export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<Theme> => {
   const isDark = theme.palette.mode === "dark";
   const textColor = theme.palette.text.primary;
   const secondaryTextColor = theme.palette.text.secondary;

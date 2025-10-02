@@ -15,22 +15,22 @@ const USE_TOKEN_MODE = isTokenMode();
 
 export class GitHubTokenManager {
   private tokens: string[] = [];
-  private currentIndex: number = 0;
-  private usageCount: Map<string, number> = new Map();
-  private failedTokens: Set<string> = new Set();
+  private currentIndex = 0;
+  private usageCount = new Map<string, number>();
+  private failedTokens = new Set<string>();
 
   constructor() {
     if (isDevEnvironment || USE_TOKEN_MODE) {
       this.loadTokensFromEnv();
     }
     if (this.tokens.length > 0) {
-      logger.info(`成功加载 ${this.tokens.length} 个GitHub Personal Access Token`);
+      logger.info(`成功加载 ${this.tokens.length.toString()} 个GitHub Personal Access Token`);
     } else if (isDevEnvironment) {
       logger.warn('未加载任何GitHub Personal Access Token，API访问将受到严格限制');
     }
   }
 
-  public loadTokensFromEnv() {
+  public loadTokensFromEnv(): void {
     this.tokens = [];
 
     try {
@@ -38,11 +38,11 @@ export class GitHubTokenManager {
       this.tokens.push(...envTokens);
 
       if (envTokens.length > 0) {
-        logger.debug(`从环境变量加载了 ${envTokens.length} 个 GitHub PAT`);
+        logger.debug(`从环境变量加载了 ${envTokens.length.toString()} 个 GitHub PAT`);
       }
       if (typeof localStorage !== 'undefined') {
         const localToken = localStorage.getItem('GITHUB_PAT');
-        if (localToken && EnvParser.validateToken(localToken)) {
+        if (localToken !== null && localToken !== '' && EnvParser.validateToken(localToken)) {
           this.tokens.push(localToken.trim());
           logger.debug('已从localStorage加载token (已脱敏)');
         }
@@ -51,7 +51,7 @@ export class GitHubTokenManager {
       this.tokens = [...new Set(this.tokens)];
 
       if (this.tokens.length > 0) {
-        logger.info(`成功加载 ${this.tokens.length} 个GitHub Personal Access Token`);
+        logger.info(`成功加载 ${this.tokens.length.toString()} 个GitHub Personal Access Token`);
       }
 
       if (isDeveloperMode()) {
@@ -64,18 +64,22 @@ export class GitHubTokenManager {
   }
 
   public getCurrentToken(): string {
-    if (this.tokens.length === 0) return '';
+    if (this.tokens.length === 0) {
+      return '';
+    }
     return this.tokens[this.currentIndex] ?? '';
   }
 
   public getNextToken(): string {
-    if (this.tokens.length === 0) return '';
+    if (this.tokens.length === 0) {
+      return '';
+    }
 
     let attempts = 0;
     while (attempts < this.tokens.length) {
       this.currentIndex = (this.currentIndex + 1) % this.tokens.length;
       const token = this.tokens[this.currentIndex];
-      if (!token) {
+      if (token === undefined || token === '') {
         attempts++;
         continue;
       }
@@ -92,8 +96,8 @@ export class GitHubTokenManager {
     return this.tokens[0] ?? '';
   }
 
-  public markTokenUsed(token: string) {
-    const count = this.usageCount.get(token) || 0;
+  public markTokenUsed(token: string): void {
+    const count = this.usageCount.get(token) ?? 0;
     this.usageCount.set(token, count + 1);
 
     if (count > 30) {
@@ -102,7 +106,7 @@ export class GitHubTokenManager {
     }
   }
 
-  public markTokenFailed(token: string) {
+  public markTokenFailed(token: string): string {
     this.failedTokens.add(token);
     return this.getNextToken();
   }
@@ -121,14 +125,14 @@ export class GitHubTokenManager {
 
   public markCurrentTokenFailed(): void {
     const currentToken = this.getCurrentToken();
-    if (currentToken) {
+    if (currentToken !== '') {
       this.markTokenFailed(currentToken);
     }
   }
 
   public setLocalToken(token: string): void {
     if (typeof localStorage !== 'undefined') {
-      if (!token || token.trim().length === 0) {
+      if (token === '' || token.trim().length === 0) {
         localStorage.removeItem('GITHUB_PAT');
         logger.info('已移除本地GitHub token');
       } else {
@@ -141,7 +145,7 @@ export class GitHubTokenManager {
 
   public getGitHubPAT(): string {
     const token = this.getCurrentToken();
-    if (token) {
+    if (token !== '') {
       this.markTokenUsed(token);
     }
     return token;
@@ -150,7 +154,7 @@ export class GitHubTokenManager {
   public handleApiError(error: Response): void {
     if (error.status === 401 || error.status === 403) {
       const currentToken = this.getCurrentToken();
-      if (currentToken) {
+      if (currentToken !== '') {
         logger.warn(`令牌认证失败，尝试使用下一个令牌`);
         this.markTokenFailed(currentToken);
       }
@@ -158,7 +162,7 @@ export class GitHubTokenManager {
 
     if (error.status === 429) {
       const currentToken = this.getCurrentToken();
-      if (currentToken) {
+      if (currentToken !== '') {
         logger.warn(`令牌请求频率限制，尝试使用下一个令牌`);
         this.getNextToken();
       }
@@ -166,29 +170,29 @@ export class GitHubTokenManager {
 
     if (error.status === 400) {
       const currentToken = this.getCurrentToken();
-      if (currentToken) {
+      if (currentToken !== '') {
         logger.warn(`发生400错误(Bad Request)，可能是请求格式问题或Token权限不足，尝试使用下一个令牌`);
         this.getNextToken();
       }
 
       error.clone().text().then(errorText => {
         try {
-          const errorJson = JSON.parse(errorText);
+          const errorJson = JSON.parse(errorText) as { message?: string; errors?: unknown[] };
           logger.error(`GitHub API 400错误详情: ${JSON.stringify(errorJson)}`);
 
-          if (errorJson.message) {
+          if (errorJson.message !== undefined && errorJson.message !== '') {
             logger.error(`错误消息: ${errorJson.message}`);
           }
-          if (errorJson.errors && Array.isArray(errorJson.errors)) {
-            errorJson.errors.forEach((err: any, index: number) => {
-              logger.error(`详细错误 #${index + 1}: ${JSON.stringify(err)}`);
+          if (errorJson.errors !== undefined && Array.isArray(errorJson.errors)) {
+            errorJson.errors.forEach((err: unknown, index: number) => {
+              logger.error(`详细错误 #${(index + 1).toString()}: ${JSON.stringify(err)}`);
             });
           }
-        } catch (e) {
+        } catch (_e) {
           logger.error(`GitHub API 400错误详情 (非JSON格式): ${errorText}`);
         }
-      }).catch(e => {
-        logger.error('无法解析400错误响应内容:', e);
+      }).catch((_e: unknown) => {
+        logger.error('无法解析400错误响应内容:', _e);
       });
     }
   }

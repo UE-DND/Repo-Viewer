@@ -8,7 +8,8 @@ import {
   alpha,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { CustomContentProps, useSnackbar } from "notistack";
+import { useSnackbar } from "notistack";
+import type { CustomContentProps } from "notistack";
 import { eventEmitter, EVENTS } from "@/utils/events/eventEmitter";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
@@ -21,7 +22,7 @@ const CustomSnackbar = memo(
     ({ id, message, variant, progress }, ref) => {
       const { closeSnackbar } = useSnackbar();
 
-      const handleDismiss = () => {
+      const handleDismiss = (): void => {
         if (isDownloadRelated()) {
           eventEmitter.dispatch(EVENTS.CANCEL_DOWNLOAD, id);
         }
@@ -38,7 +39,7 @@ const CustomSnackbar = memo(
               ? "警告"
               : "信息";
 
-      const isDownloadRelated = () => {
+      const isDownloadRelated = (): boolean => {
         if (
           variant === "success" &&
           typeof message === "string" &&
@@ -52,26 +53,26 @@ const CustomSnackbar = memo(
         }
 
         if (React.isValidElement(message)) {
-          const hasProgressBar = (element: React.ReactNode): boolean => {
-            if (!React.isValidElement(element)) return false;
+          const hasProgressBar = (node: React.ReactNode): boolean => {
+            if (!React.isValidElement(node)) {
+              return false;
+            }
 
-            if (element.type === LinearProgress) {
+            if (node.type === LinearProgress) {
               return true;
             }
 
-            try {
-              const props = element.props as any;
-              const children = props?.children;
+            const { children } = node.props as { children?: React.ReactNode };
 
-              if (!children) return false;
-
-              if (Array.isArray(children)) {
-                return children.some((child) => hasProgressBar(child));
-              }
-              return hasProgressBar(children);
-            } catch (e) {
+            if (children === null || children === undefined) {
               return false;
             }
+
+            if (Array.isArray(children)) {
+              return children.some(hasProgressBar);
+            }
+
+            return hasProgressBar(children);
           };
 
           return hasProgressBar(message);

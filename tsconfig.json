@@ -34,5 +34,5 @@
     "noPropertyAccessFromIndexSignature": true,
     "skipLibCheck": true
   },
-  "include": ["./src"]
+  "include": ["./src", "./api"]
 }

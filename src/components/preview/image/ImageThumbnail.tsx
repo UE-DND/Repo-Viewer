@@ -14,6 +14,8 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imgRef,
 }) => {
   const theme = useTheme();
+  const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
+  const altText = normalizedFileName ?? '缩略图';
 
   return (
     <Box
@@ -45,7 +47,7 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
         <img
           ref={imgRef}
           src={shouldLoad ? imageUrl : ''}
-          alt={fileName || '缩略图'}
+          alt={altText}
           style={{
             width: '100%',
             height: '100%',

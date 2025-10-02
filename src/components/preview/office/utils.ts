@@ -19,7 +19,7 @@ export const isMobileDevice = (): boolean => {
   );
 };
 
-export const generatePreviewUrl = (fileUrl: string, isBackup: boolean = false): string => {
+export const generatePreviewUrl = (fileUrl: string, isBackup = false): string => {
   const safeUrl = encodeURIComponent(fileUrl);
   const baseUrl = isBackup
     ? "https://view.officeapps.live.com/op/embed.aspx?src="

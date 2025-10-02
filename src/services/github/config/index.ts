@@ -1,16 +1,20 @@
-// 代理强制管理器 - 主要配置源
+// 代理强制管理器
 export {
-  ProxyForceManager,
   getForceServerProxy,
   shouldUseServerAPI,
   getRequestStrategy,
+  getProxyConfigDetails,
   refreshProxyConfig
 } from './ProxyForceManager';
 
-// 重新导出便捷函数，确保向后兼容
+// 导出便捷函数，确保向后兼容
 import { getForceServerProxy, shouldUseServerAPI, getRequestStrategy } from './ProxyForceManager';
 
-export const getProxyForceConfig = () => ({
+export const getProxyForceConfig = (): {
+  forceServerProxy: boolean;
+  shouldUseServerAPI: boolean;
+  strategy: 'server-api' | 'direct-api' | 'hybrid';
+} => ({
   forceServerProxy: getForceServerProxy(),
   shouldUseServerAPI: shouldUseServerAPI(),
   strategy: getRequestStrategy()

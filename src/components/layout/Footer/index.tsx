@@ -88,7 +88,7 @@ const Footer: React.FC = () => {
             >
               Repo-Viewer
             </Link>
-            {version && (
+            {version !== '' && (
               <>
                 {" "}
                 · {version}

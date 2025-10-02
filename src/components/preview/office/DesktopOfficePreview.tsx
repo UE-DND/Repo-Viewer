@@ -17,12 +17,12 @@ import {
   Download as DownloadIcon,
 } from "@mui/icons-material";
 import { OfficePreviewSkeleton } from "@/components/ui/skeletons";
-import { OfficePreviewProps } from './types';
+import type { OfficePreviewProps } from "./types";
 import { getFileTypeName, generatePreviewUrl } from './utils';
 import { IFRAME_LOAD_TIMEOUT, SKELETON_EXIT_TIMEOUT } from './constants';
 import { logger } from '@/utils';
 
-interface DesktopOfficePreviewProps extends OfficePreviewProps {}
+type DesktopOfficePreviewProps = OfficePreviewProps;
 
 const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   fileUrl,
@@ -41,7 +41,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   const [triedBackup, setTriedBackup] = useState<boolean>(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeoutRef = useRef<number | null>(null);
   const loadingRef = useRef<boolean>(true);
   const isIframeLoadedRef = useRef(false);
 
@@ -72,15 +72,18 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   }, [refreshKey]);
 
   useEffect(() => {
-    if (loading) {
-      const timeoutId = setTimeout(() => {
-        logger.warn("强制退出骨架屏：超时");
-        setLoading(false);
-      }, SKELETON_EXIT_TIMEOUT);
-
-      return () => clearTimeout(timeoutId);
+    if (!loading) {
+      return undefined;
     }
-    return () => {};
+
+    const timeoutId = window.setTimeout(() => {
+      logger.warn("强制退出骨架屏：超时");
+      setLoading(false);
+    }, SKELETON_EXIT_TIMEOUT);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [loading]);
 
   const handleIframeError = useCallback(() => {
@@ -127,11 +130,11 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     setLoading(true);
     setError(null);
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
     }
 
-    timeoutRef.current = setTimeout(() => {
+    timeoutRef.current = window.setTimeout(() => {
       if (loadingRef.current) {
         logger.warn("预览加载超时");
         setError("加载预览超时，请尝试使用下载按钮下载文件");
@@ -140,11 +143,18 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     }, IFRAME_LOAD_TIMEOUT);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
       }
     };
   }, [fileUrl, refreshKey]);
+
+  const containerClassName = [
+    typeof className === "string" && className.trim().length > 0 ? className : null,
+    `${fileType}-preview-container`
+  ]
+    .filter((value): value is string => value !== null)
+    .join(" ");
 
   if (loading) {
     return (
@@ -165,7 +175,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
         borderRadius: g3BorderRadius(G3_PRESETS.card),
       }}
       style={style}
-      className={`${className} ${fileType}-preview-container`}
+      className={containerClassName}
       data-oid=":ag4zt-"
     >
       <Box
@@ -246,7 +256,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
             </IconButton>
           </Tooltip>
 
-          {onClose && (
+          {typeof onClose === "function" ? (
             <Tooltip title="关闭" data-oid="8zq5ing">
               <IconButton
                 onClick={onClose}
@@ -264,7 +274,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
                 <CloseIcon fontSize="small" data-oid="se24oz7" />
               </IconButton>
             </Tooltip>
-          )}
+          ) : null}
         </Box>
       </Box>
 
@@ -280,7 +290,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
         }}
         data-oid=":p2y7md"
       >
-        {error ? (
+        {error !== null ? (
           <Box
             sx={{
               position: "absolute",
@@ -370,7 +380,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
               display: "block",
             }}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            key={`iframe-${fileType}-${refreshKey}-${useBackupPreview ? "backup" : "main"}`}
+            key={`iframe-${fileType}-${String(refreshKey)}-${useBackupPreview ? "backup" : "main"}`}
             data-oid="gtas:rh"
           />
         )}
