@@ -367,29 +367,119 @@ export const useFilePreview = (
           } else {
             try {
               const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-
-              const statusEl = newTab.document.getElementById('status');
-              if (statusEl !== null) {
-                statusEl.textContent = '正在载入预览';
-              }
-
               const progressEl = newTab.document.getElementById('progress');
-              if (progressEl !== null) {
-                progressEl.textContent = '若等待时间过长，请尝试直接下载';
+              const viewerEl = newTab.document.getElementById('viewer') as HTMLIFrameElement | null;
+              const loaderEl = newTab.document.getElementById('loader');
+              const progressCircle = newTab.document.getElementById('progress-circle') as SVGCircleElement | null;
+
+              // 创建 AbortController 用于取消请求
+              const abortController = new AbortController();
+              (newTab as Window & { abortController?: AbortController }).abortController = abortController;
+
+              // 注入取消下载函数与事件绑定
+              const bindCancel = (): void => {
+                const cancel = (): void => {
+                  try {
+                    abortController.abort();
+                  } catch {}
+                  const status = newTab.document.getElementById('status');
+                  if (status !== null) {
+                    status.textContent = '已取消预览';
+                  }
+                  const progress = newTab.document.getElementById('progress');
+                  if (progress !== null) {
+                    progress.textContent = '';
+                  }
+                  const btn = newTab.document.getElementById('cancel-btn') as HTMLButtonElement | null;
+                  if (btn !== null) {
+                    btn.disabled = true;
+                    btn.style.display = 'none';
+                  }
+                  window.setTimeout(() => {
+                    try { newTab.close(); } catch { /* noop */ }
+                  }, 1500);
+                };
+                (newTab as Window & { cancelDownload?: () => void }).cancelDownload = cancel;
+                const btn = newTab.document.getElementById('cancel-btn');
+                if (btn !== null) {
+                  btn.addEventListener('click', cancel, { once: true });
+                }
+              };
+              bindCancel();
+
+              const resp = await fetch(proxyUrl, {
+                mode: 'cors',
+                signal: abortController.signal
+              });
+              if (!resp.ok || resp.body === null) {
+                throw new Error(`HTTP ${resp.status.toString()}`);
               }
 
+              const contentLengthHeader = resp.headers.get('Content-Length') ?? resp.headers.get('content-length');
+              const total = contentLengthHeader !== null ? parseInt(contentLengthHeader, 10) : 0;
+              let loaded = 0;
+              const reader = resp.body.getReader();
+              const chunks: Uint8Array[] = [];
+              const formatBytes = (n: number): string => `${(n / 1048576).toFixed(2)} MB`;
+              const circumference = 2 * Math.PI * 20; // radius = 20
+
+              let result = await reader.read();
+              while (!result.done) {
+                chunks.push(result.value);
+                loaded += result.value.byteLength;
+                const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
+
+                // 更新文本进度
+                if (progressEl !== null) {
+                  progressEl.textContent = total > 0 && pct !== null
+                    ? `已下载 ${formatBytes(loaded)} / ${formatBytes(total)} (${pct.toString()}%)`
+                    : `已下载 ${formatBytes(loaded)}`;
+                }
+
+                // 更新进度条
+                if (progressCircle !== null && total > 0 && pct !== null) {
+                  progressCircle.classList.add('determinate');
+                  const dashOffset = circumference - (circumference * pct / 100);
+                  progressCircle.style.strokeDashoffset = dashOffset.toString();
+                }
+                result = await reader.read();
+              }
+
+              const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' });
+              const blobUrl = URL.createObjectURL(blob);
+              setTimeout(() => {
+                URL.revokeObjectURL(blobUrl);
+              }, 60_000);
+
+              if (viewerEl !== null) {
+                viewerEl.src = blobUrl;
+                viewerEl.style.visibility = 'visible';
+              } else {
+                newTab.location.replace(blobUrl);
+              }
+              if (loaderEl !== null) {
+                loaderEl.style.display = 'none';
+              }
+              // 隐藏取消按钮，因为加载已完成
               const cancelBtn = newTab.document.getElementById('cancel-btn');
               if (cancelBtn !== null) {
                 cancelBtn.style.display = 'none';
               }
-              setTimeout(() => {
-                newTab.location.replace(proxyUrl);
-              }, 800);
-            } catch (_e: unknown) {
+              newTab.document.title = item.name !== '' ? item.name : 'PDF';
+            } catch (error: unknown) {
+              const errorObj = error instanceof Error ? error : new Error('未知错误');
+              // 检查是否是用户主动取消
+              if (errorObj.name === 'AbortError') {
+                // 用户取消，不显示错误信息
+                return;
+              }
               const loaderEl = newTab.document.getElementById('loader');
               if (loaderEl !== null) {
                 const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-                loaderEl.innerHTML = generatePDFErrorHTML(item.name, '加载失败，请直接打开', proxyUrl, themeColors);
+                loaderEl.innerHTML = generatePDFErrorHTML(item.name, errorObj.message, proxyUrl, themeColors);
+              } else {
+                const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
+                newTab.location.replace(proxyUrl);
               }
             }
           }
@@ -398,7 +488,6 @@ export const useFilePreview = (
           const errorMessage = error instanceof Error ? error.message : '未知错误';
           onError(`打开PDF失败: ${errorMessage}`);
         }
-        // 对于原生预览，不在应用内维护预览状态，也不使用预览参数
         return;
       }
       else if (isImageFile(fileNameLower)) {
@@ -407,7 +496,6 @@ export const useFilePreview = (
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });
 
         try {
-          // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
           updateUrlWithHistory(dirPath, item.path);
           dispatch({
             type: 'SET_IMAGE_PREVIEW',
@@ -423,17 +511,14 @@ export const useFilePreview = (
         }
     } else if (isWordFile(fileNameLower)) {
       // 使用统一的Office预览组件
-      // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.WORD);
     } else if (isExcelFile(fileNameLower)) {
       // 使用统一的Office预览组件
-      // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.EXCEL);
     } else if (isPPTFile(fileNameLower)) {
       // 使用统一的Office预览组件
-      // 更新 URL，添加预览参数（仅对内嵌预览类型使用）
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.PPT);
     } else {
@@ -444,11 +529,6 @@ export const useFilePreview = (
       onError(`预览文件失败: ${errorMessage}`);
     }
   }, [onError, useTokenMode, muiTheme, loadOfficePreview]);
-
-
-
-  // 加载Markdown预览 (仅用于README文件)
-
 
   // 关闭预览
   const closePreview = useCallback(() => {
