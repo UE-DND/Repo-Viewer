@@ -1,13 +1,9 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import { g3BorderRadius, G3_PRESETS } from '../../../theme/g3Curves';
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import type { LazyLoadErrorBoundaryProps, LazyLoadErrorBoundaryState } from '../types';
 import { logger } from '../../logging/logger';
 
-/**
- * 简单的错误边界组件
- * 用于处理懒加载组件的加载错误
- */
 export class LazyLoadErrorBoundary extends React.Component<
   LazyLoadErrorBoundaryProps,
   LazyLoadErrorBoundaryState
@@ -21,16 +17,16 @@ export class LazyLoadErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     logger.error('懒加载组件错误:', error, errorInfo);
   }
 
-  handleRetry = () => {
+  handleRetry = (): void => {
     this.setState({ hasError: false });
     this.props.onRetry?.();
   };
 
-  override render() {
+  override render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <Box
@@ -49,7 +45,7 @@ export class LazyLoadErrorBoundary extends React.Component<
             预览组件加载失败
           </Box>
           <Box sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
-            {this.state.error?.message || '未知错误'}
+            {this.state.error?.message ?? '未知错误'}
           </Box>
           <Box
             component="button"

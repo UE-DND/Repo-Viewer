@@ -7,38 +7,39 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { AppContextProvider } from "./contexts/unified";
-import MainContent from "./components/layout/MainContent";
-import ToolbarButtons from "./components/layout/ToolbarButtons";
-import { SITE_TITLE } from "./constants";
-import { GitHubService } from "./services/github";
-import { logger } from "./utils";
-import SEO from "./components/seo/SEO";
-import Footer from "./components/layout/Footer";
-import { FaviconManager } from "./components/ui/DynamicIcon";
-import { PageErrorBoundary, FeatureErrorBoundary } from "./components/ui/ErrorBoundary";
+import { AppContextProvider } from "@/contexts/unified";
+import MainContent from "@/components/layout/MainContent";
+import ToolbarButtons from "@/components/layout/ToolbarButtons";
+import { SITE_TITLE } from "@/constants";
+import { GitHubService } from "@/services/github";
+import { logger } from "@/utils";
+import SEO from "@/components/seo/SEO";
+import Footer from "@/components/layout/Footer";
+import { FaviconManager } from "@/components/ui/DynamicIcon";
+import { PageErrorBoundary, FeatureErrorBoundary } from "@/components/ui/ErrorBoundary";
 
-// 优化后的App组件
 const App = React.memo(() => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const titleRef = useRef<HTMLDivElement | null>(null);
 
   // 处理标题点击事件
-  const handleTitleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleTitleClick = (event: React.MouseEvent<HTMLDivElement>): void => {
     // 在移动端禁用跳转功能
-    if (isSmallScreen) return;
+    if (isSmallScreen) {
+      return;
+    }
 
     // 只有当事件的目标元素是文本内容时才执行返回首页
     if (
-      titleRef.current &&
+      titleRef.current !== null &&
       (event.target === titleRef.current ||
         titleRef.current.contains(event.target as Node))
     ) {
       // 清除缓存
       try {
         // 清除 GitHubService 中的内容缓存
-        GitHubService.clearCache();
+        void GitHubService.clearCache();
 
         logger.debug("已清除所有缓存，准备返回首页");
       } catch (e) {
@@ -57,7 +58,7 @@ const App = React.memo(() => {
     const tokenCount = GitHubService.getTokenCount();
     const hasToken = GitHubService.hasToken();
     logger.info(
-      `GitHub Token状态: ${hasToken ? "已配置" : "未配置"}, Token数量: ${tokenCount}`,
+      `GitHub Token状态: ${hasToken ? "已配置" : "未配置"}, Token数量: ${tokenCount.toString()}`,
     );
 
     if (!hasToken) {
@@ -81,12 +82,12 @@ const App = React.memo(() => {
             .notistack-SnackbarContainer {
               bottom: 24px !important;
             }
-            
+
             .notistack-MuiContent {
-              border-radius: ${theme.shape.borderRadius}px !important;
+              border-radius: ${theme.shape.borderRadius.toString()}px !important;
               box-shadow: ${theme.shadows[3]} !important;
             }
-            
+
             .notistack-MuiContent-success,
             .notistack-MuiContent-error,
             .notistack-MuiContent-warning,

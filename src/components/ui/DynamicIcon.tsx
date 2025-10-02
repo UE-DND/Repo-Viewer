@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useDynamicIcon, useFaviconUpdater } from '../../hooks/useDynamicIcon';
-import { logger } from '../../utils';
+import { useDynamicIcon, useFaviconUpdater } from '@/hooks/useDynamicIcon';
+import { logger } from '@/utils';
 
 interface DynamicIconProps {
   className?: string;
@@ -9,9 +9,9 @@ interface DynamicIconProps {
   manageFavicon?: boolean;
 }
 
-export const DynamicIcon: React.FC<DynamicIconProps> = ({ 
-  className, 
-  style, 
+export const DynamicIcon: React.FC<DynamicIconProps> = ({
+  className,
+  style,
   alt = "Repo Viewer Icon",
   manageFavicon = false
 }) => {
@@ -26,8 +26,8 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({
   }, [manageFavicon]);
 
   return (
-    <img 
-      src={iconPath} 
+    <img
+      src={iconPath}
       alt={alt}
       className={className}
       style={style}
@@ -44,12 +44,12 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({
 
 export const FaviconManager: React.FC = () => {
   useFaviconUpdater();
-  
+
   // 添加调试信息
   React.useEffect(() => {
     logger.info('🔧 FaviconManager初始化完成');
   }, []);
-  
+
   return null;
 };
 

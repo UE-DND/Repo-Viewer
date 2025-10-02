@@ -418,6 +418,7 @@ body {
 /* 确保虚拟列表的内边距完全由 JavaScript 控制 */
 .file-list-container.few-items .virtual-file-list {
   /* 移除所有强制的内边距设置 */
+  padding: 0;
 }
 
 /* 不需要滚动的文件列表样式 */
@@ -497,6 +498,7 @@ body {
   /* 移动端针对极少量文件的特殊优化 */
   .file-list-container.few-items.no-scroll .virtual-file-list {
     /* 只对极少量文件（1-2个）应用最小内边距 */
+    padding: 8px;
   }
 
   /* 移动端中等数量文件的优化 */

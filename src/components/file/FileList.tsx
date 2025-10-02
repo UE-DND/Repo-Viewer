@@ -1,17 +1,32 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { Box } from "@mui/material";
-import { FixedSizeList, ListChildComponentProps } from "react-window";
+import { FixedSizeList, type ListChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { motion } from "framer-motion";
+import type { MotionStyle } from "framer-motion";
 import FileListItem from "./FileListItem";
-import { GitHubContent } from "../../types";
-import { g3Styles } from "../../utils";
+import type { GitHubContent } from "@/types";
+import { g3Styles } from "@/utils";
 
-// 添加CSS优化，提高动画性能
+// 虚拟列表项数据类型
+interface VirtualListItemData {
+  contents: GitHubContent[];
+  downloadingPath: string | null;
+  downloadingFolderPath: string | null;
+  folderDownloadProgress: number;
+  handleItemClick: (item: GitHubContent) => void;
+  handleDownloadClick: (e: React.MouseEvent, item: GitHubContent) => void;
+  handleFolderDownloadClick: (e: React.MouseEvent, item: GitHubContent) => void;
+  handleCancelDownload: (e: React.MouseEvent) => void;
+  currentPath: string;
+  isScrolling: boolean;
+  scrollSpeed: number;
+}
+
 const optimizedAnimationStyle = {
-  willChange: "opacity, transform",
-  backfaceVisibility: "hidden" as "hidden",
-  WebkitBackfaceVisibility: "hidden" as "hidden",
+  willChange: "opacity, transform" as const,
+  backfaceVisibility: "hidden" as const,
+  WebkitBackfaceVisibility: "hidden" as const,
   perspective: 1000,
   WebkitPerspective: 1000,
 };
@@ -105,7 +120,7 @@ const listAnimationVariants = {
 };
 
 // 根据滚动速度动态生成动画变体
-const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
+const getDynamicItemVariants = (speed: number, isScrolling: boolean): typeof itemVariants => {
   // 根据滚动速度调整动画参数
   const isFastScrolling = speed > 0.3; // 阈值可以根据实际情况调整
 
@@ -144,7 +159,7 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean) => {
 };
 
 // 列表项渲染器
-const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
+const Row = React.memo(({ data, index, style }: ListChildComponentProps<VirtualListItemData>) => {
   const {
     contents,
     downloadingPath,
@@ -160,16 +175,21 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
   } = data;
 
   const item = contents[index];
+  
+  // 确保索引有效
+  if (item === undefined) {
+    return null;
+  }
 
   // 调整样式以确保一致的间距，但使用更小的视觉间距
-  const adjustedStyle = {
-    ...style,
+  const adjustedStyle: MotionStyle = {
+    ...(style as MotionStyle),
     // 为了保证列表上下间距始终一致，给每个列表项添加对称的上下内边距（各占 ROW_GAP 的一半）
     paddingTop: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
     paddingBottom: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
     /* 保持虚拟列表固定行高，由 rowHeight 精确控制高度 */
     paddingRight: "3px",
-    boxSizing: "border-box" as "border-box",
+    boxSizing: "border-box" as const,
     ...optimizedAnimationStyle, // 添加优化的动画样式
   };
 
@@ -178,7 +198,7 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps) => {
 
   return (
     <motion.div
-      style={adjustedStyle as any}
+      style={adjustedStyle}
       className="file-list-item-container"
       variants={currentVariants}
       custom={index}
@@ -246,7 +266,7 @@ const FileList = React.memo<FileListProps>(
     }, [isSmallScreen]);
 
     // 计算悬停效果所需的额外空间
-    const hoverExtraSpace = useMemo(() => {
+    const hoverExtraSpace = useMemo((): number => {
       // 悬停时阴影所需的额外空间
       const shadowSpace = isSmallScreen
         ? FILE_ITEM_CONFIG.hover.shadowSpace.xs
@@ -271,7 +291,7 @@ const FileList = React.memo<FileListProps>(
     // 监听窗口大小变化和文件数量变化
     useEffect(() => {
       // 计算可用高度的函数，考虑文件数量
-      const calculateAvailableHeight = () => {
+      const calculateAvailableHeight = (): number => {
         // 获取视口高度
         const viewportHeight = window.innerHeight;
         // 估计顶部导航栏和面包屑的高度（可以根据实际情况调整）
@@ -364,7 +384,7 @@ const FileList = React.memo<FileListProps>(
       setAvailableHeight(calculateAvailableHeight());
 
       // 添加窗口大小变化事件监听
-      const handleResize = () => {
+      const handleResize = (): void => {
         setAvailableHeight(calculateAvailableHeight());
       };
 
@@ -384,7 +404,7 @@ const FileList = React.memo<FileListProps>(
 
     // 仅当相关数据变化时才更新列表项数据
     const itemData = useMemo(
-      () => ({
+      (): VirtualListItemData => ({
         contents,
         downloadingPath,
         downloadingFolderPath,
@@ -413,7 +433,7 @@ const FileList = React.memo<FileListProps>(
     );
 
     // 简化的列表内边距计算
-    const listPadding = useMemo(() => {
+    const listPadding = useMemo((): { paddingTop: number; paddingBottom: number } => {
       // 非滚动模式：使用固定的对称内边距，稍微增加一点
       if (!needsScrolling) {
         const padding = isSmallScreen ? 16 : 20; // 增加4px
@@ -437,7 +457,7 @@ const FileList = React.memo<FileListProps>(
       }: {
         scrollOffset: number;
         scrollDirection: "forward" | "backward";
-      }) => {
+      }): void => {
         // 设置为正在滚动状态
         setIsScrolling(true);
 
@@ -454,7 +474,7 @@ const FileList = React.memo<FileListProps>(
         }
 
         // 清除之前的定时器（如果有）
-        if (scrollTimerRef.current) {
+        if (scrollTimerRef.current !== null) {
           clearTimeout(scrollTimerRef.current);
         }
 
@@ -470,15 +490,15 @@ const FileList = React.memo<FileListProps>(
 
     // 在组件卸载时清除定时器
     React.useEffect(() => {
-      return () => {
-        if (scrollTimerRef.current) {
+      return (): void => {
+        if (scrollTimerRef.current !== null) {
           clearTimeout(scrollTimerRef.current);
         }
       };
     }, []);
 
     // 简化的虚拟列表样式
-    const virtualListStyle = useMemo(() => {
+    const virtualListStyle = useMemo((): React.CSSProperties => {
       return {
         overflowX: "hidden" as const,
         overflowY: needsScrolling ? ("auto" as const) : ("hidden" as const),
@@ -529,7 +549,7 @@ const FileList = React.memo<FileListProps>(
             animate="visible"
           >
             {contents.map((item, index) => (
-              <div key={`${item.name}-${index}`} style={{ height: rowHeight }}>
+              <div key={`${item.name}-${String(index)}`} style={{ height: rowHeight }}>
                 <Row index={index} style={{ height: rowHeight }} data={itemData} />
               </div>
             ))}

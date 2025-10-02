@@ -9,25 +9,21 @@ import {
   alpha,
   Paper,
 } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import {
   Close as CloseIcon,
   Fullscreen as FullscreenIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
 } from "@mui/icons-material";
-import { OfficePreviewSkeleton } from "../../ui/skeletons";
-import { OfficePreviewProps } from './types';
+import { OfficePreviewSkeleton } from "@/components/ui/skeletons";
+import type { OfficePreviewProps } from "./types";
 import { getFileTypeName, generatePreviewUrl } from './utils';
 import { IFRAME_LOAD_TIMEOUT, SKELETON_EXIT_TIMEOUT } from './constants';
-import { logger } from '../../../utils';
+import { logger } from '@/utils';
 
-interface DesktopOfficePreviewProps extends OfficePreviewProps {}
+type DesktopOfficePreviewProps = OfficePreviewProps;
 
-/**
- * 桌面端Office文档预览组件
- * 使用iframe嵌入微软Office在线预览服务
- */
 const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   fileUrl,
   fileType,
@@ -45,19 +41,15 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   const [triedBackup, setTriedBackup] = useState<boolean>(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeoutRef = useRef<number | null>(null);
   const loadingRef = useRef<boolean>(true);
   const isIframeLoadedRef = useRef(false);
 
-  // 获取实际使用的预览URL
   const actualPreviewUrl = generatePreviewUrl(fileUrl, useBackupPreview);
 
-  // 更新loadingRef以反映当前的loading状态
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
-
-  // iframe加载事件处理
   const handleIframeLoad = useCallback(() => {
     logger.info(`${getFileTypeName(fileType)}预览iframe加载完成:`, actualPreviewUrl);
     logger.debug("当前加载状态:", loading);
@@ -66,7 +58,6 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     logger.debug("已设置加载状态为 false");
   }, [actualPreviewUrl, fileType, loading]);
 
-  // 添加 useEffect 钩子检查 iframe 加载状态
   useEffect(() => {
     if (isIframeLoadedRef.current) {
       logger.debug("iframe 已加载，确保 loading 状态为 false");
@@ -74,34 +65,30 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     }
 
     return () => {
-      // 当 URL 变化时重置加载状态引用
       if (refreshKey > 0) {
         isIframeLoadedRef.current = false;
       }
     };
   }, [refreshKey]);
 
-  // 添加强制退出骨架屏的超时处理
   useEffect(() => {
-    // 如果正在加载，设置一个超时处理
-    if (loading) {
-      const timeoutId = setTimeout(() => {
-        logger.warn("强制退出骨架屏：超时");
-        setLoading(false);
-      }, SKELETON_EXIT_TIMEOUT);
-
-      return () => clearTimeout(timeoutId);
+    if (!loading) {
+      return undefined;
     }
-    
-    // 如果不在loading状态，返回空清理函数
-    return () => {};
+
+    const timeoutId = window.setTimeout(() => {
+      logger.warn("强制退出骨架屏：超时");
+      setLoading(false);
+    }, SKELETON_EXIT_TIMEOUT);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [loading]);
 
-  // 处理iframe加载错误
   const handleIframeError = useCallback(() => {
     logger.error(`${getFileTypeName(fileType)}预览iframe加载失败:`, actualPreviewUrl);
 
-    // 如果主预览失败但还未尝试备用预览，切换到备用预览
     if (!useBackupPreview && !triedBackup) {
       logger.info("尝试使用备用预览方式");
       setUseBackupPreview(true);
@@ -110,7 +97,6 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
       return;
     }
 
-    // 如果备用预览也失败，显示错误
     logger.error(`${getFileTypeName(fileType)}预览所有方式都失败`);
     setError(
       `无法加载${getFileTypeName(fileType)}文档预览，可能是网络问题导致无法访问微软预览服务`,
@@ -141,18 +127,14 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   }, [fileUrl]);
 
   useEffect(() => {
-    // 重置状态
     setLoading(true);
     setError(null);
 
-    // 清除之前的超时计时器
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
     }
 
-    // 设置超时检测
-    timeoutRef.current = setTimeout(() => {
-      // 如果仍在加载状态
+    timeoutRef.current = window.setTimeout(() => {
       if (loadingRef.current) {
         logger.warn("预览加载超时");
         setError("加载预览超时，请尝试使用下载按钮下载文件");
@@ -161,13 +143,19 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
     }, IFRAME_LOAD_TIMEOUT);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
       }
     };
   }, [fileUrl, refreshKey]);
 
-  // 在渲染部分使用骨架屏
+  const containerClassName = [
+    typeof className === "string" && className.trim().length > 0 ? className : null,
+    `${fileType}-preview-container`
+  ]
+    .filter((value): value is string => value !== null)
+    .join(" ");
+
   if (loading) {
     return (
       <OfficePreviewSkeleton isSmallScreen={false} data-oid=":hn6lc1" />
@@ -187,10 +175,9 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
         borderRadius: g3BorderRadius(G3_PRESETS.card),
       }}
       style={style}
-      className={`${className} ${fileType}-preview-container`}
+      className={containerClassName}
       data-oid=":ag4zt-"
     >
-      {/* 标题栏和工具栏 */}
       <Box
         sx={{
           display: "flex",
@@ -269,7 +256,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
             </IconButton>
           </Tooltip>
 
-          {onClose && (
+          {typeof onClose === "function" ? (
             <Tooltip title="关闭" data-oid="8zq5ing">
               <IconButton
                 onClick={onClose}
@@ -287,7 +274,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
                 <CloseIcon fontSize="small" data-oid="se24oz7" />
               </IconButton>
             </Tooltip>
-          )}
+          ) : null}
         </Box>
       </Box>
 
@@ -303,7 +290,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
         }}
         data-oid=":p2y7md"
       >
-        {error ? (
+        {error !== null ? (
           <Box
             sx={{
               position: "absolute",
@@ -393,7 +380,7 @@ const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
               display: "block",
             }}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            key={`iframe-${fileType}-${refreshKey}-${useBackupPreview ? "backup" : "main"}`}
+            key={`iframe-${fileType}-${String(refreshKey)}-${useBackupPreview ? "backup" : "main"}`}
             data-oid="gtas:rh"
           />
         )}

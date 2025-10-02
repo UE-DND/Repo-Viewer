@@ -1,14 +1,21 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import App from "@/App";
+import "@/index.css";
 import "github-markdown-css/github-markdown.css";
-import { logger } from "./utils";
-import ThemeProvider from "./providers/ThemeProvider";
-import { setupLatexOptimization } from "./utils/rendering/latexOptimizer";
-import SEOProvider from "./contexts/SEOContext";
-import { ResponsiveSnackbarProvider } from "./components/ui/ResponsiveSnackbarProvider";
-import { getDeveloperConfig } from "./config";
+import { logger } from "@/utils";
+import ThemeProvider from "@/providers/ThemeProvider";
+import { setupLatexOptimization } from "@/utils/rendering/latexOptimizer";
+import SEOProvider from "@/contexts/SEOContext";
+import { ResponsiveSnackbarProvider } from "@/components/ui/ResponsiveSnackbarProvider";
+import { getDeveloperConfig } from "@/config";
+
+// 扩展Window接口以支持LaTeX优化清理函数
+declare global {
+  interface Window {
+    __latexOptimizerCleanup?: () => void;
+  }
+}
 
 // 开发者模式配置 - 控制调试信息显示
 const developerConfig = getDeveloperConfig();
@@ -16,28 +23,39 @@ const allowConsoleOutput = developerConfig.mode || developerConfig.consoleLoggin
 
 // 初始化日志系统
 if (!allowConsoleOutput) {
-  const noop = (..._args: unknown[]) => undefined;
+  const noop = (..._args: unknown[]): undefined => undefined;
+  // eslint-disable-next-line no-console
   console.log = noop;
+  // eslint-disable-next-line no-console
   console.info = noop;
+  // eslint-disable-next-line no-console
   console.debug = noop;
+  // eslint-disable-next-line no-console
   console.group = noop as typeof console.group;
+  // eslint-disable-next-line no-console
   console.groupCollapsed = noop as typeof console.groupCollapsed;
-  console.groupEnd = () => undefined;
+  // eslint-disable-next-line no-console
+  console.groupEnd = (): undefined => undefined;
 }
 
 
 // 应用LaTeX渲染优化
 // 在应用加载后设置LaTeX优化监听器
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", (): void => {
   // 设置LaTeX优化
   // 记录到窗口对象上，以防需要手动清理
-  (window as any).__latexOptimizerCleanup = setupLatexOptimization();
+  window.__latexOptimizerCleanup = setupLatexOptimization();
 
   logger.debug("LaTeX渲染优化已启用");
 });
 
 // 使用更轻量级、优化的根组件
-ReactDOM.createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (rootElement === null) {
+  throw new Error('找不到根元素：请确保 HTML 中存在 id="root" 的元素');
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode data-oid="6an7u6a">
     <SEOProvider data-oid="doscrxm">
       <ThemeProvider data-oid="d_mpj1:">

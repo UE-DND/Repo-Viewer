@@ -15,10 +15,16 @@ export default tseslint.config(
       "vite.config.ts",
     ],
   },
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
     languageOptions: {
       parser: tseslint.parser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
       sourceType: "module",
       globals: {
         ...globals.browser,
@@ -37,6 +43,71 @@ export default tseslint.config(
           allowConstantExport: true,
         },
       ],
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/explicit-function-return-type": [
+        "warn",
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+        },
+      ],
+      "@typescript-eslint/no-non-null-assertion": "error",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/strict-boolean-expressions": [
+        "warn",
+        {
+          allowString: false,
+          allowNumber: false,
+          allowNullableObject: false,
+        },
+      ],
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/no-unnecessary-condition": "warn",
+      "@typescript-eslint/consistent-type-imports": [
+        "warn",
+        {
+          prefer: "type-imports",
+          fixStyle: "separate-type-imports",
+        },
+      ],
+      "@typescript-eslint/consistent-type-exports": "warn",
+
+      "no-console": [
+        "warn",
+        {
+          allow: ["warn", "error"],
+        },
+      ],
+      "no-debugger": "error",
+      "no-alert": "warn",
+      "prefer-const": "error",
+      "no-var": "error",
+      eqeqeq: ["error", "always"],
+      curly: ["error", "all"],
+      "no-implicit-coercion": "warn",
+      "no-return-await": "off",
+      "@typescript-eslint/return-await": ["error", "in-try-catch"],
+      "react-hooks/exhaustive-deps": "error",
+    },
+  },
+  {
+    files: ["**/*.{js,jsx}"],
+    ...tseslint.configs.disableTypeChecked,
+    rules: {
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 );

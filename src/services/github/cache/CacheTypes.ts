@@ -36,7 +36,7 @@ export interface CacheStats {
 
 // 缓存项元数据
 export interface CacheItemMeta {
-  value: any;
+  value: unknown;
   timestamp: number;
   accessCount: number;
   lastAccess: number;

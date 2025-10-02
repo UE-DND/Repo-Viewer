@@ -1,23 +1,27 @@
-import { logger } from '../../../utils';
+import { logger } from '@/utils';
 import type { CacheStats } from './CacheTypes';
 import { AdvancedCache, LRUCache } from './AdvancedCache';
 import { CONTENT_CACHE_CONFIG, FILE_CACHE_CONFIG } from './CacheConfig';
 
-export class CacheManager {
-  private static contentCache: AdvancedCache<string, any>;
-  private static fileCache: AdvancedCache<string, string>;
-  private static initialized = false;
+class CacheManagerImpl {
+  private contentCache: AdvancedCache<string, unknown> | null = null;
+  private fileCache: AdvancedCache<string, string> | null = null;
+  private initialized = false;
 
-  public static async initialize(): Promise<void> {
-    if (this.initialized) return;
+  public async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
 
     try {
-      this.contentCache = new AdvancedCache<string, any>(CONTENT_CACHE_CONFIG);
+      this.contentCache = new AdvancedCache<string, unknown>(CONTENT_CACHE_CONFIG);
       this.fileCache = new AdvancedCache<string, string>(FILE_CACHE_CONFIG);
 
+      const contentInitPromise = this.contentCache.initializePersistence();
+      const fileInitPromise = this.fileCache.initializePersistence();
       await Promise.all([
-        this.contentCache.initializePersistence() || Promise.resolve(),
-        this.fileCache.initializePersistence() || Promise.resolve(),
+        contentInitPromise,
+        fileInitPromise,
       ]);
 
       this.initialized = true;
@@ -28,27 +32,23 @@ export class CacheManager {
     }
   }
 
-  public static getContentCache(): AdvancedCache<string, any> {
-    if (!this.contentCache) {
-      this.contentCache = new AdvancedCache<string, any>(CONTENT_CACHE_CONFIG);
-    }
+  public getContentCache(): AdvancedCache<string, unknown> {
+    this.contentCache ??= new AdvancedCache<string, unknown>(CONTENT_CACHE_CONFIG);
     return this.contentCache;
   }
 
-  public static getFileCache(): AdvancedCache<string, string> {
-    if (!this.fileCache) {
-      this.fileCache = new AdvancedCache<string, string>(FILE_CACHE_CONFIG);
-    }
+  public getFileCache(): AdvancedCache<string, string> {
+    this.fileCache ??= new AdvancedCache<string, string>(FILE_CACHE_CONFIG);
     return this.fileCache;
   }
 
-  public static async clearAllCaches(): Promise<void> {
+  public async clearAllCaches(): Promise<void> {
     const promises: Promise<void>[] = [];
 
-    if (this.contentCache) {
+    if (this.contentCache !== null) {
       promises.push(this.contentCache.clear());
     }
-    if (this.fileCache) {
+    if (this.fileCache !== null) {
       promises.push(this.fileCache.clear());
     }
 
@@ -56,46 +56,39 @@ export class CacheManager {
     logger.info('已清除所有API缓存');
   }
 
-  public static getCacheStats(): { content: CacheStats; file: CacheStats } {
+  public getCacheStats(): { content: CacheStats; file: CacheStats } {
+    const defaultStats: CacheStats = {
+      hits: 0,
+      misses: 0,
+      size: 0,
+      hitRate: 0,
+      memoryUsage: 0,
+      lastCleanup: 0,
+    };
+
     return {
-      content:
-        this.contentCache?.getStats() || {
-          hits: 0,
-          misses: 0,
-          size: 0,
-          hitRate: 0,
-          memoryUsage: 0,
-          lastCleanup: 0,
-        },
-      file:
-        this.fileCache?.getStats() || {
-          hits: 0,
-          misses: 0,
-          size: 0,
-          hitRate: 0,
-          memoryUsage: 0,
-          lastCleanup: 0,
-        },
+      content: this.contentCache?.getStats() ?? defaultStats,
+      file: this.fileCache?.getStats() ?? defaultStats,
     };
   }
 
-  public static async prefetchContent(paths: string[]): Promise<void> {
-    if (this.contentCache && this.contentCache.prefetch) {
-      await this.contentCache.prefetch(paths);
+  public prefetchContent(paths: string[]): void {
+    if (this.contentCache !== null) {
+      this.contentCache.prefetch(paths);
     }
   }
 
-  public static async prefetchFiles(urls: string[]): Promise<void> {
-    if (this.fileCache && this.fileCache.prefetch) {
-      await this.fileCache.prefetch(urls);
+  public prefetchFiles(urls: string[]): void {
+    if (this.fileCache !== null) {
+      this.fileCache.prefetch(urls);
     }
   }
 
-  public static destroy(): void {
-    if (this.contentCache) {
+  public destroy(): void {
+    if (this.contentCache !== null) {
       this.contentCache.destroy();
     }
-    if (this.fileCache) {
+    if (this.fileCache !== null) {
       this.fileCache.destroy();
     }
 
@@ -103,6 +96,9 @@ export class CacheManager {
     logger.info('缓存管理器已销毁');
   }
 }
+
+// 导出单例实例
+export const CacheManager = new CacheManagerImpl();
 
 export { AdvancedCache, LRUCache };
 export type { CacheStats };

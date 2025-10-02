@@ -29,10 +29,10 @@ export * from './rendering/latexOptimizer';
 export * from './routing/urlManager';
 
 // 导出G3曲线工具
-export * from '../theme/g3Curves';
+export * from '@/theme/g3Curves';
 
 // 通用工具函数
-export const debounce = <F extends (...args: any[]) => any>(
+export const debounce = <F extends (...args: unknown[]) => unknown>(
   func: F,
   waitFor: number
 ): ((...args: Parameters<F>) => void) => {
@@ -42,6 +42,8 @@ export const debounce = <F extends (...args: any[]) => any>(
     if (timeout !== null) {
       clearTimeout(timeout);
     }
-    timeout = setTimeout(() => func(...args), waitFor);
+    timeout = setTimeout(() => {
+      func(...args);
+    }, waitFor);
   };
 };

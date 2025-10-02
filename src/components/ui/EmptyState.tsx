@@ -8,8 +8,8 @@ import {
   Stack,
   Button,
 } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from '../../theme/g3Curves';
-import { scaleInAnimation } from "../../theme/animations";
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
+import { scaleInAnimation } from "@/theme/animations";
 import {
   FolderOpen as FolderOpenIcon,
   CloudOff as CloudOffIcon,
@@ -36,7 +36,7 @@ interface EmptyStateProps {
   /** 是否为小屏幕 */
   isSmallScreen?: boolean;
   /** 自定义样式 */
-  sx?: object;
+  sx?: Record<string, unknown>;
 }
 
 // 预定义的空状态配置
@@ -85,10 +85,21 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   const config = emptyStateConfigs[type];
   const IconComponent = config.icon;
 
+  const actionHandler = typeof onAction === "function" ? onAction : undefined;
+  const shouldRenderAction = showAction && actionHandler !== undefined;
+
   // 获取最终的文本内容
-  const finalTitle = title || config.title;
-  const finalDescription = description || config.description;
-  const finalActionText = actionText || config.actionText;
+  const normalize = (value: string | undefined, fallback: string): string => {
+    if (value === undefined) {
+      return fallback;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? value : fallback;
+  };
+
+  const finalTitle = normalize(title, config.title);
+  const finalDescription = normalize(description, config.description);
+  const finalActionText = normalize(actionText, config.actionText);
 
   // 容器样式
   const containerStyles = {
@@ -140,7 +151,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   // 描述样式
   const descriptionStyles = {
     color: "text.secondary",
-    mb: showAction && onAction ? 3 : 0,
+    mb: shouldRenderAction ? 3 : 0,
     maxWidth: isSmallScreen ? 280 : 400,
     lineHeight: 1.6,
     fontSize: isSmallScreen ? "0.875rem" : "1rem",
@@ -203,12 +214,12 @@ const EmptyState: React.FC<EmptyStateProps> = ({
         </Typography>
 
         {/* 操作按钮 */}
-        {showAction && onAction && (
+        {shouldRenderAction && (
           <Button
             variant="contained"
             size={buttonSize}
             startIcon={<RefreshIcon />}
-            onClick={onAction}
+            onClick={actionHandler}
             sx={buttonStyles}
           >
             {finalActionText}

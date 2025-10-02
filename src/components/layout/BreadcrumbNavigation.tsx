@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import {
   Box,
   Breadcrumbs,
@@ -14,22 +14,22 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
-import { NavigationDirection } from "../../contexts/unified";
-import { g3Styles } from "../../utils";
+import type { FC, ReactNode, RefObject } from "react";
+import type { NavigationDirection } from "@/contexts/unified";
+import { g3Styles } from "@/utils";
 
 interface BreadcrumbNavigationProps {
-  breadcrumbSegments: Array<{ name: string; path: string }>;
+  breadcrumbSegments: { name: string; path: string }[];
   handleBreadcrumbClick: (
     path: string,
     direction?: NavigationDirection,
   ) => void;
   breadcrumbsMaxItems: number;
   isSmallScreen: boolean;
-  breadcrumbsContainerRef: React.RefObject<HTMLDivElement | null>;
+  breadcrumbsContainerRef: RefObject<HTMLDivElement | null>;
 }
 
-const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
-  ({
+const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
     breadcrumbSegments,
     handleBreadcrumbClick,
     breadcrumbsMaxItems,
@@ -39,19 +39,22 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
     const theme = useTheme();
 
     // 处理返回上一级
-    const handleGoUp = () => {
+    const handleGoUp = (): void => {
       // 如果只有Home或者当前已经在Home，不执行操作
-      if (breadcrumbSegments.length <= 1) return;
+      if (breadcrumbSegments.length <= 1) {
+        return;
+      }
 
       // 获取倒数第二个路径（当前路径的父级）
       const parentIndex = breadcrumbSegments.length - 2;
       if (parentIndex >= 0) {
         const parentSegment = breadcrumbSegments[parentIndex];
-        if (parentSegment) {
-          const parentPath = parentSegment.path;
-          // 设置导航方向为后退
-          handleBreadcrumbClick(parentPath, "backward");
+        if (parentSegment === undefined) {
+          return;
         }
+        const parentPath = parentSegment.path;
+        // 设置导航方向为后退
+        handleBreadcrumbClick(parentPath, "backward");
       }
     };
 
@@ -59,7 +62,7 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
     const canGoUp = breadcrumbSegments.length > 1;
 
     // 创建一个统一的Home按钮样式结构
-    const renderHomeContent = (isLast: boolean) => (
+    const renderHomeContent = (isLast: boolean): ReactNode => (
       <>
         <Box
           component="span"
@@ -389,15 +392,15 @@ const BreadcrumbNavigation = memo<BreadcrumbNavigationProps>(
                       }
                     : {},
                 }}
-                data-oid="zv_zv5q"
               />
             </IconButton>
           </span>
         </Tooltip>
       </Box>
     );
-  },
-);
+  };
+
+const BreadcrumbNavigation = memo(BreadcrumbNavigationComponent);
 
 BreadcrumbNavigation.displayName = "BreadcrumbNavigation";
 
