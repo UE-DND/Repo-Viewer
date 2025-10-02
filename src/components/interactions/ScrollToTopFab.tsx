@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import type { FC } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Fab,
   useTheme,
@@ -19,7 +20,7 @@ interface ScrollToTopFabProps {
   showOnlyWithContent?: boolean;
 }
 
-const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
+const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
   threshold = 200,
   scrollDuration = 800,
   sx = {},
@@ -30,26 +31,50 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
   const [isVisible, setIsVisible] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
+  const getScrollTop = useCallback((): number => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return 0;
+    }
+
+    const pageOffset = window.pageYOffset;
+    if (Number.isFinite(pageOffset)) {
+      return pageOffset;
+    }
+
+    const docScrollTop = document.documentElement.scrollTop;
+    if (Number.isFinite(docScrollTop)) {
+      return docScrollTop;
+    }
+
+    return 0;
+  }, []);
+
   // 检查滚动位置和内容
-  const checkScrollPosition = useCallback(() => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const hasContent = showOnlyWithContent ? document.body.scrollHeight > window.innerHeight : true;
+  const checkScrollPosition = useCallback((): void => {
+    if (typeof document === "undefined" || typeof window === "undefined") {
+      return;
+    }
+
+    const scrollTop = getScrollTop();
+    const hasContent = showOnlyWithContent
+      ? document.body.scrollHeight > window.innerHeight
+      : true;
     setIsVisible(scrollTop > threshold && hasContent);
-  }, [threshold, showOnlyWithContent]);
+  }, [getScrollTop, threshold, showOnlyWithContent]);
 
   // 平滑滚动到顶部
-  const scrollToTop = useCallback(() => {
-    if (isScrolling) return;
+  const scrollToTop = useCallback((): void => {
+    if (isScrolling) {
+      return;
+    }
 
     setIsScrolling(true);
     const startTime = performance.now();
-    const startScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const startScrollTop = getScrollTop();
 
-    const animateScroll = (currentTime: number) => {
+    const animateScroll = (currentTime: number): void => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / scrollDuration, 1);
-
-      // 使用缓动函数（ease-out）
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
       const currentScrollTop = startScrollTop * (1 - easeOutQuart);
 
@@ -63,30 +88,33 @@ const ScrollToTopFab: React.FC<ScrollToTopFabProps> = ({
     };
 
     requestAnimationFrame(animateScroll);
-  }, [scrollDuration, isScrolling]);
+  }, [getScrollTop, scrollDuration, isScrolling]);
 
   // 监听滚动事件
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    if (typeof window === "undefined") {
+      return undefined;
+    }
 
-    const handleScroll = () => {
-      // 使用防抖来优化性能
-      clearTimeout(timeoutId);
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const handleScroll = (): void => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
       timeoutId = setTimeout(checkScrollPosition, 10);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-
-    // 初始检查
     checkScrollPosition();
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      clearTimeout(timeoutId);
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [checkScrollPosition]);
 
-  // MD3风格的按钮样式
   const fabStyles = {
     position: "fixed" as const,
     bottom: isSmallScreen ? 16 : 24,

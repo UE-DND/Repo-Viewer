@@ -23,13 +23,13 @@ export function getPathFromUrl(): string {
     }
 
     // 如果路径段不为空，直接返回解码后的路径
-    if (pathname && pathname !== '/') {
+    if (pathname.length > 0 && pathname !== '/') {
       return decodeURIComponent(pathname);
     }
 
     // 向后兼容：如果路径段为空，尝试从查询参数获取
     const urlParams = new URLSearchParams(window.location.search);
-    const path = urlParams.get(URL_PARAMS.PATH) || '';
+    const path = urlParams.get(URL_PARAMS.PATH) ?? '';
     return decodeURIComponent(path);
   } catch (error) {
     logger.error('解析 URL 路径参数失败:', error);
@@ -47,13 +47,13 @@ export function getPreviewFromUrl(): string {
     const urlParams = new URLSearchParams(window.location.search);
     const previewParam = urlParams.get(URL_PARAMS.PREVIEW);
 
-    if (previewParam) {
+    if (previewParam !== null) {
       return decodeURIComponent(previewParam);
     }
 
     // 如果没有查询参数，检查是否有 #preview 哈希标记
     const hash = window.location.hash;
-    if (hash && hash.startsWith('#preview=')) {
+    if (hash.length > 0 && hash.startsWith('#preview=')) {
       return decodeURIComponent(hash.substring('#preview='.length));
     }
 
@@ -72,15 +72,16 @@ export function getPreviewFromUrl(): string {
  */
 export function buildUrlWithParams(path: string, preview?: string): string {
   // 将路径编码为 URL 路径段
-  const encodedPath = path ? encodeURI(path) : '';
+  const encodedPath = path.length > 0 ? encodeURI(path) : '';
 
   // 基础 URL 是路径
   let url = `/${encodedPath}`;
 
   // 如果有预览参数，添加为哈希部分，但仅使用文件名
-  if (preview) {
+  if (preview !== undefined && preview.length > 0) {
     // 从路径中提取文件名
-    url += `#preview=${encodeURI(preview.split('/').pop() || '')}`;
+    const fileName = preview.split('/').pop();
+    url += `#preview=${encodeURI(fileName ?? '')}`;
   }
 
   return url;

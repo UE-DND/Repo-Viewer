@@ -8,28 +8,30 @@ import { CONFIG_DEFAULTS } from '../constants';
 import { EnvParser } from '../utils/env-parser';
 import { resolveEnvWithMapping, hasEnvValue } from '../utils/env-mapping';
 
+type EnvSourceValue = string | boolean | null | undefined;
+type EnvSource = Record<string, EnvSourceValue>;
+type EnvStringRecord = Record<string, string | undefined>;
+
 /**
  * 配置管理器 - 单例模式
  */
 export class ConfigManager {
   private static instance: ConfigManager | null = null;
   private config: Config | null = null;
-  private listeners: Set<ConfigChangeListener> = new Set();
+  private listeners: Set<ConfigChangeListener>;
 
-  private constructor() {}
+  private constructor() {
+    this.listeners = new Set<ConfigChangeListener>();
+  }
 
   static getInstance(): ConfigManager {
-    if (!this.instance) {
-      this.instance = new ConfigManager();
-    }
+    this.instance ??= new ConfigManager();
     return this.instance;
   }
 
   // 获取配置
   getConfig(): Config {
-    if (!this.config) {
-      this.config = this.loadConfig();
-    }
+    this.config ??= this.loadConfig();
     return this.config;
   }
 
@@ -38,7 +40,7 @@ export class ConfigManager {
     const oldConfig = this.config;
     this.config = this.loadConfig();
 
-    if (oldConfig) {
+    if (oldConfig !== null) {
       this.notifyConfigChange(this.config, oldConfig);
     }
 
@@ -67,78 +69,79 @@ export class ConfigManager {
 
   // 从环境变量加载配置
   private loadConfig(): Config {
-    const env = typeof window !== 'undefined' ? import.meta.env : process.env;
+    const env = this.getEnvSource();
+    const stringEnv = this.getStringEnvRecord(env);
     const developerMode = EnvParser.parseBoolean(
-      resolveEnvWithMapping(env, 'DEVELOPER_MODE', 'false')
+      resolveEnvWithMapping(stringEnv, 'DEVELOPER_MODE', 'false')
     );
     const consoleLogging = EnvParser.parseBoolean(
-      resolveEnvWithMapping(env, 'CONSOLE_LOGGING', 'false')
+      resolveEnvWithMapping(stringEnv, 'CONSOLE_LOGGING', 'false')
     );
 
     return {
       site: {
-        title: resolveEnvWithMapping(env, 'SITE_TITLE', CONFIG_DEFAULTS.SITE_TITLE),
-        description: resolveEnvWithMapping(env, 'SITE_DESCRIPTION', CONFIG_DEFAULTS.SITE_DESCRIPTION),
-        keywords: resolveEnvWithMapping(env, 'SITE_KEYWORDS', CONFIG_DEFAULTS.SITE_KEYWORDS),
-        ogImage: resolveEnvWithMapping(env, 'SITE_OG_IMAGE', CONFIG_DEFAULTS.SITE_OG_IMAGE)
+        title: resolveEnvWithMapping(stringEnv, 'SITE_TITLE', CONFIG_DEFAULTS.SITE_TITLE),
+        description: resolveEnvWithMapping(stringEnv, 'SITE_DESCRIPTION', CONFIG_DEFAULTS.SITE_DESCRIPTION),
+        keywords: resolveEnvWithMapping(stringEnv, 'SITE_KEYWORDS', CONFIG_DEFAULTS.SITE_KEYWORDS),
+        ogImage: resolveEnvWithMapping(stringEnv, 'SITE_OG_IMAGE', CONFIG_DEFAULTS.SITE_OG_IMAGE)
       },
       github: {
-        repoOwner: resolveEnvWithMapping(env, 'GITHUB_REPO_OWNER', CONFIG_DEFAULTS.GITHUB_REPO_OWNER),
-        repoName: resolveEnvWithMapping(env, 'GITHUB_REPO_NAME', CONFIG_DEFAULTS.GITHUB_REPO_NAME),
-        repoBranch: resolveEnvWithMapping(env, 'GITHUB_REPO_BRANCH', CONFIG_DEFAULTS.GITHUB_REPO_BRANCH)
+        repoOwner: resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_OWNER', CONFIG_DEFAULTS.GITHUB_REPO_OWNER),
+        repoName: resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_NAME', CONFIG_DEFAULTS.GITHUB_REPO_NAME),
+        repoBranch: resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_BRANCH', CONFIG_DEFAULTS.GITHUB_REPO_BRANCH)
       },
       features: {
         homepageFilter: {
-          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'HOMEPAGE_FILTER_ENABLED', 'false')),
-          allowedFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HOMEPAGE_ALLOWED_FOLDERS', '')),
-          allowedFileTypes: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HOMEPAGE_ALLOWED_FILETYPES', ''))
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(stringEnv, 'HOMEPAGE_FILTER_ENABLED', 'false')),
+          allowedFolders: EnvParser.parseStringArray(resolveEnvWithMapping(stringEnv, 'HOMEPAGE_ALLOWED_FOLDERS', '')),
+          allowedFileTypes: EnvParser.parseStringArray(resolveEnvWithMapping(stringEnv, 'HOMEPAGE_ALLOWED_FILETYPES', ''))
         },
         hideDownload: {
-          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'HIDE_MAIN_FOLDER_DOWNLOAD', 'false')),
-          hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(env, 'HIDE_DOWNLOAD_FOLDERS', ''))
+          enabled: EnvParser.parseBoolean(resolveEnvWithMapping(stringEnv, 'HIDE_MAIN_FOLDER_DOWNLOAD', 'false')),
+          hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(stringEnv, 'HIDE_DOWNLOAD_FOLDERS', ''))
         }
       },
       proxy: {
-        imageProxyUrl: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
-        imageProxyUrlBackup1: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
-        imageProxyUrlBackup2: resolveEnvWithMapping(env, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2),
+        imageProxyUrl: resolveEnvWithMapping(stringEnv, 'DOWNLOAD_PROXY_URL', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL),
+        imageProxyUrlBackup1: resolveEnvWithMapping(stringEnv, 'DOWNLOAD_PROXY_URL_BACKUP1', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP1),
+        imageProxyUrlBackup2: resolveEnvWithMapping(stringEnv, 'DOWNLOAD_PROXY_URL_BACKUP2', CONFIG_DEFAULTS.DOWNLOAD_PROXY_URL_BACKUP2),
         // 代理超时配置 - 内部默认值（毫秒）
-        healthCheckTimeout: 5000,    // 健康检查超时：5秒
+        healthCheckTimeout: 5000,
         validationTimeout: 10000,    // 代理验证超时：10秒
         healthCheckInterval: 30000,  // 健康检查间隔：30秒
         recoveryTime: 300000         // 代理恢复时间：5分钟
       },
       access: {
-        useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(env, 'USE_TOKEN_MODE', 'false'))
+        useTokenMode: EnvParser.parseBoolean(resolveEnvWithMapping(stringEnv, 'USE_TOKEN_MODE', 'false'))
       },
       developer: {
         mode: developerMode,
         consoleLogging
       },
       runtime: {
-        isDev: env.DEV === true,
-        isProd: env.PROD === true
+        isDev: this.getBooleanFlag(env, 'DEV'),
+        isProd: this.getBooleanFlag(env, 'PROD')
       },
       tokens: this.loadTokens(env)
     };
   }
 
   // 加载Token配置
-  private loadTokens(env: Record<string, any>): Config['tokens'] {
+  private loadTokens(env: EnvSource): Config['tokens'] {
     const tokens: string[] = [];
 
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
       // 检查不带数字的版本
-      const baseToken = env[prefix];
-      if (baseToken && EnvParser.validateToken(baseToken)) {
+      const baseToken = this.getEnvString(env, prefix);
+      if (baseToken !== undefined && EnvParser.validateToken(baseToken)) {
         tokens.push(baseToken.trim());
       }
 
       // 检查带数字的版本
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
-        const tokenKey = `${prefix}${i}`;
-        const token = env[tokenKey];
-        if (token && EnvParser.validateToken(token)) {
+        const tokenKey = prefix + String(i);
+        const token = this.getEnvString(env, tokenKey);
+        if (token !== undefined && EnvParser.validateToken(token)) {
           tokens.push(token.trim());
         }
       }
@@ -152,22 +155,23 @@ export class ConfigManager {
   }
 
   // 获取用于 Vite define 的 PAT 对象
-  getPATsForViteDefine(env?: Record<string, any>): Record<string, string> {
-    const envSource = env || process.env;
+  getPATsForViteDefine(env?: EnvSource): Record<string, string> {
+    const processEnv = this.getProcessEnv();
+    const envSource: EnvSource = env ?? processEnv ?? {};
     const patEnvVars: Record<string, string> = {};
 
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
       // 检查不带数字的版本
-      const baseToken = envSource[prefix];
-      if (baseToken && EnvParser.validateToken(baseToken)) {
+      const baseToken = this.getEnvString(envSource, prefix);
+      if (baseToken !== undefined && EnvParser.validateToken(baseToken)) {
         patEnvVars[`process.env.${prefix}`] = JSON.stringify(baseToken);
       }
 
       // 检查带数字的版本
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
-        const tokenKey = `${prefix}${i}`;
-        const token = envSource[tokenKey];
-        if (token && EnvParser.validateToken(token)) {
+        const tokenKey = prefix + String(i);
+        const token = this.getEnvString(envSource, tokenKey);
+        if (token !== undefined && EnvParser.validateToken(token)) {
           patEnvVars[`process.env.${tokenKey}`] = JSON.stringify(token);
         }
       }
@@ -179,27 +183,27 @@ export class ConfigManager {
   // 获取调试信息
   getDebugInfo(): ConfigDebugInfo {
     const config = this.getConfig();
-    const env = typeof window !== 'undefined' ? import.meta.env : process.env;
+    const env = this.getEnvSource();
+    const stringEnv = this.getStringEnvRecord(env);
 
     // 生成token源信息
-    const tokenSources: Array<{key: string; hasValue: boolean; isValid: boolean}> = [];
+    const tokenSources: {key: string; hasValue: boolean; isValid: boolean}[] = [];
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
-      // 检查不带数字的版本
-      const baseToken = env[prefix];
+      const baseToken = this.getEnvString(env, prefix);
       tokenSources.push({
         key: prefix,
-        hasValue: !!baseToken,
-        isValid: EnvParser.validateToken(baseToken)
+        hasValue: baseToken !== undefined,
+        isValid: baseToken !== undefined && EnvParser.validateToken(baseToken)
       });
 
       // 检查带数字的版本
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
-        const tokenKey = `${prefix}${i}`;
-        const token = env[tokenKey];
+        const tokenKey = prefix + String(i);
+        const token = this.getEnvString(env, tokenKey);
         tokenSources.push({
           key: tokenKey,
-          hasValue: !!token,
-          isValid: EnvParser.validateToken(token)
+          hasValue: token !== undefined,
+          isValid: token !== undefined && EnvParser.validateToken(token)
         });
       }
     });
@@ -216,18 +220,74 @@ export class ConfigManager {
         tokenCount: config.tokens.totalCount
       },
       envVarStatus: {
-        VITE_SITE_TITLE: hasEnvValue(env, ['VITE_SITE_TITLE']),
-        VITE_GITHUB_REPO_OWNER: hasEnvValue(env, ['VITE_GITHUB_REPO_OWNER']),
-        GITHUB_REPO_OWNER: hasEnvValue(env, ['GITHUB_REPO_OWNER']),
-        VITE_GITHUB_REPO_NAME: hasEnvValue(env, ['VITE_GITHUB_REPO_NAME']),
-        GITHUB_REPO_NAME: hasEnvValue(env, ['GITHUB_REPO_NAME']),
-        VITE_GITHUB_REPO_BRANCH: hasEnvValue(env, ['VITE_GITHUB_REPO_BRANCH']),
-        GITHUB_REPO_BRANCH: hasEnvValue(env, ['GITHUB_REPO_BRANCH']),
-        VITE_DEVELOPER_MODE: hasEnvValue(env, ['VITE_DEVELOPER_MODE']),
-        VITE_USE_TOKEN_MODE: hasEnvValue(env, ['VITE_USE_TOKEN_MODE'])
+        VITE_SITE_TITLE: hasEnvValue(stringEnv, ['VITE_SITE_TITLE']),
+        VITE_GITHUB_REPO_OWNER: hasEnvValue(stringEnv, ['VITE_GITHUB_REPO_OWNER']),
+        GITHUB_REPO_OWNER: hasEnvValue(stringEnv, ['GITHUB_REPO_OWNER']),
+        VITE_GITHUB_REPO_NAME: hasEnvValue(stringEnv, ['VITE_GITHUB_REPO_NAME']),
+        GITHUB_REPO_NAME: hasEnvValue(stringEnv, ['GITHUB_REPO_NAME']),
+        VITE_GITHUB_REPO_BRANCH: hasEnvValue(stringEnv, ['VITE_GITHUB_REPO_BRANCH']),
+        GITHUB_REPO_BRANCH: hasEnvValue(stringEnv, ['GITHUB_REPO_BRANCH']),
+        VITE_DEVELOPER_MODE: hasEnvValue(stringEnv, ['VITE_DEVELOPER_MODE']),
+        VITE_USE_TOKEN_MODE: hasEnvValue(stringEnv, ['VITE_USE_TOKEN_MODE'])
       },
       tokenSources: tokenSources.filter(source => source.hasValue)
     };
+  }
+
+  private getEnvSource(): EnvSource {
+    if (typeof window !== 'undefined') {
+      return import.meta.env as unknown as EnvSource;
+    }
+    const processEnv = this.getProcessEnv();
+    if (processEnv !== undefined) {
+      return processEnv;
+    }
+    return {};
+  }
+
+  private getProcessEnv(): EnvSource | undefined {
+    const globalProcess = (globalThis as { process?: { env?: unknown } }).process;
+    if (globalProcess !== undefined && typeof globalProcess.env === 'object' && globalProcess.env !== null) {
+      return globalProcess.env as EnvSource;
+    }
+    return undefined;
+  }
+
+  private getStringEnvRecord(env: EnvSource): EnvStringRecord {
+    const result: EnvStringRecord = {};
+    Object.keys(env).forEach(key => {
+      const value = env[key];
+      if (typeof value === 'string') {
+        result[key] = value;
+      }
+    });
+    return result;
+  }
+
+  private getEnvString(env: EnvSource, key: string): string | undefined {
+    const value = env[key];
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  private getBooleanFlag(env: EnvSource, key: string): boolean {
+    const value = env[key];
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === 'true') {
+        return true;
+      }
+      if (normalized === 'false') {
+        return false;
+      }
+    }
+    return false;
   }
 }
 

@@ -1,5 +1,5 @@
 // 从主 types 文件导入文件类型枚举
-import { OfficeFileType } from '../../../types';
+import { OfficeFileType } from '@/types';
 export { OfficeFileType };
 
 export interface OfficePreviewProps {

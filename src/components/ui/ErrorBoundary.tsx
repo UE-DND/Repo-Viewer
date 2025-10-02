@@ -10,26 +10,24 @@ import {
   CardContent,
   Typography,
   Button,
-  Collapse,
   Stack,
   Alert,
   AlertTitle,
-  Chip
+  Chip,
+  Collapse
 } from '@mui/material';
-import { g3BorderRadius, G3_PRESETS } from '../../theme/g3Curves';
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import {
   ErrorOutline,
   Refresh,
-  ExpandMore,
-  ExpandLess,
   BugReport,
-  Home
+  Home,
+  ExpandLess,
+  ExpandMore
 } from '@mui/icons-material';
-import { ErrorManager } from '../../utils/error/ErrorManager';
-// 移除未使用的类型导入
-import { isDeveloperMode } from '../../config';
+import { ErrorManager } from '@/utils/error/ErrorManager';
+import { isDeveloperMode } from '@/config';
 
-// 统一使用 React.ErrorInfo 类型
 type ErrorInfo = React.ErrorInfo;
 
 interface ErrorBoundaryState {
@@ -45,7 +43,7 @@ export interface ErrorBoundaryProps {
   fallback?: React.ComponentType<ErrorFallbackProps>;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
   resetOnPropsChange?: boolean;
-  resetKeys?: Array<string | number>;
+  resetKeys?: (string | number)[];
   level?: 'page' | 'component' | 'feature';
   componentName?: string;
 }
@@ -111,7 +109,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     const { hasError } = this.state;
 
     // 当指定的props发生变化时重置错误状态
-    if (hasError && resetOnPropsChange && resetKeys) {
+    if (
+      hasError &&
+      resetOnPropsChange === true &&
+      Array.isArray(resetKeys) &&
+      Array.isArray(prevProps.resetKeys)
+    ) {
       const hasResetKeyChanged = resetKeys.some(
         (key, idx) => prevProps.resetKeys?.[idx] !== key
       );
@@ -122,10 +125,10 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     }
   }
 
-  resetError = () => {
+  resetError = (): void => {
     // 清除重置定时器
-    if (this.resetTimeoutId) {
-      clearTimeout(this.resetTimeoutId);
+    if (this.resetTimeoutId !== null) {
+      window.clearTimeout(this.resetTimeoutId);
       this.resetTimeoutId = null;
     }
 
@@ -138,23 +141,23 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   };
 
   // 延迟重置，给用户时间看到错误信息
-  autoResetAfterDelay = (delay = 5000) => {
+  autoResetAfterDelay = (delay = 5000): void => {
     this.resetTimeoutId = window.setTimeout(() => {
       this.resetError();
     }, delay);
   };
 
-  toggleDetails = () => {
+  toggleDetails = (): void => {
     this.setState(prevState => ({
       showDetails: !prevState.showDetails
     }));
   };
 
-  reloadPage = () => {
+  reloadPage = (): void => {
     window.location.reload();
   };
 
-  goHome = () => {
+  goHome = (): void => {
     window.location.href = '/';
   };
 
@@ -162,13 +165,15 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     const { hasError, error, errorInfo, showDetails, retryCount } = this.state;
     const { children, fallback: CustomFallback, level = 'component' } = this.props;
 
-    if (hasError && error) {
+    if (hasError && error !== null) {
+      const resolvedErrorInfo: ErrorInfo = errorInfo ?? { componentStack: '' };
+
       // 使用自定义fallback组件
-      if (CustomFallback) {
+      if (typeof CustomFallback === 'function') {
         return (
           <CustomFallback
             error={error}
-            errorInfo={errorInfo!}
+            errorInfo={resolvedErrorInfo}
             resetError={this.resetError}
             retryCount={retryCount}
             level={level}
@@ -180,7 +185,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       return (
         <DefaultErrorFallback
           error={error}
-          errorInfo={errorInfo!}
+          errorInfo={resolvedErrorInfo}
           resetError={this.resetError}
           retryCount={retryCount}
           level={level}
@@ -216,7 +221,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
   const isPageLevel = level === 'page';
   const isDev = isDeveloperMode();
 
-  const getErrorTitle = () => {
+  const getErrorTitle = (): string => {
     switch (level) {
       case 'page':
         return '页面加载出错';
@@ -227,11 +232,14 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
     }
   };
 
-  const getErrorMessage = () => {
+  const getErrorMessage = (): string => {
     if (retryCount > 3) {
       return '多次重试后仍然出错，请刷新页面或联系技术支持';
     }
-    return error.message || '发生了未知错误，请稍后重试';
+    if (error.message !== '') {
+      return error.message;
+    }
+    return '发生了未知错误，请稍后重试';
   };
 
   return (
@@ -276,7 +284,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
             {/* 重试次数显示 */}
             {retryCount > 0 && (
               <Chip
-                label={`已重试 ${retryCount} 次`}
+                label={`已重试 ${String(retryCount)} 次`}
                 color="warning"
                 size="small"
               />
@@ -349,7 +357,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
                       </Box>
                     </Alert>
 
-                    {errorInfo?.componentStack && (
+                    {errorInfo.componentStack !== '' && (
                       <Alert severity="info" sx={{ mt: 1 }}>
                         <AlertTitle>组件堆栈</AlertTitle>
                         <Box

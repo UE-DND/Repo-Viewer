@@ -1,103 +1,112 @@
-import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Skeleton,
-  useTheme,
-  List,
-  ListItem,
-  ListItemIcon,
-} from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
-import { getSkeletonStyles, getContainerTransitionStyles } from "./shared";
+import React from "react";
+import { Box, Skeleton, useTheme, List, ListItem, ListItemIcon } from "@mui/material";
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
 
-// 文件列表骨架屏
-export const FileListSkeleton: React.FC<{
+interface FileListSkeletonProps {
   itemCount?: number;
   isSmallScreen?: boolean;
   visible?: boolean;
   onExited?: () => void;
-}> = ({ itemCount = 10, isSmallScreen = false, visible = true, onExited }) => {
-  const [isExiting, setIsExiting] = useState(!visible);
+}
 
-  useEffect(() => {
-    let timer: number | undefined;
-    if (!visible && !isExiting) {
-      setIsExiting(true);
-      // 使用动画的持续时间后触发onExited回调
-      timer = window.setTimeout(() => {
-        onExited?.();
-      }, 300); // 匹配fadeOutAnimation的持续时间
-    } else if (visible && isExiting) {
-      setIsExiting(false);
-    }
-
-    return () => {
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [visible, isExiting, onExited]);
+// 文件列表骨架屏
+export const FileListSkeleton: React.FC<FileListSkeletonProps> = ({
+  itemCount = 10,
+  isSmallScreen = false,
+  visible = true,
+  onExited,
+}) => {
+  const isExiting = useSkeletonVisibility(visible, onExited);
+  const listBaseStyles = React.useMemo(
+    () => ({
+      width: "100%",
+      bgcolor: "background.paper",
+      borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
+      mb: 2,
+      overflow: "hidden",
+      boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
+      border: "1px solid",
+      borderColor: "divider",
+      p: { xs: 1, sm: 2 },
+    }),
+    []
+  );
 
   return (
     <List
-      sx={{
-        width: "100%",
-        bgcolor: "background.paper",
-        borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
-        mb: 2,
-        overflow: "hidden",
-        boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
-        border: "1px solid",
-        borderColor: "divider",
-        p: { xs: 1, sm: 2 },
-        ...getContainerTransitionStyles(isExiting),
-      }}
+      sx={[listBaseStyles, getContainerTransitionStyles(isExiting)]}
       data-oid="jaa7p3i"
     >
-      {Array(itemCount)
-        .fill(0)
-        .map((_, index) => (
-          <FileListItemSkeleton
-            key={index}
-            isSmallScreen={isSmallScreen}
-            visible={visible}
-            data-oid=".rgd-ue"
-          />
-        ))}
+      {Array.from({ length: itemCount }, (_, index) => (
+        <FileListItemSkeleton
+          key={index}
+          isSmallScreen={isSmallScreen}
+          visible={visible}
+          data-oid=".rgd-ue"
+        />
+      ))}
     </List>
   );
 };
 
 // 单个文件列表项骨架屏
-export const FileListItemSkeleton: React.FC<{
+interface FileListItemSkeletonProps {
   isSmallScreen?: boolean;
   visible?: boolean;
-}> = ({ isSmallScreen = false, visible = true }) => {
-  const theme = useTheme();
-  const skeletonStyles = getSkeletonStyles(theme);
-  const [isExiting, setIsExiting] = useState(!visible);
+}
 
-  useEffect(() => {
-    if (!visible && !isExiting) {
-      setIsExiting(true);
-    } else if (visible && isExiting) {
-      setIsExiting(false);
-    }
-  }, [visible, isExiting]);
+export const FileListItemSkeleton: React.FC<FileListItemSkeletonProps> = ({
+  isSmallScreen = false,
+  visible = true,
+}) => {
+  const theme = useTheme();
+  const skeletonStyles = React.useMemo(() => getSkeletonStyles(theme), [theme]);
+  const isExiting = useSkeletonVisibility(visible);
+  const listItemBaseStyles = React.useMemo(
+    () => ({
+      mb: 0.6,
+      "&:last-child": { mb: 0 },
+      overflow: "visible",
+      width: "100%",
+      position: "relative",
+      minHeight: { xs: "40px", sm: "48px" },
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "center",
+    }),
+    []
+  );
+  const itemContentBaseStyles = React.useMemo(
+    () => ({
+      borderRadius: g3BorderRadius(G3_PRESETS.fileListItem),
+      py: { xs: 1, sm: 1.5 },
+      pr: { xs: 6, sm: 8 },
+      display: "flex",
+      flexDirection: { xs: "column", sm: "row" },
+      alignItems: { xs: "flex-start", sm: "center" },
+      flex: 1,
+      mx: "auto",
+      position: "relative",
+      width: "100%",
+      bgcolor: "transparent",
+    }),
+    []
+  );
+  const itemContentInnerStyles = React.useMemo(
+    () => ({
+      display: "flex",
+      alignItems: "center",
+      width: "100%",
+      minWidth: 0,
+    }),
+    []
+  );
 
   return (
     <ListItem
       disablePadding
-      sx={{
-        mb: 0.6,
-        "&:last-child": { mb: 0 },
-        overflow: "visible",
-        width: "100%",
-        position: "relative",
-        minHeight: { xs: "40px", sm: "48px" },
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
-        ...getContainerTransitionStyles(isExiting),
-      }}
+      sx={[listItemBaseStyles, getContainerTransitionStyles(isExiting)]}
       secondaryAction={
         <Box
           sx={{
@@ -123,28 +132,11 @@ export const FileListItemSkeleton: React.FC<{
       data-oid=".a:nzp-"
     >
       <Box
-        sx={{
-          borderRadius: g3BorderRadius(G3_PRESETS.fileListItem), // 使用文件列表项G3曲线
-          py: { xs: 1, sm: 1.5 },
-          pr: { xs: 6, sm: 8 },
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "flex-start", sm: "center" },
-          flex: 1,
-          mx: "auto",
-          position: "relative",
-          width: "100%",
-          bgcolor: "transparent",
-        }}
+        sx={[itemContentBaseStyles]}
         data-oid="njw4ru1"
       >
         <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            width: "100%",
-            minWidth: 0,
-          }}
+          sx={[itemContentInnerStyles]}
           data-oid="0be3k2w"
         >
           <ListItemIcon
@@ -169,15 +161,17 @@ export const FileListItemSkeleton: React.FC<{
             width="70%"
             height={isSmallScreen ? 24 : 28}
             animation="wave"
-            sx={{
-              borderRadius: g3BorderRadius(G3_PRESETS.skeletonLine),
-              fontSize: { xs: "0.8rem", sm: "0.875rem" },
-              fontWeight: 400,
-              width: "100%",
-              overflow: "hidden",
-              display: "block",
-              ...skeletonStyles,
-            }}
+            sx={[
+              {
+                borderRadius: g3BorderRadius(G3_PRESETS.skeletonLine),
+                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                fontWeight: 400,
+                width: "100%",
+                overflow: "hidden",
+                display: "block",
+              },
+              skeletonStyles,
+            ]}
             data-oid="zc21:k-"
           />
         </Box>

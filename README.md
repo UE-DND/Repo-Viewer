@@ -33,7 +33,7 @@
 2. **安装依赖**
 
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
 
 3. **创建环境配置**
@@ -79,12 +79,12 @@ GITHUB_PAT2 =                                         # 可选备用令牌
 
 ```env
 # 首页内容过滤- 仅对仓库根目录（首页）生效
-HOMEPAGE_FILTER_ENABLED = true/false                  # 启用首页过滤功能
+HOMEPAGE_FILTER_ENABLED = true|false                  # 启用首页过滤功能
 HOMEPAGE_ALLOWED_FOLDERS = folder1,folder2            # 允许在首页显示的文件夹
 HOMEPAGE_ALLOWED_FILETYPES = md,pdf,txt               # 允许在首页显示的文件类型
 
 # 首页下载按钮控制- 仅对仓库根目录（首页）生效
-HIDE_MAIN_FOLDER_DOWNLOAD = true/false                # 隐藏首页的主文件夹下载按钮
+HIDE_MAIN_FOLDER_DOWNLOAD = true|false                # 隐藏首页的主文件夹下载按钮
 HIDE_DOWNLOAD_FOLDERS = folder1,folder2               # 首页上需要隐藏下载按钮的文件夹
 
 # 代理设置
@@ -93,8 +93,8 @@ DOWNLOAD_PROXY_URL_BACKUP1 =
 DOWNLOAD_PROXY_URL_BACKUP2 =
 
 # 开发者选项
-DEVELOPER_MODE = true/false                           # 启用开发者模式
-CONSOLE_LOGGING = true/false                          # 控制台日志
+DEVELOPER_MODE = true|false                           # 启用开发者模式
+CONSOLE_LOGGING = true|false                          # 控制台日志
 ```
 
 ## 部署指南
@@ -108,21 +108,29 @@ CONSOLE_LOGGING = true/false                          # 控制台日志
 
 2. **在Vercel上导入你的仓库**:
    - 登录[Vercel](https://vercel.com)
-   - 点击"Import Project"
-   - 选择"Import Git Repository"并连接你的GitHub账号
+   - 点击`Import Project`
+   - 选择`Import Git Repository`并连接你的GitHub账号
    - 选择Repo-Viewer仓库
 
 3. **配置环境变量**:
-   - 在部署设置页面，找到"Environment Variables"部分
+   - 在部署设置页面，找到`Environment Variables`部分
    - 添加必要的环境变量
 
 4. **部署应用**:
-   - 点击"Deploy"按钮
+   - 点击`Deploy`按钮
    - Vercel将自动构建和部署你的应用
 
 ## 许可证
 
-本项目基于AGPL-3.0许可证开源。详见[LICENSE](LICENSE)文件。
+本项目使用 **AGPL-3.0** 许可证。
+
+- ✅ 可以自由使用、修改和分发
+- ✅ 必须开源修改后的代码
+- ✅ 必须保留原作者版权信息
+- ⚠️ **网络部署也需要开源**
+- ⚠️ 修改后的版本必须使用相同的 AGPL-3.0 许可证
+
+详见 [LICENSE](LICENSE) 文件了解完整条款。
 
 ## 贡献者
 

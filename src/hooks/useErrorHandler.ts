@@ -1,21 +1,10 @@
-/**
- * 错误处理Hook - 简化版本
- * 提供统一的错误处理功能
- */
-
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
-import { ErrorManager } from '../utils/error/ErrorManager';
-import { 
-  AppError, 
-  ErrorLevel, 
-  ErrorCategory, 
-  GitHubError, 
-  NetworkError, 
-  FileOperationError 
-} from '../types/errors';
-import { getDeveloperConfig } from '../config';
-import { logger } from '../utils';
+import { ErrorManager } from '@/utils/error/ErrorManager';
+import type { AppError } from '@/types/errors';
+import { ErrorLevel, ErrorCategory, isNetworkError, isGitHubError, isFileOperationError } from '@/types/errors';
+import { getDeveloperConfig } from '@/config';
+import { logger } from '@/utils';
 
 export interface UseErrorHandlerOptions {
   showNotification?: boolean;
@@ -45,44 +34,53 @@ export function useErrorHandler(
   const { enqueueSnackbar } = useSnackbar();
   const [errors, setErrors] = useState<AppError[]>([]);
 
+  const resolvedOptions: Required<UseErrorHandlerOptions> = useMemo(() => ({
+    showNotification: globalOptions.showNotification ?? defaultOptions.showNotification ?? true,
+    logToConsole: globalOptions.logToConsole ?? defaultOptions.logToConsole ?? false,
+    fallbackMessage: globalOptions.fallbackMessage ?? defaultOptions.fallbackMessage ?? '未知错误'
+  }), [globalOptions.showNotification, globalOptions.logToConsole, globalOptions.fallbackMessage]);
+
   // 获取用户友好的错误消息
   const getUserFriendlyMessage = useCallback((error: AppError): string => {
     switch (error.category) {
-      case ErrorCategory.NETWORK:
-        const networkError = error as NetworkError;
-        if (networkError.timeout) {
+      case ErrorCategory.NETWORK: {
+        if (isNetworkError(error) && error.timeout === true) {
           return '请求超时，请检查网络连接';
         }
         return '网络连接失败，请稍后重试';
+      }
 
-      case ErrorCategory.API:
-        const apiError = error as GitHubError;
-        if (apiError.statusCode === 403) {
-          return 'API访问受限，请检查访问权限';
+      case ErrorCategory.API: {
+        if (isGitHubError(error)) {
+          if (error.statusCode === 403) {
+            return 'API访问受限，请检查访问权限';
+          }
+          if (error.statusCode === 404) {
+            return '请求的资源未找到';
+          }
+          if (error.statusCode >= 500) {
+            return '服务器错误，请稍后重试';
+          }
         }
-        if (apiError.statusCode === 404) {
-          return '请求的资源未找到';
-        }
-        if (apiError.statusCode >= 500) {
-          return '服务器错误，请稍后重试';
-        }
-        return error.message || '请求失败';
+        const apiMessage = error.message.trim();
+        return apiMessage !== '' ? apiMessage : '请求失败';
+      }
 
-      case ErrorCategory.AUTH:
-        return '认证失败，请检查访问令牌';
-
-      case ErrorCategory.FILE_OPERATION:
-        const fileError = error as FileOperationError;
-        switch (fileError.operation) {
-          case 'download':
-            return '文件下载失败，请重试';
-          case 'compress':
-            return '文件压缩失败，可能文件过大';
-          case 'parse':
-            return '文件解析失败，格式可能不支持';
-          default:
-            return '文件操作失败';
+      case ErrorCategory.FILE_OPERATION: {
+        if (isFileOperationError(error)) {
+          switch (error.operation) {
+            case 'download':
+              return '文件下载失败，请重试';
+            case 'compress':
+              return '文件压缩失败，可能文件过大';
+            case 'parse':
+              return '文件解析失败，格式可能不支持';
+            default:
+              return '文件操作失败';
+          }
         }
+        return '文件操作失败';
+      }
 
       case ErrorCategory.COMPONENT:
         return '页面组件出错，请刷新页面';
@@ -91,15 +89,16 @@ export function useErrorHandler(
         return '输入数据有误，请检查后重试';
 
       default:
-        return error.message || globalOptions.fallbackMessage || '未知错误';
+        const fallbackMessage = resolvedOptions.fallbackMessage;
+        const baseMessage = error.message.trim();
+        return baseMessage !== '' ? baseMessage : fallbackMessage;
     }
-  }, [globalOptions.fallbackMessage]);
+  }, [resolvedOptions.fallbackMessage]);
 
   // 获取通知严重级别
   const getNotificationVariant = useCallback((level: ErrorLevel): 'default' | 'error' | 'success' | 'warning' | 'info' => {
     switch (level) {
       case ErrorLevel.CRITICAL:
-        return 'error';
       case ErrorLevel.ERROR:
         return 'error';
       case ErrorLevel.WARNING:
@@ -117,16 +116,16 @@ export function useErrorHandler(
     context?: string
   ): void => {
     // 使用ErrorManager处理错误
-    const appError = ErrorManager.captureError(error, { 
+    const appError = ErrorManager.captureError(error, {
       component: 'useErrorHandler',
-      action: context || 'unknown'
+      action: context ?? 'unknown'
     });
 
     // 添加到本地错误状态
     setErrors(prev => [appError, ...prev.slice(0, 9)]); // 保留最近10个错误
 
     // 显示用户通知
-    if (globalOptions.showNotification) {
+    if (resolvedOptions.showNotification) {
       const message = getUserFriendlyMessage(appError);
       const variant = getNotificationVariant(appError.level);
 
@@ -139,7 +138,8 @@ export function useErrorHandler(
 
     // 开发者模式下的额外日志
     const developerConfig = getDeveloperConfig();
-    const shouldLog = developerConfig.consoleLogging || (globalOptions.logToConsole && developerConfig.mode);
+    const shouldLog = developerConfig.consoleLogging ||
+      (developerConfig.mode && resolvedOptions.logToConsole);
 
     if (shouldLog) {
       logger.group(`🚨 错误处理 [${appError.category}]`);
@@ -149,9 +149,9 @@ export function useErrorHandler(
       logger.groupEnd();
     }
   }, [
-    globalOptions, 
-    getUserFriendlyMessage, 
-    getNotificationVariant, 
+    resolvedOptions,
+    getUserFriendlyMessage,
+    getNotificationVariant,
     enqueueSnackbar
   ]);
 
@@ -177,12 +177,14 @@ export function useErrorHandler(
   useEffect(() => {
     const cleanup = setInterval(() => {
       const now = Date.now();
-      setErrors(prev => prev.filter(error => 
-        now - error.timestamp < 5 * 60 * 1000 // 5分钟后清理
+      setErrors(prev => prev.filter((errorItem) =>
+        now - errorItem.timestamp < 5 * 60 * 1000 // 5分钟后清理
       ));
     }, 60000); // 每分钟检查一次
 
-    return () => clearInterval(cleanup);
+    return () => {
+      clearInterval(cleanup);
+    };
   }, []);
 
   return {
@@ -191,7 +193,7 @@ export function useErrorHandler(
     clearErrors,
     errors,
     hasErrors: errors.length > 0,
-    lastError: errors[0] || null
+    lastError: errors[0] ?? null
   };
 }
 

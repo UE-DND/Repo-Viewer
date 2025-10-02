@@ -1,4 +1,4 @@
-import { getGithubConfig, getAccessConfig } from '../../../config';
+import { getGithubConfig, getAccessConfig } from '@/config';
 
 // 基础配置
 const githubConfig = getGithubConfig();
@@ -26,7 +26,7 @@ export interface ConfigInfo {
 }
 
 // 获取配置信息
-export async function getConfig(): Promise<ConfigInfo> {
+export function getConfig(): ConfigInfo {
   const githubConfig = getGithubConfig();
   
   // 使用配置中的分支，保持与后端一致
@@ -44,7 +44,7 @@ export function getApiUrl(path: string): string {
 
   // 开发环境使用本地代理
   if (isDevEnvironment) {
-    const encodedPath = safePath 
+    const encodedPath = safePath.length > 0
       ? safePath.split('/').map(segment => encodeURIComponent(segment)).join('/')
       : '';
     return `/github-api/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${encodedPath}?ref=${DEFAULT_BRANCH}`;

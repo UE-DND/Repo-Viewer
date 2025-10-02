@@ -22,19 +22,27 @@ export const MetadataProvider: React.FC<MetadataProviderProps> = ({
   const [ogImage, setOgImage] = useState<string>(DEFAULT_METADATA.ogImage);
 
   // 重置SEO数据到默认值
-  const resetMetadata = () => {
-  setTitle(DEFAULT_METADATA.title);
-  setDescription(DEFAULT_METADATA.description);
-  setKeywords(DEFAULT_METADATA.keywords);
-  setOgImage(DEFAULT_METADATA.ogImage);
+  const resetMetadata = (): void => {
+    setTitle(DEFAULT_METADATA.title);
+    setDescription(DEFAULT_METADATA.description);
+    setKeywords(DEFAULT_METADATA.keywords);
+    setOgImage(DEFAULT_METADATA.ogImage);
   };
 
   // 批量更新SEO数据
-  const updateMetadata = (data: Partial<MetadataData>) => {
-    if (data.title) setTitle(data.title);
-    if (data.description) setDescription(data.description);
-    if (data.keywords) setKeywords(data.keywords);
-    if (data.ogImage) setOgImage(data.ogImage);
+  const updateMetadata = (data: Partial<MetadataData>): void => {
+    if (typeof data.title === "string") {
+      setTitle(data.title);
+    }
+    if (typeof data.description === "string") {
+      setDescription(data.description);
+    }
+    if (typeof data.keywords === "string") {
+      setKeywords(data.keywords);
+    }
+    if (typeof data.ogImage === "string") {
+      setOgImage(data.ogImage);
+    }
   };
 
   return (

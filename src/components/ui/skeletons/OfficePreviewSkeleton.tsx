@@ -5,7 +5,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
-import { g3BorderRadius, G3_PRESETS } from "../../../theme/g3Curves";
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 // Office 文档预览骨架屏
 export const OfficePreviewSkeleton: React.FC<{

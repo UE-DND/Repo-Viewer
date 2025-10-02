@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 /**
  * 图片预览组件的Props接口定义

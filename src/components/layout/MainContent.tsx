@@ -6,24 +6,24 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import BreadcrumbNavigation from "./BreadcrumbNavigation";
-import FileList from "../file/FileList";
-// 使用懒加载的预览组件，降低首屏加载体积
-import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "../../utils/lazy-loading";
-import ErrorDisplay from "../ui/ErrorDisplay";
-import FullScreenPreview from "../file/FullScreenPreview";
+import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
+import FileList from "@/components/file/FileList";
+import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "@/utils/lazy-loading";
+import ErrorDisplay from "@/components/ui/ErrorDisplay";
+import FullScreenPreview from "@/components/file/FullScreenPreview";
 import {
   useContentContext,
   usePreviewContext,
   useDownloadContext,
-  NavigationDirection
-} from "../../contexts/unified";
-import { FileListSkeleton } from "../ui/skeletons";
-import { getPreviewFromUrl } from "../../utils/routing/urlManager";
-import { logger } from "../../utils";
-import DynamicSEO from "../seo/DynamicSEO";
-import ScrollToTopFab from "../interactions/ScrollToTopFab";
-import EmptyState from "../ui/EmptyState";
+} from "@/contexts/unified";
+import { FileListSkeleton } from "@/components/ui/skeletons";
+import { getPreviewFromUrl } from "@/utils/routing/urlManager";
+import { logger } from "@/utils";
+import DynamicSEO from "@/components/seo/DynamicSEO";
+import ScrollToTopFab from "@/components/interactions/ScrollToTopFab";
+import EmptyState from "@/components/ui/EmptyState";
+import type { NavigationDirection } from "@/contexts/unified";
+import type { BreadcrumbSegment, GitHubContent } from "@/types";
 
 const MainContent: React.FC = () => {
   // 获取主题和响应式布局
@@ -33,7 +33,7 @@ const MainContent: React.FC = () => {
   // 创建引用
   const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
 
-  // 自动计算面包屑最大项目数
+  // 计算面包屑最大项目数
   const [breadcrumbsMaxItems, setBreadcrumbsMaxItems] = useState<number>(0); // 0表示不限制
 
   // 从上下文获取数据和方法
@@ -67,11 +67,12 @@ const MainContent: React.FC = () => {
 
   // 检测当前目录中是否有README.md文件
   const hasReadmeFile = useMemo(() => {
-    if (!Array.isArray(contents) || contents.length === 0) return false;
+    if (contents.length === 0) {
+      return false;
+    }
 
     // 检查是否有任何名称为README.md的文件（不区分大小写）
     return contents.some((item) => {
-      if (!item || typeof item.name !== "string") return false;
       const fileName = item.name.toLowerCase();
       return fileName === "readme.md" || fileName === "readme.markdown";
     });
@@ -79,20 +80,29 @@ const MainContent: React.FC = () => {
 
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
-    const segments = [{ name: "Home", path: "" }];
+    const segments: BreadcrumbSegment[] = [{ name: "Home", path: "" }];
+    const normalizedCurrentPath = currentPath.trim();
 
-    if (currentPath) {
-      const pathParts = currentPath.split("/");
-      let currentSegmentPath = "";
-
-      for (const part of pathParts) {
-        currentSegmentPath += currentSegmentPath ? `/${part}` : part;
-        segments.push({
-          name: part || "",
-          path: currentSegmentPath,
-        });
-      }
+    if (normalizedCurrentPath.length === 0) {
+      return segments;
     }
+
+    const pathParts = normalizedCurrentPath
+      .split("/")
+      .filter((part) => part.length > 0);
+
+    let currentSegmentPath = "";
+
+    pathParts.forEach((part) => {
+      currentSegmentPath = currentSegmentPath.length > 0
+        ? `${currentSegmentPath}/${part}`
+        : part;
+
+      segments.push({
+        name: part,
+        path: currentSegmentPath,
+      });
+    });
 
     return segments;
   }, [currentPath]);
@@ -101,48 +111,53 @@ const MainContent: React.FC = () => {
   const handleBreadcrumbClick = useCallback((
     path: string,
     direction: NavigationDirection = "backward",
-  ) => {
+  ): void => {
     navigateTo(path, direction);
   }, [navigateTo]);
 
   // 处理文件/文件夹点击
-  const handleItemClick = (item: any) => {
+  const handleItemClick = useCallback((item: GitHubContent): void => {
     if (item.type === "dir") {
       navigateTo(item.path, "forward");
-    } else {
-      selectFile(item);
+      return;
     }
-  };
+
+    void selectFile(item);
+  }, [navigateTo, selectFile]);
 
   // 处理下载点击
-  const handleDownloadClick = (e: React.MouseEvent, item: any) => {
+  const handleDownloadClick = useCallback((
+    e: React.MouseEvent,
+    item: GitHubContent,
+  ): void => {
     e.preventDefault();
     e.stopPropagation();
-    downloadFile(item);
-  };
+    void downloadFile(item);
+  }, [downloadFile]);
 
   // 处理文件夹下载点击
-  const handleFolderDownloadClick = (e: React.MouseEvent, item: any) => {
+  const handleFolderDownloadClick = useCallback((
+    e: React.MouseEvent,
+    item: GitHubContent,
+  ): void => {
     e.preventDefault();
     e.stopPropagation();
-    downloadFolder(item.path, item.name);
-  };
+    void downloadFolder(item.path, item.name);
+  }, [downloadFolder]);
 
   // 处理取消下载点击
-  const handleCancelDownload = (e: React.MouseEvent) => {
+  const handleCancelDownload = useCallback((e: React.MouseEvent): void => {
     e.preventDefault();
     e.stopPropagation();
     cancelDownload();
-  };
+  }, [cancelDownload]);
 
 
-  // 自动调整面包屑显示
   useEffect(() => {
     const segmentCount = breadcrumbSegments.length;
 
     // 在移动端，使用更激进的折叠策略
     if (isSmallScreen) {
-      // 路径段数超过3个时，在移动端强制折叠
       if (segmentCount > 3) {
         setBreadcrumbsMaxItems(3);
       } else {
@@ -152,7 +167,6 @@ const MainContent: React.FC = () => {
     }
 
     // 桌面端逻辑
-    // 如果面包屑项目少于或等于3个，不需要限制
     if (segmentCount <= 3) {
       setBreadcrumbsMaxItems(0); // 0表示不限制
       return;
@@ -160,7 +174,11 @@ const MainContent: React.FC = () => {
 
     // 创建ResizeObserver监听容器尺寸变化
     const resizeObserver = new ResizeObserver(() => {
-      if (!breadcrumbsContainerRef.current) return;
+      const container = breadcrumbsContainerRef.current;
+
+      if (container === null) {
+        return;
+      }
 
       // 如果路径太长（超过8段），则设置合理的限制
       if (breadcrumbSegments.length > 8) {
@@ -172,7 +190,7 @@ const MainContent: React.FC = () => {
       setBreadcrumbsMaxItems(0);
     });
 
-    if (breadcrumbsContainerRef.current) {
+    if (breadcrumbsContainerRef.current !== null) {
       resizeObserver.observe(breadcrumbsContainerRef.current);
     }
 
@@ -183,47 +201,59 @@ const MainContent: React.FC = () => {
 
   // 处理从 URL 加载预览
   useEffect(() => {
-    // 只在内容加载完成且没有错误时处理
-    if (!loading && !error && contents.length > 0) {
+    const loadPreviewFromUrl = async (): Promise<void> => {
+      if (loading) {
+        return;
+      }
+
+      if (error !== null) {
+        return;
+      }
+
+      if (contents.length === 0) {
+        return;
+      }
+
       const previewFileName = getPreviewFromUrl();
 
-      if (!previewFileName) return;
-
-      logger.debug(`从URL获取预览文件名: ${previewFileName}`);
-
-      // 查找匹配的文件
-      // 首先尝试使用文件名直接匹配
-      let fileItem = contents.find((item) => item.name === previewFileName);
-
-      // 如果没找到，尝试查找路径末尾匹配的文件
-      if (!fileItem) {
-        fileItem = contents.find((item) =>
-          item.path.endsWith(`/${previewFileName}`),
-        );
+      if (typeof previewFileName !== "string" || previewFileName.trim().length === 0) {
+        return;
       }
 
-      if (fileItem) {
-        logger.debug(`找到匹配的文件: ${fileItem.path}`);
-        // 更新当前预览引用
-        currentPreviewItemRef.current = fileItem;
+      const normalizedPreviewFileName = previewFileName.trim();
 
-        // 避免重复加载已经打开的预览
-        const hasActivePreview =
-          previewState.previewingItem?.path === fileItem.path ||
-          previewState.previewingPdfItem?.path === fileItem.path ||
-          previewState.previewingImageItem?.path === fileItem.path ||
-          previewState.previewingOfficeItem?.path === fileItem.path;
+      logger.debug(`从URL获取预览文件名: ${normalizedPreviewFileName}`);
 
-        if (!hasActivePreview) {
-          logger.debug(`预览文件未打开，正在加载: ${fileItem.path}`);
-          selectFile(fileItem);
-        } else {
-          logger.debug(`预览文件已经打开: ${fileItem.path}`);
-        }
+      const directMatch = contents.find((item) => item.name === normalizedPreviewFileName);
+      const pathTailMatch = contents.find((item) =>
+        item.path.endsWith(`/${normalizedPreviewFileName}`),
+      );
+      const fileItem = directMatch ?? pathTailMatch;
+
+      if (fileItem === undefined) {
+        logger.warn(`无法找到预览文件: ${normalizedPreviewFileName}`);
+        return;
+      }
+
+      logger.debug(`找到匹配的文件: ${fileItem.path}`);
+
+      currentPreviewItemRef.current = fileItem;
+
+      const hasActivePreview =
+        (previewState.previewingItem !== null && previewState.previewingItem.path === fileItem.path) ||
+        (previewState.previewingPdfItem !== null && previewState.previewingPdfItem.path === fileItem.path) ||
+        (previewState.previewingImageItem !== null && previewState.previewingImageItem.path === fileItem.path) ||
+        (previewState.previewingOfficeItem !== null && previewState.previewingOfficeItem.path === fileItem.path);
+
+      if (!hasActivePreview) {
+        logger.debug(`预览文件未打开，正在加载: ${fileItem.path}`);
+        await selectFile(fileItem);
       } else {
-        logger.warn(`无法找到预览文件: ${previewFileName}`);
+        logger.debug(`预览文件已经打开: ${fileItem.path}`);
       }
-    }
+    };
+
+    void loadPreviewFromUrl();
   }, [
     loading,
     error,
@@ -235,42 +265,54 @@ const MainContent: React.FC = () => {
 
   // 在内容加载完成后预加载预览组件
   useEffect(() => {
-    if (!loading && !error && contents.length > 0) {
-      // 使用空闲时间预加载预览组件
-      preloadPreviewComponents();
+    if (loading) {
+      return;
     }
+
+    if (error !== null) {
+      return;
+    }
+
+    if (contents.length === 0) {
+      return;
+    }
+
+    // 使用空闲时间预加载预览组件
+    preloadPreviewComponents();
   }, [loading, error, contents]);
 
   // 获取当前文件或目录的信息用于SEO
   const seoInfo = useMemo(() => {
     // 如果正在预览文件，使用文件信息
-    if (previewState.previewingItem) {
+    if (previewState.previewingItem !== null) {
       return {
         title: previewState.previewingItem.name,
         filePath: previewState.previewingItem.path,
         isDirectory: false,
-        fileType: previewState.previewingItem.name.split(".").pop() || "",
+        fileType: previewState.previewingItem.name.split(".").pop() ?? "",
       };
-    } else if (previewState.previewingImageItem) {
+    } else if (previewState.previewingImageItem !== null) {
       return {
         title: previewState.previewingImageItem.name,
         filePath: previewState.previewingImageItem.path,
         isDirectory: false,
         fileType: "Image",
       };
-    } else if (previewState.previewingOfficeItem) {
+    } else if (previewState.previewingOfficeItem !== null) {
       return {
         title: previewState.previewingOfficeItem.name,
         filePath: previewState.previewingOfficeItem.path,
         isDirectory: false,
-        fileType: previewState.officeFileType || "文档",
+        fileType: previewState.officeFileType ?? "文档",
       };
     }
 
     // 否则使用当前目录信息
     return {
-      title: currentPath ? currentPath.split("/").pop() || "根目录" : "根目录",
-      filePath: currentPath || "",
+      title: currentPath.trim().length > 0
+        ? currentPath.split("/").pop() ?? "根目录"
+        : "根目录",
+      filePath: currentPath,
       isDirectory: true,
       fileType: "",
     };
@@ -308,7 +350,7 @@ const MainContent: React.FC = () => {
         handleBreadcrumbClick={handleBreadcrumbClick}
         breadcrumbsMaxItems={breadcrumbsMaxItems}
         isSmallScreen={isSmallScreen}
-        breadcrumbsContainerRef={breadcrumbsContainerRef}
+        breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
         data-oid="c02a2p5"
       />
 
@@ -318,7 +360,7 @@ const MainContent: React.FC = () => {
           itemCount={8}
           data-oid="-mkjng2"
         />
-      ) : error ? (
+      ) : error !== null ? (
         <ErrorDisplay
           errorMessage={error}
           onRetry={handleRetry}
@@ -344,12 +386,12 @@ const MainContent: React.FC = () => {
             handleFolderDownloadClick={handleFolderDownloadClick}
             handleCancelDownload={handleCancelDownload}
             currentPath={currentPath}
-            hasReadmePreview={!!readmeContent && hasReadmeFile}
+            hasReadmePreview={(readmeContent ?? "").length > 0 && hasReadmeFile}
             data-oid="_qfxtvv"
           />
 
           {/* README预览 - 底部展示 */}
-          {readmeContent && readmeLoaded && !loadingReadme && (
+          {(readmeContent ?? "").length > 0 && readmeLoaded && !loadingReadme && (
             <Box
               className="readme-container fade-in"
               sx={{
@@ -384,7 +426,7 @@ const MainContent: React.FC = () => {
           )}
 
           {/* Markdown文件预览（非README） */}
-          {previewState.previewingItem && previewState.previewContent && (
+          {previewState.previewingItem !== null && previewState.previewContent !== null && (
             <Box
               sx={{
                 position: "fixed",
@@ -426,7 +468,7 @@ const MainContent: React.FC = () => {
           )}
 
           {/* 图像预览 */}
-          {previewState.previewingImageItem && previewState.imagePreviewUrl && (
+          {previewState.previewingImageItem !== null && previewState.imagePreviewUrl !== null && (
             <LazyImagePreview
               imageUrl={previewState.imagePreviewUrl}
               fileName={previewState.previewingImageItem.name}
@@ -438,13 +480,13 @@ const MainContent: React.FC = () => {
           )}
 
           {/* Office文档预览 */}
-          {previewState.previewingOfficeItem &&
-            previewState.officePreviewUrl &&
-            previewState.officeFileType && (
+          {previewState.previewingOfficeItem !== null &&
+            previewState.officePreviewUrl !== null &&
+            previewState.officeFileType !== null && (
               <FullScreenPreview onClose={closePreview} data-oid="oa2lre0">
                 <LazyOfficePreview
                   fileUrl={previewState.officePreviewUrl}
-                  fileType={previewState.officeFileType as any}
+                  fileType={previewState.officeFileType}
                   fileName={previewState.previewingOfficeItem.name}
                   isFullScreen={previewState.isOfficeFullscreen}
                   onClose={closePreview}

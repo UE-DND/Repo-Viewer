@@ -1,4 +1,4 @@
-import { GitHubService } from '../../services/github';
+import { GitHubService } from '@/services/github';
 import { logger } from '../logging/logger';
 import axios from 'axios';
 
@@ -6,13 +6,29 @@ import axios from 'axios';
  * 从服务器获取GitHub Token状态
  * 使用新添加的API接口
  */
-export async function fetchServerTokenStatus() {
+interface TokenStatusResponse {
+  status: string;
+  data?: {
+    hasTokens: boolean;
+    count: number;
+  };
+}
+
+interface TokenStatus {
+  hasToken: boolean;
+  tokenCount: number;
+  isServerToken: boolean;
+  error?: unknown;
+}
+
+export async function fetchServerTokenStatus(): Promise<TokenStatus> {
   try {
     // 调用新添加的服务端API接口
     const response = await axios.get('/api/github?action=getTokenStatus');
 
-    if (response.data && response.data.status === 'success') {
-      const { hasTokens, count } = response.data.data;
+    const responseData = response.data as TokenStatusResponse;
+    if (responseData.status === 'success' && responseData.data !== undefined) {
+      const { hasTokens, count } = responseData.data;
       return { 
         hasToken: hasTokens, 
         tokenCount: count,
@@ -31,7 +47,12 @@ export async function fetchServerTokenStatus() {
  * 检查GitHub Token状态
  * 在控制台输出token相关信息
  */
-export async function checkTokenStatus() {
+export async function checkTokenStatus(): Promise<{
+  hasToken: boolean;
+  tokenCount: number;
+  clientToken: { hasToken: boolean; count: number };
+  serverToken: { hasToken: boolean; tokenCount: number };
+}> {
   // 获取前端token状态
   const clientTokenCount = GitHubService.getTokenCount();
   const hasClientToken = GitHubService.hasToken();
@@ -59,7 +80,7 @@ export async function checkTokenStatus() {
   // 记录状态
   logger.info(`=============================================`);
   logger.info(`GitHub Token状态: ${hasToken ? '已配置 ✅' : '未配置 ❌'}`);
-  logger.info(`Token数量: ${tokenCount}`);
+  logger.info(`Token数量: ${tokenCount.toString()}`);
 
   if (serverTokenStatus.hasToken) {
     logger.info(`令牌位置: 服务器端`);
@@ -88,11 +109,11 @@ export async function checkTokenStatus() {
  * 测试GitHub API搜索功能
  * 用于测试配置的token是否有效
  */
-export async function testApiSearch() {
+export async function testApiSearch(): Promise<boolean> {
   try {
     logger.info('正在测试GitHub API搜索...');
     const result = await GitHubService.searchFiles('test', '', true);
-    logger.info(`搜索成功! 找到 ${result.length} 个结果`);
+    logger.info(`搜索成功! 找到 ${result.length.toString()} 个结果`);
     logger.debug('搜索结果:', result);
     return true;
   } catch (error) {
@@ -102,5 +123,11 @@ export async function testApiSearch() {
 }
 
 // 导出便捷函数，方便在控制台使用
-(window as any).checkGitHubToken = checkTokenStatus;
-(window as any).testGitHubSearch = testApiSearch;
+interface WindowWithDebugFunctions extends Window {
+  checkGitHubToken?: typeof checkTokenStatus;
+  testGitHubSearch?: typeof testApiSearch;
+}
+
+const windowWithDebug = window as WindowWithDebugFunctions;
+windowWithDebug.checkGitHubToken = checkTokenStatus;
+windowWithDebug.testGitHubSearch = testApiSearch;

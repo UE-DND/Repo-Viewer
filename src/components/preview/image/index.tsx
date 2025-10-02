@@ -1,18 +1,16 @@
 import React, { useMemo } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
-import FullScreenPreview from '../../file/FullScreenPreview';
+import FullScreenPreview from '@/components/file/FullScreenPreview';
 import ImageThumbnail from './ImageThumbnail';
 import ImagePreviewContent from './ImagePreviewContent';
 import { useImagePreview } from './hooks/useImagePreview';
 import type { ImagePreviewProps, ImageToolbarProps } from './types';
 
-/**
- * 统一的图片预览组件
- * 支持缩放、平移、旋转等操作，可选缩略图模式
- */
+const NOOP: () => void = () => undefined;
+
 const ImagePreview: React.FC<ImagePreviewProps> = ({
   imageUrl,
-  fileName = '未知文件',
+  fileName,
   onClose,
   isFullScreen = false,
   thumbnailMode = false,
@@ -23,8 +21,9 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
+  const displayFileName = normalizedFileName ?? '未知文件';
 
-  // 使用自定义Hook管理状态和逻辑
   const {
     loading,
     error,
@@ -56,8 +55,11 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     if (typeof radius === 'number') {
       return radius * 2;
     }
-    if (radius) {
-      return `calc(${radius} * 2)`;
+    if (typeof radius === 'string') {
+      const trimmedRadius = radius.trim();
+      if (trimmedRadius.length > 0) {
+        return `calc(${trimmedRadius} * 2)`;
+      }
     }
     return radius;
   }, [theme.shape.borderRadius]);
@@ -68,9 +70,9 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     scale,
     isSmallScreen,
     fullScreenMode,
-    zoomIn: () => {}, // 这些会在ImagePreviewContent中被重写
-    zoomOut: () => {},
-    resetTransform: () => {},
+    zoomIn: NOOP,
+    zoomOut: NOOP,
+    resetTransform: NOOP,
     handleRotateLeft,
     handleRotateRight,
     toggleFullScreen,
@@ -81,7 +83,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   // 预览内容组件的Props
   const previewContentProps = {
     imageUrl,
-    fileName,
+    fileName: displayFileName,
     rotation,
     loading,
     error,
@@ -101,7 +103,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     return (
       <ImageThumbnail
         imageUrl={imageUrl}
-        fileName={fileName}
+        fileName={displayFileName}
         thumbnailSize={thumbnailSize}
         shouldLoad={shouldLoad}
         onOpenPreview={handleOpenPreview}

@@ -1,4 +1,4 @@
-import { logger } from '../../../utils';
+import { logger } from '@/utils';
 import type { CacheConfig, CacheStats, CacheItemMeta } from './CacheTypes';
 import { calculateTTL, estimateSize } from './CacheUtils';
 import {
@@ -16,7 +16,7 @@ import {
   saveItemToLocalStorage,
 } from './CachePersistence';
 
-export class AdvancedCache<K, V> {
+export class AdvancedCache<K extends string, V> {
   private readonly cache: Map<K, CacheItemMeta>;
   private readonly config: CacheConfig;
   private readonly stats: CacheStats;
@@ -36,10 +36,10 @@ export class AdvancedCache<K, V> {
       lastCleanup: Date.now(),
     };
 
-  this.dbName = buildDbName(this.config.storageKey);
+    this.dbName = buildDbName(this.config.storageKey);
 
     if (this.config.enablePersistence) {
-      this.initializePersistence();
+      void this.initializePersistence();
     }
 
     this.startPeriodicCleanup();
@@ -48,15 +48,15 @@ export class AdvancedCache<K, V> {
   public async initializePersistence(): Promise<void> {
     if (this.config.useIndexedDB && typeof indexedDB !== 'undefined') {
       try {
-  const handles = { dbName: this.dbName, db: this.db };
-  await initIndexedDB(handles, this.config);
-  this.db = handles.db;
-  await this.loadFromIndexedDB();
+        const handles = { dbName: this.dbName, db: this.db };
+        await initIndexedDB(handles, this.config);
+        this.db = handles.db;
+        await this.loadFromIndexedDB();
         logger.debug(`IndexedDB初始化成功: ${this.config.storageKey}`);
-      } catch (error) {
+      } catch (error: unknown) {
         logger.warn(`IndexedDB初始化失败，尝试重新初始化: ${this.config.storageKey}`, error);
         try {
-          if (this.db) {
+          if (this.db !== null) {
             this.db.close();
             this.db = null;
           }
@@ -66,7 +66,7 @@ export class AdvancedCache<K, V> {
           this.db = handles.db;
           await this.loadFromIndexedDB();
           logger.info(`IndexedDB重新初始化成功: ${this.config.storageKey}`);
-        } catch (retryError) {
+        } catch (retryError: unknown) {
           logger.warn(`IndexedDB重新初始化失败，回退到localStorage: ${this.config.storageKey}`, retryError);
           this.config.useIndexedDB = false;
           await this.loadFromLocalStorage();
@@ -78,24 +78,24 @@ export class AdvancedCache<K, V> {
   }
 
   async get(key: K): Promise<V | undefined> {
-    const keyStr = String(key);
+    const keyStr = key;
     let item = this.cache.get(key);
 
-    if (!item && this.config.enablePersistence) {
+    if (item === undefined && this.config.enablePersistence) {
       item = await this.loadItemFromPersistence(keyStr);
-      if (item) {
+      if (item !== undefined) {
         this.cache.set(key, item);
       }
     }
 
-    if (!item) {
+    if (item === undefined) {
       this.stats.misses++;
       this.updateHitRate();
       return undefined;
     }
 
     const now = Date.now();
-  const ttl = calculateTTL(this.config, item);
+    const ttl = calculateTTL(this.config, item);
 
     if (now - item.timestamp > ttl) {
       await this.delete(key);
@@ -111,7 +111,7 @@ export class AdvancedCache<K, V> {
     this.cache.set(key, item);
 
     if (this.config.enablePersistence) {
-      this.saveItemToPersistence(keyStr, item).catch(error => {
+      this.saveItemToPersistence(keyStr, item).catch((error: unknown) => {
         logger.warn('保存缓存项到持久化存储失败', error);
       });
     }
@@ -123,11 +123,11 @@ export class AdvancedCache<K, V> {
 
   // 计算TTL 统一使用工具函数
 
-  async set(key: K, value: V, version: string = '1.0'): Promise<void> {
+  async set(key: K, value: V, version = '1.0'): Promise<void> {
     const now = Date.now();
-    const keyStr = String(key);
+    const keyStr = key;
     await this.checkMemoryPressureAndCleanup();
-  const size = estimateSize(value);
+    const size = estimateSize(value);
 
     const item: CacheItemMeta = {
       value,
@@ -143,7 +143,7 @@ export class AdvancedCache<K, V> {
     this.updateMemoryUsage();
 
     if (this.config.enablePersistence) {
-      this.saveItemToPersistence(keyStr, item).catch(error => {
+      this.saveItemToPersistence(keyStr, item).catch((error: unknown) => {
         logger.warn('保存缓存项到持久化存储失败', error);
       });
     }
@@ -154,7 +154,7 @@ export class AdvancedCache<K, V> {
     if (currentLoad >= this.config.memoryPressureThreshold) {
       const itemsToRemove = Math.floor(this.config.maxSize * 0.2);
       await this.cleanupLeastUsed(itemsToRemove);
-      logger.debug(`内存压力清理：删除了${itemsToRemove}个最少使用的缓存项`);
+      logger.debug(`内存压力清理：删除了${itemsToRemove.toString()}个最少使用的缓存项`);
     }
   }
 
@@ -173,13 +173,13 @@ export class AdvancedCache<K, V> {
   }
 
   async delete(key: K): Promise<boolean> {
-    const keyStr = String(key);
+    const keyStr = key;
     const result = this.cache.delete(key);
     if (result) {
       this.stats.size = this.cache.size;
       this.updateMemoryUsage();
       if (this.config.enablePersistence) {
-        await this.deleteItemFromPersistence(keyStr).catch(error => {
+        await this.deleteItemFromPersistence(keyStr).catch((error: unknown) => {
           logger.warn('从持久化存储删除缓存项失败', error);
         });
       }
@@ -196,7 +196,7 @@ export class AdvancedCache<K, V> {
     this.updateHitRate();
 
     if (this.config.enablePersistence) {
-      await this.clearPersistence().catch(error => {
+      await this.clearPersistence().catch((error: unknown) => {
         logger.warn('清除持久化存储失败', error);
       });
     }
@@ -225,7 +225,7 @@ export class AdvancedCache<K, V> {
 
   private startPeriodicCleanup(): void {
     this.cleanupTimer = setInterval(() => {
-      this.performPeriodicCleanup().catch(error => {
+      this.performPeriodicCleanup().catch((error: unknown) => {
         logger.warn('定期清理失败', error);
       });
     }, 5 * 60 * 1000);
@@ -236,7 +236,7 @@ export class AdvancedCache<K, V> {
     const expiredKeys: K[] = [];
 
     this.cache.forEach((item, key) => {
-  const ttl = calculateTTL(this.config, item);
+      const ttl = calculateTTL(this.config, item);
       if (now - item.timestamp > ttl) {
         expiredKeys.push(key);
       }
@@ -249,29 +249,30 @@ export class AdvancedCache<K, V> {
     this.stats.lastCleanup = now;
 
     if (expiredKeys.length > 0) {
-      logger.debug(`定期清理：删除了${expiredKeys.length}个过期缓存项`);
+      logger.debug(`定期清理：删除了${expiredKeys.length.toString()}个过期缓存项`);
     }
   }
 
-  async prefetch(keys: K[]): Promise<void> {
-    if (!this.config.enablePrefetch) return;
-    setTimeout(async () => {
-      for (const key of keys) {
-        try {
-          await this.get(key);
-        } catch (error) {
+  prefetch(keys: K[]): void {
+    if (!this.config.enablePrefetch) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      keys.forEach(key => {
+        void this.get(key).catch((error: unknown) => {
           logger.debug(`预加载失败: ${key}`, error);
-        }
-      }
+        });
+      });
     }, this.config.prefetchDelay);
   }
 
   destroy(): void {
-    if (this.cleanupTimer) {
+    if (this.cleanupTimer !== null) {
       clearInterval(this.cleanupTimer);
       this.cleanupTimer = null;
     }
-    if (this.db) {
+    if (this.db !== null) {
       this.db.close();
       this.db = null;
     }
@@ -279,7 +280,7 @@ export class AdvancedCache<K, V> {
   }
 
   private async loadItemFromPersistence(key: string): Promise<CacheItemMeta | undefined> {
-    if (this.config.useIndexedDB && this.db) {
+    if (this.config.useIndexedDB && this.db !== null) {
       return loadItemFromIndexedDB(this.db, this.config, key);
     } else {
       return loadItemFromLocalStorage(this.config, key);
@@ -287,7 +288,7 @@ export class AdvancedCache<K, V> {
   }
 
   private async saveItemToPersistence(key: string, item: CacheItemMeta): Promise<void> {
-    if (this.config.useIndexedDB && this.db) {
+    if (this.config.useIndexedDB && this.db !== null) {
       return saveItemToIndexedDB(this.db, this.config, key, item);
     } else {
       return saveItemToLocalStorage(this.config, key, item);
@@ -295,7 +296,7 @@ export class AdvancedCache<K, V> {
   }
 
   private async deleteItemFromPersistence(key: string): Promise<void> {
-    if (this.config.useIndexedDB && this.db) {
+    if (this.config.useIndexedDB && this.db !== null) {
       return deleteItemFromIndexedDB(this.db, this.config, key);
     } else {
       return deleteItemFromLocalStorage(this.config, key);
@@ -303,7 +304,7 @@ export class AdvancedCache<K, V> {
   }
 
   private async clearPersistence(): Promise<void> {
-    if (this.config.useIndexedDB && this.db) {
+    if (this.config.useIndexedDB && this.db !== null) {
       return clearIndexedDB(this.db, this.config);
     } else {
       return clearLocalStorage(this.config);
@@ -311,49 +312,45 @@ export class AdvancedCache<K, V> {
   }
 
   private async loadFromIndexedDB(): Promise<void> {
-    if (!this.db) {
+    if (this.db === null) {
       logger.debug('IndexedDB连接不存在，跳过加载');
       return;
     }
 
-    return new Promise(async (resolve) => {
-      try {
-        const items = await loadAllFromIndexedDB(this.db, this.config);
-        let loadedCount = 0;
-        const now = Date.now();
-        const defaultTTL = this.config.defaultTTL;
-        items.forEach((entry) => {
-          try {
-            if (entry.data && now - entry.timestamp <= defaultTTL) {
-              this.cache.set(entry.key as any as K, entry.data);
-              loadedCount++;
-            }
-          } catch (error) {
-            logger.debug(`加载缓存项失败: ${entry.key}`, error);
+    try {
+      const items = await loadAllFromIndexedDB(this.db, this.config);
+      let loadedCount = 0;
+      const now = Date.now();
+      const defaultTTL = this.config.defaultTTL;
+      items.forEach(entry => {
+        try {
+          if (now - entry.timestamp <= defaultTTL) {
+            this.cache.set(entry.key as K, entry.data);
+            loadedCount += 1;
           }
-        });
-        this.stats.size = this.cache.size;
-        this.updateMemoryUsage();
-        logger.debug(`从IndexedDB恢复缓存: ${loadedCount}项 (${this.config.storageKey})`);
-      } catch (error) {
-        logger.debug(`从IndexedDB加载失败`, error);
-      } finally {
-        resolve();
-      }
-    });
+        } catch (error: unknown) {
+          logger.debug(`加载缓存项失败: ${entry.key}`, error);
+        }
+      });
+      this.stats.size = this.cache.size;
+      this.updateMemoryUsage();
+      logger.debug(`从IndexedDB恢复缓存: ${loadedCount.toString()}项 (${this.config.storageKey})`);
+    } catch (error: unknown) {
+      logger.debug('从IndexedDB加载失败', error);
+    }
   }
 
   private loadItemFromLocalStorage(key: string): Promise<CacheItemMeta | undefined> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       try {
         const item = localStorage.getItem(`${this.config.storageKey}_${key}`);
-        if (item) {
-          const parsed = JSON.parse(item);
+        if (item !== null) {
+          const parsed = JSON.parse(item) as CacheItemMeta;
           resolve(parsed);
         } else {
           resolve(undefined);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         logger.warn('从localStorage加载缓存项失败', error);
         resolve(undefined);
       }
@@ -365,7 +362,7 @@ export class AdvancedCache<K, V> {
       const keys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith(`${this.config.storageKey}_`)) {
+        if (key?.startsWith(`${this.config.storageKey}_`) === true) {
           keys.push(key.substring(`${this.config.storageKey}_`.length));
         }
       }
@@ -373,20 +370,20 @@ export class AdvancedCache<K, V> {
       let loadedCount = 0;
       for (const key of keys) {
         const item = await this.loadItemFromLocalStorage(key);
-        if (item) {
+        if (item !== undefined) {
           const now = Date.now();
           const ttl = calculateTTL(this.config, item);
           if (now - item.timestamp <= ttl) {
-            this.cache.set(key as any as K, item);
-            loadedCount++;
+            this.cache.set(key as K, item);
+            loadedCount += 1;
           }
         }
       }
 
       this.stats.size = this.cache.size;
       this.updateMemoryUsage();
-      logger.debug(`从localStorage恢复缓存: ${loadedCount}项 (${this.config.storageKey})`);
-    } catch (error) {
+      logger.debug(`从localStorage恢复缓存: ${loadedCount.toString()}项 (${this.config.storageKey})`);
+    } catch (error: unknown) {
       logger.warn('从localStorage加载缓存失败', error);
     }
   }

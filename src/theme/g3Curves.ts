@@ -25,7 +25,7 @@ const DEFAULT_G3_CONFIG: Required<G3CurveConfig> = {
 export function createG3BorderRadius(config: G3CurveConfig): string {
   const { radius, smoothness = DEFAULT_G3_CONFIG.smoothness } = config;
   const adjustedRadius = radius * (1.0 + smoothness * 0.6);
-  return `${Math.round(adjustedRadius)}px`;
+  return `${Math.round(adjustedRadius).toString()}px`;
 }
 
 // 生成样式对象
@@ -34,7 +34,7 @@ export function createG3Style(config: G3CurveConfig): React.CSSProperties {
   const g3Radius = createG3BorderRadius(config);
   return {
     borderRadius: g3Radius,
-    '--g3-radius': `${radius}px`,
+    '--g3-radius': `${radius.toString()}px`,
     '--g3-smoothness': smoothness.toString(),
     transition: 'border-radius 0.2s ease-out, box-shadow 0.2s ease-out',
   } as React.CSSProperties;
@@ -135,6 +135,6 @@ export function g3BorderRadius(config: G3CurveConfig): string {
 }
 
 // Material-UI sx prop
-export function g3Sx(config: G3CurveConfig) {
+export function g3Sx(config: G3CurveConfig): React.CSSProperties {
   return createG3Style(config);
 }

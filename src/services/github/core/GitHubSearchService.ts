@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { GitHubContent } from '../../../types';
-import { logger } from '../../../utils';
+import type { GitHubContent } from '@/types';
+import { logger } from '@/utils';
 import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
 import {
@@ -15,26 +15,26 @@ import {
   filterAndNormalizeGitHubContents
 } from '../schemas/dataTransformers';
 
-export class GitHubSearchService {
-  private static readonly batcher = new RequestBatcher();
+// GitHub搜索服务，使用模块导出
+const batcher = new RequestBatcher();
 
-  // 使用GitHub API进行搜索
-  public static async searchWithGitHubApi(
-    searchTerm: string,
-    currentPath: string = '',
-    fileTypeFilter?: string
-  ): Promise<GitHubContent[]> {
+// GitHub API搜索
+export async function searchWithGitHubApi(
+  searchTerm: string,
+  currentPath = '',
+  fileTypeFilter?: string
+): Promise<GitHubContent[]> {
     try {
       // 构建搜索查询
       let query = `repo:${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME} ${searchTerm}`;
 
       // 如果提供了当前路径，则限制搜索范围
-      if (currentPath && currentPath !== '/') {
+      if (currentPath !== '' && currentPath !== '/') {
         query += ` path:${currentPath}`;
       }
 
       // 如果提供了文件类型过滤器，则限制文件类型
-      if (fileTypeFilter) {
+      if (fileTypeFilter !== undefined && fileTypeFilter !== '') {
         query += ` extension:${fileTypeFilter}`;
       }
 
@@ -54,7 +54,7 @@ export class GitHubSearchService {
 
         // 使用增强批处理器处理请求
         const fetchUrl = urlWithParams.toString();
-        rawSearchResults = await this.batcher.enqueue(fetchUrl, async () => {
+        rawSearchResults = await batcher.enqueue(fetchUrl, async () => {
           logger.debug(`搜索API请求: ${fetchUrl}`);
           const result = await fetch(fetchUrl, {
             method: 'GET',
@@ -62,10 +62,11 @@ export class GitHubSearchService {
           });
 
           if (!result.ok) {
-            throw GitHubAuth.handleApiError(result, fetchUrl, 'GET');
+            const error = new Error(`HTTP ${result.status.toString()}: ${result.statusText}`);
+            throw error;
           }
 
-          return result.json();
+          return result.json() as Promise<unknown>;
         }, {
           priority: 'medium', // 搜索请求中等优先级
           method: 'GET',
@@ -89,29 +90,30 @@ export class GitHubSearchService {
         excludeHidden: false, // 搜索结果可能包含隐藏文件
         includeOnlyTypes: ['file'] // 搜索结果通常只包含文件
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
       logger.error(`搜索失败: ${searchTerm}`, error);
-      throw new Error(`搜索失败: ${error.message}`);
+      throw new Error(`搜索失败: ${errorMessage}`);
     }
-  }
+}
 
-  // 搜索文件
-  public static async searchFiles(
-    searchTerm: string,
-    currentPath: string = '',
-    recursive: boolean = false,
-    fileTypeFilter?: string
-  ): Promise<GitHubContent[]> {
-    if (!searchTerm.trim()) {
+// 搜索文件
+export async function searchFiles(
+  searchTerm: string,
+  currentPath = '',
+  recursive = false,
+  fileTypeFilter?: string
+): Promise<GitHubContent[]> {
+    if (searchTerm.trim() === '') {
       return [];
     }
 
     try {
       // 动态导入避免循环依赖
-      const { GitHubContentService } = await import('./GitHubContentService');
+      const { getContents } = await import('./GitHubContentService');
 
       // 首先获取当前目录的内容
-      const contents = await GitHubContentService.getContents(currentPath);
+      const contents = await getContents(currentPath);
 
       // 过滤匹配的文件 - 严格只匹配文件名
       const normalizedSearchTerm = searchTerm.trim().toLowerCase();
@@ -120,9 +122,9 @@ export class GitHubSearchService {
       // 处理当前目录中的匹配项
       results = contents.filter((item: GitHubContent) => {
         // 如果指定了文件类型过滤，则只匹配特定类型的文件
-        if (fileTypeFilter && item.type === 'file') {
+        if (fileTypeFilter !== undefined && fileTypeFilter !== '' && item.type === 'file') {
           const extension = item.name.split('.').pop()?.toLowerCase();
-          if (!extension || extension !== fileTypeFilter.toLowerCase()) {
+          if (extension === undefined || extension === '' || extension !== fileTypeFilter.toLowerCase()) {
             return false;
           }
         }
@@ -138,18 +140,19 @@ export class GitHubSearchService {
 
         // 并行搜索子目录，而不是串行处理
         if (directories.length > 0) {
-          logger.debug(`并行搜索 ${directories.length} 个子目录（无深度限制）`);
+          logger.debug(`并行搜索 ${directories.length.toString()} 个子目录（无深度限制）`);
 
           // 创建所有子目录搜索的Promise数组
           const searchPromises = directories.map((dir: GitHubContent) =>
-            this.searchFiles(
+            searchFiles(
               searchTerm,
               dir.path,
               true,
               fileTypeFilter
-            ).catch(error => {
+            ).catch((error: unknown) => {
               // 捕获单个目录搜索失败，但不影响其他目录
-              logger.warn(`搜索目录 ${dir.path} 失败: ${error.message}`);
+              const errorMessage = error instanceof Error ? error.message : '未知错误';
+              logger.warn(`搜索目录 ${dir.path} 失败: ${errorMessage}`);
               return [] as GitHubContent[];
             })
           );
@@ -164,11 +167,17 @@ export class GitHubSearchService {
         }
       }
 
-      logger.debug(`搜索结果: 找到 ${results.length} 个匹配项（仅匹配文件名）`);
+      logger.debug(`搜索结果: 找到 ${results.length.toString()} 个匹配项（仅匹配文件名）`);
       return results;
-    } catch (error: any) {
-      logger.error(`搜索文件失败: ${error.message}`);
-      throw new Error(`搜索文件失败: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      logger.error(`搜索文件失败: ${errorMessage}`);
+      throw new Error(`搜索文件失败: ${errorMessage}`);
     }
-  }
 }
+
+// 为了向后兼容，导出一个包含所有函数的对象
+export const GitHubSearchService = {
+  searchWithGitHubApi,
+  searchFiles
+} as const;

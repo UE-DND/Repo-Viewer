@@ -1,4 +1,4 @@
-import { OptionsObject as NotistackOptionsObject } from 'notistack';
+import type { OptionsObject as NotistackOptionsObject } from 'notistack';
 
 export * from './errors';
 

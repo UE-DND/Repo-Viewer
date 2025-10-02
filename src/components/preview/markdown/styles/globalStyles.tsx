@@ -1,6 +1,5 @@
 import { GlobalStyles } from "@mui/material";
 
-// 添加全局样式定义
 export const markdownGlobalStyles = (
   <GlobalStyles
     styles={{

@@ -1,6 +1,6 @@
-import { getProxyConfig } from '../../../config';
+import { getProxyConfig } from '@/config';
 import { PROXY_SERVICES } from './ProxyConfig';
-import { logger } from '../../../utils';
+import { logger } from '@/utils';
 
 const proxyConfig = getProxyConfig();
 
@@ -20,7 +20,7 @@ export interface ProxyHealth {
  * 负责监控代理服务的健康状态，进行故障转移和自动恢复
  */
 export class ProxyHealthManager {
-  private proxyHealth: Map<string, ProxyHealth> = new Map();
+  private proxyHealth = new Map<string, ProxyHealth>();
   private readonly MAX_FAILURES = 3;
   private healthCheckTimer: number | null = null;
 
@@ -31,7 +31,7 @@ export class ProxyHealthManager {
 
   private initializeProxies(): void {
     PROXY_SERVICES.forEach(proxyUrl => {
-      if (proxyUrl) {
+      if (proxyUrl !== '' && proxyUrl.trim() !== '') {
         this.proxyHealth.set(proxyUrl, {
           url: proxyUrl,
           failureCount: 0,
@@ -47,23 +47,23 @@ export class ProxyHealthManager {
 
   public recordSuccess(proxyUrl: string, responseTime: number): void {
     const health = this.proxyHealth.get(proxyUrl);
-    if (health) {
+    if (health !== undefined) {
       health.isHealthy = true;
       health.consecutiveFailures = 0;
       health.responseTime = responseTime;
       health.lastSuccessTime = Date.now();
-      logger.debug(`代理成功: ${proxyUrl}, 响应时间: ${responseTime}ms`);
+      logger.debug(`代理成功: ${proxyUrl}, 响应时间: ${responseTime.toString()}ms`);
     }
   }
 
   public recordFailure(proxyUrl: string): void {
     const health = this.proxyHealth.get(proxyUrl);
-    if (health) {
+    if (health !== undefined) {
       health.failureCount++;
       health.consecutiveFailures++;
       health.lastFailure = Date.now();
       health.isHealthy = health.consecutiveFailures < this.MAX_FAILURES;
-      logger.warn(`代理失败: ${proxyUrl}, 连续失败: ${health.consecutiveFailures}`);
+      logger.warn(`代理失败: ${proxyUrl}, 连续失败: ${health.consecutiveFailures.toString()}`);
     }
   }
 
@@ -72,13 +72,17 @@ export class ProxyHealthManager {
       .filter(health => health.isHealthy || this.shouldRetryProxy(health))
       .sort((a, b) => {
         // 优先选择健康的代理
-        if (a.isHealthy && !b.isHealthy) return -1;
-        if (!a.isHealthy && b.isHealthy) return 1;
+        if (a.isHealthy && !b.isHealthy) {
+          return -1;
+        }
+        if (!a.isHealthy && b.isHealthy) {
+          return 1;
+        }
         // 在健康代理中，选择响应时间最短的
         return a.responseTime - b.responseTime;
       });
 
-    return healthyProxies.length > 0 ? healthyProxies[0]?.url || '' : PROXY_SERVICES[0] || '';
+    return healthyProxies.length > 0 ? (healthyProxies[0]?.url ?? '') : (PROXY_SERVICES[0] ?? '');
   }
 
   private shouldRetryProxy(health: ProxyHealth): boolean {
@@ -90,7 +94,7 @@ export class ProxyHealthManager {
   private startHealthCheck(): void {
     const interval = proxyConfig.healthCheckInterval;
     this.healthCheckTimer = window.setInterval(() => {
-      this.performHealthCheck();
+      void this.performHealthCheck();
     }, interval);
   }
 
@@ -103,7 +107,9 @@ export class ProxyHealthManager {
       try {
         const testUrl = `${health.url}/health-check`;
         const controller = new AbortController();
-        timeoutId = window.setTimeout(() => controller.abort(), proxyConfig.healthCheckTimeout);
+        timeoutId = window.setTimeout(() => {
+          controller.abort();
+        }, proxyConfig.healthCheckTimeout);
         const startTime = Date.now();
         const response = await fetch(testUrl, {
           method: 'HEAD',
@@ -117,12 +123,20 @@ export class ProxyHealthManager {
       } catch {
         // 健康检查失败，保持当前状态
       } finally {
-        if (timeoutId !== null) window.clearTimeout(timeoutId);
+        if (timeoutId !== null) {
+          window.clearTimeout(timeoutId);
+        }
       }
     }
   }
 
-  public getHealthStats() {
+  public getHealthStats(): {
+    url: string;
+    isHealthy: boolean;
+    failureCount: number;
+    responseTime: number;
+    consecutiveFailures: number;
+  }[] {
     return Array.from(this.proxyHealth.values()).map(health => ({
       url: health.url,
       isHealthy: health.isHealthy,
@@ -133,7 +147,7 @@ export class ProxyHealthManager {
   }
 
   public destroy(): void {
-    if (this.healthCheckTimer) {
+    if (this.healthCheckTimer !== null) {
       clearInterval(this.healthCheckTimer);
       this.healthCheckTimer = null;
     }

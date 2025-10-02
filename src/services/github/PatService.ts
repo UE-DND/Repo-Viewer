@@ -1,4 +1,4 @@
-import { configManager } from '../../config';
+import { configManager } from '@/config';
 import { GitHubTokenManager } from './TokenManager';
 
 /**
@@ -17,9 +17,7 @@ export class PatService {
    * 获取 PatService 单例实例
    */
   static getInstance(): PatService {
-    if (!PatService.instance) {
-      PatService.instance = new PatService();
-    }
+    PatService.instance ??= new PatService();
     return PatService.instance;
   }
 
@@ -97,7 +95,7 @@ export class PatService {
    * 获取 PAT 配置的调试信息
    * @returns 调试信息对象
    */
-  getDebugInfo() {
+  getDebugInfo(): { totalTokens: number; tokenSources: unknown } {
     const debugInfo = configManager.getDebugInfo();
     return {
       totalTokens: debugInfo.configSummary.tokenCount,
@@ -133,6 +131,8 @@ export const patService = PatService.getInstance();
 /**
  * 兼容性导出 - 直接获取 PAT 的便捷函数
  */
-export const getGitHubPAT = () => patService.getGitHubPAT();
-export const hasGitHubTokens = () => patService.hasTokens();
-export const markTokenFailed = () => patService.markCurrentTokenFailed();
+export const getGitHubPAT = (): string => patService.getGitHubPAT();
+export const hasGitHubTokens = (): boolean => patService.hasTokens();
+export const markTokenFailed = (): void => {
+  patService.markCurrentTokenFailed();
+};

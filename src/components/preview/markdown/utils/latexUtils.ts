@@ -1,6 +1,7 @@
 import React from "react";
-import { countLatexElements } from "../../../../utils/rendering/latexOptimizer";
-import { logger } from '../../../../utils';
+import type { PropsWithChildren, ReactElement, HTMLAttributes, ClassAttributes } from "react";
+import { countLatexElements } from "@/utils/rendering/latexOptimizer";
+import { logger } from "@/utils";
 
 /**
  * 检测LaTeX公式数量
@@ -8,43 +9,43 @@ import { logger } from '../../../../utils';
 export const checkLatexCount = (
   markdownRef: React.RefObject<HTMLDivElement | null>,
   setLatexCount: (count: number) => void
-) => {
-  // 延迟检测，等待渲染完成
-  setTimeout(() => {
-    if (markdownRef.current) {
-      const count = countLatexElements();
-      setLatexCount(count);
+): void => {
+  window.setTimeout(() => {
+    if (markdownRef.current === null) {
+      return;
+    }
 
-      // 如果公式数量很多，在控制台提示
-      if (count > 50) {
-        logger.warn(`检测到${count}个LaTeX公式，已启用性能优化模式`);
-      }
+    const count = countLatexElements();
+    setLatexCount(count);
+
+    if (count > 50) {
+      logger.warn(`检测到${String(count)}个LaTeX公式，已启用性能优化模式`);
     }
   }, 500);
 };
 
-/**
- * 创建LaTeX代码块处理器
- */
-export const createLatexCodeHandler = () => {
-  return ({
-    inline,
-    className = "",
-    children,
-    ...props
-  }: any) => {
-    const match = /language-(\w+)/.exec(className);
-    const language = match?.[1]?.toLowerCase();
-    const isLatexBlock =
-      !inline && Boolean(language && ["math", "latex", "tex"].includes(language));
+interface LatexCodeProps extends ClassAttributes<HTMLElement>, HTMLAttributes<HTMLElement> {
+  inline?: boolean;
+  className?: string | undefined;
+}
 
-    const childText = React.Children.toArray(children)
+export const createLatexCodeHandler = (): (props: PropsWithChildren<LatexCodeProps>) => ReactElement => {
+  return ({ inline = false, className, children, ...rest }: PropsWithChildren<LatexCodeProps>) => {
+    const normalizedClassName = typeof className === "string" ? className : "";
+    const match = /language-(\w+)/.exec(normalizedClassName);
+    const language = match?.[1]?.toLowerCase();
+    const isLatexLanguage = language !== undefined && ["math", "latex", "tex"].includes(language);
+    const isLatexBlock = !inline && isLatexLanguage;
+
+    const flattenedChildren = React.Children.toArray(children ?? []);
+    const childText = flattenedChildren
       .map((child) => (typeof child === "string" ? child : ""))
       .join("");
     const normalizedContent = childText.replace(/\n$/, "");
     const hasLineBreak = normalizedContent.includes("\n");
-    const shouldRenderAsBlock =
-      !isLatexBlock && !inline && (Boolean(language) || hasLineBreak);
+    const shouldRenderAsBlock = !isLatexBlock && !inline && (language !== undefined || hasLineBreak);
+
+    const codeClassName = normalizedClassName.length > 0 ? normalizedClassName : undefined;
 
     if (isLatexBlock) {
       return React.createElement(
@@ -52,9 +53,9 @@ export const createLatexCodeHandler = () => {
         {
           className: "math math-display",
           style: { overflowX: "auto", padding: "0.5em 0" },
-          "data-oid": "g0ievsv"
+          "data-oid": "g0ievsv",
         },
-        String(children).replace(/\n$/, "")
+        normalizedContent,
       );
     }
 
@@ -62,30 +63,30 @@ export const createLatexCodeHandler = () => {
       return React.createElement(
         "pre",
         {
-          className: className || undefined,
+          className: codeClassName,
           tabIndex: 0,
-          "data-language": language || undefined,
-          "data-oid": "b48y9g3"
+          "data-language": language ?? undefined,
+          "data-oid": "b48y9g3",
         },
         React.createElement(
           "code",
           {
-            className,
-            ...props
+            className: codeClassName,
+            ...rest,
           },
-          normalizedContent
-        )
+          normalizedContent,
+        ),
       );
     }
 
     return React.createElement(
       "code",
       {
-        className: className || undefined,
-        ...props,
-        "data-oid": "nzwnmt7"
+        className: codeClassName,
+        ...rest,
+        "data-oid": "nzwnmt7",
       },
-      children
+      children,
     );
   };
 };

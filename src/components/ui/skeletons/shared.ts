@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { alpha } from "@mui/material";
-import { fadeAnimation, fadeOutAnimation } from "../../../theme/animations";
+import type { Theme } from "@mui/material";
+import type { SystemStyleObject } from "@mui/system";
+import { fadeAnimation, fadeOutAnimation } from "@/theme/animations";
 
 // 获取骨架屏样式，使用当前主题颜色
-export const getSkeletonStyles = (theme: any) => ({
+export const getSkeletonStyles = (theme: Theme): SystemStyleObject<Theme> => ({
   backgroundColor: alpha(theme.palette.primary.main, 0.08),
   "&::after": {
     backgroundColor: alpha(theme.palette.primary.main, 0.12),
@@ -23,7 +25,7 @@ export const getSkeletonStyles = (theme: any) => ({
 });
 
 // 创建获取容器过渡动画样式的函数，根据是否正在退出应用不同动画
-export const getContainerTransitionStyles = (isExiting: boolean) => ({
+export const getContainerTransitionStyles = (isExiting: boolean): SystemStyleObject<Theme> => ({
   animation: isExiting
     ? `${fadeOutAnimation} 0.3s ease-in-out forwards`
     : `${fadeAnimation} 0.5s ease-in-out`,
@@ -32,14 +34,15 @@ export const getContainerTransitionStyles = (isExiting: boolean) => ({
   transitionDelay: isExiting ? "0s" : "0.1s",
 });
 
-export const useSkeletonVisibility = (visible: boolean, onExited?: () => void) => {
+export const useSkeletonVisibility = (visible: boolean, onExited?: () => void): boolean => {
   const [isExiting, setIsExiting] = useState(!visible);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: number | null = null;
+
     if (!visible && !isExiting) {
       setIsExiting(true);
-      timer = setTimeout(() => {
+      timer = window.setTimeout(() => {
         onExited?.();
       }, 300);
     } else if (visible && isExiting) {
@@ -47,7 +50,9 @@ export const useSkeletonVisibility = (visible: boolean, onExited?: () => void) =
     }
 
     return () => {
-      if (timer) clearTimeout(timer);
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
     };
   }, [visible, isExiting, onExited]);
 

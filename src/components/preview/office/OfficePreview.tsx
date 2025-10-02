@@ -1,9 +1,9 @@
-import React from 'react';
+import React from "react";
 import { useMediaQuery } from "@mui/material";
-import MobileOfficePreview from './MobileOfficePreview';
-import DesktopOfficePreview from './DesktopOfficePreview';
-import { OfficePreviewProps } from './types';
-import { isMobileDevice } from './utils';
+import MobileOfficePreview from "./MobileOfficePreview";
+import DesktopOfficePreview from "./DesktopOfficePreview";
+import type { OfficePreviewProps } from "./types";
+import { isMobileDevice } from "./utils";
 
 /**
  * Office文档预览组件

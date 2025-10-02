@@ -11,6 +11,11 @@ export interface ConfigInfo {
   repoBranch: string;
 }
 
+interface ConfigApiSuccessResponse {
+  status: 'success';
+  data?: unknown;
+}
+
 /**
  * 配置默认值
  */
@@ -29,120 +34,157 @@ let isInitialized = false;
 let isLoading = false;
 let initPromise: Promise<ConfigInfo> | null = null;
 
-/**
- * 配置服务
- */
-export class ConfigService {
-  /**
-   * 初始化配置服务
-   * 确保只会初始化一次，返回Promise等待初始化完成
-   */
-  public static init(): Promise<ConfigInfo> {
-    // 如果已经初始化或正在加载中，直接返回
-    if (isInitialized) {
-      return Promise.resolve(currentConfig);
+const isConfigApiSuccessResponse = (value: unknown): value is ConfigApiSuccessResponse => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return (value as { status?: unknown }).status === 'success';
+};
+
+const normalizeConfigData = (data: unknown): Partial<ConfigInfo> => {
+  if (typeof data !== 'object' || data === null) {
+    return {};
+  }
+
+  const record = data as Record<string, unknown>;
+  const normalized: Partial<ConfigInfo> = {};
+
+  const siteTitle = record['siteTitle'];
+  if (typeof siteTitle === 'string') {
+    normalized.siteTitle = siteTitle;
+  }
+
+  const repoOwner = record['repoOwner'];
+  if (typeof repoOwner === 'string') {
+    normalized.repoOwner = repoOwner;
+  }
+
+  const repoName = record['repoName'];
+  if (typeof repoName === 'string') {
+    normalized.repoName = repoName;
+  }
+
+  const repoBranch = record['repoBranch'];
+  if (typeof repoBranch === 'string') {
+    normalized.repoBranch = repoBranch;
+  }
+
+  return normalized;
+};
+
+const updateDocumentTitle = (siteTitle: string): void => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const trimmedTitle = siteTitle.trim();
+
+  if (trimmedTitle.length === 0) {
+    return;
+  }
+
+  document.title = trimmedTitle;
+};
+
+const loadConfig = async (): Promise<ConfigInfo> => {
+  try {
+    logger.debug('正在从API加载配置信息...');
+
+    const headers: HeadersInit = {
+      Accept: 'application/json',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache'
+    };
+
+    const timestamp = Date.now().toString();
+    const response = await fetch(`/api/github?action=getConfig&t=${encodeURIComponent(timestamp)}`, { headers });
+
+    if (!response.ok) {
+      throw new Error(`API请求失败: ${response.status.toString()}`);
     }
 
-    if (isLoading && initPromise) {
-      return initPromise;
+    const contentType = response.headers.get('content-type');
+
+    if (typeof contentType !== 'string' || !contentType.includes('application/json')) {
+      logger.warn(`API响应格式不是JSON: ${contentType ?? 'unknown'}`);
+      const text = await response.text();
+      logger.debug('API原始响应:', text);
+      throw new Error('API返回格式不正确');
     }
 
-    isLoading = true;
-    initPromise = this.loadConfig()
-      .then(config => {
-        isInitialized = true;
-        isLoading = false;
+    const result: unknown = await response.json();
 
-        // 更新页面标题
-        if (config.siteTitle && document) {
-          document.title = config.siteTitle;
-        }
+    if (isConfigApiSuccessResponse(result)) {
+      const normalizedConfig = normalizeConfigData(result.data);
+      currentConfig = {
+        ...DEFAULT_CONFIG,
+        ...normalizedConfig
+      };
 
-        return config;
-      })
-      .catch(error => {
-        isLoading = false;
-        logger.error('配置初始化失败', error);
-        return currentConfig;
-      });
+      logger.debug('配置信息加载成功', currentConfig);
+      return currentConfig;
+    }
 
+    logger.warn('API返回无效配置数据，使用默认值');
+  } catch (error: unknown) {
+    logger.error('加载配置失败，使用默认配置', error);
+  }
+
+  currentConfig = { ...DEFAULT_CONFIG };
+  return currentConfig;
+};
+
+const getConfig = (): ConfigInfo => currentConfig;
+
+const getSiteTitle = (): string => currentConfig.siteTitle;
+
+const isServiceInitialized = (): boolean => isInitialized;
+
+const init = (): Promise<ConfigInfo> => {
+  if (isInitialized) {
+    return Promise.resolve(currentConfig);
+  }
+
+  if (isLoading && initPromise !== null) {
     return initPromise;
   }
 
-  /**
-   * 从后端API加载配置
-   * @returns Promise<ConfigInfo> 配置信息
-   */
-  public static async loadConfig(): Promise<ConfigInfo> {
-    try {
-      logger.debug('正在从API加载配置信息...');
-      
-      // 明确指定请求头以避免浏览器缓存或格式问题
-      const headers = {
-        'Accept': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      };
-      
-      // 添加时间戳避免缓存
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/github?action=getConfig&t=${timestamp}`, { headers });
-      
-      if (!response.ok) {
-        throw new Error(`API请求失败: ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        logger.warn(`API响应格式不是JSON: ${contentType}`);
-        const text = await response.text();
-        logger.debug('API原始响应:', text);
-        throw new Error('API返回格式不正确');
-      }
-      
-      const result = await response.json();
-      
-      if (result.status === 'success' && result.data) {
-        // 更新配置，保留默认值作为备用
-        currentConfig = {
-          ...DEFAULT_CONFIG,
-          ...result.data
-        };
-        
-        logger.debug('配置信息加载成功', currentConfig);
-        return currentConfig;
-      } else {
-        logger.warn('API返回无效配置数据，使用默认值');
-        return DEFAULT_CONFIG;
-      }
-    } catch (error) {
-      logger.error('加载配置失败，使用默认配置', error);
-      return DEFAULT_CONFIG;
-    }
-  }
-  
-  /**
-   * 获取当前配置
-   * @returns ConfigInfo 当前配置信息
-   */
-  public static getConfig(): ConfigInfo {
-    return currentConfig;
-  }
-  
-  /**
-   * 获取站点标题
-   * @returns string 站点标题
-   */
-  public static getSiteTitle(): string {
-    return currentConfig.siteTitle;
-  }
+  isLoading = true;
 
-  /**
-   * 配置是否已初始化
-   */
-  public static isInitialized(): boolean {
-    return isInitialized;
-  }
+  const promise = loadConfig()
+    .then(config => {
+      isInitialized = true;
+      updateDocumentTitle(config.siteTitle);
+      return config;
+    })
+    .catch((error: unknown) => {
+      logger.error('配置初始化失败', error);
+      return currentConfig;
+    })
+    .finally(() => {
+      isLoading = false;
+      initPromise = null;
+    });
+
+  initPromise = promise;
+  return promise;
+};
+
+interface ConfigServiceApi {
+  init: () => Promise<ConfigInfo>;
+  loadConfig: () => Promise<ConfigInfo>;
+  getConfig: () => ConfigInfo;
+  getSiteTitle: () => string;
+  isInitialized: () => boolean;
 }
 
-export default ConfigService; 
+export const ConfigService: ConfigServiceApi = {
+  init,
+  loadConfig,
+  getConfig,
+  getSiteTitle,
+  isInitialized: isServiceInitialized
+};
+
+export default ConfigService;

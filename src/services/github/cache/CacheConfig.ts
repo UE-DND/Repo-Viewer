@@ -1,4 +1,4 @@
-import { CacheConfig } from './CacheTypes';
+import type { CacheConfig } from './CacheTypes';
 
 export const DEFAULT_CACHE_CONFIG: CacheConfig = {
   defaultTTL: 5 * 60 * 1000,

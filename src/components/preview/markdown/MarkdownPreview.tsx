@@ -4,7 +4,6 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
-
 import {
   Box,
   Paper,
@@ -14,24 +13,18 @@ import {
   Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-
-// 导入拆分的模块
-import { MarkdownPreviewProps } from "./types";
+import type { MarkdownPreviewProps } from "./types";
 import { katexOptions } from "./config/katex";
-import { loadKatexStyles } from "../../../utils/lazy-loading";
+import { loadKatexStyles } from "@/utils/lazy-loading";
 import { markdownGlobalStyles } from "./styles/globalStyles";
 import { createMarkdownStyles } from "./styles/markdownStyles";
-import {
-  createImageLoadingState,
-  ImageLoadingState,
-} from "./utils/imageUtils";
+import { createImageLoadingState } from "./utils/imageUtils";
+import type { ImageLoadingState } from "./utils/imageUtils";
 import { checkLatexCount, createLatexCodeHandler } from "./utils/latexUtils";
 import { MarkdownImage } from "./components/MarkdownImage";
 import { MarkdownLink } from "./components/MarkdownLink";
-import { logger } from '../../../utils';
-
-// 导入骨架屏组件
-import { MarkdownPreviewSkeleton } from "../../ui/skeletons";
+import { logger } from "@/utils";
+import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 
 const MarkdownPreview = memo<MarkdownPreviewProps>(
   ({
@@ -56,31 +49,41 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const [isThemeChanging, setIsThemeChanging] = useState<boolean>(false);
     // LaTeX公式数量
     const [latexCount, setLatexCount] = useState<number>(0);
-
     // 检测LaTeX公式数量的回调
     const handleLatexCheck = useCallback(() => {
       checkLatexCount(markdownRef, setLatexCount);
     }, []);
 
+    const isLazyLoadEnabled = lazyLoad;
+    const hasReadmeContent =
+      typeof readmeContent === "string" && readmeContent.length > 0;
+
     // 动态加载 katex 样式
     useEffect(() => {
-      if (shouldRender && readmeContent && latexCount > 0) {
-        loadKatexStyles().catch((error) => {
-          logger.error('加载 KaTeX 样式失败:', error);
+      if (
+        shouldRender &&
+        typeof readmeContent === "string" &&
+        readmeContent.length > 0 &&
+        latexCount > 0
+      ) {
+        loadKatexStyles().catch((error: unknown) => {
+          logger.error("加载 KaTeX 样式失败:", error);
         });
       }
     }, [shouldRender, readmeContent, latexCount]);
 
     // 设置IntersectionObserver监听markdown容器
     useEffect(() => {
-      if (!lazyLoad || shouldRender) return;
+      if (!isLazyLoadEnabled || shouldRender) {
+        return;
+      }
 
       observerRef.current = new IntersectionObserver(
         (entries) => {
-          if (entries[0]?.isIntersecting) {
+          if (entries[0]?.isIntersecting === true) {
             setShouldRender(true);
             // 一旦内容开始加载，就停止观察
-            if (observerRef.current && markdownRef.current) {
+            if (observerRef.current !== null && markdownRef.current !== null) {
               observerRef.current.unobserve(markdownRef.current);
             }
           }
@@ -93,16 +96,16 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
       );
 
       // 开始观察
-      if (markdownRef.current) {
+      if (markdownRef.current !== null) {
         observerRef.current.observe(markdownRef.current);
       }
 
       return () => {
-        if (observerRef.current) {
+        if (observerRef.current !== null) {
           observerRef.current.disconnect();
         }
       };
-    }, [lazyLoad, shouldRender]);
+    }, [isLazyLoadEnabled, shouldRender]);
 
     // 添加主题切换检测
     useEffect(() => {
@@ -122,15 +125,17 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         }
       }, 300); // 主题切换动画完成后再显示公式
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }, [theme.palette.mode, handleLatexCheck]);
 
     // 初始检测LaTeX公式数量
     useEffect(() => {
-      if (shouldRender && readmeContent) {
+      if (shouldRender && hasReadmeContent) {
         handleLatexCheck();
       }
-    }, [shouldRender, readmeContent, handleLatexCheck]);
+    }, [shouldRender, hasReadmeContent, handleLatexCheck]);
 
     // 清理图片加载计时器
     useEffect(() => {
@@ -155,7 +160,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
       );
     }
 
-    if (!readmeContent) {
+    if (!hasReadmeContent) {
       return null;
     }
 
@@ -169,7 +174,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         {markdownGlobalStyles}
 
         {/* 关闭按钮 */}
-        {onClose && (
+        {typeof onClose === "function" ? (
           <Tooltip title="关闭预览" placement="left">
             <IconButton
               onClick={onClose}
@@ -201,7 +206,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
               <CloseIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
             </IconButton>
           </Tooltip>
-        )}
+        ) : null}
 
         <Paper
           square
@@ -221,20 +226,33 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeRaw, [rehypeKatex, katexOptions]]}
                 components={{
-                  a: ({ href, children, ...props }) => (
-                    <MarkdownLink href={href} {...props}>
-                      {children}
-                    </MarkdownLink>
-                  ),
-                  img: ({ src, alt, ...props }) => (
-                    <MarkdownImage
-                      src={src}
-                      alt={alt}
-                      previewingItem={previewingItem || null}
-                      imageState={imageStateRef.current}
-                      {...props}
-                    />
-                  ),
+                  a: ({ href, children, style: linkStyle, ...props }) => {
+                    if (typeof href !== "string" || href.trim().length === 0) {
+                      return <>{children}</>;
+                    }
+
+                    return (
+                      <MarkdownLink href={href} style={linkStyle} {...props}>
+                        {children}
+                      </MarkdownLink>
+                    );
+                  },
+                  img: ({ src, alt, style: imageStyle, ...props }) => {
+                    if (typeof src !== "string" || src.trim().length === 0) {
+                      return null;
+                    }
+
+                    return (
+                      <MarkdownImage
+                        src={src}
+                        alt={alt ?? ""}
+                        style={imageStyle}
+                        previewingItem={previewingItem ?? null}
+                        imageState={imageStateRef.current}
+                        {...props}
+                      />
+                    );
+                  },
                   code: latexCodeHandler,
                 }}
                 data-oid="53g570v"

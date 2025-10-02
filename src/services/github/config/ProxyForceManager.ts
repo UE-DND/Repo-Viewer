@@ -1,26 +1,23 @@
-import { getConfig, getAccessConfig, getRuntimeConfig, configManager } from '../../../config';
-import { logger } from '../../../utils';
+import { getConfig, getAccessConfig, getRuntimeConfig, configManager } from '@/config';
+import { logger } from '@/utils';
 
 // 代理强制模式配置管理器，统一管理所有代理相关的配置逻辑
-export class ProxyForceManager {
-  private static _forceServerProxy: boolean | null = null;
+// 内部状态变量
+let _forceServerProxy: boolean | null = null;
 
-  // 获取是否强制使用服务端代理
+// 获取是否强制使用服务端代理
+export function getForceServerProxy(): boolean {
+  _forceServerProxy ??= calculateForceServerProxy();
+  return _forceServerProxy;
+}
 
-  public static getForceServerProxy(): boolean {
-    if (this._forceServerProxy === null) {
-      this._forceServerProxy = this.calculateForceServerProxy();
-    }
-    return this._forceServerProxy;
-  }
+// 重新计算并刷新强制代理配置
+export function refreshConfig(): void {
+  _forceServerProxy = calculateForceServerProxy();
+}
 
-  // 重新计算并刷新强制代理配置
-  public static refreshConfig(): void {
-    this._forceServerProxy = this.calculateForceServerProxy();
-  }
-
-  // 计算是否强制使用服务端代理
-  private static calculateForceServerProxy(): boolean {
+// 计算是否强制使用服务端代理
+function calculateForceServerProxy(): boolean {
     try {
       const runtimeConfig = getRuntimeConfig();
       const accessConfig = getAccessConfig();
@@ -41,16 +38,16 @@ export class ProxyForceManager {
     }
   }
 
-  // 获取代理配置详情（用于调试）
-  public static getProxyConfigDetails(): {
-    forceServerProxy: boolean;
-    isDev: boolean;
-    useTokenMode: boolean;
-    reason: string;
-  } {
+// 获取代理配置详情（用于调试）
+export function getProxyConfigDetails(): {
+  forceServerProxy: boolean;
+  isDev: boolean;
+  useTokenMode: boolean;
+  reason: string;
+} {
     const runtimeConfig = getRuntimeConfig();
     const accessConfig = getAccessConfig();
-    const forceServerProxy = this.getForceServerProxy();
+    const forceServerProxy = getForceServerProxy();
 
     let reason: string;
     if (!runtimeConfig.isDev) {
@@ -69,10 +66,10 @@ export class ProxyForceManager {
     };
   }
 
-  // 检查是否应该使用服务端API
-  public static shouldUseServerAPI(): boolean {
+// 检查是否应该使用服务端API
+export function shouldUseServerAPI(): boolean {
     // 基础的强制代理检查
-    if (this.getForceServerProxy()) {
+    if (getForceServerProxy()) {
       return true;
     }
 
@@ -84,29 +81,30 @@ export class ProxyForceManager {
     return false;
   }
 
-  // 获取推荐的请求策略
-  public static getRequestStrategy(): 'server-api' | 'direct-api' | 'hybrid' {
-    const config = getConfig();
+// 获取推荐的请求策略
+export function getRequestStrategy(): 'server-api' | 'direct-api' | 'hybrid' {
+  const config = getConfig();
 
-    if (this.getForceServerProxy()) {
-      return 'server-api';
-    }
-
-    if (config.runtime.isDev) {
-      return 'direct-api';
-    }
-
-    return 'hybrid';
+  if (getForceServerProxy()) {
+    return 'server-api';
   }
+
+  if (config.runtime.isDev) {
+    return 'direct-api';
+  }
+
+  return 'hybrid';
 }
 
-// 导出便捷函数
-export const getForceServerProxy = () => ProxyForceManager.getForceServerProxy();
-export const shouldUseServerAPI = () => ProxyForceManager.shouldUseServerAPI();
-export const getRequestStrategy = () => ProxyForceManager.getRequestStrategy();
-export const refreshProxyConfig = () => ProxyForceManager.refreshConfig();
+// 导出便捷别名函数
+export const getForceServerProxyAlias = (): boolean => getForceServerProxy();
+export const shouldUseServerAPIAlias = (): boolean => shouldUseServerAPI();
+export const getRequestStrategyAlias = (): 'server-api' | 'direct-api' | 'hybrid' => getRequestStrategy();
+export const refreshProxyConfig = (): void => {
+  refreshConfig();
+};
 
-// 配置变更监听（静态注册，避免动态/静态混用警告）
+// 配置变更监听
 configManager.onConfigChange(() => {
-  ProxyForceManager.refreshConfig();
+  refreshConfig();
 });

@@ -1,17 +1,26 @@
-/**
- * 环境变量映射工具
- * 处理环境变量的自动映射和同步
- */
-
 import { ENV_MAPPING, CONFIG_DEFAULTS } from '../constants';
 import type { EnvMappingOptions } from '../types';
 
-const runtimeProcessEnv: Record<string, string | undefined> | undefined =
-  typeof process !== 'undefined' && process.env ? process.env : undefined;
+type MutableEnvRecord = Record<string, string | undefined>;
+type EnvLookupRecord = Record<string, unknown>;
 
-/**
- * 标准化环境变量值
- */
+const getProcessEnvRecord = (): MutableEnvRecord | undefined => {
+  const globalProcess = (globalThis as { process?: { env?: unknown } }).process;
+  if (globalProcess !== undefined && typeof globalProcess.env === 'object' && globalProcess.env !== null) {
+    return globalProcess.env as MutableEnvRecord;
+  }
+  return undefined;
+};
+
+const runtimeProcessEnv = getProcessEnvRecord();
+
+const setProcessEnvValue = (key: string, value: string): void => {
+  const processEnv = getProcessEnvRecord();
+  if (processEnv !== undefined) {
+    processEnv[key] = value;
+  }
+};
+
 const normalizeEnvValue = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
     return undefined;
@@ -20,13 +29,8 @@ const normalizeEnvValue = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-/**
- * Vite 构建侧辅助：
- * - 将无前缀环境变量按 ENV_MAPPING 注入为对应的 VITE_ 前缀变量，供前端 import.meta.env 使用
- * - 在开发环境可选地将 GITHUB_PAT* 同步为 VITE_GITHUB_PAT*，避免令牌在生产构建中被暴露
- */
 export function applyEnvMappingForVite(
-  env: Record<string, string | undefined>,
+  env: MutableEnvRecord,
   options: EnvMappingOptions = {}
 ): void {
   const { isProdLike = false } = options;
@@ -35,12 +39,10 @@ export function applyEnvMappingForVite(
   Object.entries(ENV_MAPPING).forEach(([plainKey, viteKey]) => {
     const viteValue = normalizeEnvValue(env[viteKey] ?? runtimeProcessEnv?.[viteKey]);
     const plainValue = normalizeEnvValue(env[plainKey] ?? runtimeProcessEnv?.[plainKey]);
-    if (!viteValue && plainValue) {
+    if (viteValue === undefined && plainValue !== undefined) {
       // 写回到两处，确保 Vite dev/build 与后续 import.meta.env 都可见
       env[viteKey] = plainValue;
-      if (typeof process !== 'undefined' && process.env) {
-        process.env[viteKey] = plainValue;
-      }
+      setProcessEnvValue(viteKey, plainValue);
     }
   });
 
@@ -52,56 +54,54 @@ export function applyEnvMappingForVite(
     // 基础（无数字后缀）
     const basePlain = normalizeEnvValue(env[plainPrefix] ?? runtimeProcessEnv?.[plainPrefix]);
     const baseVite = normalizeEnvValue(env[vitePrefix] ?? runtimeProcessEnv?.[vitePrefix]);
-    if (basePlain && !baseVite) {
+    if (basePlain !== undefined && baseVite === undefined) {
       env[vitePrefix] = basePlain;
-      if (typeof process !== 'undefined' && process.env) {
-        process.env[vitePrefix] = basePlain;
-      }
+      setProcessEnvValue(vitePrefix, basePlain);
     }
 
     // 带数字后缀 1..MAX
     for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
-      const pKey = `${plainPrefix}${i}`;
-      const vKey = `${vitePrefix}${i}`;
+      const suffix = String(i);
+      const pKey = `${plainPrefix}${suffix}`;
+      const vKey = `${vitePrefix}${suffix}`;
       const pVal = normalizeEnvValue(env[pKey] ?? runtimeProcessEnv?.[pKey]);
       const vVal = normalizeEnvValue(env[vKey] ?? runtimeProcessEnv?.[vKey]);
-      if (pVal && !vVal) {
+      if (pVal !== undefined && vVal === undefined) {
         env[vKey] = pVal;
-        if (typeof process !== 'undefined' && process.env) {
-          process.env[vKey] = pVal;
-        }
+        setProcessEnvValue(vKey, pVal);
       }
     }
   }
 }
 
-/**
- * 支持从无前缀变量自动映射到VITE_前缀变量的解析函数
- */
-export const resolveEnvWithMapping = (env: Record<string, any>, plainKey: string, fallback: string): string => {
+export const resolveEnvWithMapping = (
+  env: EnvLookupRecord,
+  plainKey: string,
+  fallback: string
+): string => {
   // 优先使用VITE_前缀的变量（如果存在）
   const viteKey = ENV_MAPPING[plainKey as keyof typeof ENV_MAPPING];
-  if (viteKey) {
+  if (typeof viteKey === 'string') {
     const viteValue = normalizeEnvValue(env[viteKey]);
-    if (viteValue) {
+    if (viteValue !== undefined) {
       return viteValue;
     }
 
     // 如果VITE_变量不存在，尝试使用无前缀变量
     const plainValue = normalizeEnvValue(env[plainKey]);
-    if (plainValue) {
+    if (plainValue !== undefined) {
       return plainValue;
     }
 
     // 检查runtime环境变量
-    if (runtimeProcessEnv) {
+    if (runtimeProcessEnv !== undefined) {
       const runtimeViteValue = normalizeEnvValue(runtimeProcessEnv[viteKey]);
-      if (runtimeViteValue) {
+      if (runtimeViteValue !== undefined) {
         return runtimeViteValue;
       }
 
       const runtimePlainValue = normalizeEnvValue(runtimeProcessEnv[plainKey]);
-      if (runtimePlainValue) {
+      if (runtimePlainValue !== undefined) {
         return runtimePlainValue;
       }
     }
@@ -110,19 +110,16 @@ export const resolveEnvWithMapping = (env: Record<string, any>, plainKey: string
   return fallback;
 };
 
-/**
- * 检查环境变量是否有值
- */
-export const hasEnvValue = (env: Record<string, any>, keys: string[]): boolean => {
+export const hasEnvValue = (env: EnvLookupRecord, keys: string[]): boolean => {
   for (const key of keys) {
-    if (normalizeEnvValue(env[key])) {
+    if (normalizeEnvValue(env[key]) !== undefined) {
       return true;
     }
   }
 
-  if (runtimeProcessEnv) {
+  if (runtimeProcessEnv !== undefined) {
     for (const key of keys) {
-      if (normalizeEnvValue(runtimeProcessEnv[key])) {
+      if (normalizeEnvValue(runtimeProcessEnv[key]) !== undefined) {
         return true;
       }
     }

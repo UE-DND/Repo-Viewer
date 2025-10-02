@@ -1,8 +1,5 @@
-import { Theme } from '@mui/material';
+import type { Theme } from '@mui/material';
 
-/**
- * PDF加载页面的主题颜色配置
- */
 export interface PDFLoadingThemeColors {
   primary: string;
   onPrimary: string;
@@ -17,9 +14,6 @@ export interface PDFLoadingThemeColors {
   isDark: boolean;
 }
 
-/**
- * 从MUI主题提取PDF加载页面所需的颜色
- */
 export const extractPDFThemeColors = (muiTheme: Theme): PDFLoadingThemeColors => {
   const palette = muiTheme.palette;
   return {
@@ -53,13 +47,13 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    html, body { 
+    html, body {
       height: 100%; margin: 0; padding: 0;
       font-family: "Roboto", "Helvetica", "Arial", sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-    
+
     /* 使用全局 MUI 主题色 */
     :root {
       --md-sys-color-surface: ${themeColors.background};
@@ -76,23 +70,23 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       --md-sys-color-outline-variant: ${themeColors.outlineVariant};
       --md-elevation-1: 0px 1px 2px rgba(0, 0, 0, ${themeColors.isDark ? '0.3' : '0.1'}), 0px 1px 3px 1px rgba(0, 0, 0, ${themeColors.isDark ? '0.15' : '0.05'});
     }
-    
-    body { 
+
+    body {
       background-color: var(--md-sys-color-surface);
       color: var(--md-sys-color-on-surface);
     }
-    
-    #loader { 
-      position: fixed; 
-      inset: 0; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: center; 
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       gap: 24px;
       padding: 24px;
     }
-    
+
     .loading-card {
       background-color: var(--md-sys-color-surface-variant);
       border-radius: 24px;
@@ -106,7 +100,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       align-items: center;
       gap: 20px;
     }
-    
+
     /* Material 3 Circular Progress Indicator */
     .progress-circular {
       width: 48px;
@@ -114,7 +108,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       position: relative;
       flex-shrink: 0;
     }
-    
+
     .progress-circular svg {
       width: 100%;
       height: 100%;
@@ -122,7 +116,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       top: 0;
       left: 0;
     }
-    
+
     .progress-track {
       fill: none;
       stroke: var(--md-sys-color-outline-variant);
@@ -131,7 +125,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       opacity: 0.3;
       transform-origin: center;
     }
-    
+
     .progress-indicator {
       fill: none;
       stroke: var(--md-sys-color-primary);
@@ -142,12 +136,12 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       transform-origin: center;
       animation: progress-spin 1.5s linear infinite;
     }
-    
+
     .progress-indicator.determinate {
       animation: none;
       transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     @keyframes progress-spin {
       0% {
         transform: rotate(-90deg);
@@ -162,7 +156,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
         stroke-dashoffset: 126;
       }
     }
-    
+
     .loading-text {
       color: var(--md-sys-color-on-surface-variant);
       font-size: 18px;
@@ -170,7 +164,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       line-height: 26px;
       margin: 0;
     }
-    
+
     .progress-text {
       color: var(--md-sys-color-primary);
       font-size: 12px;
@@ -179,7 +173,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       margin: 0;
       min-height: 18px;
     }
-    
+
     /* 取消按钮样式 - 使用副主题色 */
     .cancel-button {
       display: inline-flex;
@@ -199,30 +193,30 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       margin-top: 12px;
       min-width: 72px;
     }
-    
+
     .cancel-button:hover {
       background-color: var(--md-sys-color-secondary);
       color: var(--md-sys-color-on-secondary);
       transform: translateY(-1px);
       box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
     }
-    
+
     .cancel-button:active {
       transform: translateY(0);
       box-shadow: none;
     }
-    
-    #viewer { 
-      position: fixed; 
-      top: 0; 
-      left: 0; 
-      width: 100vw; 
-      height: 100vh; 
-      border: 0; 
-      visibility: hidden; 
+
+    #viewer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      border: 0;
+      visibility: hidden;
       background: var(--md-sys-color-surface);
     }
-    
+
     .error-card {
       background-color: var(--md-sys-color-surface-variant);
       border-radius: 24px;
@@ -236,7 +230,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       align-items: center;
       gap: 16px;
     }
-    
+
     .error-title {
       color: var(--md-sys-color-on-surface);
       font-size: 18px;
@@ -244,7 +238,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       line-height: 24px;
       margin: 0;
     }
-    
+
     .error-message {
       color: var(--md-sys-color-on-surface-variant);
       font-size: 14px;
@@ -252,7 +246,7 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       line-height: 20px;
       margin: 0;
     }
-    
+
     .error-action {
       display: inline-flex;
       align-items: center;
@@ -269,27 +263,27 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
       box-shadow: var(--md-elevation-1);
       margin-top: 8px;
     }
-    
+
     .error-action:hover {
       box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
       background-color: var(--md-sys-color-primary);
       transform: translateY(-1px);
     }
-    
+
     /* 响应式设计 */
     @media (max-width: 600px) {
       #loader { padding: 16px; gap: 20px; }
-      .loading-card, .error-card { 
-        padding: 24px 20px; 
-        border-radius: 20px; 
+      .loading-card, .error-card {
+        padding: 24px 20px;
+        border-radius: 20px;
         max-width: none;
       }
       .loading-text { font-size: 16px; }
       .progress-text { font-size: 11px; }
-      .cancel-button { 
-        font-size: 12px; 
-        padding: 6px 12px; 
-        margin-top: 8px; 
+      .cancel-button {
+        font-size: 12px;
+        padding: 6px 12px;
+        margin-top: 8px;
       }
       .error-title { font-size: 16px; }
       .error-message { font-size: 13px; }
@@ -341,12 +335,11 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
  * @returns 错误页面HTML
  */
 export const generatePDFErrorHTML = (
-  fileName: string, 
-  errorMessage: string, 
-  downloadUrl: string, 
+  fileName: string,
+  errorMessage: string,
+  downloadUrl: string,
   themeColors: PDFLoadingThemeColors
 ): string => {
-  // 使用传入的主题色，确保在独立使用时也有正确配色
   const inlineStyles = `
     background-color: ${themeColors.surface};
     color: ${themeColors.text};

@@ -1,8 +1,9 @@
 import { useSnackbar } from "notistack";
-import { ReactNode, useCallback, useMemo } from "react";
-import { useDownload } from "../../hooks/useDownload";
-import { useFilePreview } from "../../hooks/useFilePreview";
-import { useGitHubContent } from "../../hooks/useGitHubContent";
+import type { ReactNode, ReactElement } from "react";
+import { useCallback, useMemo } from "react";
+import { useDownload } from "@/hooks/useDownload";
+import { useFilePreview } from "@/hooks/useFilePreview";
+import { useGitHubContent } from "@/hooks/useGitHubContent";
 import {
   ContentContext,
   PreviewContext,
@@ -17,7 +18,7 @@ interface AppContextProviderProps {
   children: ReactNode;
 }
 
-export function AppContextProvider({ children }: AppContextProviderProps) {
+export function AppContextProvider({ children }: AppContextProviderProps): ReactElement {
   const content = useGitHubContent();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -58,13 +59,13 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
   const download = useDownload(handleError);
 
   const navigateTo = useCallback(
-    (path: string, direction: NavigationDirection = "forward") => {
+    (path: string, direction: NavigationDirection = "forward"): void => {
       setCurrentPath(path, direction);
     },
     [setCurrentPath],
   );
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback((): void => {
     refreshContents();
   }, [refreshContents]);
 

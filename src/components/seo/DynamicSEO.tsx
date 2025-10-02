@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSEO } from "../../contexts/SEOContext";
+import { useSEO } from "@/contexts/SEOContext/useSEO";
 import SEO from "./SEO";
 
 interface DynamicSEOProps {
@@ -27,42 +27,54 @@ const DynamicSEO: React.FC<DynamicSEOProps> = ({
   const { updateSEO, resetSEO } = useSEO();
 
   useEffect(() => {
+    const normalizeString = (value?: string): string =>
+      typeof value === "string" ? value.trim() : "";
+
+    const normalizedTitle = normalizeString(title);
+    const normalizedFilePath = normalizeString(filePath);
+    const normalizedDescription = normalizeString(description);
+    const normalizedFileType = normalizeString(fileType);
+    const normalizedRepoOwner = normalizeString(repoOwner);
+    const normalizedRepoName = normalizeString(repoName);
+
     // 如果没有足够的信息，则使用默认SEO设置
-    if (!filePath && !title) {
+    if (normalizedFilePath.length === 0 && normalizedTitle.length === 0) {
       resetSEO();
       return;
     }
 
     // 构建SEO标题
-    let seoTitle = title || "";
-    if (filePath && !seoTitle) {
-      const fileNameMatch = filePath.match(/([^/]+)$/);
-      seoTitle = fileNameMatch?.[1] || filePath;
+    let seoTitle = normalizedTitle;
+    if (normalizedFilePath.length > 0 && seoTitle.length === 0) {
+      const fileNameMatch = /([^/]+)$/.exec(normalizedFilePath);
+      seoTitle = fileNameMatch?.[1] ?? normalizedFilePath;
     }
 
-    // 添加"Repoviewer"到标题中，不再显示仓库信息
-    seoTitle = `${seoTitle} | Repo-Viewer`;
+    // 添加"Repo-Viewer"到标题中，不再显示仓库信息
+    const finalTitle = `${seoTitle} | Repo-Viewer`;
 
     // 构建SEO描述
-    let seoDescription = description || "";
-    if (!seoDescription) {
+    let seoDescription = normalizedDescription;
+    if (seoDescription.length === 0) {
       if (isDirectory) {
-        seoDescription = `查看 ${filePath || "仓库"} 目录中的内容`;
+        const pathLabel = normalizedFilePath.length > 0 ? normalizedFilePath : "仓库";
+        seoDescription = `查看 ${pathLabel} 目录中的内容`;
       } else {
-        seoDescription = `查看 ${filePath || "文件"} 的详细内容`;
-        if (fileType) {
-          seoDescription += `（${fileType}格式）`;
+        const fileLabel = normalizedFilePath.length > 0 ? normalizedFilePath : "文件";
+        seoDescription = `查看 ${fileLabel} 的详细内容`;
+        if (normalizedFileType.length > 0) {
+          seoDescription += `（${normalizedFileType}格式）`;
         }
       }
 
-      if (repoOwner && repoName) {
-        seoDescription += ` - ${repoOwner}/${repoName} GitHub仓库`;
+      if (normalizedRepoOwner.length > 0 && normalizedRepoName.length > 0) {
+        seoDescription += ` - ${normalizedRepoOwner}/${normalizedRepoName} GitHub仓库`;
       }
     }
 
     // 更新SEO数据
     updateSEO({
-      title: seoTitle,
+      title: finalTitle,
       description: seoDescription,
     });
 

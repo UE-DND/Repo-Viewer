@@ -10,7 +10,7 @@ export {
   validateGitHubSearchResponse,
   safeValidateGitHubContentsResponse,
   safeValidateGitHubSearchResponse,
-  
+
   // Schema类型
   type GitHubContentItem,
   type GitHubContentsResponse,
@@ -24,7 +24,7 @@ export {
   transformGitHubSearchResponse,
   transformGitHubContentItem,
   transformGitHubSearchCodeItem,
-  
+
   // 工具函数
   filterAndNormalizeGitHubContents,
   sortGitHubContents,

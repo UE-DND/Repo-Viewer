@@ -12,10 +12,13 @@ export const ColorModeProvider: React.FC<ColorModeProviderProps> = ({
   children,
 }) => {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const [mode, setMode] = useState<PaletteMode>(
-    (localStorage.getItem("colorMode") as PaletteMode) ||
-      (prefersDarkMode ? "dark" : "light"),
-  );
+  const [mode, setMode] = useState<PaletteMode>(() => {
+    const savedMode = localStorage.getItem("colorMode");
+    if (savedMode === "light" || savedMode === "dark") {
+      return savedMode;
+    }
+    return prefersDarkMode ? "dark" : "light";
+  });
   const [isAutoMode, setIsAutoMode] = useState<boolean>(false);
 
   const colorMode = useMemo(

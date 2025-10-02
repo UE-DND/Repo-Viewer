@@ -1,4 +1,4 @@
-import { createTheme, alpha, PaletteMode } from '@mui/material/styles';
+import { createTheme, alpha, type PaletteMode, type Theme } from '@mui/material/styles';
 import { g3BorderRadius, G3_PRESETS } from './g3Curves';
 
 // 主题色配置
@@ -230,7 +230,12 @@ const getThemeIndexByDate = (): number => {
 };
 
 const getCurrentTheme = (): (typeof md3Themes)[number] => {
-  return md3Themes[getThemeIndexByDate()]!;
+  const index = getThemeIndexByDate();
+  const theme = md3Themes[index];
+  if (theme === undefined) {
+    throw new Error(`Invalid theme index: ${index.toString()}`);
+  }
+  return theme;
 };
 
 const lightPalette = {
@@ -278,8 +283,8 @@ export const getCurrentThemeName = (): string => {
   return getCurrentTheme().name;
 };
 
-export const createMaterialYouTheme = (mode: PaletteMode) => {
-  const themeConfig: any = {
+export const createMaterialYouTheme = (mode: PaletteMode): Theme => {
+  const themeConfig = {
     palette: {
       mode,
       ...(mode === 'light' ? lightPalette : darkPalette),
@@ -308,7 +313,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
         },
       },
       button: {
-        textTransform: 'none',
+        textTransform: 'none' as const,
         fontWeight: 500,
       },
       body1: {
@@ -343,7 +348,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       },
       MuiAppBar: {
         styleOverrides: {
-          root: ({ theme }: { theme: any }) => ({
+          root: ({ theme }: { theme: Theme }) => ({
             boxShadow: 'none',
             backgroundColor: theme.palette.mode === 'light' ? '#FFFBFE' : '#1C1B1F',
             color: theme.palette.mode === 'light' ? '#1C1B1F' : '#E6E1E5',
@@ -352,7 +357,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       },
       MuiCard: {
         styleOverrides: {
-          root: ({ theme }: { theme: any }) => ({
+          root: ({ theme }: { theme: Theme }) => ({
             borderRadius: g3BorderRadius(G3_PRESETS.card),
             padding: 16,
             boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
@@ -393,7 +398,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
       },
       MuiListItemButton: {
         styleOverrides: {
-          root: ({ theme }: { theme: any }) => ({
+          root: ({ theme }: { theme: Theme }) => ({
             borderRadius: g3BorderRadius(G3_PRESETS.fileListItem),
             transition: 'background-color 0.3s ease',
             '&:hover': {
@@ -511,7 +516,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
         defaultProps: {
         },
         styleOverrides: {
-          tooltip: ({ theme }: { theme: any }) => ({
+          tooltip: ({ theme }: { theme: Theme }) => ({
             backgroundColor: alpha(theme.palette.grey[700], 0.92),
             color: '#fff',
             borderRadius: g3BorderRadius(G3_PRESETS.tooltip),
@@ -535,7 +540,7 @@ export const createMaterialYouTheme = (mode: PaletteMode) => {
               backgroundColor: '#9A82DB',
             },
           },
-          track: ({ theme }: { theme: any }) => ({
+          track: ({ theme }: { theme: Theme }) => ({
             backgroundColor: theme.palette.mode === 'light' ? '#CAC4D0' : '#49454F',
           }),
         },
