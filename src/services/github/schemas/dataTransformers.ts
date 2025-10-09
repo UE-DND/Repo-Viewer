@@ -1,9 +1,9 @@
-import { GitHubContent } from '../../../types';
-import type { 
-  GitHubContentItem, 
-  GitHubContentsResponse, 
-  GitHubSearchCodeItem, 
-  GitHubSearchResponse 
+import type { GitHubContent } from '@/types';
+import type {
+  GitHubContentItem,
+  GitHubContentsResponse,
+  GitHubSearchCodeItem,
+  GitHubSearchResponse
 } from './apiSchemas';
 
 /**
@@ -22,20 +22,13 @@ export function transformGitHubContentItem(apiItem: GitHubContentItem): GitHubCo
   if (apiItem.size !== undefined) {
     result.size = apiItem.size;
   }
-  
-  if (apiItem.url) {
-    result.url = apiItem.url;
-  }
-  
-  if (apiItem.html_url) {
-    result.html_url = apiItem.html_url;
-  }
-  
-  if (apiItem.git_url) {
-    result.git_url = apiItem.git_url;
-  }
-  
-  if (apiItem._links) {
+
+  // 这些字段在API schema中是必需的
+  result.url = apiItem.url;
+  result.html_url = apiItem.html_url;
+  result.git_url = apiItem.git_url;
+
+  if (apiItem._links !== undefined) {
     result._links = {
       self: apiItem._links.self,
       git: apiItem._links.git,
@@ -54,7 +47,7 @@ export function transformGitHubContentsResponse(apiResponse: GitHubContentsRespo
   if (!Array.isArray(apiResponse)) {
     return [transformGitHubContentItem(apiResponse)];
   }
-  
+
   // 如果是数组，逐个转换
   return apiResponse.map(transformGitHubContentItem);
 }
@@ -66,27 +59,19 @@ export function transformGitHubSearchCodeItem(searchItem: GitHubSearchCodeItem):
   const result: GitHubContent = {
     name: searchItem.name,
     path: searchItem.path,
-    type: 'file', // 搜索结果通常都是文件
+    type: 'file',
     sha: searchItem.sha,
-    download_url: null, // 搜索结果不直接提供下载链接
+    download_url: null,
   };
 
   // 只有当值存在时才添加可选属性
   if (searchItem.file_size !== undefined) {
     result.size = searchItem.file_size;
   }
-  
-  if (searchItem.url) {
-    result.url = searchItem.url;
-  }
-  
-  if (searchItem.html_url) {
-    result.html_url = searchItem.html_url;
-  }
-  
-  if (searchItem.git_url) {
-    result.git_url = searchItem.git_url;
-  }
+
+  result.url = searchItem.url;
+  result.html_url = searchItem.html_url;
+  result.git_url = searchItem.git_url;
 
   return result;
 }
@@ -108,9 +93,9 @@ export function sortGitHubContents(contents: GitHubContent[]): GitHubContent[] {
       return a.type === 'dir' ? -1 : 1;
     }
     // 同类型按名称排序
-    return a.name.localeCompare(b.name, undefined, { 
-      numeric: true, 
-      sensitivity: 'base' 
+    return a.name.localeCompare(b.name, undefined, {
+      numeric: true,
+      sensitivity: 'base'
     });
   });
 }
@@ -145,7 +130,7 @@ export function filterAndNormalizeGitHubContents(
   }
 
   // 只包含指定类型
-  if (includeOnlyTypes && includeOnlyTypes.length > 0) {
+  if (includeOnlyTypes !== undefined && includeOnlyTypes.length > 0) {
     filtered = filtered.filter(item => includeOnlyTypes.includes(item.type));
   }
 
@@ -161,19 +146,19 @@ export function validateGitHubContentItem(item: GitHubContent): {
 } {
   const errors: string[] = [];
 
-  if (!item.name || typeof item.name !== 'string') {
+  if (item.name === '' || typeof item.name !== 'string') {
     errors.push('缺少有效的name字段');
   }
 
-  if (!item.path || typeof item.path !== 'string') {
+  if (item.path === '' || typeof item.path !== 'string') {
     errors.push('缺少有效的path字段');
   }
 
-  if (!item.type || !['file', 'dir'].includes(item.type)) {
+  if (!['file', 'dir'].includes(item.type)) {
     errors.push('缺少有效的type字段');
   }
 
-  if (!item.sha || typeof item.sha !== 'string') {
+  if (item.sha === '' || typeof item.sha !== 'string') {
     errors.push('缺少有效的sha字段');
   }
 
@@ -188,9 +173,9 @@ export function validateGitHubContentItem(item: GitHubContent): {
  */
 export function validateGitHubContentsArray(contents: GitHubContent[]): {
   isValid: boolean;
-  invalidItems: Array<{ index: number; item: GitHubContent; errors: string[] }>;
+  invalidItems: { index: number; item: GitHubContent; errors: string[] }[];
 } {
-  const invalidItems: Array<{ index: number; item: GitHubContent; errors: string[] }> = [];
+  const invalidItems: { index: number; item: GitHubContent; errors: string[] }[] = [];
 
   contents.forEach((item, index) => {
     const validation = validateGitHubContentItem(item);

@@ -1,5 +1,5 @@
 import { createContext, useContext, type Context, type RefObject } from "react";
-import type { GitHubContent, PreviewState, DownloadState } from "../../types";
+import type { GitHubContent, PreviewState, DownloadState } from "@/types";
 
 export type NavigationDirection = "forward" | "backward" | "none";
 
@@ -47,7 +47,7 @@ export const DownloadContext = createContext<DownloadContextValue | null>(null);
 
 function useRequiredContext<T>(context: Context<T | null>, name: string): T {
   const value = useContext(context);
-  if (!value) {
+  if (value === null) {
     throw new Error(`${name} 必须在 AppContextProvider 内部使用`);
   }
   return value;

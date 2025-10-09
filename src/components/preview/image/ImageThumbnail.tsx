@@ -1,12 +1,8 @@
 import React from 'react';
 import { Box, Button, useTheme } from '@mui/material';
-import { g3BorderRadius, G3_PRESETS } from '../../../theme/g3Curves';
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import type { ImageThumbnailProps } from './types';
 
-/**
- * 图片缩略图组件
- * 用于在缩略图模式下显示小图预览，点击后打开完整预览
- */
 const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imageUrl,
   fileName,
@@ -18,6 +14,8 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imgRef,
 }) => {
   const theme = useTheme();
+  const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
+  const altText = normalizedFileName ?? '缩略图';
 
   return (
     <Box
@@ -49,7 +47,7 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
         <img
           ref={imgRef}
           src={shouldLoad ? imageUrl : ''}
-          alt={fileName || '缩略图'}
+          alt={altText}
           style={{
             width: '100%',
             height: '100%',

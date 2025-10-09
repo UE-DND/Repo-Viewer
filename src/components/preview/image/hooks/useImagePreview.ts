@@ -24,16 +24,28 @@ export const useImagePreview = ({
 
   // 设置IntersectionObserver监听图片元素
   useEffect(() => {
-    if (!lazyLoad) return;
+    if (!lazyLoad) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setShouldLoad(true);
+      return;
+    }
 
     // 创建观察器实例
-    observerRef.current = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
+        const firstEntry = entries[0];
+        const isIntersecting = firstEntry?.isIntersecting ?? false;
+
+        if (isIntersecting) {
           setShouldLoad(true);
           // 一旦图片开始加载，就停止观察
-          if (observerRef.current && imgRef.current) {
-            observerRef.current.unobserve(imgRef.current);
+          const image = imgRef.current;
+
+          if (image !== null) {
+            observer.unobserve(image);
           }
         }
       },
@@ -44,15 +56,18 @@ export const useImagePreview = ({
       },
     );
 
+    observerRef.current = observer;
+
     // 开始观察
-    if (imgRef.current) {
-      observerRef.current.observe(imgRef.current);
+    const image = imgRef.current;
+
+    if (image !== null) {
+      observer.observe(image);
     }
 
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
+      observer.disconnect();
+      observerRef.current = null;
     };
   }, [lazyLoad]);
 
@@ -89,7 +104,9 @@ export const useImagePreview = ({
       setFullScreenMode(false);
     }
 
-    if (onClose) onClose();
+    if (typeof onClose === 'function') {
+      onClose();
+    }
   }, [thumbnailMode, fullScreenMode, onClose]);
 
   const handleImageLoad = useCallback(() => {

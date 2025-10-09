@@ -1,31 +1,37 @@
-/**
- * 环境变量解析工具类
- */
-
-// 环境变量解析工具
-export class EnvParser {
-  /**
-   * 解析布尔值
-   */
-  static parseBoolean(value: string | undefined): boolean {
-    return value === 'true';
+const normalizeString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
   }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
 
-  /**
-   * 解析字符串数组（逗号分隔）
-   */
-  static parseStringArray(value: string | undefined): string[] {
-    if (!value) return [];
-    return value.split(',').filter(Boolean).map(item => item.trim());
-  }
+export const parseBoolean = (value: string | undefined): boolean => value === 'true';
 
-  /**
-   * 验证Token格式
-   */
-  static validateToken(token: any): token is string {
-    return typeof token === 'string' &&
-           token.trim().length > 0 &&
-           token.trim() !== 'your_token_here' &&
-           !token.includes('placeholder');
+export const parseStringArray = (value: string | undefined): string[] => {
+  const normalized = normalizeString(value);
+  if (normalized === undefined) {
+    return [];
   }
-}
+  return normalized
+    .split(',')
+    .map(item => item.trim())
+    .filter(item => item.length > 0);
+};
+
+export const validateToken = (token: unknown): token is string => {
+  const normalized = normalizeString(token);
+  if (normalized === undefined) {
+    return false;
+  }
+  if (normalized === 'your_token_here' || normalized.includes('placeholder')) {
+    return false;
+  }
+  return true;
+};
+
+export const EnvParser = {
+  parseBoolean,
+  parseStringArray,
+  validateToken
+} as const;

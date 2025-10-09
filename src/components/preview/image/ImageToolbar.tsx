@@ -15,12 +15,8 @@ import {
   Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
 import type { ImageToolbarProps } from './types';
-import { g3BorderRadius, G3_PRESETS } from '../../../theme/g3Curves';
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 
-/**
- * 图片预览工具栏组件
- * 提供缩放、旋转、全屏等操作功能
- */
 const ImageToolbar: React.FC<ImageToolbarProps> = ({
   error,
   scale,

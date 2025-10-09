@@ -1,11 +1,8 @@
 import React from 'react';
 import { CircularProgress, Box } from '@mui/material';
 
-/**
- * 默认加载中组件
- */
-export const DefaultLoadingFallback: React.FC<{ loadingText?: string }> = ({ 
-  loadingText 
+export const DefaultLoadingFallback: React.FC<{ loadingText?: string }> = ({
+  loadingText
 }) => (
   <Box
     sx={{
@@ -19,7 +16,7 @@ export const DefaultLoadingFallback: React.FC<{ loadingText?: string }> = ({
     }}
   >
     <CircularProgress size={40} />
-    {loadingText && (
+    {typeof loadingText === 'string' && loadingText.length > 0 && (
       <Box
         component="span"
         sx={{

@@ -1,6 +1,6 @@
 import { logger } from '../logging/logger';
 // 导入GitHubService以使用其多代理机制
-import { GitHubService } from '../../services/github';
+import { GitHubService } from '@/services/github';
 
 // 获取处理过的URL，解决CORS问题
 export const getProxiedUrl = (url: string): string => {
@@ -8,11 +8,11 @@ export const getProxiedUrl = (url: string): string => {
 
   if (!isDevEnvironment) {
     // 生产环境使用GitHubService的多代理机制
-    if (url.includes('raw.githubusercontent.com') || url.includes('api.github.com')) {
+    if (url.length > 0 && (url.includes('raw.githubusercontent.com') || url.includes('api.github.com'))) {
       try {
         // 尝试使用GitHubService的代理机制
         const proxiedUrl = GitHubService.transformImageUrl(url, '', true);
-        return proxiedUrl || url;
+        return proxiedUrl ?? url;
       } catch (error) {
         logger.error('代理URL转换失败:', error);
         return url;

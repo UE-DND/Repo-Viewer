@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GitHubContent } from '../types';
-import { GitHubService } from '../services/github';
-import { logger } from '../utils';
-import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '../utils/routing/urlManager';
-import { NavigationDirection } from '../contexts/unified';
-import { getFeaturesConfig, getGithubConfig } from '../config';
+import type { GitHubContent } from '@/types';
+import { GitHubService } from '@/services/github';
+import { logger } from '@/utils';
+import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '@/utils/routing/urlManager';
+import type { NavigationDirection } from '@/contexts/unified';
+import { getFeaturesConfig, getGithubConfig } from '@/config';
 
 // 配置
 const featuresConfig = getFeaturesConfig();
@@ -18,14 +18,27 @@ const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 const GITHUB_REPO_OWNER = githubConfig.repoOwner;
 const GITHUB_REPO_NAME = githubConfig.repoName;
 
-// 自定义Hook，管理GitHub内容获取
-export const useGitHubContent = () => {
+// 管理GitHub内容获取
+export const useGitHubContent = (): {
+  currentPath: string;
+  contents: GitHubContent[];
+  readmeContent: string | null;
+  loading: boolean;
+  loadingReadme: boolean;
+  readmeLoaded: boolean;
+  error: string | null;
+  setCurrentPath: (path: string, direction?: NavigationDirection) => void;
+  refreshContents: () => void;
+  navigationDirection: NavigationDirection;
+  repoOwner: string;
+  repoName: string;
+} => {
   // 尝试从URL获取路径
   const getSavedPath = (): string => {
     try {
       // 从URL获取路径
       const urlPath = getPathFromUrl();
-      if (urlPath) {
+      if (urlPath !== '') {
         logger.debug(`从URL获取路径: ${urlPath}`);
         return urlPath;
       }
@@ -76,7 +89,9 @@ export const useGitHubContent = () => {
 
   // 加载README内容
   const loadReadmeContent = useCallback(async (readmeItem: GitHubContent, requestId?: number) => {
-    if (!readmeItem || !readmeItem.download_url) return;
+    if (readmeItem.download_url === null || readmeItem.download_url === '') {
+      return;
+    }
 
     const readmeDir = readmeItem.path.includes('/')
       ? readmeItem.path.split('/').slice(0, -1).join('/')
@@ -89,7 +104,7 @@ export const useGitHubContent = () => {
     try {
       const content = await GitHubService.getFileContent(readmeItem.download_url);
 
-      if (requestId && activeRequestIdRef.current !== requestId) {
+      if (requestId !== undefined && activeRequestIdRef.current !== requestId) {
         logger.debug(`忽略过期的 README 响应: ${readmeItem.path}`);
         return;
       }
@@ -101,18 +116,19 @@ export const useGitHubContent = () => {
 
       setReadmeContent(content);
       setReadmeLoaded(true); // 设置为已加载完成
-    } catch (e: any) {
-      if (requestId && activeRequestIdRef.current !== requestId) {
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e : new Error('未知错误');
+      if (requestId !== undefined && activeRequestIdRef.current !== requestId) {
         logger.debug(`忽略过期的 README 错误: ${readmeItem.path}`);
         return;
       }
 
-      logger.error(`加载README失败:`, e);
-      displayError(`加载 README 失败: ${e.message}`);
+      logger.error(`加载README失败:`, error);
+      displayError(`加载 README 失败: ${error.message}`);
       setReadmeContent(null);
       setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
-      if (!requestId || activeRequestIdRef.current === requestId) {
+      if (requestId === undefined || activeRequestIdRef.current === requestId) {
         setLoadingReadme(false);
       }
     }
@@ -161,10 +177,10 @@ export const useGitHubContent = () => {
           }
 
           const extension = item.name.split('.').pop()?.toLowerCase();
-          return extension && HOMEPAGE_ALLOWED_FILETYPES.includes(extension);
+          return extension !== undefined && extension !== '' && HOMEPAGE_ALLOWED_FILETYPES.includes(extension);
         });
 
-        logger.debug(`过滤后剩余 ${filteredData.length} 个文件/目录（过滤前 ${sortedData.length} 个）`);
+        logger.debug(`过滤后剩余 ${filteredData.length.toString()} 个文件/目录（过滤前 ${sortedData.length.toString()} 个）`);
         logger.debug(`允许的文件夹: ${HOMEPAGE_ALLOWED_FOLDERS.join(', ')}`);
         logger.debug(`允许的文件类型: ${HOMEPAGE_ALLOWED_FILETYPES.join(', ')}`);
       }
@@ -175,7 +191,7 @@ export const useGitHubContent = () => {
       }
 
       setContents(filteredData);
-      logger.debug(`获取到 ${filteredData.length} 个文件/目录`);
+      logger.debug(`获取到 ${filteredData.length.toString()} 个文件/目录`);
 
       const readmeItem = sortedData.find(item =>
         item.type === 'file' &&
@@ -183,7 +199,7 @@ export const useGitHubContent = () => {
         item.name.toLowerCase().endsWith('.md')
       );
 
-      if (readmeItem) {
+      if (readmeItem !== undefined) {
         await loadReadmeContent(readmeItem, requestId);
       } else {
         if (activeRequestIdRef.current !== requestId) {
@@ -193,14 +209,15 @@ export const useGitHubContent = () => {
         // README不存在时也设置为已加载完成
         setReadmeLoaded(true);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e : new Error('未知错误');
       if (activeRequestIdRef.current !== requestId) {
         logger.debug(`忽略过期的目录错误: ${path}`);
         return;
       }
 
-      logger.error('获取内容失败:', e);
-      displayError(`获取目录内容失败: ${e.message}`);
+      logger.error('获取内容失败:', error);
+      displayError(`获取目录内容失败: ${error.message}`);
       setContents([]);
       // 出错时也设置为已加载完成
       setReadmeLoaded(true);
@@ -218,7 +235,7 @@ export const useGitHubContent = () => {
 
 
   const applyCurrentPath = useCallback((path: string, direction: NavigationDirection = 'none') => {
-    if (isRefreshInProgressRef.current && refreshTargetPathRef.current) {
+    if (isRefreshInProgressRef.current && refreshTargetPathRef.current !== null) {
       if (path !== refreshTargetPathRef.current) {
         if (direction === 'none') {
           logger.debug(`刷新期间忽略路径更新: ${path}`);
@@ -236,35 +253,33 @@ export const useGitHubContent = () => {
 
   // 处理路径变化
   useEffect(() => {
-    if (currentPath !== null) {
-      // 检查是否是仅主题切换的操作，如果是则不重新加载内容
-      const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
+    // 检查是否是仅主题切换的操作，如果是则不重新加载内容
+    const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
 
-      if (!isThemeChangeOnly) {
-        loadContents(currentPath);
+    if (!isThemeChangeOnly) {
+      void loadContents(currentPath);
 
-        // 只有在非初始加载时更新URL
-        if (!isInitialLoad.current) {
-          // 使用历史API更新URL，并添加历史记录
-          updateUrlWithHistory(currentPath);
-        } else {
-          // 初始加载时，如果URL中已有path参数，则不需要更新URL
-          const urlPath = getPathFromUrl();
-          if (currentPath !== urlPath) {
-            // 如果初始加载的路径与URL中的路径不同，更新URL（但不添加历史记录）
-            updateUrlWithoutHistory(currentPath);
-          }
-          isInitialLoad.current = false;
-        }
+      // 只有在非初始加载时更新URL
+      if (!isInitialLoad.current) {
+        // 使用历史API更新URL，并添加历史记录
+        updateUrlWithHistory(currentPath);
       } else {
-        logger.debug('仅主题切换操作，跳过内容重新加载');
+        // 初始加载时，如果URL中已有path参数，则不需要更新URL
+        const urlPath = getPathFromUrl();
+        if (currentPath !== urlPath) {
+          // 如果初始加载的路径与URL中的路径不同，更新URL（但不添加历史记录）
+          updateUrlWithoutHistory(currentPath);
+        }
+        isInitialLoad.current = false;
       }
+    } else {
+      logger.debug('仅主题切换操作，跳过内容重新加载');
     }
   }, [currentPath, refreshTrigger, loadContents]);
 
   // 监听浏览器历史导航事件
   useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
+    const handlePopState = (event: PopStateEvent): void => {
       if (isRefreshInProgressRef.current) {
         logger.debug('刷新进行中，忽略历史导航事件');
         return;
@@ -276,14 +291,14 @@ export const useGitHubContent = () => {
       const state = event.state as { path?: string; preview?: string } | null;
       logger.debug(`历史状态: ${JSON.stringify(state)}`);
 
-      if (state && state.path !== undefined) {
+      if (state?.path !== undefined) {
         logger.debug(`历史导航事件，路径: ${state.path}`);
         // 更新当前路径，但不添加新的历史记录
         applyCurrentPath(state.path, 'backward');
       } else {
         // 如果没有state或path未定义，尝试从 URL 获取路径
         const urlPath = getPathFromUrl();
-        if (urlPath) {
+        if (urlPath !== '') {
           logger.debug(`历史导航事件，从URL获取路径: ${urlPath}`);
           applyCurrentPath(urlPath, 'backward');
         } else {
@@ -295,7 +310,7 @@ export const useGitHubContent = () => {
     };
 
     // 处理标题点击导航到首页事件
-    const handleNavigateToHome = () => {
+    const handleNavigateToHome = (): void => {
       if (isRefreshInProgressRef.current) {
         logger.debug('刷新进行中，忽略返回首页事件');
         return;
@@ -326,8 +341,6 @@ export const useGitHubContent = () => {
     setNavigationDirection('none'); // 刷新时不应用动画
     logger.debug('触发内容刷新');
   }, []);
-
-
 
   return {
     currentPath,

@@ -1,4 +1,4 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 
 // 配置常量
@@ -32,17 +32,19 @@ const shouldLog = (level: LogLevel): boolean => {
 };
 
 const apiLogger = {
-  info: (...args: any[]) => {
+  info: (...args: unknown[]): void => {
     if (shouldLog('info')) {
+      // 开发者模式下允许使用 console.log
+      // eslint-disable-next-line no-console
       console.log('[API]', ...args);
     }
   },
-  warn: (...args: any[]) => {
+  warn: (...args: unknown[]): void => {
     if (shouldLog('warn')) {
       console.warn('[API]', ...args);
     }
   },
-  error: (...args: any[]) => {
+  error: (...args: unknown[]): void => {
     if (shouldLog('error')) {
       console.error('[API]', ...args);
     }
@@ -52,14 +54,14 @@ const apiLogger = {
 // GitHub Token管理器
 class GitHubTokenManager {
   private tokens: string[] = [];
-  private currentIndex: number = 0;
-  private failedTokens: Set<string> = new Set();
+  private currentIndex = 0;
+  private failedTokens = new Set<string>();
 
   constructor() {
     this.loadTokensFromEnv();
   }
 
-  private loadTokensFromEnv() {
+  private loadTokensFromEnv(): void {
     // 清空现有token
     this.tokens = [];
 
@@ -79,20 +81,24 @@ class GitHubTokenManager {
         .map(key => process.env[key])
         .filter((token): token is string => typeof token === 'string' && token.trim().length > 0);
 
-      apiLogger.info(`已加载 ${this.tokens.length} 个GitHub令牌`);
+      apiLogger.info('已加载', this.tokens.length, '个GitHub令牌');
     } catch (error) {
       apiLogger.error('加载GitHub token失败:', error);
     }
   }
 
   public getCurrentToken(): string {
-    if (this.tokens.length === 0) return '';
+    if (this.tokens.length === 0) {
+      return '';
+    }
     const token = this.tokens[this.currentIndex];
     return token ?? '';
   }
 
   public getNextToken(): string {
-    if (this.tokens.length === 0) return '';
+    if (this.tokens.length === 0) {
+      return '';
+    }
 
     // 轮换到下一个有效的令牌
     let attempts = 0;
@@ -101,7 +107,7 @@ class GitHubTokenManager {
       const token = this.tokens[this.currentIndex];
 
       // 跳过已知失败的令牌
-      if (token && this.failedTokens.has(token)) {
+      if (token !== undefined && token.length > 0 && this.failedTokens.has(token)) {
         attempts++;
         continue;
       }
@@ -116,7 +122,7 @@ class GitHubTokenManager {
     return firstToken ?? '';
   }
 
-  public markTokenFailed(token: string) {
+  public markTokenFailed(token: string): void {
     this.failedTokens.add(token);
   }
 
@@ -150,7 +156,7 @@ const normalizeEnvValue = (value?: string | null): string | undefined => {
 const resolveEnvValue = (keys: string[], fallback = ''): string => {
   for (const key of keys) {
     const value = normalizeEnvValue(process.env[key]);
-    if (value) {
+    if (value !== undefined && value.length > 0) {
       return value;
     }
   }
@@ -163,45 +169,63 @@ interface RepoEnvConfig {
   repoBranch: string;
 }
 
-const getRepoEnvConfig = (): RepoEnvConfig => ({
-  repoOwner: resolveEnvValue(['GITHUB_REPO_OWNER', 'VITE_GITHUB_REPO_OWNER']),
-  repoName: resolveEnvValue(['GITHUB_REPO_NAME', 'VITE_GITHUB_REPO_NAME']),
-  repoBranch: resolveEnvValue(['GITHUB_REPO_BRANCH', 'VITE_GITHUB_REPO_BRANCH'], 'main') || 'main'
-});
+const getRepoEnvConfig = (): RepoEnvConfig => {
+  const branch = resolveEnvValue(['GITHUB_REPO_BRANCH', 'VITE_GITHUB_REPO_BRANCH'], 'main');
+  return {
+    repoOwner: resolveEnvValue(['GITHUB_REPO_OWNER', 'VITE_GITHUB_REPO_OWNER']),
+    repoName: resolveEnvValue(['GITHUB_REPO_NAME', 'VITE_GITHUB_REPO_NAME']),
+    repoBranch: branch.length > 0 ? branch : 'main'
+  };
+};
 
 // 构建认证头
-function getAuthHeaders() {
+function getAuthHeaders(): Record<string, string> {
   const token = tokenManager.getCurrentToken();
   const headers: Record<string, string> = {
     'Accept': 'application/vnd.github.v3+json',
     'User-Agent': 'Repo-Viewer'
   };
 
-  if (token) {
+  if (token.length > 0) {
     headers['Authorization'] = `token ${token}`;
   }
 
   return headers;
 }
 
+// Axios 错误响应接口
+interface AxiosErrorResponse {
+  response?: {
+    status: number;
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 // 处理API请求失败
-async function handleRequestWithRetry(requestFn: () => Promise<any>) {
+async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T> {
   try {
-    return await requestFn();
-  } catch (error: any) {
+    const result = await requestFn();
+    return result;
+  } catch (error) {
+    const axiosError = error as AxiosErrorResponse;
     // 检查是否是认证错误或速率限制错误
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      apiLogger.warn(`令牌认证失败或达到限制，尝试轮换令牌...`);
+    const responseStatus = axiosError.response?.status;
+    if (responseStatus !== undefined && (responseStatus === 401 || responseStatus === 403)) {
+      apiLogger.warn('令牌认证失败或达到限制，尝试轮换令牌...');
       const currentToken = tokenManager.getCurrentToken();
-      if (currentToken) {
+      if (currentToken.length > 0) {
         tokenManager.markTokenFailed(currentToken);
       }
 
       // 获取新令牌并重试
       const newToken = tokenManager.getNextToken();
-      if (newToken && newToken !== currentToken) {
-        apiLogger.info(`已轮换到新令牌`);
-        return await requestFn(); // 使用新令牌重试
+      if (newToken.length > 0 && newToken !== currentToken) {
+        apiLogger.info('已轮换到新令牌');
+        const retryResult = await requestFn(); // 使用新令牌重试
+        return retryResult;
       }
     }
 
@@ -211,20 +235,21 @@ async function handleRequestWithRetry(requestFn: () => Promise<any>) {
 }
 
 // API处理函数
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
     const { action, path, url } = req.query;
 
     const actionParam = Array.isArray(action) ? action[0] : action;
 
-    if (!actionParam || typeof actionParam !== 'string') {
-      return res.status(400).json({ error: '缺少action参数' });
+    if (actionParam === undefined || typeof actionParam !== 'string' || actionParam.length === 0) {
+      res.status(400).json({ error: '缺少action参数' });
+      return;
     }
 
     // 获取配置信息 - 新增API
     if (actionParam === 'getConfig') {
       const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
-      return res.status(200).json({
+      res.status(200).json({
         status: 'success',
         data: {
           repoOwner,
@@ -232,32 +257,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           repoBranch
         }
       });
+      return;
     }
 
     // 获取令牌状态 - 新增API
     if (actionParam === 'getTokenStatus') {
-      return res.status(200).json({
+      res.status(200).json({
         status: 'success',
         data: tokenManager.getTokenStatus()
       });
+      return;
     }
 
     // 获取仓库内容
     if (actionParam === 'getContents') {
       if (typeof path !== 'string') {
-        return res.status(400).json({ error: '缺少path参数' });
+        res.status(400).json({ error: '缺少path参数' });
+        return;
       }
 
       const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
 
-      if (!repoOwner || !repoName) {
-        return res.status(500).json({
+      if (repoOwner.length === 0 || repoName.length === 0) {
+        res.status(500).json({
           error: '仓库配置缺失',
           message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
         });
+        return;
       }
 
-      const branch = repoBranch || 'main';
+      const branch = repoBranch.length > 0 ? repoBranch : 'main';
 
       // 处理空路径
       const pathSegment = path === '' ? '' : `/${path}`;
@@ -265,19 +294,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       try {
         const response = await handleRequestWithRetry(() =>
-          axios.get(`${GITHUB_API_BASE}${apiPath}`, {
+          axios.get<unknown>(`${GITHUB_API_BASE}${apiPath}`, {
             headers: getAuthHeaders()
           })
         );
 
-        return res.status(200).json(response.data);
-      } catch (error: any) {
-        apiLogger.error('GitHub API请求失败:', error.message);
+        res.status(200).json(response.data);
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        apiLogger.error('GitHub API请求失败:', axiosError.message ?? '未知错误');
 
-        return res.status(error.response?.status || 500).json({
+        res.status(axiosError.response?.status ?? 500).json({
           error: '获取内容失败',
-          message: error.message
+          message: axiosError.message ?? '未知错误'
         });
+        return;
       }
     }
 
@@ -286,7 +318,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // 规范化并校验 url 参数
       const urlParam = Array.isArray(url) ? (url.length > 0 ? url[0] : undefined) : url;
       if (typeof urlParam !== 'string' || urlParam.trim() === '') {
-        return res.status(400).json({ error: '缺少url参数' });
+        res.status(400).json({ error: '缺少url参数' });
+        return;
       }
 
       try {
@@ -301,7 +334,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const fileExtension = urlString.split('.').pop()?.toLowerCase();
 
           // 设置正确的Content-Type
-          if (fileExtension) {
+          if (fileExtension !== undefined && fileExtension.length > 0) {
             const contentTypeMap: Record<string, string> = {
               'pdf': 'application/pdf',
               'png': 'image/png',
@@ -316,7 +349,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               '7z': 'application/x-7z-compressed'
             };
 
-            const contentType = contentTypeMap[fileExtension] || 'application/octet-stream';
+            const contentType = contentTypeMap[fileExtension] ?? 'application/octet-stream';
             res.setHeader('Content-Type', contentType);
           } else {
             res.setHeader('Content-Type', 'application/octet-stream');
@@ -330,25 +363,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
           );
 
-          return res.status(200).send(response.data);
+          res.status(200).send(response.data);
+          return;
         } else {
           // 文本文件
           res.setHeader('Content-Type', 'text/plain; charset=utf-8');
 
           const response = await handleRequestWithRetry(() =>
-            axios.get(urlString, {
+            axios.get<unknown>(urlString, {
               headers: getAuthHeaders()
             })
           );
 
-          return res.status(200).send(response.data);
+          res.status(200).send(response.data);
+          return;
         }
-      } catch (error: any) {
-        apiLogger.error('获取文件内容失败:', error.message);
-        return res.status(error.response?.status || 500).json({
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        apiLogger.error('获取文件内容失败:', axiosError.message ?? '未知错误');
+        res.status(axiosError.response?.status ?? 500).json({
           error: '获取文件内容失败',
-          message: error.message
+          message: axiosError.message ?? '未知错误'
         });
+        return;
       }
     }
 
@@ -360,55 +397,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // 规范化查询参数
       const qParam = Array.isArray(q) ? (q.length > 0 ? q[0] : '') : (q ?? '');
       if (typeof qParam !== 'string' || qParam.trim() === '') {
-        return res.status(400).json({ error: '缺少搜索参数' });
+        res.status(400).json({ error: '缺少搜索参数' });
+        return;
       }
 
       const { repoOwner, repoName } = getRepoEnvConfig();
 
-      if (!repoOwner || !repoName) {
-        return res.status(500).json({
+      if (repoOwner.length === 0 || repoName.length === 0) {
+        res.status(500).json({
           error: '仓库配置缺失',
           message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
         });
+        return;
       }
 
       const searchQuery = `repo:${repoOwner}/${repoName} ${qParam}`;
 
       try {
         const response = await handleRequestWithRetry(() =>
-          axios.get(`${GITHUB_API_BASE}/search/code`, {
+          axios.get<unknown>(`${GITHUB_API_BASE}/search/code`, {
             headers: getAuthHeaders(),
             params: {
               q: searchQuery,
-              sort: (Array.isArray(sort) ? sort[0] : sort) || 'best-match',
-              order: (Array.isArray(order) ? order[0] : order) || 'desc'
+              sort: (Array.isArray(sort) ? sort[0] : sort) ?? 'best-match',
+              order: (Array.isArray(order) ? order[0] : order) ?? 'desc'
             }
           })
         );
 
-        return res.status(200).json(response.data);
-      } catch (error: any) {
-        apiLogger.error('GitHub搜索API请求失败:', error.message);
-        return res.status(error.response?.status || 500).json({
+        res.status(200).json(response.data);
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        apiLogger.error('GitHub搜索API请求失败:', axiosError.message ?? '未知错误');
+        res.status(axiosError.response?.status ?? 500).json({
           error: '搜索失败',
-          message: error.message
+          message: axiosError.message ?? '未知错误'
         });
+        return;
       }
     }
 
     // 未知操作
-    return res.status(400).json({ error: '不支持的操作' });
-  } catch (error: any) {
+    res.status(400).json({ error: '不支持的操作' });
+  } catch (error) {
+    const axiosError = error as AxiosErrorResponse;
     apiLogger.error('API请求处理错误:', error);
     let message = '处理请求时发生错误';
 
-    if (error.response) {
-      const status = error.response.status;
-      message = `GitHub API错误 (${status}): ${error.response.data?.message || '未知错误'}`;
-    } else if (error.message) {
-      message = error.message;
+    const response = axiosError.response;
+    if (response !== undefined) {
+      const status = response.status;
+      const statusStr = String(status);
+      message = `GitHub API错误 (${statusStr}): ${response.data?.message ?? '未知错误'}`;
+    } else {
+      const errorMsg = axiosError.message;
+      if (errorMsg !== undefined && errorMsg.length > 0) {
+        message = errorMsg;
+      }
     }
 
-    return res.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 }

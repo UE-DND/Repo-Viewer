@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type ReactElement } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
 interface LoadingSpinnerProps {
@@ -8,7 +8,10 @@ interface LoadingSpinnerProps {
 }
 
 const LoadingSpinner = memo<LoadingSpinnerProps>(
-  ({ message = "加载中...", isSmallScreen, fullHeight = false }) => {
+  ({ message = "加载中...", isSmallScreen, fullHeight = false }): ReactElement => {
+    const normalizedMessage = message.trim();
+    const showMessage = normalizedMessage.length > 0;
+
     return (
       <Box
         sx={{
@@ -29,8 +32,7 @@ const LoadingSpinner = memo<LoadingSpinnerProps>(
           sx={{ mb: 2 }}
           data-oid="v-vl.mu"
         />
-
-        {message && (
+        {showMessage && (
           <Typography
             variant="body2"
             color="text.secondary"
@@ -41,7 +43,7 @@ const LoadingSpinner = memo<LoadingSpinnerProps>(
             }}
             data-oid=".x07k0m"
           >
-            {message}
+            {normalizedMessage}
           </Typography>
         )}
       </Box>

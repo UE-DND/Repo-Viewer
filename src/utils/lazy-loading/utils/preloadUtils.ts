@@ -1,28 +1,25 @@
 import { logger } from '../../logging/logger';
 
-/**
- * 预加载预览组件（在空闲时间进行）
- * 使用智能策略在浏览器空闲时预加载常用组件
- */
-export const preloadPreviewComponents = () => {
-  // 使用 requestIdleCallback 或 setTimeout 在空闲时预加载
-  const idleCallback = (window as any).requestIdleCallback || 
-    ((cb: () => void) => setTimeout(cb, 1));
+// 类型安全的 requestIdleCallback 检查
+type RequestIdleCallbackFn = (callback: () => void) => number;
+
+export const preloadPreviewComponents = (): void => {
+  // 使用 requestIdleCallback 或 setTimeout 在空闲时间预加载
+  const requestIdleCallbackFn = (window as unknown as { requestIdleCallback?: RequestIdleCallbackFn }).requestIdleCallback;
+  const idleCallback: RequestIdleCallbackFn = requestIdleCallbackFn ?? ((cb: () => void): number => setTimeout(cb, 1) as unknown as number);
 
   idleCallback(() => {
     // 预加载常用的预览组件
-    import('../../../components/preview/markdown').catch(() => {
-      // 预加载失败是可接受的，不影响用户体验
+    import('../../../components/preview/markdown').catch((_unknown: unknown) => {
       logger.debug('预加载 Markdown 预览组件失败');
     });
 
-    import('../../../components/preview/image').catch(() => {
-      // 预加载失败是可接受的
+    import('../../../components/preview/image').catch((_unknown: unknown) => {
       logger.debug('预加载图片预览组件失败');
     });
 
     // Office 预览组件较大，根据使用频率决定是否预加载
-    import('../../../components/preview/office').catch(() => {
+    import('../../../components/preview/office').catch((_unknown: unknown) => {
       logger.debug('预加载 Office 预览组件失败');
     });
   });
@@ -41,27 +38,29 @@ export const preloadComponents = (
     /** 是否在空闲时间执行 */
     useIdleCallback?: boolean;
   } = {}
-) => {
+): void => {
   const { delay = 0, useIdleCallback = true } = options;
 
-  const executePreload = () => {
+  const executePreload = (): void => {
     componentPaths.forEach((path) => {
-      import(/* @vite-ignore */ path).catch((error) => {
+      import(/* @vite-ignore */ path).catch((error: unknown) => {
         logger.debug(`预加载组件失败: ${path}`, error);
       });
     });
   };
 
+  const requestIdleCallbackFn = (window as unknown as { requestIdleCallback?: RequestIdleCallbackFn }).requestIdleCallback;
+
   if (delay > 0) {
     setTimeout(() => {
-      if (useIdleCallback && (window as any).requestIdleCallback) {
-        (window as any).requestIdleCallback(executePreload);
+      if (useIdleCallback && typeof requestIdleCallbackFn !== 'undefined') {
+        requestIdleCallbackFn(executePreload);
       } else {
         executePreload();
       }
     }, delay);
-  } else if (useIdleCallback && (window as any).requestIdleCallback) {
-    (window as any).requestIdleCallback(executePreload);
+  } else if (useIdleCallback && typeof requestIdleCallbackFn !== 'undefined') {
+    requestIdleCallbackFn(executePreload);
   } else {
     executePreload();
   }

@@ -1,5 +1,5 @@
-import { memo } from "react";
-import EmptyState from "./EmptyState";
+import { memo, type ReactElement } from "react";
+import EmptyState, { type EmptyStateType } from "./EmptyState";
 
 interface ErrorDisplayProps {
   errorMessage: string;
@@ -7,21 +7,25 @@ interface ErrorDisplayProps {
   isSmallScreen: boolean;
 }
 
+const defaultRetry: () => void = () => undefined;
+
 const ErrorDisplay = memo<ErrorDisplayProps>(
-  ({ errorMessage, onRetry, isSmallScreen }) => {
+  ({ errorMessage, onRetry, isSmallScreen }): ReactElement => {
     // 判断错误类型
-    const getErrorType = () => {
+    const getErrorType = (): EmptyStateType => {
       if (errorMessage.includes("网络") || errorMessage.includes("连接")) {
         return "network-error";
       }
       return "general-error";
     };
 
+    const handleRetry = onRetry ?? defaultRetry;
+
     return (
       <EmptyState
         type={getErrorType()}
         description={errorMessage}
-        onAction={onRetry ?? (() => {})}
+        onAction={handleRetry}
         isSmallScreen={isSmallScreen}
       />
     );

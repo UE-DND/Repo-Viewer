@@ -1,7 +1,9 @@
 import type { CacheConfig, CacheItemMeta } from './CacheTypes';
 
 export function calculateTTL(config: CacheConfig, item: CacheItemMeta): number {
-  if (!config.enableAdaptiveTTL) return config.defaultTTL;
+  if (!config.enableAdaptiveTTL) {
+    return config.defaultTTL;
+  }
   let ttl = config.defaultTTL;
   if (item.accessCount >= config.frequentAccessThreshold) {
     ttl *= config.frequentAccessMultiplier;
@@ -9,7 +11,7 @@ export function calculateTTL(config: CacheConfig, item: CacheItemMeta): number {
   return Math.min(Math.max(ttl, config.minTTL), config.maxTTL);
 }
 
-export function estimateSize(obj: any): number {
+export function estimateSize(obj: unknown): number {
   try {
     return new Blob([JSON.stringify(obj)]).size;
   } catch {
