@@ -1,5 +1,6 @@
 import { logger } from '@/utils';
 import { getGithubConfig, getRuntimeConfig } from '@/config';
+import { getCurrentBranch } from '../core/GitHubConfig';
 import { getForceServerProxy } from '../config/ProxyForceManager';
 
 const githubConfig = getGithubConfig();
@@ -165,7 +166,7 @@ function transformImageUrl(
       }
     }
 
-    const branch = githubConfig.repoBranch;
+    const branch = getCurrentBranch();
     const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${fullPath}`;
     logger.debug('构建的原始URL:', rawUrl);
 

@@ -1,7 +1,10 @@
 import { logger } from '@/utils';
+import { getCurrentBranch } from '../core/GitHubConfig';
 import type { CacheStats } from './CacheTypes';
 import { AdvancedCache, LRUCache } from './AdvancedCache';
 import { CONTENT_CACHE_CONFIG, FILE_CACHE_CONFIG } from './CacheConfig';
+
+const CONTENT_CACHE_ROOT_KEY = '__root__';
 
 class CacheManagerImpl {
   private contentCache: AdvancedCache<string, unknown> | null = null;
@@ -73,9 +76,17 @@ class CacheManagerImpl {
   }
 
   public prefetchContent(paths: string[]): void {
-    if (this.contentCache !== null) {
-      this.contentCache.prefetch(paths);
+    if (this.contentCache === null || paths.length === 0) {
+      return;
     }
+
+    const branch = getCurrentBranch();
+    const keys = paths.map(path => {
+      const normalizedPath = path === '' ? CONTENT_CACHE_ROOT_KEY : path;
+      return `contents_${branch}__${normalizedPath}`;
+    });
+
+    this.contentCache.prefetch(keys);
   }
 
   public prefetchFiles(urls: string[]): void {

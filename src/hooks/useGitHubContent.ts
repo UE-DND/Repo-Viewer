@@ -17,6 +17,8 @@ const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 // 获取仓库信息
 const GITHUB_REPO_OWNER = githubConfig.repoOwner;
 const GITHUB_REPO_NAME = githubConfig.repoName;
+const DEFAULT_BRANCH = GitHubService.getDefaultBranch();
+const INITIAL_BRANCH = GitHubService.getCurrentBranch();
 
 // 管理GitHub内容获取
 export const useGitHubContent = (): {
@@ -32,6 +34,13 @@ export const useGitHubContent = (): {
   navigationDirection: NavigationDirection;
   repoOwner: string;
   repoName: string;
+  currentBranch: string;
+  defaultBranch: string;
+  branches: string[];
+  branchLoading: boolean;
+  branchError: string | null;
+  setCurrentBranch: (branch: string) => void;
+  refreshBranches: () => Promise<void>;
 } => {
   // 尝试从URL获取路径
   const getSavedPath = (): string => {
@@ -69,9 +78,16 @@ export const useGitHubContent = (): {
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   // 导航方向
   const [navigationDirection, setNavigationDirection] = useState<NavigationDirection>('none');
+  // 分支状态
+  const [currentBranch, setCurrentBranchState] = useState<string>(INITIAL_BRANCH);
+  const [availableBranches, setAvailableBranches] = useState<string[]>(() => Array.from(new Set([DEFAULT_BRANCH, INITIAL_BRANCH])));
+  const [branchLoading, setBranchLoading] = useState<boolean>(false);
+  const [branchError, setBranchError] = useState<string | null>(null);
   // 初始加载标记
   const isInitialLoad = useRef<boolean>(true);
   const currentPathRef = useRef<string>(currentPath);
+  const currentBranchRef = useRef<string>(currentBranch);
+  const defaultBranchRef = useRef<string>(DEFAULT_BRANCH);
   const requestIdCounterRef = useRef(0);
   const activeRequestIdRef = useRef(0);
   const refreshTargetPathRef = useRef<string | null>(null);
@@ -81,11 +97,61 @@ export const useGitHubContent = (): {
     currentPathRef.current = currentPath;
   }, [currentPath]);
 
+  useEffect(() => {
+    currentBranchRef.current = currentBranch;
+  }, [currentBranch]);
+
   // 处理错误显示
   const displayError = useCallback((message: string) => {
     setError(message);
     logger.error(message);
   }, []);
+
+  const mergeBranchList = useCallback((branches: string[]) => {
+    setAvailableBranches(prev => {
+      const branchSet = new Set(prev);
+      branches.forEach(name => {
+        const trimmed = name.trim();
+        if (trimmed.length > 0) {
+          branchSet.add(trimmed);
+        }
+      });
+      branchSet.add(defaultBranchRef.current);
+      branchSet.add(currentBranchRef.current);
+
+      const branchArray = Array.from(branchSet);
+      branchArray.sort((a, b) => a.localeCompare(b, 'zh-CN'));
+      branchArray.sort((a, b) => {
+        if (a === defaultBranchRef.current) {
+          return -1;
+        }
+        if (b === defaultBranchRef.current) {
+          return 1;
+        }
+        return 0;
+      });
+      return branchArray;
+    });
+  }, []);
+
+  const loadBranches = useCallback(async () => {
+    setBranchLoading(true);
+    setBranchError(null);
+    try {
+      const branches = await GitHubService.getBranches();
+      mergeBranchList(branches);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '未知错误';
+      setBranchError(`获取分支列表失败: ${message}`);
+      logger.error('获取分支列表失败:', error);
+    } finally {
+      setBranchLoading(false);
+    }
+  }, [mergeBranchList]);
+
+  useEffect(() => {
+    void loadBranches();
+  }, [loadBranches]);
 
   // 加载README内容
   const loadReadmeContent = useCallback(async (readmeItem: GitHubContent, requestId?: number) => {
@@ -342,6 +408,29 @@ export const useGitHubContent = (): {
     logger.debug('触发内容刷新');
   }, []);
 
+  const changeBranch = useCallback((branchName: string): void => {
+    const trimmed = branchName.trim();
+    const targetBranch = trimmed.length > 0 ? trimmed : defaultBranchRef.current;
+
+    if (targetBranch === currentBranchRef.current) {
+      logger.debug(`分支未变更，忽略：${targetBranch}`);
+      return;
+    }
+
+    logger.info(`切换分支: ${currentBranchRef.current} -> ${targetBranch}`);
+    GitHubService.setCurrentBranch(targetBranch);
+    currentBranchRef.current = targetBranch;
+    setCurrentBranchState(targetBranch);
+    mergeBranchList([targetBranch]);
+    setBranchError(null);
+
+    setReadmeContent(null);
+    setReadmeLoaded(false);
+    setError(null);
+
+    refreshContents();
+  }, [mergeBranchList, refreshContents]);
+
   return {
     currentPath,
     contents,
@@ -356,6 +445,13 @@ export const useGitHubContent = (): {
     refreshContents,
     navigationDirection,
     repoOwner: GITHUB_REPO_OWNER,
-    repoName: GITHUB_REPO_NAME
+    repoName: GITHUB_REPO_NAME,
+    currentBranch,
+    defaultBranch: defaultBranchRef.current,
+    branches: availableBranches,
+    branchLoading,
+    branchError,
+    setCurrentBranch: changeBranch,
+    refreshBranches: loadBranches
   };
 };

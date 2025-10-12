@@ -6,7 +6,8 @@ import { RequestBatcher } from '../RequestBatcher';
 import { GitHubAuth } from './GitHubAuth';
 import {
   USE_TOKEN_MODE,
-  getApiUrl
+  getApiUrl,
+  getCurrentBranch
 } from './GitHubConfig';
 import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubContentsResponse } from '../schemas/apiSchemas';
@@ -15,6 +16,13 @@ import {
   filterAndNormalizeGitHubContents,
   validateGitHubContentsArray
 } from '../schemas/dataTransformers';
+
+const ROOT_PATH_KEY = '__root__';
+
+function buildContentsCacheKey(path: string, branch: string): string {
+  const normalizedPath = path === '' ? ROOT_PATH_KEY : path;
+  return `contents_${branch}__${normalizedPath}`;
+}
 
 // GitHub内容服务，使用模块导出而非类
 const batcher = new RequestBatcher();
@@ -41,7 +49,8 @@ async function ensureCacheInitialized(): Promise<void> {
 export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
   await ensureCacheInitialized();
 
-    const cacheKey = `contents_${path}`;
+    const branch = getCurrentBranch();
+    const cacheKey = buildContentsCacheKey(path, branch);
     const contentCache = CacheManager.getContentCache();
     const cachedContents = await contentCache.get(cacheKey);
 
@@ -55,11 +64,15 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
 
       // 根据环境决定使用服务端API还是直接调用GitHub API（运行时判定）
       if (shouldUseServerAPI()) {
-        rawData = (await axios.get(`/api/github?action=getContents&path=${encodeURIComponent(path)}`)).data;
+        const query = new URLSearchParams();
+        query.set('action', 'getContents');
+        query.set('path', path);
+        query.set('branch', branch);
+        rawData = (await axios.get(`/api/github?${query.toString()}`)).data;
         logger.debug(`通过服务端API获取内容: ${path}`);
       } else {
         // 原始直接请求GitHub API的代码
-        const apiUrl = getApiUrl(path);
+        const apiUrl = getApiUrl(path, branch);
 
         // 使用批处理器处理请求
         rawData = await batcher.enqueue(apiUrl, async () => {
@@ -109,7 +122,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
       }
 
       // 使用异步缓存并包含版本信息
-      const version = generateContentVersion(path, contents);
+      const version = generateContentVersion(path, branch, contents);
       await contentCache.set(cacheKey, contents, version);
 
       return contents;
@@ -178,12 +191,12 @@ export async function getFileContent(fileUrl: string): Promise<string> {
 }
 
 // 生成内容版本
-function generateContentVersion(path: string, contents: GitHubContent[]): string {
+function generateContentVersion(path: string, branch: string, contents: GitHubContent[]): string {
   const contentHash = contents.map(item => {
     const identifier = item.sha !== '' ? item.sha : (item.size !== undefined ? item.size.toString() : 'unknown');
     return `${item.name}-${identifier}`;
   }).join('|');
-  return `${path}-${Date.now().toString()}-${contentHash.slice(0, 8)}`;
+  return `${branch}:${path}-${Date.now().toString()}-${contentHash.slice(0, 8)}`;
 }
 
 // 生成文件版本

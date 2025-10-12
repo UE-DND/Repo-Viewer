@@ -3,7 +3,14 @@ import { GitHubAuth } from './GitHubAuth';
 import { GitHubSearchService } from './GitHubSearchService';
 import { GitHubPrefetchService } from './GitHubPrefetchService';
 import { GitHubStatsService } from './GitHubStatsService';
-import { getConfig, type ConfigInfo } from './GitHubConfig';
+import {
+  getConfig,
+  getCurrentBranch as getActiveBranch,
+  setCurrentBranch as setActiveBranch,
+  getDefaultBranch,
+  type ConfigInfo
+} from './GitHubConfig';
+import { getBranches as fetchBranches } from './GitHubBranchService';
 
 // GitHub服务，使用模块导出而非类
 
@@ -25,6 +32,22 @@ export function setLocalToken(token: string): void {
 // 获取配置信息
 export function getGitHubConfig(): ConfigInfo {
   return getConfig();
+}
+
+export function getCurrentBranch(): string {
+  return getActiveBranch();
+}
+
+export function setCurrentBranch(branch: string): void {
+  setActiveBranch(branch);
+}
+
+export function getDefaultBranchName(): string {
+  return getDefaultBranch();
+}
+
+export async function getBranches(): Promise<string[]> {
+  return fetchBranches();
 }
 
 // 获取目录内容
@@ -122,6 +145,10 @@ export const GitHubService = {
   hasToken,
   setLocalToken,
   getConfig: getGitHubConfig,
+  getCurrentBranch,
+  setCurrentBranch,
+  getDefaultBranch: getDefaultBranchName,
+  getBranches,
   getContents,
   getFileContent,
   searchWithGitHubApi,

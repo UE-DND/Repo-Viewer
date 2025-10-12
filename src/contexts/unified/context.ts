@@ -14,6 +14,13 @@ export interface ContentContextValue {
   navigationDirection: NavigationDirection;
   repoOwner: string;
   repoName: string;
+  currentBranch: string;
+  defaultBranch: string;
+  branches: string[];
+  branchLoading: boolean;
+  branchError: string | null;
+  setCurrentBranch: (branch: string) => void;
+  refreshBranches: () => Promise<void>;
   setCurrentPath: (path: string, direction?: NavigationDirection) => void;
   navigateTo: (path: string, direction?: NavigationDirection) => void;
   refresh: () => void;
