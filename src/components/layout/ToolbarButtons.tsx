@@ -179,7 +179,7 @@ const ToolbarButtons: React.FC = () => {
 
   const branchLabelId = "toolbar-branch-select-label";
 
-  const handleBranchChange = useCallback((event: SelectChangeEvent<string>): void => {
+  const handleBranchChange = useCallback((event: SelectChangeEvent): void => {
     setCurrentBranch(event.target.value);
   }, [setCurrentBranch]);
 

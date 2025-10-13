@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GitHubContent } from '@/types';
 import { GitHubService } from '@/services/github';
 import { logger } from '@/utils';
-import { getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '@/utils/routing/urlManager';
+import { getBranchFromUrl, getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '@/utils/routing/urlManager';
 import type { NavigationDirection } from '@/contexts/unified';
 import { getFeaturesConfig, getGithubConfig } from '@/config';
 
@@ -18,7 +18,6 @@ const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 const GITHUB_REPO_OWNER = githubConfig.repoOwner;
 const GITHUB_REPO_NAME = githubConfig.repoName;
 const DEFAULT_BRANCH = GitHubService.getDefaultBranch();
-const INITIAL_BRANCH = GitHubService.getCurrentBranch();
 
 // 管理GitHub内容获取
 export const useGitHubContent = (): {
@@ -79,8 +78,18 @@ export const useGitHubContent = (): {
   // 导航方向
   const [navigationDirection, setNavigationDirection] = useState<NavigationDirection>('none');
   // 分支状态
-  const [currentBranch, setCurrentBranchState] = useState<string>(INITIAL_BRANCH);
-  const [availableBranches, setAvailableBranches] = useState<string[]>(() => Array.from(new Set([DEFAULT_BRANCH, INITIAL_BRANCH])));
+  const [currentBranch, setCurrentBranchState] = useState<string>(() => {
+    const branchFromUrl = getBranchFromUrl().trim();
+    if (branchFromUrl.length > 0) {
+      GitHubService.setCurrentBranch(branchFromUrl);
+      return branchFromUrl;
+    }
+    return GitHubService.getCurrentBranch();
+  });
+  const [availableBranches, setAvailableBranches] = useState<string[]>(() => {
+    const initial = GitHubService.getCurrentBranch();
+    return Array.from(new Set([DEFAULT_BRANCH, initial]));
+  });
   const [branchLoading, setBranchLoading] = useState<boolean>(false);
   const [branchError, setBranchError] = useState<string | null>(null);
   // 初始加载标记
@@ -317,6 +326,32 @@ export const useGitHubContent = (): {
     setCurrentPathState(path);
   }, [setNavigationDirection, setCurrentPathState]);
 
+  // 刷新内容
+  const refreshContents = useCallback(() => {
+    refreshTargetPathRef.current = currentPathRef.current;
+    isRefreshInProgressRef.current = true;
+    setRefreshTrigger(prev => prev + 1);
+    setNavigationDirection('none'); // 刷新时不应用动画
+    logger.debug('触发内容刷新');
+  }, []);
+
+  const applyBranchState = useCallback((branchName: string): string => {
+    const trimmed = branchName.trim();
+    const target = trimmed.length > 0 ? trimmed : defaultBranchRef.current;
+
+    if (currentBranchRef.current === target) {
+      return target;
+    }
+
+    GitHubService.setCurrentBranch(target);
+    currentBranchRef.current = target;
+    setCurrentBranchState(target);
+    mergeBranchList([target]);
+    setBranchError(null);
+
+    return target;
+  }, [mergeBranchList]);
+
   // 处理路径变化
   useEffect(() => {
     // 检查是否是仅主题切换的操作，如果是则不重新加载内容
@@ -328,13 +363,13 @@ export const useGitHubContent = (): {
       // 只有在非初始加载时更新URL
       if (!isInitialLoad.current) {
         // 使用历史API更新URL，并添加历史记录
-        updateUrlWithHistory(currentPath);
+        updateUrlWithHistory(currentPath, undefined, currentBranchRef.current);
       } else {
         // 初始加载时，如果URL中已有path参数，则不需要更新URL
         const urlPath = getPathFromUrl();
         if (currentPath !== urlPath) {
           // 如果初始加载的路径与URL中的路径不同，更新URL（但不添加历史记录）
-          updateUrlWithoutHistory(currentPath);
+          updateUrlWithoutHistory(currentPath, undefined, currentBranchRef.current);
         }
         isInitialLoad.current = false;
       }
@@ -354,8 +389,22 @@ export const useGitHubContent = (): {
       logger.debug('内容管理器: 检测到历史导航事件');
 
       // 从历史状态中获取路径
-      const state = event.state as { path?: string; preview?: string } | null;
+      const state = event.state as { path?: string; preview?: string; branch?: string } | null;
       logger.debug(`历史状态: ${JSON.stringify(state)}`);
+
+      const stateBranch = typeof state?.branch === 'string' ? state.branch : '';
+      const urlBranch = getBranchFromUrl().trim();
+      const branchCandidate = stateBranch.trim().length > 0 ? stateBranch.trim() : urlBranch;
+
+      if (branchCandidate.length > 0) {
+        if (branchCandidate !== currentBranchRef.current) {
+          logger.debug(`历史导航事件，应用分支: ${branchCandidate}`);
+          applyBranchState(branchCandidate);
+        }
+      } else if (currentBranchRef.current !== defaultBranchRef.current) {
+        logger.debug('历史导航事件，无分支信息，回退到默认分支');
+        applyBranchState(defaultBranchRef.current);
+      }
 
       if (state?.path !== undefined) {
         logger.debug(`历史导航事件，路径: ${state.path}`);
@@ -397,16 +446,7 @@ export const useGitHubContent = (): {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('navigate-to-home', handleNavigateToHome as EventListener);
     };
-  }, [applyCurrentPath]);
-
-  // 刷新内容
-  const refreshContents = useCallback(() => {
-    refreshTargetPathRef.current = currentPathRef.current;
-    isRefreshInProgressRef.current = true;
-    setRefreshTrigger(prev => prev + 1);
-    setNavigationDirection('none'); // 刷新时不应用动画
-    logger.debug('触发内容刷新');
-  }, []);
+  }, [applyCurrentPath, applyBranchState]);
 
   const changeBranch = useCallback((branchName: string): void => {
     const trimmed = branchName.trim();
@@ -418,18 +458,15 @@ export const useGitHubContent = (): {
     }
 
     logger.info(`切换分支: ${currentBranchRef.current} -> ${targetBranch}`);
-    GitHubService.setCurrentBranch(targetBranch);
-    currentBranchRef.current = targetBranch;
-    setCurrentBranchState(targetBranch);
-    mergeBranchList([targetBranch]);
-    setBranchError(null);
+
+    applyBranchState(targetBranch);
 
     setReadmeContent(null);
     setReadmeLoaded(false);
     setError(null);
 
     refreshContents();
-  }, [mergeBranchList, refreshContents]);
+  }, [applyBranchState, refreshContents]);
 
   return {
     currentPath,
