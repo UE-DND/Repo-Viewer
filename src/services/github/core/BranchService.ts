@@ -1,14 +1,14 @@
 import axios from 'axios';
 import { logger } from '@/utils';
 import { shouldUseServerAPI } from '../config/ProxyForceManager';
-import { GitHubAuth } from './GitHubAuth';
+import { GitHubAuth } from './Auth';
 import {
   GITHUB_API_BASE,
   GITHUB_REPO_OWNER,
   GITHUB_REPO_NAME,
   getDefaultBranch,
   getCurrentBranch
-} from './GitHubConfig';
+} from './Config';
 
 interface GitHubBranchApiItem {
   name?: string;
@@ -16,10 +16,10 @@ interface GitHubBranchApiItem {
 }
 
 interface ServerBranchResponse {
-  status?: 'success' | 'error';
-  data?: {
+  status: 'success' | 'error';
+  data: {
     defaultBranch?: string;
-    branches?: unknown;
+    branches: unknown;
   };
 }
 
@@ -46,9 +46,9 @@ function normalizeBranchNames(items: unknown): string[] {
 async function fetchBranchesViaServer(): Promise<string[]> {
   const branches: string[] = [];
   let page = 1;
-  let hasNext = true;
+  let shouldContinue = true;
 
-  while (hasNext) {
+  while (shouldContinue) {
     const params = new URLSearchParams();
     params.set('action', 'getBranches');
     params.set('page', page.toString());
@@ -57,19 +57,15 @@ async function fetchBranchesViaServer(): Promise<string[]> {
     const response = await axios.get<ServerBranchResponse>(`/api/github?${params.toString()}`);
     const payload = response.data;
 
-    if (payload?.status !== 'success') {
+    if (payload.status !== 'success') {
       throw new Error('分支列表响应格式错误');
     }
 
-    const branchNames = normalizeBranchNames(payload.data?.branches);
+    const branchNames = normalizeBranchNames(payload.data.branches);
     branches.push(...branchNames);
 
-    hasNext = branchNames.length === MAX_PER_PAGE;
+    shouldContinue = branchNames.length === MAX_PER_PAGE;
     page += 1;
-
-    if (!hasNext) {
-      break;
-    }
   }
 
   return branches;

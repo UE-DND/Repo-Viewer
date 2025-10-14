@@ -27,6 +27,7 @@ interface BreadcrumbNavigationProps {
   breadcrumbsMaxItems: number;
   isSmallScreen: boolean;
   breadcrumbsContainerRef: RefObject<HTMLDivElement | null>;
+  compact?: boolean; // 紧凑模式，用于顶部栏
 }
 
 const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
@@ -35,6 +36,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
     breadcrumbsMaxItems,
     isSmallScreen,
     breadcrumbsContainerRef,
+    compact = false,
   }) => {
     const theme = useTheme();
 
@@ -53,7 +55,6 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
           return;
         }
         const parentPath = parentSegment.path;
-        // 设置导航方向为后退
         handleBreadcrumbClick(parentPath, "backward");
       }
     };
@@ -61,72 +62,54 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
     // 检查是否有上级目录可返回
     const canGoUp = breadcrumbSegments.length > 1;
 
-    // 创建一个统一的Home按钮样式结构
     const renderHomeContent = (isLast: boolean): ReactNode => (
-      <>
-        <Box
-          component="span"
+      <Box
+        component="span"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: theme.palette.primary.main,
+          width: { xs: 20, sm: 24 },
+          height: { xs: 20, sm: 24 },
+          borderRadius: "50%",
+          flexShrink: 0,
+          position: "relative",
+          transition: "all 0.2s",
+          ...(isLast
+            ? {}
+            : {
+                ".MuiLink-root:hover &": {
+                  transform: "rotate(-5deg)",
+                },
+              }),
+        }}
+        data-oid=".e0qa-0"
+      >
+        <HomeIcon
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: theme.palette.primary.main,
-            mr: 0.5,
-            width: { xs: 20, sm: 24 },
-            height: { xs: 20, sm: 24 },
-            borderRadius: "50%",
-            flexShrink: 0,
-            position: "relative",
-            transition: "all 0.2s",
-            ...(isLast
-              ? {}
-              : {
-                  ".MuiLink-root:hover &": {
-                    transform: "rotate(-5deg)", // 只旋转，不改变位置
-                  },
-                }),
+            fontSize: { xs: "0.9rem", sm: "1.1rem" },
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
           }}
-          data-oid=".e0qa-0"
-        >
-          <HomeIcon
-            sx={{
-              fontSize: { xs: "0.9rem", sm: "1.1rem" },
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
-            data-oid="xxu.9dy"
-          />
-        </Box>
-        {/* 在小屏幕上，如果不是当前路径(Home)，则隐藏文字 */}
-        {(!isSmallScreen || isLast) && (
-          <Box
-            component="span"
-            sx={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              display: "block",
-            }}
-            data-oid="s7_d5ob"
-          >
-            Home
-          </Box>
-        )}
-      </>
+          data-oid="xxu.9dy"
+        />
+      </Box>
     );
 
     return (
       <Box
         ref={breadcrumbsContainerRef}
         sx={{
-          mb: { xs: 1.5, sm: 2.25 },
+          mb: compact ? 0 : { xs: 1.5, sm: 2.25 },
           position: "relative",
           display: "flex",
           alignItems: "center",
           overflow: "visible",
           zIndex: 1,
+          width: compact ? '100%' : 'auto',
         }}
         data-oid="zmb:p06"
       >
@@ -143,11 +126,11 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
           itemsBeforeCollapse={isSmallScreen ? 1 : 2}
           itemsAfterCollapse={isSmallScreen ? 1 : 2}
           sx={{
-            px: { xs: 1, sm: 1.2 },
-            py: { xs: 0.75, sm: 1. },
-            bgcolor: "background.paper",
+            px: compact ? { xs: 0.75, sm: 1 } : { xs: 1, sm: 1.2 },
+            py: compact ? { xs: 0.5, sm: 0.6 } : { xs: 0.75, sm: 1 },
+            bgcolor: compact ? "transparent" : "background.paper",
             borderRadius: g3Styles.breadcrumb().borderRadius,
-            boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.05)",
+            boxShadow: compact ? "none" : "0px 2px 6px rgba(0, 0, 0, 0.05)",
             "& .MuiBreadcrumbs-ol": {
               alignItems: "center",
               flexWrap: "nowrap",
@@ -162,7 +145,9 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
               textOverflow: "ellipsis",
               display: "inline-block",
               position: "relative",
-              fontSize: { xs: "0.75rem", sm: "inherit" },
+              fontSize: compact
+                ? { xs: "0.7rem", sm: "0.8rem" }
+                : { xs: "0.75rem", sm: "inherit" },
             },
             "& .MuiBreadcrumbs-separator": {
               mx: { xs: 0.5, sm: 1 },
@@ -187,27 +172,11 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
             overflowX: "auto",
             overflowY: "visible",
             whiteSpace: "nowrap",
-            scrollbarWidth: "thin",
+            scrollbarWidth: "none",
             msOverflowStyle: "none",
             "&::-webkit-scrollbar": {
-              height: "4px",
+              display: "none",
             },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: alpha(theme.palette.primary.main, 0.2),
-              borderRadius: "2px",
-            },
-            "&::-webkit-scrollbar-track": {
-              backgroundColor: "transparent",
-            },
-            ...(theme.palette.mode === "dark" && {
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: alpha(theme.palette.primary.main, 0.3),
-                borderRadius: "2px",
-              },
-              "&::-webkit-scrollbar-track": {
-                backgroundColor: "rgba(255, 255, 255, 0.03)",
-              },
-            }),
             flexGrow: 1,
             mr: { xs: 0.75, sm: 1.5 },
           }}
@@ -223,13 +192,27 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  py: { xs: 0.5, sm: 0.75 },
-                  px: { xs: 1.25, sm: 1.75 },
+                  py: compact
+                    ? { xs: 0.25, sm: 0.4 }
+                    : { xs: 0.5, sm: 0.75 },
+                  px: isHome
+                    ? compact
+                      ? { xs: 0.25, sm: 1.75 }
+                      : { xs: 0.5, sm: 1.75 }
+                    : { xs: 1.25, sm: 1.75 },
                   borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: alpha(theme.palette.primary.main, 0.06),
                   fontWeight: 500,
-                  height: { xs: "28px", sm: "36px" },
-                  fontSize: { xs: "0.75rem", sm: "inherit" },
+                  height: compact
+                    ? { xs: "24px", sm: "28px" }
+                    : { xs: "28px", sm: "36px" },
+                  minWidth: isHome
+                    ? { xs: compact ? "24px" : "28px", sm: "auto" }
+                    : "auto",
+                  justifyContent: isHome ? "center" : "flex-start",
+                  fontSize: compact
+                    ? { xs: "0.7rem", sm: "0.8rem" }
+                    : { xs: "0.75rem", sm: "inherit" },
                   boxSizing: "border-box",
                   maxWidth: isSmallScreen ? "120px" : "250px",
                   "& > span": {
@@ -267,12 +250,22 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
                   display: "flex",
                   alignItems: "center",
                   position: "relative",
-                  px: { xs: 1.25, sm: 1.75 },
-                  py: { xs: 0.5, sm: 0.75 },
+                  px: isHome
+                    ? compact
+                      ? { xs: 0.25, sm: 1.75 }
+                      : { xs: 0.5, sm: 1.75 }
+                    : { xs: 1.25, sm: 1.75 },
+                  py: compact
+                    ? { xs: 0.25, sm: 0.4 }
+                    : { xs: 0.5, sm: 0.75 },
                   borderRadius: g3Styles.breadcrumbItem().borderRadius,
                   bgcolor: isHome
                     ? alpha(theme.palette.primary.main, 0.08)
                     : "transparent",
+                  minWidth: isHome
+                    ? { xs: compact ? "24px" : "28px", sm: "auto" }
+                    : "auto",
+                  justifyContent: isHome ? "center" : "flex-start",
                   "&:hover": {
                     bgcolor: isHome
                       ? alpha(theme.palette.primary.main, 0.12)
@@ -284,10 +277,14 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
                     boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                     transition: "all 0.2s",
                   },
-                  fontSize: { xs: "0.75rem", sm: "inherit" },
+                  fontSize: compact
+                    ? { xs: "0.7rem", sm: "0.8rem" }
+                    : { xs: "0.75rem", sm: "inherit" },
                   fontWeight: isHome ? 500 : 400,
                   transition: "all 0.2s",
-                  height: { xs: "28px", sm: "36px" },
+                  height: compact
+                    ? { xs: "24px", sm: "28px" }
+                    : { xs: "28px", sm: "36px" },
                   boxSizing: "border-box",
                   whiteSpace: "nowrap",
                   maxWidth: isSmallScreen ? "90px" : "220px",
@@ -316,12 +313,13 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
           })}
         </Breadcrumbs>
 
-        {/* 返回上一级按钮 */}
-        <Tooltip
-          title={canGoUp ? "返回上一级" : "已位于根目录"}
-          data-oid="ujxfsq2"
-        >
-          <span data-oid="0rhl8w6">
+        {/* 返回上一级按钮 - 紧凑模式下隐藏 */}
+        {!compact && (
+          <Tooltip
+            title={canGoUp ? "返回上一级" : "已位于根目录"}
+            data-oid="ujxfsq2"
+          >
+            <span data-oid="0rhl8w6">
             <IconButton
               onClick={handleGoUp}
               disabled={!canGoUp}
@@ -396,6 +394,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
             </IconButton>
           </span>
         </Tooltip>
+      )}
       </Box>
     );
   };

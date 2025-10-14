@@ -3,12 +3,12 @@ import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
-import { GitHubAuth } from './GitHubAuth';
+import { GitHubAuth } from './Auth';
 import {
   USE_TOKEN_MODE,
   getApiUrl,
   getCurrentBranch
-} from './GitHubConfig';
+} from './Config';
 import { getForceServerProxy, shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubContentsResponse } from '../schemas/apiSchemas';
 import {
@@ -36,9 +36,9 @@ async function ensureCacheInitialized(): Promise<void> {
     try {
       await CacheManager.initialize();
       cacheInitialized = true;
-      logger.info('GitHubContentService: 缓存系统初始化完成');
+      logger.info('ContentService: 缓存系统初始化完成');
     } catch (error) {
-      logger.warn('GitHubContentService: 缓存系统初始化失败，使用同步缓存', error);
+      logger.warn('ContentService: 缓存系统初始化失败，使用同步缓存', error);
       // 即使初始化失败，也标记为已初始化以避免重复尝试
       cacheInitialized = true;
     }

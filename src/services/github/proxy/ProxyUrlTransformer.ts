@@ -1,6 +1,6 @@
 import { logger } from '@/utils';
 import { getGithubConfig, getRuntimeConfig } from '@/config';
-import { getCurrentBranch } from '../core/GitHubConfig';
+import { getCurrentBranch } from '../core/Config';
 import { getForceServerProxy } from '../config/ProxyForceManager';
 
 const githubConfig = getGithubConfig();

@@ -1,5 +1,5 @@
 import { logger } from '@/utils';
-import { getCurrentBranch } from '../core/GitHubConfig';
+import { getCurrentBranch } from '../core/Config';
 import type { CacheStats } from './CacheTypes';
 import { AdvancedCache, LRUCache } from './AdvancedCache';
 import { CONTENT_CACHE_CONFIG, FILE_CACHE_CONFIG } from './CacheConfig';

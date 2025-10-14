@@ -108,7 +108,8 @@ export function buildUrlWithParams(path: string, preview?: string, branch?: stri
 
   const queryParams = new URLSearchParams();
 
-  const activeBranch = (branch ?? getCurrentBranch() ?? '').trim();
+  const branchValue = branch ?? getCurrentBranch();
+  const activeBranch = branchValue.trim();
 
   if (activeBranch.length > 0) {
     queryParams.set(URL_PARAMS.BRANCH, activeBranch);
@@ -138,7 +139,8 @@ export function buildUrlWithParams(path: string, preview?: string, branch?: stri
 export function updateUrlWithoutHistory(path: string, preview?: string, branch?: string): void {
   try {
     const newUrl = buildUrlWithParams(path, preview, branch);
-    const activeBranch = (branch ?? getCurrentBranch() ?? '').trim();
+    const branchValue = branch ?? getCurrentBranch();
+    const activeBranch = branchValue.trim();
     window.history.replaceState({ path, preview, branch: activeBranch }, '', newUrl);
     logger.debug(`URL 已更新（不添加历史记录）: ${newUrl}`);
   } catch (error) {
@@ -154,7 +156,8 @@ export function updateUrlWithoutHistory(path: string, preview?: string, branch?:
 export function updateUrlWithHistory(path: string, preview?: string, branch?: string): void {
   try {
     const newUrl = buildUrlWithParams(path, preview, branch);
-    const activeBranch = (branch ?? getCurrentBranch() ?? '').trim();
+    const branchValue = branch ?? getCurrentBranch();
+    const activeBranch = branchValue.trim();
     window.history.pushState({ path, preview, branch: activeBranch }, '', newUrl);
     logger.debug(`URL 已更新（添加历史记录）: ${newUrl}`);
   } catch (error) {

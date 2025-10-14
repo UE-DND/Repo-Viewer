@@ -5,6 +5,7 @@ import {
   useMediaQuery,
   Box,
   Typography,
+  Portal,
 } from "@mui/material";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
 import FileList from "@/components/file/FileList";
@@ -25,7 +26,11 @@ import EmptyState from "@/components/ui/EmptyState";
 import type { NavigationDirection } from "@/contexts/unified";
 import type { BreadcrumbSegment, GitHubContent } from "@/types";
 
-const MainContent: React.FC = () => {
+interface MainContentProps {
+  showBreadcrumbInToolbar: boolean;
+}
+
+const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) => {
   // 获取主题和响应式布局
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -106,6 +111,9 @@ const MainContent: React.FC = () => {
 
     return segments;
   }, [currentPath]);
+
+  const isHomePage = breadcrumbSegments.length <= 1;
+  const shouldShowInToolbar = showBreadcrumbInToolbar && !isHomePage;
 
   // 处理面包屑点击
   const handleBreadcrumbClick = useCallback((
@@ -324,13 +332,47 @@ const MainContent: React.FC = () => {
     previewState.officeFileType,
   ]);
 
+  // 获取顶部栏面包屑容器
+  const [toolbarBreadcrumbContainer, setToolbarBreadcrumbContainer] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const container = document.getElementById('toolbar-breadcrumb-container');
+    setToolbarBreadcrumbContainer(container);
+  }, []);
+
+  // 渲染面包屑导航组件
+  const breadcrumbNavigation = (
+    <BreadcrumbNavigation
+      breadcrumbSegments={breadcrumbSegments}
+      handleBreadcrumbClick={handleBreadcrumbClick}
+      breadcrumbsMaxItems={breadcrumbsMaxItems}
+      isSmallScreen={isSmallScreen}
+      breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
+      compact={false}
+      data-oid="c02a2p5"
+    />
+  );
+
+  // 紧凑模式的面包屑（用于顶部栏）
+  const compactBreadcrumbNavigation = (
+    <BreadcrumbNavigation
+      breadcrumbSegments={breadcrumbSegments}
+      handleBreadcrumbClick={handleBreadcrumbClick}
+      breadcrumbsMaxItems={breadcrumbsMaxItems}
+      isSmallScreen={isSmallScreen}
+      breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
+      compact={true}
+      data-oid="c02a2p5-compact"
+    />
+  );
+
   return (
     <Container
       component="main"
       sx={{
         flexGrow: 1,
         py: 4,
-        overflow: "hidden",
+        width: "100%",
       }}
       data-oid="7powvvf"
     >
@@ -345,14 +387,36 @@ const MainContent: React.FC = () => {
         data-oid="8ov3blv"
       />
 
-      <BreadcrumbNavigation
-        breadcrumbSegments={breadcrumbSegments}
-        handleBreadcrumbClick={handleBreadcrumbClick}
-        breadcrumbsMaxItems={breadcrumbsMaxItems}
-        isSmallScreen={isSmallScreen}
-        breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
-        data-oid="c02a2p5"
-      />
+      {/* 面包屑导航 - 根据滚动位置决定渲染位置 */}
+      {shouldShowInToolbar && toolbarBreadcrumbContainer !== null ? (
+        <Portal container={toolbarBreadcrumbContainer}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              animation: 'slideUpFadeIn 0.3s ease-out',
+              '@keyframes slideUpFadeIn': {
+                from: { opacity: 0, transform: 'translateY(10px)' },
+                to: { opacity: 1, transform: 'translateY(0)' },
+              },
+            }}
+          >
+            {compactBreadcrumbNavigation}
+          </Box>
+        </Portal>
+      ) : null}
+
+      <Box
+        sx={{
+          opacity: shouldShowInToolbar ? 0 : 1,
+          transform: shouldShowInToolbar ? 'translateY(-20px)' : 'translateY(0)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: shouldShowInToolbar ? 'none' : 'auto',
+        }}
+      >
+        {breadcrumbNavigation}
+      </Box>
 
       {loading ? (
         <FileListSkeleton

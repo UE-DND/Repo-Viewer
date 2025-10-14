@@ -3,13 +3,12 @@ import type { PaletteMode } from '@mui/material';
 import { logger } from '@/utils';
 import { removeLatexElements, restoreLatexElements } from '@/utils/rendering/latexOptimizer';
 
-const shouldUseDarkMode = (): boolean => {
-  const currentHour = new Date().getHours();
-  return currentHour >= 18 || currentHour < 6;
-};
-
-const getTimeBasedMode = (): PaletteMode => {
-  return shouldUseDarkMode() ? 'dark' : 'light';
+const getSystemBasedMode = (): PaletteMode => {
+  if (typeof window !== 'undefined') {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    return mediaQuery.matches ? 'dark' : 'light';
+  }
+  return 'light';
 };
 
 const shouldRefreshThemeColor = (): boolean => {
@@ -57,7 +56,7 @@ export const useThemeMode = (): {
         logger.error('读取主题数据时出错:', e);
       }
     }
-    return getTimeBasedMode();
+    return getSystemBasedMode();
   });
 
   const [isAutoMode, setIsAutoMode] = useState<boolean>(() => {
@@ -103,9 +102,9 @@ export const useThemeMode = (): {
 
   useEffect(() => {
     if (isAutoMode) {
-      const timeBasedMode = getTimeBasedMode();
-      if (timeBasedMode !== mode) {
-        setMode(timeBasedMode);
+      const systemBasedMode = getSystemBasedMode();
+      if (systemBasedMode !== mode) {
+        setMode(systemBasedMode);
       }
     }
   }, [isAutoMode, mode]);
@@ -158,40 +157,25 @@ export const useThemeMode = (): {
       return;
     }
 
-    let hourlyTimer: number | null = null;
+    // 监听系统主题变化
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-    const scheduleAutoModeUpdate = (): void => {
-      const newTimeBasedMode = getTimeBasedMode();
-      const currentMode = modeRef.current;
-      if (isAutoModeRef.current && newTimeBasedMode !== currentMode) {
-        logger.info(`自动切换主题模式: ${currentMode} -> ${newTimeBasedMode}`);
-        modeRef.current = newTimeBasedMode;
-        setMode(newTimeBasedMode);
-      }
-
-      hourlyTimer = window.setInterval(() => {
-        const nextMode = getTimeBasedMode();
-        const latestMode = modeRef.current;
-        if (isAutoModeRef.current && nextMode !== latestMode) {
-          logger.info(`自动切换主题模式: ${latestMode} -> ${nextMode}`);
-          modeRef.current = nextMode;
-          setMode(nextMode);
+    const handleSystemThemeChange = (e: MediaQueryListEvent): void => {
+      if (isAutoModeRef.current) {
+        const newMode = e.matches ? 'dark' : 'light';
+        const currentMode = modeRef.current;
+        if (newMode !== currentMode) {
+          logger.info(`系统主题变化，自动切换主题模式: ${currentMode} -> ${newMode}`);
+          modeRef.current = newMode;
+          setMode(newMode);
         }
-      }, 3600000);
+      }
     };
 
-    const now = new Date();
-    const nextHour = new Date(now);
-    nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-    const timeToNextHour = nextHour.getTime() - now.getTime();
-
-    const checkTimeTimer = window.setTimeout(scheduleAutoModeUpdate, timeToNextHour);
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
 
     return () => {
-      if (hourlyTimer !== null) {
-        window.clearInterval(hourlyTimer);
-      }
-      window.clearTimeout(checkTimeTimer);
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
     };
   }, [isAutoMode]);
 
@@ -211,9 +195,9 @@ export const useThemeMode = (): {
           logger.info(`切换自动主题模式: ${isAutoMode.toString()} -> ${newAutoMode.toString()}`);
           setIsAutoMode(newAutoMode);
           if (newAutoMode) {
-            const timeBasedMode = getTimeBasedMode();
-            if (timeBasedMode !== mode) {
-              setMode(timeBasedMode);
+            const systemBasedMode = getSystemBasedMode();
+            if (systemBasedMode !== mode) {
+              setMode(systemBasedMode);
             }
           }
         }

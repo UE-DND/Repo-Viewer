@@ -39,7 +39,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
   "& .markdown-body": {
     color: `${textColor} !important`,
     backgroundColor: "transparent !important",
-    fontSize: "1rem",
+    fontSize: { xs: "0.875rem", sm: "1rem" },
     lineHeight: 1.7,
     wordBreak: "break-word",
     fontFamily: SYSTEM_FONT,
@@ -206,7 +206,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
   "& .markdown-body pre > code": {
     display: "block",
     fontFamily: MONO_FONT,
-    fontSize: "0.875rem",
+    fontSize: { xs: "0.8125rem", sm: "0.875rem" },
     lineHeight: 1.55,
     backgroundColor: codeSurfaceColor, // 行间代码块背景色
     borderRadius: "inherit",
@@ -219,7 +219,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
 
   "& .markdown-body :not(pre) > code": {
     fontFamily: MONO_FONT,
-    fontSize: "0.875em",
+    fontSize: { xs: "0.8125em", sm: "0.875em" },
     backgroundColor: codeSurfaceColor,
     borderRadius: "6px",
     padding: "0.2em 0.4em",
@@ -276,7 +276,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
 
   // LaTeX公式样式
   "& .markdown-body .math": {
-    fontSize: "1.08em",
+    fontSize: { xs: "1em", sm: "1.08em" },
     margin: "0.5em 0",
   },
   "& .markdown-body .math-inline": {

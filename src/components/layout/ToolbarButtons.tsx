@@ -4,13 +4,7 @@ import {
   IconButton,
   Tooltip,
   useTheme,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
 } from "@mui/material";
-import type { SelectChangeEvent } from "@mui/material/Select";
 import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
@@ -19,7 +13,7 @@ import {
 } from "@mui/icons-material";
 import { ColorModeContext } from "@/contexts/colorModeContext";
 import { useRefresh } from "@/hooks/useRefresh";
-import { pulseAnimation, refreshAnimation } from "@/theme/animations";
+import { refreshAnimation } from "@/theme/animations";
 import { GitHubService } from "@/services/github";
 import axios from "axios";
 import { getGithubConfig } from "@/config";
@@ -38,8 +32,16 @@ interface GitHubConfigResponse {
   data?: Partial<RepoInfo>;
 }
 
+interface ToolbarButtonsProps {
+  showBreadcrumbInToolbar?: boolean;
+  isSmallScreen?: boolean;
+}
+
 // 工具栏按钮组件
-const ToolbarButtons: React.FC = () => {
+const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
+  showBreadcrumbInToolbar = false,
+  isSmallScreen = false,
+}) => {
   const { toggleColorMode } = useContext(ColorModeContext);
   const theme = useTheme();
   const handleRefresh = useRefresh();
@@ -54,10 +56,11 @@ const ToolbarButtons: React.FC = () => {
   const {
     currentBranch,
     defaultBranch,
-    branches,
-    branchLoading,
-    branchError,
-    setCurrentBranch,
+    currentPath,
+    branches: _branches,
+    branchLoading: _branchLoading,
+    branchError: _branchError,
+    setCurrentBranch: _setCurrentBranch,
     refreshBranches,
   } = useContentContext();
 
@@ -177,68 +180,38 @@ const ToolbarButtons: React.FC = () => {
     window.open(githubUrl, "_blank");
   }, [repoInfo, currentBranch, defaultBranch]);
 
-  const branchLabelId = "toolbar-branch-select-label";
+  // 保留分支逻辑但不显示UI：这些代码确保分支功能的后台逻辑正常工作
+  // branchLabelId, handleBranchChange, handleBranchOpen, branchOptions 等
+  // 虽然不再渲染UI，但保留这些逻辑以备将来需要或其他组件调用
 
-  const handleBranchChange = useCallback((event: SelectChangeEvent): void => {
-    setCurrentBranch(event.target.value);
-  }, [setCurrentBranch]);
+  const isHomePage = currentPath.trim().length === 0;
+  const shouldHideButtons = isSmallScreen && showBreadcrumbInToolbar && !isHomePage;
 
-  const handleBranchOpen = useCallback(() => {
-    if (!branchLoading && (branchError !== null || branches.length <= 1)) {
-      void refreshBranches();
-    }
-  }, [branchLoading, branchError, branches.length, refreshBranches]);
-
-  const branchOptions = branches.map((branch) => (
-    <MenuItem key={branch} value={branch}>
-      {branch === defaultBranch ? `${branch} (默认)` : branch}
-    </MenuItem>
-  ));
   return (
-    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }} data-oid="7:zr_jb">
-      <Tooltip
-        title={branchError ?? ""}
-        placement="bottom"
-        arrow
-        disableHoverListener={branchError === null}
-      >
-        <FormControl
-          size="small"
-          variant="outlined"
-          sx={{ minWidth: 168 }}
-          error={branchError !== null}
-          disabled={branchLoading && branches.length === 0}
-        >
-          <InputLabel id={branchLabelId}>分支</InputLabel>
-          <Select
-            labelId={branchLabelId}
-            value={currentBranch}
-            label="分支"
-            onChange={handleBranchChange}
-            onOpen={handleBranchOpen}
-            MenuProps={{ PaperProps: { sx: { maxHeight: 280 } } }}
-          >
-            {branchOptions}
-          </Select>
-        </FormControl>
-      </Tooltip>
-      {branchLoading ? (
-        <CircularProgress
-          size={18}
-          sx={{
-            color: theme.palette.mode === "dark"
-              ? theme.palette.grey[300]
-              : theme.palette.grey[600],
-          }}
-        />
-      ) : null}
+    <Box
+      sx={{
+        display: "flex",
+        gap: 1,
+        alignItems: "center",
+        transform: shouldHideButtons
+          ? { xs: 'translateX(120px)', sm: 'translateX(0)' }
+          : 'translateX(0)',
+        opacity: shouldHideButtons ? 0 : 1,
+        transition: shouldHideButtons
+          ? 'none'
+          : 'all 0.2s ease-out',
+        pointerEvents: shouldHideButtons ? 'none' : 'auto',
+        position: shouldHideButtons ? { xs: 'absolute', sm: 'relative' } : 'relative',
+        right: shouldHideButtons ? { xs: 0, sm: 'auto' } : 'auto',
+      }}
+      data-oid="7:zr_jb"
+    >
       <Tooltip title="在GitHub中查看" data-oid="f.rvw_c">
         <IconButton
           color="inherit"
           onClick={onGitHubClick}
           sx={{
             "&:hover": {
-              animation: `${pulseAnimation} 0.4s ease`,
               color: theme.palette.primary.light,
             },
           }}
@@ -284,7 +257,6 @@ const ToolbarButtons: React.FC = () => {
           color="inherit"
           sx={{
             "&:hover": {
-              animation: `${pulseAnimation} 0.4s ease`,
               color:
                 theme.palette.mode === "dark"
                   ? theme.palette.warning.light

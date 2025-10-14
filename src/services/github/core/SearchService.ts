@@ -2,12 +2,12 @@ import axios from 'axios';
 import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { RequestBatcher } from '../RequestBatcher';
-import { GitHubAuth } from './GitHubAuth';
+import { GitHubAuth } from './Auth';
 import {
   GITHUB_API_BASE,
   GITHUB_REPO_OWNER,
   GITHUB_REPO_NAME
-} from './GitHubConfig';
+} from './Config';
 import { shouldUseServerAPI } from '../config/ProxyForceManager';
 import { safeValidateGitHubSearchResponse } from '../schemas/apiSchemas';
 import {
@@ -110,7 +110,7 @@ export async function searchFiles(
 
     try {
       // 动态导入避免循环依赖
-      const { getContents } = await import('./GitHubContentService');
+      const { getContents } = await import('./ContentService');
 
       // 首先获取当前目录的内容
       const contents = await getContents(currentPath);

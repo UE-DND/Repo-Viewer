@@ -1,13 +1,13 @@
 import { CacheManager } from '../cache/CacheManager';
 import { ProxyService } from '../proxy/ProxyService';
-import { GitHubAuth } from './GitHubAuth';
+import { GitHubAuth } from './Auth';
 
 // GitHub统计服务，使用模块导出而非类
 
 // 清除缓存和重置网络状态
 export async function clearCache(): Promise<void> {
   await CacheManager.clearAllCaches();
-  const { clearBatcherCache } = await import('./GitHubContentService');
+  const { clearBatcherCache } = await import('./ContentService');
   clearBatcherCache();
   GitHubAuth.resetFailedProxyServices();
 }
@@ -23,7 +23,7 @@ export async function getNetworkStats(): Promise<{
   proxy: ReturnType<typeof ProxyService.getProxyHealthStats>;
   cache: ReturnType<typeof getCacheStats>;
 }> {
-  const { getBatcher } = await import('./GitHubContentService');
+  const { getBatcher } = await import('./ContentService');
   return {
     batcher: getBatcher().getStats(),
     proxy: ProxyService.getProxyHealthStats(),

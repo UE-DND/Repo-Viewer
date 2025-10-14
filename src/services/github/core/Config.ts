@@ -6,7 +6,7 @@ export const GITHUB_REPO_OWNER = githubConfig.repoOwner;
 export const GITHUB_REPO_NAME = githubConfig.repoName;
 export const DEFAULT_BRANCH = githubConfig.repoBranch;
 
-let currentBranch = (githubConfig.repoBranch ?? '').trim() || DEFAULT_BRANCH;
+let currentBranch = githubConfig.repoBranch.trim() !== '' ? githubConfig.repoBranch.trim() : DEFAULT_BRANCH;
 
 // 运行时配置
 const accessConfig = getAccessConfig();
@@ -43,7 +43,7 @@ export function setCurrentBranch(branch: string): void {
 // 获取配置信息
 export function getConfig(): ConfigInfo {
   const githubConfig = getGithubConfig();
-  
+
   // 使用配置中的分支，保持与后端一致
   return {
     repoOwner: githubConfig.repoOwner,
@@ -55,7 +55,8 @@ export function getConfig(): ConfigInfo {
 // 获取API URL
 export function getApiUrl(path: string, branch?: string): string {
   const safePath = path.replace(/^\/+/, '');
-  const activeBranch = (branch ?? currentBranch ?? DEFAULT_BRANCH).trim() || DEFAULT_BRANCH;
+  const branchValue = branch ?? currentBranch;
+  const activeBranch = branchValue.trim() !== '' ? branchValue.trim() : DEFAULT_BRANCH;
   const encodedBranch = encodeURIComponent(activeBranch);
   const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${safePath}?ref=${encodedBranch}`;
 

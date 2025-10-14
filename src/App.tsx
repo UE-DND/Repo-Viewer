@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -6,6 +6,7 @@ import {
   Box,
   useTheme,
   useMediaQuery,
+  Collapse,
 } from "@mui/material";
 import { AppContextProvider } from "@/contexts/unified";
 import MainContent from "@/components/layout/MainContent";
@@ -22,6 +23,7 @@ const App = React.memo(() => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const titleRef = useRef<HTMLDivElement | null>(null);
+  const [showBreadcrumbInToolbar, setShowBreadcrumbInToolbar] = useState(false);
 
   // 处理标题点击事件
   const handleTitleClick = (event: React.MouseEvent<HTMLDivElement>): void => {
@@ -70,6 +72,42 @@ const App = React.memo(() => {
     }
   }, []);
 
+  useEffect(() => {
+    let rafId: number | null = null;
+    let lastScrollY = window.scrollY;
+    const scrollThreshold = 100;
+
+    const handleScroll = (): void => {
+      if (rafId !== null) {
+        return;
+      }
+
+      rafId = requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        const shouldShow = currentScrollY > scrollThreshold;
+        const wasShowing = lastScrollY > scrollThreshold;
+
+        if (shouldShow !== wasShowing) {
+          setShowBreadcrumbInToolbar(shouldShow);
+        }
+
+        lastScrollY = currentScrollY;
+        rafId = null;
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
+
   return (
     <>
       {/* 动态favicon管理器 */}
@@ -103,16 +141,16 @@ const App = React.memo(() => {
               display: "flex",
               flexDirection: "column",
               minHeight: "100vh",
-              overflow: "hidden",
             }}
             data-oid="x1__:v_"
           >
             <AppBar
-              position="static"
+              position="fixed"
               elevation={0}
               sx={{
                 borderBottom: "1px solid",
                 borderColor: "divider",
+                zIndex: theme.zIndex.appBar,
               }}
               data-oid="wo6wy.h"
             >
@@ -122,6 +160,7 @@ const App = React.memo(() => {
                     flexGrow: 1,
                     display: "flex",
                     alignItems: "center",
+                    gap: 2,
                   }}
                   data-oid="ldirzxg"
                 >
@@ -145,19 +184,48 @@ const App = React.memo(() => {
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
+                      flexShrink: 0,
                     }}
                     onClick={handleTitleClick}
                     data-oid="isr-jsd"
                   >
                     {SITE_TITLE}
                   </Typography>
+
+                  {/* 面包屑在顶部栏的容器 */}
+                  <Collapse
+                    in={showBreadcrumbInToolbar}
+                    orientation="horizontal"
+                    timeout={300}
+                    sx={{
+                      flexGrow: 1,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
+                      id="toolbar-breadcrumb-container"
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        minWidth: 0,
+                        flexGrow: 1,
+                      }}
+                    />
+                  </Collapse>
                 </Box>
-                <ToolbarButtons data-oid="enprsdk" />
+                <ToolbarButtons
+                  showBreadcrumbInToolbar={showBreadcrumbInToolbar}
+                  isSmallScreen={isSmallScreen}
+                  data-oid="enprsdk"
+                />
               </Toolbar>
             </AppBar>
 
+            {/* 占位符，用于为固定的AppBar留出空间 */}
+            <Toolbar />
+
             <FeatureErrorBoundary featureName="MainContent">
-              <MainContent data-oid="jgn58er" />
+              <MainContent showBreadcrumbInToolbar={showBreadcrumbInToolbar} data-oid="jgn58er" />
             </FeatureErrorBoundary>
 
             {/* 添加页脚组件 */}

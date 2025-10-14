@@ -1,4 +1,4 @@
-import { GitHubService } from "@/services/github/core/GitHubService";
+import { GitHubService } from "@/services/github/core/Service";
 import type { GitHubContent } from "@/types";
 import { logger } from "@/utils";
 

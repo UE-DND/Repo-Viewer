@@ -1,16 +1,16 @@
 import type { GitHubContent } from '@/types';
-import { GitHubAuth } from './GitHubAuth';
-import { GitHubSearchService } from './GitHubSearchService';
-import { GitHubPrefetchService } from './GitHubPrefetchService';
-import { GitHubStatsService } from './GitHubStatsService';
+import { GitHubAuth } from './Auth';
+import { GitHubSearchService } from './SearchService';
+import { GitHubPrefetchService } from './PrefetchService';
+import { GitHubStatsService } from './StatsService';
 import {
   getConfig,
   getCurrentBranch as getActiveBranch,
   setCurrentBranch as setActiveBranch,
   getDefaultBranch,
   type ConfigInfo
-} from './GitHubConfig';
-import { getBranches as fetchBranches } from './GitHubBranchService';
+} from './Config';
+import { getBranches as fetchBranches } from './BranchService';
 
 // GitHub服务，使用模块导出而非类
 
@@ -52,7 +52,7 @@ export async function getBranches(): Promise<string[]> {
 
 // 获取目录内容
 export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
-  const { getContents: getContentsImpl } = await import('./GitHubContentService');
+  const { getContents: getContentsImpl } = await import('./ContentService');
   const contents = await getContentsImpl(path, signal);
 
   // 预加载相关内容
@@ -65,7 +65,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
 
 // 获取文件内容
 export async function getFileContent(fileUrl: string): Promise<string> {
-  const { getFileContent: getFileContentImpl } = await import('./GitHubContentService');
+  const { getFileContent: getFileContentImpl } = await import('./ContentService');
   return getFileContentImpl(fileUrl);
 }
 
@@ -135,7 +135,7 @@ export async function getNetworkStats(): Promise<ReturnType<typeof GitHubStatsSe
 
 // 获取批处理器（用于调试）
 export async function getBatcher(): Promise<unknown> {
-  const { getBatcher: getBatcherImpl } = await import('./GitHubContentService');
+  const { getBatcher: getBatcherImpl } = await import('./ContentService');
   return getBatcherImpl();
 }
 
@@ -165,4 +165,4 @@ export const GitHubService = {
   getBatcher
 } as const;
 
-export type { ConfigInfo } from './GitHubConfig';
+export type { ConfigInfo } from './Config';

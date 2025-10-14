@@ -2,7 +2,7 @@ import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
-import { GitHubAuth } from './GitHubAuth';
+import { GitHubAuth } from './Auth';
 
 // GitHub预取服务，使用模块导出而非类
 const batcher = new RequestBatcher();
@@ -13,7 +13,7 @@ export function prefetchContents(path: string, priority: 'high' | 'medium' | 'lo
   const delay = priority === 'high' ? 0 : priority === 'medium' ? 100 : 200;
   setTimeout(() => {
     // 动态导入避免循环依赖
-    void import('./GitHubContentService').then(({ getContents }) => {
+    void import('./ContentService').then(({ getContents }) => {
       void getContents(path).catch(() => {
         // 忽略错误
       });
@@ -28,7 +28,7 @@ export async function batchPrefetchContents(paths: string[], maxConcurrency = 3)
   }
 
     // 动态导入避免循环依赖
-  const { getContents } = await import('./GitHubContentService');
+  const { getContents } = await import('./ContentService');
 
   // 限制并发数量防止网络资源过耗
   for (let i = 0; i < paths.length; i += maxConcurrency) {
@@ -166,7 +166,7 @@ async function prefetchFilesWithPriority(
     }
 
   // 动态导入避免循环依赖
-  const { getFileContent } = await import('./GitHubContentService');
+  const { getFileContent } = await import('./ContentService');
 
   // 使用增强的批处理器预加载
   const prefetchPromises = fileUrls.map(url =>
