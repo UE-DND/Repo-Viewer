@@ -465,8 +465,9 @@ export const useGitHubContent = (): {
     setReadmeLoaded(false);
     setError(null);
 
-    refreshContents();
-  }, [applyBranchState, refreshContents]);
+    // 切换分支时导航到根目录，避免路径不存在的问题
+    applyCurrentPath('', 'none');
+  }, [applyBranchState, applyCurrentPath]);
 
   return {
     currentPath,

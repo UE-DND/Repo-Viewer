@@ -169,18 +169,18 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
       if (segmentCount > 3) {
         setBreadcrumbsMaxItems(3);
       } else {
-        setBreadcrumbsMaxItems(0); // 少于或等于3个时不折叠
+        setBreadcrumbsMaxItems(0);
       }
       return;
     }
 
     // 桌面端逻辑
     if (segmentCount <= 3) {
-      setBreadcrumbsMaxItems(0); // 0表示不限制
+      setBreadcrumbsMaxItems(0);
       return;
     }
 
-    // 创建ResizeObserver监听容器尺寸变化
+    // 监听容器尺寸变化
     const resizeObserver = new ResizeObserver(() => {
       const container = breadcrumbsContainerRef.current;
 
@@ -188,7 +188,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
         return;
       }
 
-      // 如果路径太长（超过8段），则设置合理的限制
+      // 如果路径太长，则设置限制
       if (breadcrumbSegments.length > 8) {
         setBreadcrumbsMaxItems(8);
         return;

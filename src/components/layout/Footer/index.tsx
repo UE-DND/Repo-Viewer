@@ -1,11 +1,17 @@
 import React from "react";
-import { Box, Typography, Link, Container, useTheme } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Link,
+  Container,
+  useTheme,
+} from "@mui/material";
+import { BranchSwitcher } from "@/components/ui";
 
 declare const __APP_VERSION__: string;
 
 const Footer: React.FC = () => {
   const version = __APP_VERSION__;
-  const currentYear = new Date().getFullYear();
   const theme = useTheme();
 
   return (
@@ -32,7 +38,7 @@ const Footer: React.FC = () => {
           }}
           data-oid="uk5kgqo"
         >
-          {/* 左侧：萌ICP备徽标 */}
+          {/* 萌ICP备 */}
           <Box
             sx={{
               display: { xs: "none", sm: "flex" },
@@ -46,55 +52,31 @@ const Footer: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                lineHeight: 0,
-                display: "inline-flex",
-                alignItems: "center",
-                transition: "opacity 0.2s ease-in-out, transform 0.2s ease",
-                opacity: 0.9,
-                '&:hover': { opacity: 1, transform: 'translateY(-1px)' },
-              }}
-            >
-              <img
-                src="/moeicp.svg"
-                alt="萌ICP备 20251940号"
-                style={{ display: 'block', height: 20, width: 'auto' }}
-              />
-            </Link>
-          </Box>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              textAlign: { xs: "center", sm: "center" },
-              fontSize: "0.75rem",
-              order: { xs: 2, sm: 1 },
-            }}
-            data-oid="wukw05h"
-          >
-            <Link
-              color="inherit"
-              href="https://github.com/UE-DND/Repo-Viewer"
-              target="_blank"
-              rel="noopener"
-              sx={{
                 textDecoration: "none",
+                fontSize: "0.75rem",
+                color: "text.secondary",
                 transition: "color 0.2s ease-in-out",
                 "&:hover": {
                   color: theme.palette.primary.main,
-                  textDecoration: "none",
                 },
               }}
-              data-oid=".fmrdb9"
             >
-              Repo-Viewer
+              萌ICP备 20251940号
             </Link>
-            {version !== '' && (
-              <>
-                {" "}
-                · {version}
-              </>
-            )}
-          </Typography>
+          </Box>
+
+          {/* 分支切换器 */}
+          <Box
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            data-oid="wukw05h"
+          >
+            <BranchSwitcher showLabel={true} />
+          </Box>
+
           <Typography
             variant="caption"
             color="text.secondary"
@@ -105,25 +87,30 @@ const Footer: React.FC = () => {
             }}
             data-oid="78vii.:"
           >
-            © {currentYear}{" "}
+            Built with{" "}
             <Link
-              color="inherit"
-              href="https://github.com/UE-DND"
+              color="primary"
+              href="https://github.com/UE-DND/Repo-Viewer"
               target="_blank"
               rel="noopener"
               sx={{
                 textDecoration: "none",
                 transition: "color 0.2s ease-in-out",
                 "&:hover": {
-                  color: theme.palette.primary.main,
+                  color: theme.palette.primary.dark,
                   textDecoration: "none",
                 },
               }}
-              data-oid="k7qr9bw"
+              data-oid=".fmrdb9"
             >
-              UE-DND
-            </Link>{" "}
-            · Released under GNU AGPL 3.0
+              RepoViewer
+            </Link>
+            {version !== '' && (
+              <>
+                {" "}
+                {version}
+              </>
+            )}
           </Typography>
         </Box>
       </Container>

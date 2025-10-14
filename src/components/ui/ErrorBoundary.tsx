@@ -334,7 +334,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
                   size="small"
                   endIcon={<BugReport />}
                 >
-                  {showDetails ? '隐藏' : '显示'}技术详情
+                  {showDetails ? '隐藏' : '显示'}堆栈详情
                 </Button>
 
                 <Collapse in={showDetails}>
