@@ -61,7 +61,15 @@ function downloadReducer(state: DownloadState, action: DownloadAction): Download
   }
 }
 
-// 自定义Hook，管理下载功能
+/**
+ * 下载管理Hook
+ * 
+ * 提供文件和文件夹下载功能，支持进度追踪和取消操作。
+ * 文件夹下载会打包为ZIP格式。
+ * 
+ * @param onError - 错误回调函数
+ * @returns 包含下载状态和操作函数的对象
+ */
 export const useDownload = (onError: (message: string) => void): {
   downloadState: DownloadState;
   downloadFile: (item: GitHubContent) => Promise<void>;

@@ -26,6 +26,12 @@ import { MarkdownLink } from "./components/MarkdownLink";
 import { logger } from "@/utils";
 import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 
+/**
+ * Markdown预览组件
+ * 
+ * 渲染Markdown内容，支持GFM语法、LaTeX公式、代码高亮等。
+ * 包含图片代理处理、懒加载和主题切换优化。
+ */
 const MarkdownPreview = memo<MarkdownPreviewProps>(
   ({
     readmeContent,

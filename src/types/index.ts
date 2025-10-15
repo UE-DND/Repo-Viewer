@@ -2,14 +2,21 @@ import type { OptionsObject as NotistackOptionsObject } from 'notistack';
 
 export * from './errors';
 
-// Office文件类型枚举
+/**
+ * Office文件类型枚举
+ */
 export enum OfficeFileType {
+  /** Word文档 */
   WORD = "word",
+  /** Excel表格 */
   EXCEL = "excel",
+  /** PowerPoint演示文稿 */
   PPT = "ppt",
 }
 
-// 定义GitHub仓库内容项的接口
+/**
+ * GitHub仓库内容项接口
+ */
 export interface GitHubContent {
   name: string;
   path: string;
@@ -27,23 +34,35 @@ export interface GitHubContent {
   };
 }
 
-// 定义面包屑段接口
+/**
+ * 面包屑导航段接口
+ */
 export interface BreadcrumbSegment {
+  /** 显示名称 */
   name: string;
+  /** 路径 */
   path: string;
 }
 
-// 定义通知组件扩展接口
+/**
+ * 通知组件扩展选项接口
+ */
 export interface OptionsObject extends NotistackOptionsObject {
+  /** 是否隐藏关闭按钮 */
   hideCloseButton?: boolean;
 }
 
-// 定义进度通知接口
+/**
+ * 进度通知选项接口
+ */
 export interface ProgressSnackbarOptions extends OptionsObject {
+  /** 进度百分比 */
   progress?: number;
 }
 
-// 定义预览状态接口
+/**
+ * 文件预览状态接口
+ */
 export interface PreviewState {
   // Markdown预览 (仅用于README文件)
   previewContent: string | null;
@@ -67,7 +86,9 @@ export interface PreviewState {
   officeFileType: OfficeFileType | null;
 }
 
-// 定义预览操作类型
+/**
+ * 预览操作联合类型
+ */
 export type PreviewAction =
   | { type: 'RESET_PREVIEW' }
   // Markdown预览操作 (仅用于README文件)
@@ -87,7 +108,9 @@ export type PreviewAction =
   | { type: 'SET_OFFICE_ERROR', error: string | null }
   | { type: 'SET_OFFICE_FULLSCREEN', fullscreen: boolean };
 
-// 定义下载状态接口
+/**
+ * 下载状态接口
+ */
 export interface DownloadState {
   downloadingPath: string | null;
   downloadingFolderPath: string | null;
@@ -97,7 +120,9 @@ export interface DownloadState {
   isCancelled: boolean;
 }
 
-// 定义下载操作类型
+/**
+ * 下载操作联合类型
+ */
 export type DownloadAction =
   | { type: 'SET_DOWNLOADING_FILE', path: string | null }
   | { type: 'SET_DOWNLOADING_FOLDER', path: string | null }
@@ -107,7 +132,9 @@ export type DownloadAction =
   | { type: 'CANCEL_DOWNLOAD' }
   | { type: 'RESET_DOWNLOAD_STATE' };
 
-// 定义应用状态接口
+/**
+ * 应用状态接口
+ */
 export interface AppState {
   preview: PreviewState;
   download: DownloadState;

@@ -98,6 +98,16 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
   }
 }
 
+/**
+ * 文件预览Hook
+ * 
+ * 提供文件预览功能，支持Markdown、图片、PDF和Office文档的预览。
+ * 自动处理URL参数和浏览器历史导航。
+ * 
+ * @param onError - 错误回调函数
+ * @param findFileItemByPath - 根据路径查找文件的函数
+ * @returns 文件预览状态和操作函数
+ */
 export const useFilePreview = (
   onError: (message: string) => void,
   findFileItemByPath?: (path: string) => GitHubContent | undefined

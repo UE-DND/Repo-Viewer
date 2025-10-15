@@ -1,9 +1,15 @@
 import { logger } from '../logging/logger';
 
-// 创建全局事件发布器
+/**
+ * 事件映射类型
+ */
 type EventMap = Record<string, ((data: unknown) => void)[]>;
 
-// 事件发射器
+/**
+ * 全局事件发射器
+ * 
+ * 提供发布/订阅模式的事件系统，支持事件分发和订阅管理。
+ */
 export const eventEmitter = {
   events: {} as EventMap,
   dispatch(event: string, data: unknown): void {

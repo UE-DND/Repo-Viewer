@@ -109,24 +109,58 @@ export type ConfigResponse = z.infer<typeof ConfigResponseSchema>;
 export type TokenStatusResponse = z.infer<typeof TokenStatusResponseSchema>;
 export type ApiErrorResponse = z.infer<typeof ApiErrorResponseSchema>;
 
-// 验证工具函数
+/**
+ * 验证GitHub内容响应
+ * 
+ * @param data - 待验证的数据
+ * @returns 验证后的GitHubContentsResponse
+ * @throws 当数据格式不符合schema时抛出错误
+ */
 export function validateGitHubContentsResponse(data: unknown): GitHubContentsResponse {
   return GitHubContentsResponseSchema.parse(data);
 }
 
+/**
+ * 验证GitHub搜索响应
+ * 
+ * @param data - 待验证的数据
+ * @returns 验证后的GitHubSearchResponse
+ * @throws 当数据格式不符合schema时抛出错误
+ */
 export function validateGitHubSearchResponse(data: unknown): GitHubSearchResponse {
   return GitHubSearchResponseSchema.parse(data);
 }
 
+/**
+ * 验证配置响应
+ * 
+ * @param data - 待验证的数据
+ * @returns 验证后的ConfigResponse
+ * @throws 当数据格式不符合schema时抛出错误
+ */
 export function validateConfigResponse(data: unknown): ConfigResponse {
   return ConfigResponseSchema.parse(data);
 }
 
+/**
+ * 验证Token状态响应
+ * 
+ * @param data - 待验证的数据
+ * @returns 验证后的TokenStatusResponse
+ * @throws 当数据格式不符合schema时抛出错误
+ */
 export function validateTokenStatusResponse(data: unknown): TokenStatusResponse {
   return TokenStatusResponseSchema.parse(data);
 }
 
-// 安全验证函数（不抛出异常）
+/**
+ * 安全验证GitHub内容响应
+ * 
+ * 不抛出异常的验证函数，返回包含成功状态的对象。
+ * 
+ * @param data - 待验证的数据
+ * @returns 验证结果对象（成功或失败）
+ */
 export function safeValidateGitHubContentsResponse(data: unknown): {
   success: true;
   data: GitHubContentsResponse;
@@ -145,6 +179,14 @@ export function safeValidateGitHubContentsResponse(data: unknown): {
   }
 }
 
+/**
+ * 安全验证GitHub搜索响应
+ * 
+ * 不抛出异常的验证函数，返回包含成功状态的对象。
+ * 
+ * @param data - 待验证的数据
+ * @returns 验证结果对象（成功或失败）
+ */
 export function safeValidateGitHubSearchResponse(data: unknown): {
   success: true;
   data: GitHubSearchResponse;

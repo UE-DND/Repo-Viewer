@@ -18,6 +18,9 @@ import type { FC, ReactNode, RefObject } from "react";
 import type { NavigationDirection } from "@/contexts/unified";
 import { g3Styles } from "@/utils";
 
+/**
+ * 面包屑导航组件属性接口
+ */
 interface BreadcrumbNavigationProps {
   breadcrumbSegments: { name: string; path: string }[];
   handleBreadcrumbClick: (
@@ -30,6 +33,11 @@ interface BreadcrumbNavigationProps {
   compact?: boolean; // 紧凑模式，用于顶部栏
 }
 
+/**
+ * 面包屑导航组件
+ * 
+ * 显示当前路径的层级导航，支持点击跳转和返回上级功能。
+ */
 const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
     breadcrumbSegments,
     handleBreadcrumbClick,

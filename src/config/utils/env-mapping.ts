@@ -74,6 +74,16 @@ export function applyEnvMappingForVite(
   }
 }
 
+/**
+ * 解析环境变量（支持映射）
+ * 
+ * 查找环境变量值，支持Vite前缀映射和后备值。
+ * 
+ * @param env - 环境变量记录
+ * @param plainKey - 无前缀的键名
+ * @param fallback - 后备值
+ * @returns 解析后的环境变量值
+ */
 export const resolveEnvWithMapping = (
   env: EnvLookupRecord,
   plainKey: string,

@@ -222,13 +222,24 @@ const md3Themes = [
   }
 ];
 
-// 获取基于日期的主题索引
+/**
+ * 获取基于日期的主题索引
+ * 
+ * 根据当前日期计算主题索引，每天使用不同的主题。
+ * 
+ * @returns 主题索引
+ */
 const getThemeIndexByDate = (): number => {
   const today = new Date();
   const dayCount = Math.floor(today.getTime() / (24 * 60 * 60 * 1000));
   return dayCount % md3Themes.length;
 };
 
+/**
+ * 获取当前主题配置
+ * 
+ * @returns 当前主题配置对象
+ */
 const getCurrentTheme = (): (typeof md3Themes)[number] => {
   const index = getThemeIndexByDate();
   const theme = md3Themes[index];
@@ -278,11 +289,23 @@ const darkPalette = {
   },
 };
 
-// 导出当前主题名称，用于显示
+/**
+ * 获取当前主题名称
+ * 
+ * @returns 当前主题的显示名称
+ */
 export const getCurrentThemeName = (): string => {
   return getCurrentTheme().name;
 };
 
+/**
+ * 创建Material You主题
+ * 
+ * 根据指定的模式（明/暗）创建完整的Material-UI主题配置。
+ * 
+ * @param mode - 主题模式（'light'或'dark'）
+ * @returns Material-UI主题对象
+ */
 export const createMaterialYouTheme = (mode: PaletteMode): Theme => {
   const themeConfig = {
     palette: {

@@ -5,6 +5,12 @@ import { logger } from "@/utils";
 
 /**
  * 检测LaTeX公式数量
+ * 
+ * 统计页面中的LaTeX公式数量，用于性能优化决策。
+ * 
+ * @param markdownRef - Markdown容器的引用
+ * @param setLatexCount - 设置公式数量的函数
+ * @returns void
  */
 export const checkLatexCount = (
   markdownRef: React.RefObject<HTMLDivElement | null>,
@@ -24,11 +30,21 @@ export const checkLatexCount = (
   }, 500);
 };
 
+/**
+ * LaTeX代码块属性接口
+ */
 interface LatexCodeProps extends ClassAttributes<HTMLElement>, HTMLAttributes<HTMLElement> {
   inline?: boolean;
   className?: string | undefined;
 }
 
+/**
+ * 创建LaTeX代码处理器
+ * 
+ * 返回处理Markdown中代码块的函数，支持LaTeX公式渲染和语法高亮。
+ * 
+ * @returns 代码块处理函数
+ */
 export const createLatexCodeHandler = (): (props: PropsWithChildren<LatexCodeProps>) => ReactElement => {
   return ({ inline = false, className, children, ...rest }: PropsWithChildren<LatexCodeProps>) => {
     const normalizedClassName = typeof className === "string" ? className : "";

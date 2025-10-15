@@ -18,7 +18,17 @@ import {
 // GitHub搜索服务，使用模块导出
 const batcher = new RequestBatcher();
 
-// GitHub API搜索
+/**
+ * 使用GitHub API进行代码搜索
+ * 
+ * 通过GitHub Code Search API搜索仓库中的文件，支持路径和文件类型过滤。
+ * 
+ * @param searchTerm - 搜索关键词
+ * @param currentPath - 限制搜索的路径范围，默认为空（搜索整个仓库）
+ * @param fileTypeFilter - 文件扩展名过滤器，例如'ts'、'md'
+ * @returns Promise，解析为匹配的GitHub内容数组
+ * @throws 当API请求失败或响应格式错误时抛出错误
+ */
 export async function searchWithGitHubApi(
   searchTerm: string,
   currentPath = '',
@@ -97,7 +107,19 @@ export async function searchWithGitHubApi(
     }
 }
 
-// 搜索文件
+/**
+ * 在本地内容中搜索文件
+ * 
+ * 递归搜索指定路径下的文件，支持文件名模糊匹配和文件类型过滤。
+ * 使用并行搜索策略提升性能。
+ * 
+ * @param searchTerm - 搜索关键词（匹配文件名）
+ * @param currentPath - 起始搜索路径，默认为空（从根目录开始）
+ * @param recursive - 是否递归搜索子目录，默认为false
+ * @param fileTypeFilter - 文件扩展名过滤器
+ * @returns Promise，解析为匹配的文件数组
+ * @throws 当获取目录内容失败时抛出错误
+ */
 export async function searchFiles(
   searchTerm: string,
   currentPath = '',
@@ -176,7 +198,13 @@ export async function searchFiles(
     }
 }
 
-// 为了向后兼容，导出一个包含所有函数的对象
+/**
+ * GitHub搜索服务对象
+ * 
+ * 为了向后兼容性，导出包含所有搜索相关函数的常量对象。
+ * 
+ * @deprecated 推荐直接使用独立的导出函数
+ */
 export const GitHubSearchService = {
   searchWithGitHubApi,
   searchFiles

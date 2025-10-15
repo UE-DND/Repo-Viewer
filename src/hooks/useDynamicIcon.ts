@@ -14,14 +14,24 @@ const themeIconMap: Readonly<Record<string, string>> = {
   '青色': '/icons/icon-cyan.svg'
 };
 
+/**
+ * 动态图标Hook返回值接口
+ */
 interface DynamicIconHook {
+  /** 当前图标路径 */
   iconPath: string;
+  /** 更新图标 */
   updateIcon: () => void;
+  /** 获取当前主题图标路径 */
   getCurrentThemeIconPath: () => string;
 }
 
 /**
- * 动态图标Hook - 根据当前主题返回对应的图标路径
+ * 动态图标Hook
+ * 
+ * 根据当前主题返回对应的图标路径，自动监听主题变化。
+ * 
+ * @returns 动态图标状态和操作函数
  */
 export const useDynamicIcon = (): DynamicIconHook => {
   const [iconPath, setIconPath] = useState<string>(DEFAULT_ICON);
@@ -97,7 +107,11 @@ export const useDynamicIcon = (): DynamicIconHook => {
 };
 
 /**
- * 动态更新网站favicon
+ * Favicon更新Hook
+ * 
+ * 自动根据主题变化更新网站的favicon图标。
+ * 
+ * @returns 当前favicon路径
  */
 export const useFaviconUpdater = (): string => {
   const { iconPath } = useDynamicIcon();

@@ -269,7 +269,16 @@ async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T
   }
 }
 
-// API处理函数
+/**
+ * GitHub API请求处理函数
+ * 
+ * 统一处理所有GitHub相关的API请求，包括获取内容、搜索、分支列表等。
+ * 支持token管理和自动轮换。
+ * 
+ * @param req - Vercel请求对象
+ * @param res - Vercel响应对象
+ * @returns Promise，处理完成后解析
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
     const { action, path, url, branch, page, per_page } = req.query;

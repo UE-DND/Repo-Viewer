@@ -17,6 +17,11 @@ import {
 import type { ImageToolbarProps } from './types';
 import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 
+/**
+ * 图片工具栏组件
+ * 
+ * 提供图片预览的控制功能，包括缩放、旋转、全屏和关闭。
+ */
 const ImageToolbar: React.FC<ImageToolbarProps> = ({
   error,
   scale,

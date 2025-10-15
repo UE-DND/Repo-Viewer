@@ -26,10 +26,19 @@ import EmptyState from "@/components/ui/EmptyState";
 import type { NavigationDirection } from "@/contexts/unified";
 import type { BreadcrumbSegment, GitHubContent } from "@/types";
 
+/**
+ * 主内容区组件属性接口
+ */
 interface MainContentProps {
   showBreadcrumbInToolbar: boolean;
 }
 
+/**
+ * 主内容区组件
+ * 
+ * 应用的主要内容区域，包含面包屑导航、文件列表、预览功能等。
+ * 自动处理URL参数和内容加载。
+ */
 const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) => {
   // 获取主题和响应式布局
   const theme = useTheme();

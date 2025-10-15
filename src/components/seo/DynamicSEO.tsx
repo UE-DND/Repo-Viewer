@@ -2,6 +2,9 @@ import { useEffect } from "react";
 import { useSEO } from "@/contexts/SEOContext/useSEO";
 import SEO from "./SEO";
 
+/**
+ * 动态SEO组件属性接口
+ */
 interface DynamicSEOProps {
   title?: string;
   description?: string;

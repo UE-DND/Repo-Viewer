@@ -26,6 +26,9 @@ const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 const HIDE_MAIN_FOLDER_DOWNLOAD = featuresConfig.hideDownload.enabled;
 const HIDE_DOWNLOAD_FOLDERS = featuresConfig.hideDownload.hiddenFolders;
 
+/**
+ * 文件列表项组件属性接口
+ */
 interface FileListItemProps {
   item: GitHubContent;
   downloadingPath: string | null;
@@ -39,6 +42,12 @@ interface FileListItemProps {
   contents?: GitHubContent[];
 }
 
+/**
+ * 文件列表项组件
+ * 
+ * 显示单个文件或文件夹，包含图标、名称和下载功能。
+ * 支持下载进度显示和取消操作。
+ */
 const FileListItem = memo<FileListItemProps>(
   ({
     item,

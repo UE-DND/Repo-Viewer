@@ -28,7 +28,14 @@ interface StoredElement {
 let storedElements: StoredElement[] = [];
 let isThemeChanging = false;
 
-// 彻底移除所有LaTeX元素
+/**
+ * 移除所有LaTeX元素
+ * 
+ * 在主题切换时临时移除LaTeX元素以优化性能，
+ * 用占位符保持布局稳定性。
+ * 
+ * @returns void
+ */
 export const removeLatexElements = (): void => {
   if (isThemeChanging) {
     return;
@@ -76,7 +83,13 @@ export const removeLatexElements = (): void => {
   }
 };
 
-// 分批恢复LaTeX元素
+/**
+ * 分批恢复LaTeX元素
+ * 
+ * 在主题切换完成后，分批恢复LaTeX元素以避免阻塞主线程。
+ * 
+ * @returns void
+ */
 export const restoreLatexElements = (): void => {
   if (!isThemeChanging || storedElements.length === 0) {
     return;
@@ -133,27 +146,51 @@ export const restoreLatexElements = (): void => {
   }, 100);
 };
 
-// 隐藏所有LaTeX元素，减少主题切换时的卡顿 (保留为后备方案)
+/**
+ * 隐藏所有LaTeX元素
+ * 
+ * 后备方案，调用removeLatexElements实现。
+ * 
+ * @returns void
+ */
 export const hideLatexElements = (): void => {
   // 使用更激进的方式完全移除元素
   removeLatexElements();
 };
 
-// 显示所有LaTeX元素 (保留为后备方案)
+/**
+ * 显示所有LaTeX元素
+ * 
+ * 后备方案，调用restoreLatexElements实现。
+ * 
+ * @returns void
+ */
 export const showLatexElements = (): void => {
   // 使用批量恢复方法
   restoreLatexElements();
 };
 
-// 优化版的批量处理函数
+/**
+ * 防抖版的LaTeX元素恢复函数
+ */
 export const debouncedShowLatexElements = debounce(restoreLatexElements, 100);
 
-// 检测页面中LaTeX元素的数量
+/**
+ * 计算页面中LaTeX元素的数量
+ * 
+ * @returns LaTeX元素总数
+ */
 export const countLatexElements = (): number => {
   return document.querySelectorAll('.katex-display, .katex:not(.katex-display .katex)').length;
 };
 
-// 添加必要的CSS样式
+/**
+ * 添加LaTeX优化器样式
+ * 
+ * 在文档中注入优化LaTeX渲染所需的CSS样式。
+ * 
+ * @returns void
+ */
 const addLatexOptimizerStyles = (): void => {
   // 如果样式已存在，则不重复添加
   if (document.getElementById('latex-optimizer-styles') !== null) {
@@ -179,7 +216,13 @@ const addLatexOptimizerStyles = (): void => {
   document.head.appendChild(styleElement);
 };
 
-// 监听主题变化并优化LaTeX渲染
+/**
+ * 设置LaTeX优化
+ * 
+ * 设置主题变化监听器，自动处理LaTeX元素的移除和恢复。
+ * 
+ * @returns 清理函数
+ */
 export const setupLatexOptimization = (): () => void => {
   // 添加必要的样式
   addLatexOptimizerStyles();

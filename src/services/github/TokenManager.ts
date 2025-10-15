@@ -13,6 +13,12 @@ const isDevEnvironment = import.meta.env.DEV;
 // 模式设置
 const USE_TOKEN_MODE = isTokenMode();
 
+/**
+ * GitHub Token管理器类
+ * 
+ * 管理多个GitHub Personal Access Token的加载、轮换和失败处理。
+ * 支持从环境变量和localStorage加载token，并提供自动轮换机制以避免rate limit。
+ */
 export class GitHubTokenManager {
   private tokens: string[] = [];
   private currentIndex = 0;
@@ -30,6 +36,11 @@ export class GitHubTokenManager {
     }
   }
 
+  /**
+   * 从环境变量和localStorage加载GitHub Token
+   * 
+   * @returns void
+   */
   public loadTokensFromEnv(): void {
     this.tokens = [];
 
@@ -63,6 +74,11 @@ export class GitHubTokenManager {
     }
   }
 
+  /**
+   * 获取当前使用的Token
+   * 
+   * @returns 当前Token字符串，如果没有可用token则返回空字符串
+   */
   public getCurrentToken(): string {
     if (this.tokens.length === 0) {
       return '';
@@ -70,6 +86,13 @@ export class GitHubTokenManager {
     return this.tokens[this.currentIndex] ?? '';
   }
 
+  /**
+   * 切换到下一个可用Token
+   * 
+   * 自动跳过已标记为失败的token，如果所有token都失败则清除失败记录并重新开始。
+   * 
+   * @returns 下一个可用的Token字符串
+   */
   public getNextToken(): string {
     if (this.tokens.length === 0) {
       return '';
@@ -96,6 +119,14 @@ export class GitHubTokenManager {
     return this.tokens[0] ?? '';
   }
 
+  /**
+   * 标记Token已被使用
+   * 
+   * 记录token使用次数，当使用次数超过30次时自动轮换到下一个token。
+   * 
+   * @param token - 已使用的Token字符串
+   * @returns void
+   */
   public markTokenUsed(token: string): void {
     const count = this.usageCount.get(token) ?? 0;
     this.usageCount.set(token, count + 1);
@@ -106,23 +137,53 @@ export class GitHubTokenManager {
     }
   }
 
+  /**
+   * 标记Token失败
+   * 
+   * 将token添加到失败列表并切换到下一个可用token。
+   * 
+   * @param token - 失败的Token字符串
+   * @returns 下一个可用的Token字符串
+   */
   public markTokenFailed(token: string): string {
     this.failedTokens.add(token);
     return this.getNextToken();
   }
 
+  /**
+   * 检查是否有可用Token
+   * 
+   * @returns 如果至少有一个token则返回true
+   */
   public hasTokens(): boolean {
     return this.tokens.length > 0;
   }
 
+  /**
+   * 获取Token总数
+   * 
+   * @returns 已加载的token数量
+   */
   public getTokenCount(): number {
     return this.tokens.length;
   }
 
+  /**
+   * 轮换到下一个Token
+   * 
+   * @returns 下一个可用的Token字符串
+   */
   public rotateToNextToken(): string {
     return this.getNextToken();
   }
 
+  /**
+   * 标记当前Token失败
+   * 
+   * 将当前正在使用的token标记为失败状态。
+   * 
+   * @returns void
+   */
   public markCurrentTokenFailed(): void {
     const currentToken = this.getCurrentToken();
     if (currentToken !== '') {
@@ -130,6 +191,14 @@ export class GitHubTokenManager {
     }
   }
 
+  /**
+   * 设置本地Token
+   * 
+   * 在localStorage中存储或删除GitHub PAT，并重新加载所有token。
+   * 
+   * @param token - Token字符串，空字符串表示删除
+   * @returns void
+   */
   public setLocalToken(token: string): void {
     if (typeof localStorage !== 'undefined') {
       if (token === '' || token.trim().length === 0) {
@@ -143,6 +212,13 @@ export class GitHubTokenManager {
     }
   }
 
+  /**
+   * 获取GitHub PAT用于API请求
+   * 
+   * 返回当前token并自动记录使用次数。
+   * 
+   * @returns GitHub Personal Access Token字符串
+   */
   public getGitHubPAT(): string {
     const token = this.getCurrentToken();
     if (token !== '') {
@@ -151,6 +227,14 @@ export class GitHubTokenManager {
     return token;
   }
 
+  /**
+   * 处理API错误响应
+   * 
+   * 根据HTTP状态码自动处理token轮换，支持401/403/429/400等错误。
+   * 
+   * @param error - API响应的Response对象
+   * @returns void
+   */
   public handleApiError(error: Response): void {
     if (error.status === 401 || error.status === 403) {
       const currentToken = this.getCurrentToken();

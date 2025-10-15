@@ -3,8 +3,7 @@ import { logger } from '../logging/logger';
 import axios from 'axios';
 
 /**
- * 从服务器获取GitHub Token状态
- * 使用新添加的API接口
+ * Token状态响应接口
  */
 interface TokenStatusResponse {
   status: string;
@@ -14,13 +13,27 @@ interface TokenStatusResponse {
   };
 }
 
+/**
+ * Token状态接口
+ */
 interface TokenStatus {
+  /** 是否有可用token */
   hasToken: boolean;
+  /** token数量 */
   tokenCount: number;
+  /** 是否为服务器端token */
   isServerToken: boolean;
+  /** 错误信息 */
   error?: unknown;
 }
 
+/**
+ * 从服务器获取GitHub Token状态
+ * 
+ * 调用服务端API接口查询token配置情况。
+ * 
+ * @returns Promise，解析为Token状态对象
+ */
 export async function fetchServerTokenStatus(): Promise<TokenStatus> {
   try {
     // 调用新添加的服务端API接口
@@ -45,7 +58,10 @@ export async function fetchServerTokenStatus(): Promise<TokenStatus> {
 
 /**
  * 检查GitHub Token状态
- * 在控制台输出token相关信息
+ * 
+ * 检查客户端和服务端的token配置情况，并在控制台输出详细信息。
+ * 
+ * @returns Promise，解析为包含客户端和服务端token状态的对象
  */
 export async function checkTokenStatus(): Promise<{
   hasToken: boolean;
@@ -107,7 +123,10 @@ export async function checkTokenStatus(): Promise<{
 
 /**
  * 测试GitHub API搜索功能
- * 用于测试配置的token是否有效
+ * 
+ * 执行测试搜索以验证配置的token是否有效。
+ * 
+ * @returns Promise，解析为测试结果（成功返回true，失败返回false）
  */
 export async function testApiSearch(): Promise<boolean> {
   try {

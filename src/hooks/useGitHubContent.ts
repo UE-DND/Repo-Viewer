@@ -19,7 +19,14 @@ const GITHUB_REPO_OWNER = githubConfig.repoOwner;
 const GITHUB_REPO_NAME = githubConfig.repoName;
 const DEFAULT_BRANCH = GitHubService.getDefaultBranch();
 
-// 管理GitHub内容获取
+/**
+ * GitHub内容管理Hook
+ * 
+ * 管理GitHub仓库内容的获取、缓存和状态，支持分支切换、路径导航和README预览。
+ * 自动处理URL参数和浏览器历史导航。
+ * 
+ * @returns GitHub内容状态和操作函数
+ */
 export const useGitHubContent = (): {
   currentPath: string;
   contents: GitHubContent[];

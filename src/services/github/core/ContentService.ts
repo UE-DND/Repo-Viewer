@@ -20,11 +20,13 @@ import {
 const ROOT_PATH_KEY = '__root__';
 
 /**
- * 字符串哈希函数 cyrb53 算法
+ * 字符串哈希函数
+ * 
+ * 使用 cyrb53 算法生成字符串的哈希值，用于缓存键生成和版本标识。
  * 
  * @param str - 要哈希的字符串
- * @param seed - 哈希种子（可选）
- * @returns 16进制哈希字符串
+ * @param seed - 哈希种子，默认为0
+ * @returns 16进制格式的哈希字符串
  */
 function simpleHash(str: string, seed = 0): string {
   let h1 = 0xdeadbeef ^ seed;
@@ -171,7 +173,17 @@ function setFallbackCache(key: string, data: unknown): void {
   });
 }
 
-// 获取目录内容
+/**
+ * 获取GitHub仓库目录内容
+ * 
+ * 从GitHub API获取指定路径的目录内容，支持缓存和降级策略。
+ * 优先使用主缓存系统（IndexedDB/LocalStorage），失败时使用内存降级缓存。
+ * 
+ * @param path - 目录路径，空字符串表示根目录
+ * @param signal - 可选的中断信号，用于取消请求
+ * @returns Promise，解析为GitHub内容数组
+ * @throws 当API请求失败或响应格式错误时抛出错误
+ */
 export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
   await ensureCacheInitialized();
 
@@ -275,7 +287,16 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
     }
 }
 
-// 获取文件内容
+/**
+ * 获取文件内容
+ * 
+ * 从GitHub获取指定URL的文件内容，支持代理和缓存。
+ * 根据环境自动选择使用服务端API或直接请求GitHub。
+ * 
+ * @param fileUrl - 文件的URL地址
+ * @returns Promise，解析为文件的文本内容
+ * @throws 当请求失败或响应状态码不是200时抛出错误
+ */
 export async function getFileContent(fileUrl: string): Promise<string> {
   await ensureCacheInitialized();
 
@@ -387,17 +408,35 @@ function generateFileVersion(fileUrl: string, content: string): string {
   return `fv_${hash}`;
 }
 
-// 获取批处理器（用于调试）
+/**
+ * 获取请求批处理器实例
+ * 
+ * 主要用于调试和测试目的。
+ * 
+ * @returns 请求批处理器实例
+ */
 export function getBatcher(): RequestBatcher {
   return batcher;
 }
 
-// 清除批处理器缓存
+/**
+ * 清除批处理器缓存
+ * 
+ * 清除所有缓存的请求结果，强制下次请求重新获取数据。
+ * 
+ * @returns void
+ */
 export function clearBatcherCache(): void {
   batcher.clearCache();
 }
 
-// 为了向后兼容，导出一个包含所有函数的对象
+/**
+ * GitHub内容服务对象
+ * 
+ * 为了向后兼容性，导出包含所有内容相关函数的常量对象。
+ * 
+ * @deprecated 推荐直接使用独立的导出函数
+ */
 export const GitHubContentService = {
   getContents,
   getFileContent,

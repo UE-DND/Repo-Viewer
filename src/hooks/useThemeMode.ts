@@ -30,10 +30,22 @@ const shouldRefreshThemeColor = (): boolean => {
   return false;
 };
 
+/**
+ * 主题模式Hook
+ * 
+ * 管理应用的明暗主题模式，支持手动切换和跟随系统主题。
+ * 包含主题切换动画和LaTeX元素优化处理。
+ * 
+ * @returns 主题模式状态和切换函数
+ */
 export const useThemeMode = (): {
+  /** 切换明暗模式 */
   toggleColorMode: () => void;
+  /** 切换自动模式 */
   toggleAutoMode: () => void;
+  /** 当前主题模式 */
   mode: PaletteMode;
+  /** 是否为自动模式 */
   isAutoMode: boolean;
 } => {
   const [mode, setMode] = useState<PaletteMode>(() => {

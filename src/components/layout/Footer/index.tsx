@@ -10,6 +10,11 @@ import { BranchSwitcher } from "@/components/ui";
 
 declare const __APP_VERSION__: string;
 
+/**
+ * 页脚组件
+ * 
+ * 显示应用底部信息，包括分支切换器、版权信息和ICP备案。
+ */
 const Footer: React.FC = () => {
   const version = __APP_VERSION__;
   const theme = useTheme();

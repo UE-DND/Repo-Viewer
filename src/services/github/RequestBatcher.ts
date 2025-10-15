@@ -1,5 +1,8 @@
 import { logger } from '@/utils';
 
+/**
+ * 批处理请求接口
+ */
 interface BatchedRequest<T = unknown> {
   resolve: (value: T) => void;
   reject: (reason: unknown) => void;
@@ -8,6 +11,12 @@ interface BatchedRequest<T = unknown> {
   retryCount: number;
 }
 
+/**
+ * 请求批处理器类
+ * 
+ * 管理和优化HTTP请求，提供请求合并、去重、优先级排序和重试机制。
+ * 自动批处理相同的请求，减少网络开销并提升性能。
+ */
 export class RequestBatcher {
   private readonly batchedRequests = new Map<string, BatchedRequest[]>();
 
@@ -60,7 +69,13 @@ export class RequestBatcher {
     return `${method}:${key}:${headerStr}`;
   }
 
-  // 销毁批处理器
+  /**
+   * 销毁批处理器
+   * 
+   * 清理所有定时器和缓存，释放资源。
+   * 
+   * @returns void
+   */
   public destroy(): void {
     if (this.cleanupInterval !== 0 && !isNaN(this.cleanupInterval)) {
       clearInterval(this.cleanupInterval);
@@ -73,7 +88,20 @@ export class RequestBatcher {
     this.requestFingerprints.clear();
   }
 
-  // 将请求放入批处理队列
+  /**
+   * 将请求加入批处理队列
+   * 
+   * 支持请求去重、优先级管理和智能合并相同请求。
+   * 
+   * @param key - 请求的唯一标识符（通常是URL）
+   * @param executeRequest - 执行实际请求的函数
+   * @param options - 可选配置项
+   * @param options.priority - 请求优先级，默认为'medium'
+   * @param options.method - HTTP方法，默认为'GET'
+   * @param options.headers - 请求头
+   * @param options.skipDeduplication - 是否跳过去重检查
+   * @returns Promise，解析为请求结果
+   */
   public enqueue<T>(
     key: string,
     executeRequest: () => Promise<T>,
@@ -231,7 +259,11 @@ export class RequestBatcher {
     // 已经在enqueue中处理了所有队列
   }
 
-  // 获取批处理器状态
+  /**
+   * 获取批处理器统计信息
+   * 
+   * @returns 包含待处理请求数、批处理请求数、缓存大小和命中次数的对象
+   */
   public getStats(): { pendingRequests: number; batchedRequests: number; fingerprintCache: number; fingerprintHits: number } {
     return {
       pendingRequests: this.pendingRequests.size,
@@ -242,13 +274,25 @@ export class RequestBatcher {
     };
   }
 
-  // 清除所有缓存
+  /**
+   * 清除所有缓存
+   * 
+   * 清除请求指纹缓存，强制下次请求重新获取数据。
+   * 
+   * @returns void
+   */
   public clearCache(): void {
     this.requestFingerprints.clear();
     logger.debug('已清除请求指纹缓存');
   }
 
-  // 强制取消所有等待的请求
+  /**
+   * 强制取消所有等待的请求
+   * 
+   * 取消所有在队列中等待的请求，清空批处理队列。
+   * 
+   * @returns void
+   */
   public cancelAllRequests(): void {
     for (const [, queue] of this.batchedRequests.entries()) {
       queue.forEach(request => {

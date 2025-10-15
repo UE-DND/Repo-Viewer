@@ -5,12 +5,19 @@ import { getSiteConfig, getGithubConfig } from '../config';
  * 配置信息接口
  */
 export interface ConfigInfo {
+  /** 网站标题 */
   siteTitle: string;
+  /** 仓库所有者 */
   repoOwner: string;
+  /** 仓库名称 */
   repoName: string;
+  /** 仓库分支 */
   repoBranch: string;
 }
 
+/**
+ * 配置API成功响应接口
+ */
 interface ConfigApiSuccessResponse {
   status: 'success';
   data?: unknown;
@@ -135,12 +142,35 @@ const loadConfig = async (): Promise<ConfigInfo> => {
   return currentConfig;
 };
 
+/**
+ * 获取当前配置信息
+ * 
+ * @returns 当前的配置信息对象
+ */
 const getConfig = (): ConfigInfo => currentConfig;
 
+/**
+ * 获取网站标题
+ * 
+ * @returns 当前网站标题
+ */
 const getSiteTitle = (): string => currentConfig.siteTitle;
 
+/**
+ * 检查配置服务是否已初始化
+ * 
+ * @returns 如果已初始化返回true，否则返回false
+ */
 const isServiceInitialized = (): boolean => isInitialized;
 
+/**
+ * 初始化配置服务
+ * 
+ * 从API加载配置信息并更新文档标题。
+ * 如果已经初始化，直接返回当前配置。
+ * 
+ * @returns Promise，解析为配置信息对象
+ */
 const init = (): Promise<ConfigInfo> => {
   if (isInitialized) {
     return Promise.resolve(currentConfig);
@@ -171,14 +201,27 @@ const init = (): Promise<ConfigInfo> => {
   return promise;
 };
 
+/**
+ * 配置服务API接口
+ */
 interface ConfigServiceApi {
+  /** 初始化配置服务 */
   init: () => Promise<ConfigInfo>;
+  /** 重新加载配置 */
   loadConfig: () => Promise<ConfigInfo>;
+  /** 获取当前配置 */
   getConfig: () => ConfigInfo;
+  /** 获取网站标题 */
   getSiteTitle: () => string;
+  /** 检查是否已初始化 */
   isInitialized: () => boolean;
 }
 
+/**
+ * 配置服务对象
+ * 
+ * 提供配置管理功能，包括从API加载配置、获取配置信息和检查初始化状态。
+ */
 export const ConfigService: ConfigServiceApi = {
   init,
   loadConfig,

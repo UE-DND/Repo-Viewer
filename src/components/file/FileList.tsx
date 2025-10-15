@@ -8,6 +8,9 @@ import FileListItem from "./FileListItem";
 import type { GitHubContent } from "@/types";
 import { responsiveG3Styles } from "@/utils";
 
+/**
+ * 虚拟列表项数据接口
+ */
 interface VirtualListItemData {
   contents: GitHubContent[];
   downloadingPath: string | null;
@@ -22,6 +25,9 @@ interface VirtualListItemData {
   scrollSpeed: number;
 }
 
+/**
+ * 优化的动画样式配置
+ */
 const optimizedAnimationStyle = {
   willChange: "opacity, transform" as const,
   backfaceVisibility: "hidden" as const,
@@ -30,6 +36,9 @@ const optimizedAnimationStyle = {
   WebkitPerspective: 1000,
 };
 
+/**
+ * 文件列表组件属性接口
+ */
 interface FileListProps {
   contents: GitHubContent[];
   isSmallScreen: boolean;
@@ -98,7 +107,6 @@ const LIST_HEIGHT_CONFIG = {
   },
 };
 
-// Define animation variants
 const EASE_OUT: [number, number, number, number] = [0.4, 0, 0.2, 1];
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -196,7 +204,11 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean): typeof ite
   return variants;
 };
 
-// 列表项渲染器
+/**
+ * 虚拟列表行渲染器组件
+ * 
+ * 用于react-window的行渲染，支持动画和滚动优化。
+ */
 const Row = React.memo(({ data, index, style }: ListChildComponentProps<VirtualListItemData>) => {
   const {
     contents,
@@ -264,7 +276,12 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps<VirtualL
 
 Row.displayName = "FileListRow";
 
-// 优化的文件列表组件
+/**
+ * 文件列表组件
+ * 
+ * 显示文件和文件夹列表，支持虚拟化滚动、动画和下载功能。
+ * 自动根据内容数量选择普通或虚拟化渲染模式。
+ */
 const FileList = React.memo<FileListProps>(
   ({
     contents,

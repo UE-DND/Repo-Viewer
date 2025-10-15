@@ -1,6 +1,9 @@
 import { createContext } from "react";
 import type { PaletteMode } from "@mui/material";
 
+/**
+ * 颜色模式上下文类型接口
+ */
 export interface ColorModeContextType {
   toggleColorMode: () => void;
   toggleAutoMode: () => void;

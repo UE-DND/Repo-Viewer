@@ -5,6 +5,13 @@ import { logger } from '@/utils';
 
 const MIN_ANIMATION_DURATION = 600;
 
+/**
+ * 页面刷新Hook
+ * 
+ * 提供带动画效果的页面刷新功能，自动处理LaTeX元素的移除和恢复。
+ * 
+ * @returns 刷新函数
+ */
 export const useRefresh = (): (() => void) => {
   const { refresh, loading, currentPath } = useContentContext();
   const refreshTimerRef = useRef<number | null>(null);

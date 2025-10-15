@@ -6,11 +6,25 @@ import { CONTENT_CACHE_CONFIG, FILE_CACHE_CONFIG } from './CacheConfig';
 
 const CONTENT_CACHE_ROOT_KEY = '__root__';
 
+/**
+ * 缓存管理器实现类
+ * 
+ * 管理内容缓存和文件缓存，提供统一的缓存访问接口。
+ * 支持缓存初始化、清除和统计功能。
+ */
 class CacheManagerImpl {
   private contentCache: AdvancedCache<string, unknown> | null = null;
   private fileCache: AdvancedCache<string, string> | null = null;
   private initialized = false;
 
+  /**
+   * 初始化缓存管理器
+   * 
+   * 初始化内容缓存和文件缓存的持久化存储。
+   * 
+   * @returns Promise，初始化完成后解析
+   * @throws 当缓存初始化失败时抛出错误
+   */
   public async initialize(): Promise<void> {
     if (this.initialized) {
       return;
@@ -35,16 +49,33 @@ class CacheManagerImpl {
     }
   }
 
+  /**
+   * 获取内容缓存实例
+   * 
+   * @returns 内容缓存对象
+   */
   public getContentCache(): AdvancedCache<string, unknown> {
     this.contentCache ??= new AdvancedCache<string, unknown>(CONTENT_CACHE_CONFIG);
     return this.contentCache;
   }
 
+  /**
+   * 获取文件缓存实例
+   * 
+   * @returns 文件缓存对象
+   */
   public getFileCache(): AdvancedCache<string, string> {
     this.fileCache ??= new AdvancedCache<string, string>(FILE_CACHE_CONFIG);
     return this.fileCache;
   }
 
+  /**
+   * 清除所有缓存
+   * 
+   * 清除内容缓存和文件缓存中的所有数据。
+   * 
+   * @returns Promise，清除完成后解析
+   */
   public async clearAllCaches(): Promise<void> {
     const promises: Promise<void>[] = [];
 
@@ -59,6 +90,11 @@ class CacheManagerImpl {
     logger.info('已清除所有API缓存');
   }
 
+  /**
+   * 获取缓存统计信息
+   * 
+   * @returns 包含内容缓存和文件缓存统计信息的对象
+   */
   public getCacheStats(): { content: CacheStats; file: CacheStats } {
     const defaultStats: CacheStats = {
       hits: 0,
@@ -75,6 +111,14 @@ class CacheManagerImpl {
     };
   }
 
+  /**
+   * 预取内容
+   * 
+   * 预加载指定路径的内容到缓存中。
+   * 
+   * @param paths - 要预取的路径数组
+   * @returns void
+   */
   public prefetchContent(paths: string[]): void {
     if (this.contentCache === null || paths.length === 0) {
       return;
@@ -89,12 +133,27 @@ class CacheManagerImpl {
     this.contentCache.prefetch(keys);
   }
 
+  /**
+   * 预取文件
+   * 
+   * 预加载指定URL的文件到缓存中。
+   * 
+   * @param urls - 要预取的URL数组
+   * @returns void
+   */
   public prefetchFiles(urls: string[]): void {
     if (this.fileCache !== null) {
       this.fileCache.prefetch(urls);
     }
   }
 
+  /**
+   * 销毁缓存管理器
+   * 
+   * 清理所有缓存资源并重置初始化状态。
+   * 
+   * @returns void
+   */
   public destroy(): void {
     if (this.contentCache !== null) {
       this.contentCache.destroy();
@@ -108,7 +167,11 @@ class CacheManagerImpl {
   }
 }
 
-// 导出单例实例
+/**
+ * 缓存管理器单例实例
+ * 
+ * 全局缓存管理器，用于管理内容和文件缓存。
+ */
 export const CacheManager = new CacheManagerImpl();
 
 export { AdvancedCache, LRUCache };

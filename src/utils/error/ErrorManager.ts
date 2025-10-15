@@ -13,6 +13,12 @@ import { ErrorLevel, ErrorCategory } from '@/types/errors';
 import { logger } from '../logging/logger';
 import { getDeveloperConfig } from '@/config';
 
+/**
+ * 错误管理器类
+ * 
+ * 统一管理应用中的错误，提供错误创建、捕获、记录和上报功能。
+ * 支持多种错误类型，包括API错误、网络错误、组件错误和文件操作错误。
+ */
 class ErrorManagerClass {
   private errorHistory: AppError[] = [];
   private readonly maxHistorySize = 100;
@@ -63,7 +69,15 @@ class ErrorManagerClass {
     };
   }
 
-  // 捕获并处理错误
+  /**
+   * 捕获并处理错误
+   * 
+   * 将普通Error转换为AppError，记录到历史并可选地上报。
+   * 
+   * @param error - Error对象或AppError对象
+   * @param context - 额外的错误上下文信息
+   * @returns 处理后的AppError对象
+   */
   public captureError(error: Error | AppError, context?: ErrorContext): AppError {
     let appError: AppError;
 
@@ -99,7 +113,16 @@ class ErrorManagerClass {
     return appError;
   }
 
-  // 创建API错误
+  /**
+   * 创建API错误
+   * 
+   * @param message - 错误消息
+   * @param statusCode - HTTP状态码
+   * @param endpoint - API端点
+   * @param method - HTTP方法
+   * @param context - 额外的上下文信息
+   * @returns API错误对象
+   */
   public createAPIError(
     message: string,
     statusCode: number,
@@ -124,7 +147,17 @@ class ErrorManagerClass {
     };
   }
 
-  // 创建GitHub特定错误
+  /**
+   * 创建GitHub特定错误
+   * 
+   * @param message - 错误消息
+   * @param statusCode - HTTP状态码
+   * @param endpoint - API端点
+   * @param method - HTTP方法
+   * @param rateLimitInfo - Rate limit信息
+   * @param context - 额外的上下文信息
+   * @returns GitHub错误对象
+   */
   public createGitHubError(
     message: string,
     statusCode: number,
@@ -149,7 +182,16 @@ class ErrorManagerClass {
     };
   }
 
-  // 创建网络错误
+  /**
+   * 创建网络错误
+   * 
+   * @param message - 错误消息
+   * @param url - 请求URL
+   * @param timeout - 是否为超时错误
+   * @param retryCount - 重试次数
+   * @param context - 额外的上下文信息
+   * @returns 网络错误对象
+   */
   public createNetworkError(
     message: string,
     url: string,
@@ -174,7 +216,15 @@ class ErrorManagerClass {
     };
   }
 
-  // 创建组件错误
+  /**
+   * 创建组件错误
+   * 
+   * @param componentName - 组件名称
+   * @param message - 错误消息
+   * @param props - 组件属性
+   * @param context - 额外的上下文信息
+   * @returns 组件错误对象
+   */
   public createComponentError(
     componentName: string,
     message: string,
@@ -197,7 +247,16 @@ class ErrorManagerClass {
     };
   }
 
-  // 创建文件操作错误
+  /**
+   * 创建文件操作错误
+   * 
+   * @param fileName - 文件名
+   * @param operation - 操作类型
+   * @param message - 错误消息
+   * @param fileSize - 文件大小（可选）
+   * @param context - 额外的上下文信息
+   * @returns 文件操作错误对象
+   */
   public createFileOperationError(
     fileName: string,
     operation: 'read' | 'write' | 'download' | 'compress' | 'parse',
@@ -222,7 +281,16 @@ class ErrorManagerClass {
     };
   }
 
-  // 处理API错误响应
+  /**
+   * 处理API错误响应
+   * 
+   * 从axios或fetch错误中提取信息并创建结构化的API错误。
+   * 
+   * @param error - 错误对象
+   * @param endpoint - API端点
+   * @param method - HTTP方法
+   * @returns API错误或GitHub错误对象
+   */
   public handleAPIError(error: unknown, endpoint: string, method: string): APIError | GitHubError {
     const errorObj = error as {
       response?: {
@@ -344,7 +412,13 @@ class ErrorManagerClass {
     }
   }
 
-  // 获取错误历史
+  /**
+   * 获取错误历史
+   * 
+   * @param category - 可选的错误分类过滤
+   * @param limit - 返回的最大错误数量，默认20
+   * @returns 错误历史数组
+   */
   public getErrorHistory(category?: ErrorCategory, limit = 20): AppError[] {
     let history = this.errorHistory;
 
@@ -355,12 +429,24 @@ class ErrorManagerClass {
     return history.slice(0, limit);
   }
 
-  // 清理错误历史
+  /**
+   * 清理错误历史
+   * 
+   * 清空所有记录的错误历史。
+   * 
+   * @returns void
+   */
   public clearErrorHistory(): void {
     this.errorHistory = [];
   }
 
-  // 获取错误统计
+  /**
+   * 获取错误统计
+   * 
+   * 返回各类错误的数量统计。
+   * 
+   * @returns 错误分类统计对象
+   */
   public getErrorStats(): Record<ErrorCategory, number> {
     const stats: Record<ErrorCategory, number> = {
       [ErrorCategory.NETWORK]: 0,
@@ -379,19 +465,34 @@ class ErrorManagerClass {
     return stats;
   }
 
-  // 更新配置
+  /**
+   * 更新错误处理配置
+   * 
+   * @param newConfig - 新的配置选项
+   * @returns void
+   */
   public updateConfig(newConfig: Partial<ErrorHandlerConfig>): void {
     this.config = { ...this.config, ...newConfig };
   }
 
-  // 重置会话
+  /**
+   * 重置错误会话
+   * 
+   * 清空错误历史并生成新的会话ID。
+   * 
+   * @returns void
+   */
   public resetSession(): void {
     this.sessionId = this.generateSessionId();
     this.errorHistory = [];
   }
 }
 
-// 导出单例实例
+/**
+ * 错误管理器单例实例
+ * 
+ * 全局错误管理器，用于统一处理应用中的所有错误。
+ */
 export const ErrorManager = new ErrorManagerClass();
 
 // 全局错误处理

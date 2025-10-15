@@ -13,10 +13,18 @@ import type { CustomContentProps } from "notistack";
 import { eventEmitter, EVENTS } from "@/utils/events/eventEmitter";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
+/**
+ * 自定义通知组件属性接口
+ */
 interface CustomSnackbarProps extends CustomContentProps {
   progress?: number;
 }
 
+/**
+ * 自定义通知组件
+ * 
+ * 提供增强的通知UI，支持进度显示和自定义样式。
+ */
 const CustomSnackbar = memo(
   forwardRef<HTMLDivElement, CustomSnackbarProps>(
     ({ id, message, variant, progress }, ref) => {

@@ -32,7 +32,15 @@ export * from './routing/urlManager';
 // 导出G3曲线工具
 export * from '@/theme/g3Curves';
 
-// 通用工具函数
+/**
+ * 防抖函数
+ * 
+ * 限制函数执行频率，在指定时间内多次调用只执行最后一次。
+ * 
+ * @param func - 要防抖的函数
+ * @param waitFor - 等待时间（毫秒）
+ * @returns 防抖后的函数
+ */
 export const debounce = <F extends (...args: unknown[]) => unknown>(
   func: F,
   waitFor: number

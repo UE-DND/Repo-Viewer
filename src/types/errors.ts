@@ -1,12 +1,20 @@
-// 错误级别枚举
+/**
+ * 错误级别枚举
+ */
 export enum ErrorLevel {
+  /** 信息 */
   INFO = 'info',
+  /** 警告 */
   WARNING = 'warning',
+  /** 错误 */
   ERROR = 'error',
+  /** 严重错误 */
   CRITICAL = 'critical'
 }
 
-// 错误类别枚举
+/**
+ * 错误类别枚举
+ */
 export enum ErrorCategory {
   NETWORK = 'network',
   API = 'api',
@@ -17,7 +25,9 @@ export enum ErrorCategory {
   SYSTEM = 'system'
 }
 
-// 基础错误接口
+/**
+ * 基础错误接口
+ */
 export interface BaseError {
   code: string;
   message: string;
@@ -30,7 +40,9 @@ export interface BaseError {
   sessionId?: string;
 }
 
-// API错误接口
+/**
+ * API错误接口
+ */
 export interface APIError extends BaseError {
   category: ErrorCategory.API;
   statusCode: number;
@@ -39,7 +51,9 @@ export interface APIError extends BaseError {
   requestId?: string;
 }
 
-// 网络错误接口
+/**
+ * 网络错误接口
+ */
 export interface NetworkError extends BaseError {
   category: ErrorCategory.NETWORK;
   url: string;
@@ -47,14 +61,18 @@ export interface NetworkError extends BaseError {
   retryCount?: number;
 }
 
-// GitHub API特定错误
+/**
+ * GitHub API特定错误接口
+ */
 export interface GitHubError extends APIError {
   rateLimitRemaining?: number;
   rateLimitReset?: number;
   documentationUrl?: string;
 }
 
-// 文件操作错误
+/**
+ * 文件操作错误接口
+ */
 export interface FileOperationError extends BaseError {
   category: ErrorCategory.FILE_OPERATION;
   fileName: string;
@@ -62,7 +80,9 @@ export interface FileOperationError extends BaseError {
   operation: 'read' | 'write' | 'download' | 'compress' | 'parse';
 }
 
-// 组件错误
+/**
+ * 组件错误接口
+ */
 export interface ComponentError extends BaseError {
   category: ErrorCategory.COMPONENT;
   componentName: string;
@@ -70,14 +90,18 @@ export interface ComponentError extends BaseError {
   errorBoundary?: string;
 }
 
-// 认证错误
+/**
+ * 认证错误接口
+ */
 export interface AuthError extends BaseError {
   category: ErrorCategory.AUTH;
   tokenType?: 'github_pat' | 'session';
   tokenIndex?: number;
 }
 
-// 验证错误
+/**
+ * 验证错误接口
+ */
 export interface ValidationError extends BaseError {
   category: ErrorCategory.VALIDATION;
   field: string;
@@ -85,7 +109,9 @@ export interface ValidationError extends BaseError {
   expectedType?: string;
 }
 
-// 系统错误
+/**
+ * 系统错误接口
+ */
 export interface SystemError extends BaseError {
   category: ErrorCategory.SYSTEM;
   browserInfo?: string;
@@ -93,7 +119,9 @@ export interface SystemError extends BaseError {
   memory?: number;
 }
 
-// 错误联合类型
+/**
+ * 应用错误联合类型
+ */
 export type AppError =
   | APIError
   | NetworkError

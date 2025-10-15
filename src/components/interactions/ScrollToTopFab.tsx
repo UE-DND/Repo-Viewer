@@ -9,6 +9,9 @@ import {
 } from "@mui/material";
 import { KeyboardArrowUp as ArrowUpIcon } from "@mui/icons-material";
 
+/**
+ * 返回顶部浮动按钮组件属性接口
+ */
 interface ScrollToTopFabProps {
   /** 显示按钮的滚动阈值（像素） */
   threshold?: number;
@@ -20,6 +23,12 @@ interface ScrollToTopFabProps {
   showOnlyWithContent?: boolean;
 }
 
+/**
+ * 返回顶部浮动按钮组件
+ * 
+ * 滚动超过阈值时显示，点击平滑滚动到页面顶部。
+ * 支持响应式设计和自定义样式。
+ */
 const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
   threshold = 200,
   scrollDuration = 800,

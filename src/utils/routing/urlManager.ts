@@ -11,8 +11,11 @@ export const URL_PARAMS = {
 } as const;
 
 /**
- * 从 URL 解析路径参数
- * @returns 文件路径
+ * 从URL解析路径参数
+ * 
+ * 优先从路径段获取，向后兼容查询参数方式。
+ * 
+ * @returns 文件路径字符串
  */
 export function getPathFromUrl(): string {
   try {
@@ -40,8 +43,11 @@ export function getPathFromUrl(): string {
 }
 
 /**
- * 从 URL 解析分支参数
- * @returns 分支名称
+ * 从URL解析分支参数
+ * 
+ * 从查询参数或history state中获取分支名称。
+ * 
+ * @returns 分支名称字符串
  */
 export function getBranchFromUrl(): string {
   try {
@@ -67,7 +73,10 @@ export function getBranchFromUrl(): string {
 }
 
 /**
- * 从 URL 解析预览文件参数
+ * 从URL解析预览文件参数
+ * 
+ * 从查询参数或哈希部分获取预览文件名。
+ * 
  * @returns 预览文件名
  */
 export function getPreviewFromUrl(): string {
@@ -94,10 +103,14 @@ export function getPreviewFromUrl(): string {
 }
 
 /**
- * 构建包含路径的 URL
- * @param path 文件路径
- * @param preview 预览文件路径（可选）
- * @returns 构建的 URL 字符串（不包含域名）
+ * 构建包含路径的URL
+ * 
+ * 根据路径、预览参数和分支构建完整URL。
+ * 
+ * @param path - 文件路径
+ * @param preview - 预览文件路径（可选）
+ * @param branch - 分支名称（可选）
+ * @returns 构建的URL字符串（不包含域名）
  */
 export function buildUrlWithParams(path: string, preview?: string, branch?: string): string {
   // 将路径编码为 URL 路径段
@@ -132,9 +145,14 @@ export function buildUrlWithParams(path: string, preview?: string, branch?: stri
 }
 
 /**
- * 更新浏览器 URL，不添加历史记录
- * @param path 文件路径
- * @param preview 预览文件路径（可选）
+ * 更新浏览器URL（不添加历史记录）
+ * 
+ * 使用replaceState更新URL，不会在浏览器历史中创建新条目。
+ * 
+ * @param path - 文件路径
+ * @param preview - 预览文件路径（可选）
+ * @param branch - 分支名称（可选）
+ * @returns void
  */
 export function updateUrlWithoutHistory(path: string, preview?: string, branch?: string): void {
   try {
@@ -149,9 +167,14 @@ export function updateUrlWithoutHistory(path: string, preview?: string, branch?:
 }
 
 /**
- * 更新浏览器 URL，添加历史记录
- * @param path 文件路径
- * @param preview 预览文件路径（可选）
+ * 更新浏览器URL（添加历史记录）
+ * 
+ * 使用pushState更新URL，在浏览器历史中创建新条目。
+ * 
+ * @param path - 文件路径
+ * @param preview - 预览文件路径（可选）
+ * @param branch - 分支名称（可选）
+ * @returns void
  */
 export function updateUrlWithHistory(path: string, preview?: string, branch?: string): void {
   try {
@@ -166,8 +189,11 @@ export function updateUrlWithHistory(path: string, preview?: string, branch?: st
 }
 
 /**
- * 检查 URL 中是否有预览参数
- * @returns 是否有预览参数
+ * 检查URL中是否有预览参数
+ * 
+ * 检查查询参数或哈希部分是否包含预览参数。
+ * 
+ * @returns 如果包含预览参数返回true
  */
 export function hasPreviewParam(): boolean {
   try {
@@ -187,8 +213,9 @@ export function hasPreviewParam(): boolean {
 }
 
 /**
- * 检查 URL 是否为有效的应用 URL
- * @returns 是否为有效的应用 URL
+ * 检查URL是否为有效的应用URL
+ * 
+ * @returns 如果是有效的应用URL返回true
  */
 export function isValidAppUrl(): boolean {
   return true; // 所有路径现在都是有效的应用 URL

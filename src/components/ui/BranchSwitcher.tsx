@@ -9,10 +9,19 @@ import {
 } from "@mui/material";
 import { useContentContext } from "@/contexts/unified";
 
+/**
+ * 分支切换器组件属性接口
+ */
 interface BranchSwitcherProps {
+  /** 是否显示标签 */
   showLabel?: boolean;
 }
 
+/**
+ * 分支切换器组件
+ * 
+ * 提供Git分支选择和切换功能，支持动画和响应式设计。
+ */
 const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
   showLabel = true
 }) => {

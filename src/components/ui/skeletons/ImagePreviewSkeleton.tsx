@@ -8,7 +8,11 @@ import {
 import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
-// 图片预览骨架屏
+/**
+ * 图片预览骨架屏组件
+ * 
+ * 在图片加载时显示的占位骨架屏。
+ */
 export const ImagePreviewSkeleton: React.FC<{
   isSmallScreen?: boolean;
   visible?: boolean;

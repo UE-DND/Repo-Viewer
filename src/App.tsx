@@ -19,6 +19,12 @@ import Footer from "@/components/layout/Footer";
 import { FaviconManager } from "@/components/ui/DynamicIcon";
 import { PageErrorBoundary, FeatureErrorBoundary } from "@/components/ui/ErrorBoundary";
 
+/**
+ * 应用主组件
+ * 
+ * 应用的根组件，包含顶部导航栏、主内容区和页脚。
+ * 处理标题点击、滚动监听和token状态检查。
+ */
 const App = React.memo(() => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));

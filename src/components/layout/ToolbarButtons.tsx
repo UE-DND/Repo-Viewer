@@ -20,24 +20,40 @@ import { getGithubConfig } from "@/config";
 import { logger } from "@/utils";
 import { useContentContext } from "@/contexts/unified";
 
+/**
+ * 仓库信息接口
+ */
 interface RepoInfo {
   repoOwner: string;
   repoName: string;
 }
 
+/**
+ * GitHub配置状态类型
+ */
 type GitHubConfigStatus = "success" | "error";
 
+/**
+ * GitHub配置响应接口
+ */
 interface GitHubConfigResponse {
   status?: GitHubConfigStatus;
   data?: Partial<RepoInfo>;
 }
 
+/**
+ * 工具栏按钮组件属性接口
+ */
 interface ToolbarButtonsProps {
   showBreadcrumbInToolbar?: boolean;
   isSmallScreen?: boolean;
 }
 
-// 工具栏按钮组件
+/**
+ * 工具栏按钮组件
+ * 
+ * 提供主题切换、刷新和跳转到GitHub等功能按钮。
+ */
 const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
   showBreadcrumbInToolbar = false,
   isSmallScreen = false,

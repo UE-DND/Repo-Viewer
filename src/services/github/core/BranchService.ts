@@ -10,11 +10,17 @@ import {
   getCurrentBranch
 } from './Config';
 
+/**
+ * GitHub分支API响应项接口
+ */
 interface GitHubBranchApiItem {
   name?: string;
   protected?: boolean;
 }
 
+/**
+ * 服务端分支响应接口
+ */
 interface ServerBranchResponse {
   status: 'success' | 'error';
   data: {
@@ -25,6 +31,14 @@ interface ServerBranchResponse {
 
 const MAX_PER_PAGE = 100;
 
+/**
+ * 标准化分支名称数组
+ * 
+ * 从API响应中提取并验证分支名称。
+ * 
+ * @param items - API响应的分支数据
+ * @returns 标准化后的分支名称数组
+ */
 function normalizeBranchNames(items: unknown): string[] {
   if (!Array.isArray(items)) {
     return [];
@@ -43,6 +57,14 @@ function normalizeBranchNames(items: unknown): string[] {
     .filter((name): name is string => typeof name === 'string');
 }
 
+/**
+ * 通过服务端API获取分支列表
+ * 
+ * 支持分页获取所有分支。
+ * 
+ * @returns Promise，解析为分支名称数组
+ * @throws 当API响应格式错误时抛出错误
+ */
 async function fetchBranchesViaServer(): Promise<string[]> {
   const branches: string[] = [];
   let page = 1;
@@ -71,6 +93,14 @@ async function fetchBranchesViaServer(): Promise<string[]> {
   return branches;
 }
 
+/**
+ * 直接从GitHub API获取分支列表
+ * 
+ * 支持分页和Link头解析，获取所有分支。
+ * 
+ * @returns Promise，解析为分支名称数组
+ * @throws 当API请求失败时抛出错误
+ */
 async function fetchBranchesDirect(): Promise<string[]> {
   const headers = GitHubAuth.getAuthHeaders();
   const branches: string[] = [];
@@ -107,6 +137,14 @@ async function fetchBranchesDirect(): Promise<string[]> {
   return branches;
 }
 
+/**
+ * 获取仓库的所有分支
+ * 
+ * 根据环境自动选择使用服务端API或直接请求GitHub。
+ * 返回的分支列表已去重并排序，默认分支始终在最前面。
+ * 
+ * @returns Promise，解析为排序后的分支名称数组
+ */
 export async function getBranches(): Promise<string[]> {
   try {
     const branches = shouldUseServerAPI()

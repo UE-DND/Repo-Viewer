@@ -1,7 +1,9 @@
 import React from "react";
 import { useMetadata } from "@/contexts/MetadataContext/context";
 
-// 基础SEO组件属性类型
+/**
+ * NativeSEO组件属性接口
+ */
 interface NativeSEOProps {
   title?: string;
   description?: string;

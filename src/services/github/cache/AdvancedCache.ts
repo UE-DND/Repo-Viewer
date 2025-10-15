@@ -16,6 +16,15 @@ import {
   saveItemToLocalStorage,
 } from './CachePersistence';
 
+/**
+ * 高级缓存类
+ * 
+ * 提供LRU缓存功能，支持持久化存储（IndexedDB/LocalStorage）、
+ * 自适应TTL、内存管理和缓存统计。
+ * 
+ * @template K - 缓存键类型（必须为string）
+ * @template V - 缓存值类型
+ */
 export class AdvancedCache<K extends string, V> {
   private readonly cache: Map<K, CacheItemMeta>;
   private readonly config: CacheConfig;
@@ -45,6 +54,13 @@ export class AdvancedCache<K extends string, V> {
     this.startPeriodicCleanup();
   }
 
+  /**
+   * 初始化持久化存储
+   * 
+   * 优先使用IndexedDB，失败时回退到LocalStorage。
+   * 
+   * @returns Promise，初始化完成后解析
+   */
   public async initializePersistence(): Promise<void> {
     if (this.config.useIndexedDB && typeof indexedDB !== 'undefined') {
       try {
@@ -77,6 +93,14 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 获取缓存项
+   * 
+   * 从缓存中获取值，自动检查TTL并更新访问统计。
+   * 
+   * @param key - 缓存键
+   * @returns Promise，解析为缓存的值，如果不存在或已过期则返回undefined
+   */
   async get(key: K): Promise<V | undefined> {
     const keyStr = key;
     let item = this.cache.get(key);
@@ -121,8 +145,16 @@ export class AdvancedCache<K extends string, V> {
     return item.value as V;
   }
 
-  // 计算TTL 统一使用工具函数
-
+  /**
+   * 设置缓存项
+   * 
+   * 将值存储到缓存中，支持持久化和内存管理。
+   * 
+   * @param key - 缓存键
+   * @param value - 要缓存的值
+   * @param version - 版本标识，默认为'1.0'
+   * @returns Promise，设置完成后解析
+   */
   async set(key: K, value: V, version = '1.0'): Promise<void> {
     const now = Date.now();
     const keyStr = key;
@@ -172,6 +204,14 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 删除缓存项
+   * 
+   * 从缓存和持久化存储中删除指定键的值。
+   * 
+   * @param key - 缓存键
+   * @returns Promise，解析为是否成功删除
+   */
   async delete(key: K): Promise<boolean> {
     const keyStr = key;
     const result = this.cache.delete(key);
@@ -187,6 +227,13 @@ export class AdvancedCache<K extends string, V> {
     return result;
   }
 
+  /**
+   * 清空缓存
+   * 
+   * 清除所有缓存项和持久化存储。
+   * 
+   * @returns Promise，清空完成后解析
+   */
   async clear(): Promise<void> {
     this.cache.clear();
     this.stats.size = 0;
@@ -202,10 +249,20 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 获取缓存大小
+   * 
+   * @returns 当前缓存的项目数量
+   */
   size(): number {
     return this.cache.size;
   }
 
+  /**
+   * 获取缓存统计信息
+   * 
+   * @returns 缓存统计对象
+   */
   getStats(): CacheStats {
     return { ...this.stats };
   }
@@ -253,6 +310,14 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 预取缓存项
+   * 
+   * 延迟加载指定键的数据到缓存中。
+   * 
+   * @param keys - 要预取的键数组
+   * @returns void
+   */
   prefetch(keys: K[]): void {
     if (!this.config.enablePrefetch) {
       return;
@@ -267,6 +332,13 @@ export class AdvancedCache<K extends string, V> {
     }, this.config.prefetchDelay);
   }
 
+  /**
+   * 销毁缓存实例
+   * 
+   * 清理定时器和数据库连接。
+   * 
+   * @returns void
+   */
   destroy(): void {
     if (this.cleanupTimer !== null) {
       clearInterval(this.cleanupTimer);
@@ -389,4 +461,9 @@ export class AdvancedCache<K extends string, V> {
   }
 }
 
+/**
+ * LRU缓存别名
+ * 
+ * AdvancedCache的别名，提供向后兼容性。
+ */
 export const LRUCache = AdvancedCache;

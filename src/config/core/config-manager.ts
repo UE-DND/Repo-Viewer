@@ -24,18 +24,35 @@ export class ConfigManager {
     this.listeners = new Set<ConfigChangeListener>();
   }
 
+  /**
+   * 获取ConfigManager单例实例
+   * 
+   * @returns ConfigManager实例
+   */
   static getInstance(): ConfigManager {
     this.instance ??= new ConfigManager();
     return this.instance;
   }
 
-  // 获取配置
+  /**
+   * 获取配置
+   * 
+   * 获取当前加载的配置对象，如果未加载则自动加载。
+   * 
+   * @returns 完整的配置对象
+   */
   getConfig(): Config {
     this.config ??= this.loadConfig();
     return this.config;
   }
 
-  // 重新加载配置
+  /**
+   * 重新加载配置
+   * 
+   * 从环境变量重新加载配置，并通知所有监听器。
+   * 
+   * @returns 重新加载后的配置对象
+   */
   reloadConfig(): Config {
     const oldConfig = this.config;
     this.config = this.loadConfig();
@@ -47,7 +64,14 @@ export class ConfigManager {
     return this.config;
   }
 
-  // 配置变更监听
+  /**
+   * 监听配置变更
+   * 
+   * 注册配置变更监听器，当配置更新时会被调用。
+   * 
+   * @param listener - 配置变更监听器函数
+   * @returns 取消监听的函数
+   */
   onConfigChange(listener: ConfigChangeListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -154,7 +178,14 @@ export class ConfigManager {
     };
   }
 
-  // 获取用于 Vite define 的 PAT 对象
+  /**
+   * 获取用于Vite define的PAT对象
+   * 
+   * 构建用于Vite构建时注入的环境变量对象。
+   * 
+   * @param env - 可选的环境变量源
+   * @returns PAT环境变量对象
+   */
   getPATsForViteDefine(env?: EnvSource): Record<string, string> {
     const processEnv = this.getProcessEnv();
     const envSource: EnvSource = env ?? processEnv ?? {};
@@ -180,7 +211,13 @@ export class ConfigManager {
     return patEnvVars;
   }
 
-  // 获取调试信息
+  /**
+   * 获取配置调试信息
+   * 
+   * 返回详细的配置加载信息，用于调试和排查配置问题。
+   * 
+   * @returns 配置调试信息对象
+   */
   getDebugInfo(): ConfigDebugInfo {
     const config = this.getConfig();
     const env = this.getEnvSource();
@@ -291,5 +328,9 @@ export class ConfigManager {
   }
 }
 
-// 导出配置管理器实例
+/**
+ * 配置管理器单例实例
+ * 
+ * 全局配置管理器，用于访问和管理应用配置。
+ */
 export const configManager = ConfigManager.getInstance();

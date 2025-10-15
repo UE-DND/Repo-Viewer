@@ -7,6 +7,16 @@ const SYSTEM_FONT =
 const MONO_FONT =
   "var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace)";
 
+/**
+ * 创建Markdown样式
+ * 
+ * 根据主题、LaTeX公式数量和屏幕大小生成Markdown预览的样式配置。
+ * 
+ * @param theme - Material-UI主题对象
+ * @param latexCount - LaTeX公式数量（用于性能优化）
+ * @param isSmallScreen - 是否为小屏幕，默认false
+ * @returns Material-UI SxProps样式对象
+ */
 export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallScreen: boolean = false): SxProps<Theme> => {
   const containerBorderRadius = responsiveG3Styles.readmeContainer(isSmallScreen);
   const isDark = theme.palette.mode === "dark";
