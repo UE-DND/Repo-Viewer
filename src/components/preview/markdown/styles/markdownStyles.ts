@@ -1,13 +1,14 @@
 import type { Theme, SxProps } from "@mui/material";
 import { alpha } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { responsiveG3Styles, g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 const SYSTEM_FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'";
 const MONO_FONT =
   "var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace)";
 
-export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<Theme> => {
+export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallScreen: boolean = false): SxProps<Theme> => {
+  const containerBorderRadius = responsiveG3Styles.readmeContainer(isSmallScreen);
   const isDark = theme.palette.mode === "dark";
   const textColor = theme.palette.text.primary;
   const secondaryTextColor = theme.palette.text.secondary;
@@ -31,7 +32,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
   px: { xs: 2.5, sm: 4 },
   mt: 2,
   mb: 3,
-  borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
+  borderRadius: containerBorderRadius,
   bgcolor: "background.paper",
   border: "1px solid",
   borderColor: "divider",

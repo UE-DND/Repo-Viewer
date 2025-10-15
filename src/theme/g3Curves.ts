@@ -129,6 +129,60 @@ export function createResponsiveG3Style(
   };
 }
 
+/**
+ * 响应式圆角配置接口
+ */
+export interface ResponsiveG3Config {
+  desktop: G3CurveConfig;
+  mobile: G3CurveConfig;
+}
+
+/**
+ * 预定义的响应式圆角配置
+ */
+export const RESPONSIVE_G3_PRESETS = {
+  // 文件列表容器 - 响应式
+  fileListContainer: {
+    desktop: { radius: 20, smoothness: 0.8 },
+    mobile: { radius: 16, smoothness: 0.8 },
+  } as ResponsiveG3Config,
+
+  // README预览容器 - 响应式
+  readmeContainer: {
+    desktop: { radius: 20, smoothness: 0.8 },
+    mobile: { radius: 16, smoothness: 0.8 },
+  } as ResponsiveG3Config,
+
+  // 卡片 - 响应式
+  card: {
+    desktop: { radius: 20, smoothness: 0.5 },
+    mobile: { radius: 16, smoothness: 0.5 },
+  } as ResponsiveG3Config,
+} as const;
+
+/**
+ * 获取响应式圆角样式
+ */
+export function getResponsiveG3BorderRadius(
+  preset: ResponsiveG3Config,
+  isSmallScreen: boolean
+): string {
+  const config = isSmallScreen ? preset.mobile : preset.desktop;
+  return createG3BorderRadius(config);
+}
+
+/**
+ * 响应式G3样式工具集
+ */
+export const responsiveG3Styles = {
+  fileListContainer: (isSmallScreen: boolean) => 
+    getResponsiveG3BorderRadius(RESPONSIVE_G3_PRESETS.fileListContainer, isSmallScreen),
+  readmeContainer: (isSmallScreen: boolean) => 
+    getResponsiveG3BorderRadius(RESPONSIVE_G3_PRESETS.readmeContainer, isSmallScreen),
+  card: (isSmallScreen: boolean) => 
+    getResponsiveG3BorderRadius(RESPONSIVE_G3_PRESETS.card, isSmallScreen),
+};
+
 // Emotion styled-components
 export function g3BorderRadius(config: G3CurveConfig): string {
   return createG3BorderRadius(config);

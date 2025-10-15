@@ -6,7 +6,7 @@ import {
   Paper,
 } from "@mui/material";
 import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
-import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { responsiveG3Styles, g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 // Markdown 预览骨架屏
 export const MarkdownPreviewSkeleton: React.FC<{
@@ -17,6 +17,8 @@ export const MarkdownPreviewSkeleton: React.FC<{
   const theme = useTheme();
   const skeletonStyles = getSkeletonStyles(theme);
   const isExiting = useSkeletonVisibility(visible, onExited);
+
+  const containerBorderRadius = responsiveG3Styles.readmeContainer(isSmallScreen);
 
   return (
     <Box
@@ -35,7 +37,7 @@ export const MarkdownPreviewSkeleton: React.FC<{
           px: { xs: 2, sm: 3, md: 4 },
           mt: 2,
           mb: 3,
-          borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
+          borderRadius: containerBorderRadius,
           bgcolor: "background.paper",
           overflowX: "auto",
           border: "1px solid",

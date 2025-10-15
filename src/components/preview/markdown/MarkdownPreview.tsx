@@ -212,7 +212,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
           square
           elevation={0}
           className={isThemeChanging ? "theme-transition-katex" : ""}
-          sx={createMarkdownStyles(theme, latexCount)}
+          sx={createMarkdownStyles(theme, latexCount, isSmallScreen)}
           data-oid=":p7j.31"
         >
           {shouldRender && !isThemeChanging && (

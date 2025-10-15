@@ -6,9 +6,8 @@ import { motion } from "framer-motion";
 import type { MotionStyle } from "framer-motion";
 import FileListItem from "./FileListItem";
 import type { GitHubContent } from "@/types";
-import { g3Styles } from "@/utils";
+import { responsiveG3Styles } from "@/utils";
 
-// 虚拟列表项数据类型
 interface VirtualListItemData {
   contents: GitHubContent[];
   downloadingPath: string | null;
@@ -54,8 +53,8 @@ const FILE_ITEM_CONFIG = {
   },
   // 文件项间距
   spacing: {
-    marginBottom: 8, // 固定下边距为8px (0.5rem)，用于高度计算
-    visualMarginBottom: 4, // 视觉上的下边距，更小以使列表更紧凑
+    marginBottom: 8,
+    visualMarginBottom: 4,
     paddingY: {
       sm: 6, // 上下内边距（普通屏幕）
       xs: 4, // 上下内边距（小屏幕）
@@ -63,12 +62,12 @@ const FILE_ITEM_CONFIG = {
   },
   // 悬停效果配置
   hover: {
-    // 悬停时阴影所需的额外空间（像素）
+    // 悬停时阴影所需的额外空间
     shadowSpace: {
       sm: 6, // 正常屏幕
       xs: 4, // 小屏幕
     },
-    // 悬停时可能的垂直位移（像素）
+    // 悬停时可能的垂直位移
     verticalOffset: 2,
   },
 };
@@ -506,11 +505,10 @@ const FileList = React.memo<FileListProps>(
       };
     }, [needsScrolling, listPadding]);
 
-    // 重构的渲染逻辑：非滚动模式使用简单布局，滚动模式使用虚拟化
     const containerStyle = {
       width: "100%",
       bgcolor: "background.paper",
-      borderRadius: g3Styles.fileListContainer().borderRadius, // 应用G3曲线样式
+      borderRadius: responsiveG3Styles.fileListContainer(isSmallScreen),
       mb: 2,
       overflow: "hidden",
       boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
@@ -521,7 +519,6 @@ const FileList = React.memo<FileListProps>(
     };
 
     if (!needsScrolling) {
-      // 非滚动模式：简单布局，完美居中
       const totalContentHeight = contents.length * rowHeight;
       const finalHeight = totalContentHeight + listPadding.paddingTop + listPadding.paddingBottom;
 
