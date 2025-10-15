@@ -192,7 +192,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                   ? "rgba(103, 80, 164, 0.04)"
                   : "rgba(208, 188, 255, 0.04)"),
               overflow: "visible",
-              transition: "height 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), border-color 0.2s, background-color 0.2s, width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)",
+              transition: "height 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               height: (open && !isAnimating) ? (() => {
                 const totalHeight = branches
                   .filter(branch => branch !== currentBranch)
@@ -268,7 +268,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                             backgroundColor: "transparent",
                             borderBottom: `1px dashed ${theme.palette.divider}`,
                             borderRadius: index === 0 ? "8px 8px 0 0" : "0",
-                            transition: "background-color 0.15s ease-in-out",
+                            transition: "background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                             cursor: "pointer",
                             "&:hover": {
                               backgroundColor: theme.palette.mode === "light"
@@ -406,7 +406,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 borderRadius: open ? "0 0 8px 8px" : "8px",
-                transition: "color 0.2s ease-in-out",
+                transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 overflow: "hidden",
                 "&:hover": {
                   backgroundColor: theme.palette.mode === "light"
