@@ -79,7 +79,7 @@ export async function checkTokenStatus(): Promise<{
 
   // 记录状态
   logger.info(`=============================================`);
-  logger.info(`GitHub Token状态: ${hasToken ? '已配置 ✅' : '未配置 ❌'}`);
+  logger.info(`GitHub Token状态: ${hasToken ? '已配置' : '未配置'}`);
   logger.info(`Token数量: ${tokenCount.toString()}`);
 
   if (serverTokenStatus.hasToken) {

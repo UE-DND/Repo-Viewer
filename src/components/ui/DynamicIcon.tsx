@@ -21,7 +21,7 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({
 
   useEffect(() => {
     if (manageFavicon) {
-      logger.info('🎨 动态favicon系统初始化完成');
+      logger.info('[DynamicIcon] 动态favicon系统初始化完成');
     }
   }, [manageFavicon]);
 
@@ -47,7 +47,7 @@ export const FaviconManager: React.FC = () => {
 
   // 添加调试信息
   React.useEffect(() => {
-    logger.info('🔧 FaviconManager初始化完成');
+    logger.info('[FaviconManager] 初始化完成');
   }, []);
 
   return null;
