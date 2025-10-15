@@ -19,30 +19,156 @@ import {
 
 const ROOT_PATH_KEY = '__root__';
 
+/**
+ * 字符串哈希函数 cyrb53 算法
+ * 
+ * @param str - 要哈希的字符串
+ * @param seed - 哈希种子（可选）
+ * @returns 16进制哈希字符串
+ */
+function simpleHash(str: string, seed = 0): string {
+  let h1 = 0xdeadbeef ^ seed;
+  let h2 = 0x41c6ce57 ^ seed;
+  
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  
+  const hash = 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  return hash.toString(16).padStart(14, '0');
+}
+
+/**
+ * 构建内容缓存键
+ * 
+ * 使用哈希函数生成紧凑的缓存键，优化内存使用和查找性能。
+ * 
+ * @param path - 文件/目录路径
+ * @param branch - Git 分支名
+ * @returns 优化的缓存键（格式: c_<hash>）
+ * 
+ * @example
+ * buildContentsCacheKey('src/components', 'main')
+ * // => 'c_a3f2d9e8b1c4f7'
+ */
 function buildContentsCacheKey(path: string, branch: string): string {
   const normalizedPath = path === '' ? ROOT_PATH_KEY : path;
-  return `contents_${branch}__${normalizedPath}`;
+  const keyString = `${branch}:${normalizedPath}`;
+  const hash = simpleHash(keyString);
+  return `c_${hash}`;
 }
 
 // GitHub内容服务，使用模块导出而非类
 const batcher = new RequestBatcher();
 
-// 缓存初始化状态
+// 缓存系统状态管理
 let cacheInitialized = false;
+let cacheAvailable = false;
+let initializationAttempts = 0;
+const MAX_INIT_ATTEMPTS = 3;
 
-// 确保缓存初始化
+// 降级缓存：当主缓存系统不可用时使用的内存缓存
+const fallbackCache = new Map<string, { data: unknown; timestamp: number }>();
+const FALLBACK_CACHE_TTL = 5 * 60 * 1000; // 5分钟
+const FALLBACK_CACHE_MAX_SIZE = 50; // 最多缓存50个条目
+
+/**
+ * 确保缓存初始化（带降级机制）
+ * 
+ * 初始化策略：
+ * 1. 尝试初始化主缓存系统（IndexedDB/LocalStorage）
+ * 2. 如果失败，使用内存缓存作为降级方案
+ * 3. 限制重试次数，避免无限重试
+ * 
+ * @returns Promise<void>
+ */
 async function ensureCacheInitialized(): Promise<void> {
-  if (!cacheInitialized) {
-    try {
-      await CacheManager.initialize();
-      cacheInitialized = true;
-      logger.info('ContentService: 缓存系统初始化完成');
-    } catch (error) {
-      logger.warn('ContentService: 缓存系统初始化失败，使用同步缓存', error);
-      // 即使初始化失败，也标记为已初始化以避免重复尝试
-      cacheInitialized = true;
+  if (cacheInitialized) {
+    return;
+  }
+
+  if (initializationAttempts >= MAX_INIT_ATTEMPTS) {
+    logger.warn('ContentService: 已达到最大初始化尝试次数，使用降级缓存');
+    cacheInitialized = true;
+    cacheAvailable = false;
+    return;
+  }
+
+  initializationAttempts++;
+
+  try {
+    await CacheManager.initialize();
+    cacheInitialized = true;
+    cacheAvailable = true;
+    logger.info('ContentService: 缓存系统初始化完成');
+  } catch (error) {
+    logger.warn(
+      `ContentService: 缓存系统初始化失败（尝试 ${initializationAttempts.toString()}/${MAX_INIT_ATTEMPTS.toString()}），使用内存降级缓存`,
+      error
+    );
+    
+    // 标记为已初始化，但使用降级模式
+    cacheInitialized = true;
+    cacheAvailable = false;
+    
+    // 在开发模式下提供更详细的错误信息
+    if (import.meta.env.DEV) {
+      logger.error('缓存初始化失败详情:', error);
+      logger.info('建议：检查浏览器的 IndexedDB 和 LocalStorage 权限设置');
     }
   }
+}
+
+/**
+ * 从降级缓存获取数据
+ * 
+ * @param key - 缓存键
+ * @returns 缓存的数据或 null
+ */
+function getFallbackCache<T>(key: string): T | null {
+  const cached = fallbackCache.get(key);
+  
+  if (cached === undefined) {
+    return null;
+  }
+  
+  // 检查是否过期
+  const now = Date.now();
+  if (now - cached.timestamp > FALLBACK_CACHE_TTL) {
+    fallbackCache.delete(key);
+    return null;
+  }
+  
+  return cached.data as T;
+}
+
+/**
+ * 设置降级缓存数据
+ * 
+ * @param key - 缓存键
+ * @param data - 要缓存的数据
+ */
+function setFallbackCache(key: string, data: unknown): void {
+  // 限制缓存大小，避免内存溢出
+  if (fallbackCache.size >= FALLBACK_CACHE_MAX_SIZE) {
+    // 删除最旧的条目
+    const firstKey = fallbackCache.keys().next().value;
+    if (firstKey !== undefined) {
+      fallbackCache.delete(firstKey);
+    }
+  }
+  
+  fallbackCache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
 }
 
 // 获取目录内容
@@ -51,11 +177,21 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
 
     const branch = getCurrentBranch();
     const cacheKey = buildContentsCacheKey(path, branch);
-    const contentCache = CacheManager.getContentCache();
-    const cachedContents = await contentCache.get(cacheKey);
+    
+    // 尝试从主缓存或降级缓存获取
+    let cachedContents: unknown = null;
+    
+    if (cacheAvailable) {
+      // 使用主缓存系统
+      const contentCache = CacheManager.getContentCache();
+      cachedContents = await contentCache.get(cacheKey);
+    } else {
+      // 使用降级缓存
+      cachedContents = getFallbackCache<GitHubContent[]>(cacheKey);
+    }
 
     if (cachedContents !== null && cachedContents !== undefined) {
-      logger.debug(`已从缓存中获取内容: ${path}`);
+      logger.debug(`已从${cacheAvailable ? '主' : '降级'}缓存中获取内容: ${path}`);
       return cachedContents as GitHubContent[];
     }
 
@@ -121,9 +257,15 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
         // 不阻止执行，但记录警告
       }
 
-      // 使用异步缓存并包含版本信息
-      const version = generateContentVersion(path, branch, contents);
-      await contentCache.set(cacheKey, contents, version);
+      // 使用缓存系统（主缓存或降级缓存）
+      if (cacheAvailable) {
+        const version = generateContentVersion(path, branch, contents);
+        const contentCache = CacheManager.getContentCache();
+        await contentCache.set(cacheKey, contents, version);
+      } else {
+        // 使用降级缓存
+        setFallbackCache(cacheKey, contents);
+      }
 
       return contents;
     } catch (error: unknown) {
@@ -139,12 +281,21 @@ export async function getFileContent(fileUrl: string): Promise<string> {
 
     // 添加缓存键
     const cacheKey = `file:${fileUrl}`;
-    const fileCache = CacheManager.getFileCache();
+    
+    // 尝试从主缓存或降级缓存获取
+    let cachedContent: string | null | undefined;
+    
+    if (cacheAvailable) {
+      // 使用主缓存系统
+      const fileCache = CacheManager.getFileCache();
+      cachedContent = await fileCache.get(cacheKey);
+    } else {
+      // 使用降级缓存
+      cachedContent = getFallbackCache<string>(cacheKey);
+    }
 
-    // 检查缓存
-    const cachedContent = await fileCache.get(cacheKey);
-    if (cachedContent !== undefined) {
-      logger.debug(`从缓存获取文件内容: ${fileUrl}`);
+    if (cachedContent !== undefined && cachedContent !== null) {
+      logger.debug(`从${cacheAvailable ? '主' : '降级'}缓存获取文件内容: ${fileUrl}`);
       return cachedContent;
     }
 
@@ -179,9 +330,16 @@ export async function getFileContent(fileUrl: string): Promise<string> {
 
       const content = await response.text();
 
-      // 缓存文件内容（异步）
-      const version = generateFileVersion(fileUrl, content);
-      await fileCache.set(cacheKey, content, version);
+      // 使用缓存系统（主缓存或降级缓存）
+      if (cacheAvailable) {
+        const version = generateFileVersion(fileUrl, content);
+        const fileCache = CacheManager.getFileCache();
+        await fileCache.set(cacheKey, content, version);
+      } else {
+        // 使用降级缓存
+        setFallbackCache(cacheKey, content);
+      }
+      
       return content;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -190,20 +348,43 @@ export async function getFileContent(fileUrl: string): Promise<string> {
     }
 }
 
-// 生成内容版本
+/**
+ * 生成内容版本标识
+ * 
+ * 使用哈希算法生成紧凑的版本标识，用于缓存验证。
+ * 
+ * @param path - 文件/目录路径
+ * @param branch - Git 分支名
+ * @param contents - 内容列表
+ * @returns 版本标识字符串
+ */
 function generateContentVersion(path: string, branch: string, contents: GitHubContent[]): string {
-  const contentHash = contents.map(item => {
+  const contentSignature = contents.map(item => {
     const identifier = item.sha !== '' ? item.sha : (item.size !== undefined ? item.size.toString() : 'unknown');
     return `${item.name}-${identifier}`;
   }).join('|');
-  return `${branch}:${path}-${Date.now().toString()}-${contentHash.slice(0, 8)}`;
+  
+  // 使用哈希生成紧凑的版本标识
+  const versionString = `${branch}:${path}:${contentSignature}:${Date.now().toString()}`;
+  const hash = simpleHash(versionString);
+  return `v_${hash}`;
 }
 
-// 生成文件版本
+/**
+ * 生成文件版本标识
+ * 
+ * @param fileUrl - 文件URL
+ * @param content - 文件内容
+ * @returns 版本标识字符串
+ */
 function generateFileVersion(fileUrl: string, content: string): string {
   const contentLength = content.length;
-  const urlHash = fileUrl.split('/').slice(-2).join('-'); // 取文件名和父目录
-  return `${urlHash}-${contentLength.toString()}-${Date.now().toString()}`;
+  const timestamp = Date.now();
+  
+  // 使用哈希生成紧凑的版本标识
+  const versionString = `${fileUrl}:${contentLength.toString()}:${timestamp.toString()}`;
+  const hash = simpleHash(versionString);
+  return `fv_${hash}`;
 }
 
 // 获取批处理器（用于调试）

@@ -21,6 +21,7 @@ export { ErrorManager } from './error/ErrorManager';
 
 // 导出PDF相关工具
 export * from './pdf/pdfLoading';
+export * from './pdf/pdfPreviewHelper';
 
 // 导出渲染优化工具
 export * from './rendering/latexOptimizer';

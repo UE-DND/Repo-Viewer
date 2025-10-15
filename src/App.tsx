@@ -13,7 +13,7 @@ import MainContent from "@/components/layout/MainContent";
 import ToolbarButtons from "@/components/layout/ToolbarButtons";
 import { SITE_TITLE } from "@/constants";
 import { GitHubService } from "@/services/github";
-import { logger } from "@/utils";
+import { logger, debounce } from "@/utils";
 import SEO from "@/components/seo/SEO";
 import Footer from "@/components/layout/Footer";
 import { FaviconManager } from "@/components/ui/DynamicIcon";
@@ -25,7 +25,26 @@ const App = React.memo(() => {
   const titleRef = useRef<HTMLDivElement | null>(null);
   const [showBreadcrumbInToolbar, setShowBreadcrumbInToolbar] = useState(false);
 
-  // 处理标题点击事件
+  /**
+   * 处理应用标题的点击事件
+   * 
+   * 当用户点击应用标题时，在桌面端会触发以下操作：
+   * 1. 清除所有缓存的GitHub内容数据
+   * 2. 重定向到网站根路径（首页）
+   * 3. 刷新页面以重置应用状态
+   * 
+   * 注意：
+   * - 在移动端（小屏幕）设备上，此功能被禁用以防止误触
+   * - 只有当点击目标是标题元素本身时才会触发
+   * - 缓存清除失败不会阻止页面跳转，只会记录错误日志
+   * 
+   * @param event - React鼠标点击事件对象
+   * @returns void
+   * 
+   * @example
+   * // 用户在桌面端点击标题
+   * // → 清除所有缓存 → 跳转到首页 → 页面刷新
+   */
   const handleTitleClick = (event: React.MouseEvent<HTMLDivElement>): void => {
     // 在移动端禁用跳转功能
     if (isSmallScreen) {
@@ -72,6 +91,14 @@ const App = React.memo(() => {
     }
   }, []);
 
+  /**
+   * 滚动处理逻辑的优化
+   * 
+   * 使用组合优化策略提升性能：
+   * 1. requestAnimationFrame - 与浏览器刷新率同步
+   * 2. debounce - 防抖限制函数调用频率
+   * 3. passive 事件监听 - 提升滚动性能
+   */
   useEffect(() => {
     let rafId: number | null = null;
     let lastScrollY = window.scrollY;
@@ -96,12 +123,17 @@ const App = React.memo(() => {
       });
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // 使用 debounce 进一步优化，减少高频滚动时的函数调用
+    // 16ms 约等于 60fps，与 RAF 配合使用效果最佳
+    const debouncedHandleScroll = debounce(handleScroll, 16);
 
+    window.addEventListener('scroll', debouncedHandleScroll, { passive: true });
+
+    // 初始调用检查状态
     handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', debouncedHandleScroll);
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }

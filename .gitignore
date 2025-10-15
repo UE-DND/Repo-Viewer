@@ -20,3 +20,4 @@ coverage
 .temp
 .tmp
 .github/
+.report/
