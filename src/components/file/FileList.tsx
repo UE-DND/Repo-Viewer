@@ -7,6 +7,7 @@ import type { MotionStyle } from "framer-motion";
 import FileListItem from "./FileListItem";
 import type { GitHubContent } from "@/types";
 import { theme, cache } from "@/utils";
+import { useOptimizedScroll } from "@/hooks/useScroll";
 
 /**
  * 虚拟列表项数据接口
@@ -294,11 +295,12 @@ const FileList = React.memo<FileListProps>(
   }) => {
     const [availableHeight, setAvailableHeight] = useState(0);
     const [needsScrolling, setNeedsScrolling] = useState(false);
-    const [isScrolling, setIsScrolling] = useState(false);
-    const [scrollSpeed, setScrollSpeed] = useState(0);
-    const scrollTimerRef = React.useRef<NodeJS.Timeout | null>(null);
-    const lastScrollTopRef = React.useRef(0);
-    const lastScrollTimeRef = React.useRef(Date.now());
+    const { isScrolling, scrollSpeed, handleScroll: handleScrollEvent } = useOptimizedScroll({
+      maxSamples: 5,
+      scrollEndDelay: 200,
+      fastScrollThreshold: 0.3
+    });
+    
     const listRef = React.useRef<FixedSizeList>(null);
 
     // 计算每个文件项的高度（包括间距）
@@ -501,7 +503,7 @@ const FileList = React.memo<FileListProps>(
       };
     }, [needsScrolling, isSmallScreen]);
 
-    // 处理滚动事件
+    // 处理滚动事件（适配 react-window 接口）
     const handleScroll = React.useCallback(
       ({
         scrollOffset,
@@ -509,44 +511,10 @@ const FileList = React.memo<FileListProps>(
         scrollOffset: number;
         scrollDirection: "forward" | "backward";
       }): void => {
-        // 设置为正在滚动状态
-        setIsScrolling(true);
-
-        // 计算滚动速度
-        const now = Date.now();
-        const timeDiff = now - lastScrollTimeRef.current;
-        if (timeDiff > 0) {
-          const distance = Math.abs(scrollOffset - lastScrollTopRef.current);
-          const speed = distance / timeDiff; // 像素/毫秒
-          setScrollSpeed(speed);
-
-          lastScrollTopRef.current = scrollOffset;
-          lastScrollTimeRef.current = now;
-        }
-
-        // 清除之前的定时器（如果有）
-        if (scrollTimerRef.current !== null) {
-          clearTimeout(scrollTimerRef.current);
-        }
-
-        // 设置新的定时器，在滚动停止后延迟将滚动状态设置为false
-        scrollTimerRef.current = setTimeout(() => {
-          // 使用渐变过渡来隐藏滚动条
-          setIsScrolling(false);
-          setScrollSpeed(0); // 重置滚动速度
-        }, 200); // 减少延迟时间，更快地恢复正常动画
+        handleScrollEvent(scrollOffset);
       },
-      [],
+      [handleScrollEvent]
     );
-
-    // 在组件卸载时清除定时器
-    React.useEffect(() => {
-      return (): void => {
-        if (scrollTimerRef.current !== null) {
-          clearTimeout(scrollTimerRef.current);
-        }
-      };
-    }, []);
 
     // 简化的虚拟列表样式
     const virtualListStyle = useMemo((): React.CSSProperties => {

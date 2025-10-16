@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
+import { hashStringSync } from '@/utils/crypto/hashUtils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
 import { getAuthHeaders } from './Auth';
@@ -20,37 +21,10 @@ import {
 const ROOT_PATH_KEY = '__root__';
 
 /**
- * 字符串哈希函数
- * 
- * 使用 cyrb53 算法生成字符串的哈希值，用于缓存键生成和版本标识。
- * 
- * @param str - 要哈希的字符串
- * @param seed - 哈希种子，默认为0
- * @returns 16进制格式的哈希字符串
- */
-function simpleHash(str: string, seed = 0): string {
-  let h1 = 0xdeadbeef ^ seed;
-  let h2 = 0x41c6ce57 ^ seed;
-  
-  for (let i = 0; i < str.length; i++) {
-    const ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
-  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
-  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  
-  const hash = 4294967296 * (2097151 & h2) + (h1 >>> 0);
-  return hash.toString(16).padStart(14, '0');
-}
-
-/**
  * 构建内容缓存键
  * 
- * 使用哈希函数生成紧凑的缓存键，优化内存使用和查找性能。
+ * 使用标准哈希函数生成紧凑且可靠的缓存键。
+ * 采用改进的 cyrb53 算法，提供良好的分布性和低冲突率。
  * 
  * @param path - 文件/目录路径
  * @param branch - Git 分支名
@@ -63,7 +37,7 @@ function simpleHash(str: string, seed = 0): string {
 function buildContentsCacheKey(path: string, branch: string): string {
   const normalizedPath = path === '' ? ROOT_PATH_KEY : path;
   const keyString = `${branch}:${normalizedPath}`;
-  const hash = simpleHash(keyString);
+  const hash = hashStringSync(keyString);
   return `c_${hash}`;
 }
 
@@ -372,7 +346,7 @@ export async function getFileContent(fileUrl: string): Promise<string> {
 /**
  * 生成内容版本标识
  * 
- * 使用哈希算法生成紧凑的版本标识，用于缓存验证。
+ * 使用标准哈希算法生成紧凑且可靠的版本标识，用于缓存验证。
  * 
  * @param path - 文件/目录路径
  * @param branch - Git 分支名
@@ -385,9 +359,9 @@ function generateContentVersion(path: string, branch: string, contents: GitHubCo
     return `${item.name}-${identifier}`;
   }).join('|');
   
-  // 使用哈希生成紧凑的版本标识
+  // 使用标准哈希生成紧凑的版本标识
   const versionString = `${branch}:${path}:${contentSignature}:${Date.now().toString()}`;
-  const hash = simpleHash(versionString);
+  const hash = hashStringSync(versionString);
   return `v_${hash}`;
 }
 
@@ -402,9 +376,9 @@ function generateFileVersion(fileUrl: string, content: string): string {
   const contentLength = content.length;
   const timestamp = Date.now();
   
-  // 使用哈希生成紧凑的版本标识
+  // 使用标准哈希生成紧凑的版本标识
   const versionString = `${fileUrl}:${contentLength.toString()}:${timestamp.toString()}`;
-  const hash = simpleHash(versionString);
+  const hash = hashStringSync(versionString);
   return `fv_${hash}`;
 }
 

@@ -163,6 +163,11 @@ export class SmartCache<K, V> {
       return { key, score };
     });
     
+    // 确保 scoredEntries 不为空
+    if (scoredEntries.length === 0) {
+      return;
+    }
+    
     // 按得分排序（升序，得分低的先删除）
     scoredEntries.sort((a, b) => a.score - b.score);
     
@@ -172,7 +177,7 @@ export class SmartCache<K, V> {
     // 删除得分最低的条目
     for (let i = 0; i < toRemove && i < scoredEntries.length; i++) {
       const entry = scoredEntries[i];
-      if (entry) {
+      if (entry !== undefined) {
         this.cache.delete(entry.key);
       }
     }

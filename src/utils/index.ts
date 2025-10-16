@@ -66,6 +66,10 @@ export const retry = retryUtils;
 import * as SmartCacheModule from './cache/SmartCache';
 export const cache = SmartCacheModule;
 
+// 加密和哈希工具
+import * as hashUtils from './crypto/hashUtils';
+export const crypto = hashUtils;
+
 // 主题相关工具
 import * as g3Curves from '@/theme/g3Curves';
 export const theme = g3Curves;
