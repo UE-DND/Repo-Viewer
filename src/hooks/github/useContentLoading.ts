@@ -22,10 +22,10 @@ export function useContentLoading(path: string, branch: string): ContentLoadingS
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
-  const [isThemeChanging, setIsThemeChanging] = useState<boolean>(false);
 
   const currentPathRef = useRef<string>(path);
   const currentBranchRef = useRef<string>(branch);
+  const isThemeChangingRef = useRef<boolean>(false);
 
   useEffect(() => {
     currentPathRef.current = path;
@@ -38,11 +38,11 @@ export function useContentLoading(path: string, branch: string): ContentLoadingS
   // 监听主题切换事件
   useEffect(() => {
     const handleThemeChanging = (): void => {
-      setIsThemeChanging(true);
+      isThemeChangingRef.current = true;
     };
 
     const handleThemeChanged = (): void => {
-      setIsThemeChanging(false);
+      isThemeChangingRef.current = false;
     };
 
     window.addEventListener('theme:changing', handleThemeChanging);
@@ -107,13 +107,13 @@ export function useContentLoading(path: string, branch: string): ContentLoadingS
   // 监听路径、分支或刷新触发器的变化
   useEffect(() => {
     // 主题切换期间跳过内容重新加载
-    if (isThemeChanging) {
+    if (isThemeChangingRef.current) {
       logger.debug('主题切换中，跳过内容重新加载');
       return;
     }
     
     void loadContents();
-  }, [path, branch, refreshTrigger, isThemeChanging, loadContents]);
+  }, [path, branch, refreshTrigger, loadContents]);
 
   const refresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
