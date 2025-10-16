@@ -107,10 +107,19 @@ const FileListItem = memo<FileListItemProps>(
   }) => {
     const theme = useTheme();
     const [isHoveringDownload, setIsHoveringDownload] = React.useState(false);
+    const [hoverCount, setHoverCount] = React.useState(0);
 
     const isDownloading = downloadingPath === item.path;
     const isFolderDownloading = downloadingFolderPath === item.path;
     const isItemDownloading = isDownloading || isFolderDownloading;
+
+    // 当下载状态改变时重置悬停计数
+    React.useEffect(() => {
+      if (!isItemDownloading) {
+        setHoverCount(0);
+        setIsHoveringDownload(false);
+      }
+    }, [isItemDownloading]);
 
     const IconComponent = React.useMemo(() => {
       return item.type === "dir" ? FolderIcon : file.getFileIcon(item.name);
@@ -188,8 +197,17 @@ const FileListItem = memo<FileListItemProps>(
     );
 
     const handleDownloadMouseEnter = React.useCallback(() => {
-      setIsHoveringDownload(true);
-    }, []);
+      if (isItemDownloading) {
+        setHoverCount(prev => {
+          const newCount = prev + 1;
+          // 只有第二次及以后的悬停才显示取消图标
+          if (newCount >= 2) {
+            setIsHoveringDownload(true);
+          }
+          return newCount;
+        });
+      }
+    }, [isItemDownloading]);
 
     const handleDownloadMouseLeave = React.useCallback(() => {
       setIsHoveringDownload(false);
@@ -212,14 +230,14 @@ const FileListItem = memo<FileListItemProps>(
             <Tooltip
               title={
                 isItemDownloading
-                  ? "取消下载"
+                  ? (hoverCount >= 2 ? "取消下载" : "")
                   : item.type === "file"
                     ? `下载 ${item.name}`
                     : `下载文件夹 ${item.name}`
               }
               disableInteractive
               placement="left"
-              enterDelay={300}
+              enterDelay={isItemDownloading ? 0 : 300}
               leaveDelay={0}
               slotProps={{
                 tooltip: {
@@ -266,7 +284,7 @@ const FileListItem = memo<FileListItemProps>(
                   }
                   onClick={
                     isItemDownloading
-                      ? onCancelDownload
+                      ? (isHoveringDownload ? onCancelDownload : undefined)
                       : item.type === "file"
                         ? handleFileDownloadClick
                         : handleFileFolderDownloadClick
@@ -295,7 +313,7 @@ const FileListItem = memo<FileListItemProps>(
                         data-oid="0oqwaa-"
                       />
 
-                      {/* 只在悬停时显示取消图标 */}
+                      {/* 第二次及以后悬停时显示取消图标 */}
                       <Box
                         sx={{
                           top: 0,
@@ -312,6 +330,7 @@ const FileListItem = memo<FileListItemProps>(
                             ? alpha(theme.palette.error.main, 0.1)
                             : "transparent",
                           borderRadius: "50%",
+                          pointerEvents: isHoveringDownload ? "auto" : "none",
                         }}
                         data-oid="g-4-y6c"
                       >
