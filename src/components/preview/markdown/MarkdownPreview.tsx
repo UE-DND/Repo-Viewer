@@ -47,6 +47,8 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
     const markdownRef = useRef<HTMLDivElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
+    const hasInitializedThemeModeRef = useRef<boolean>(false);
+    const isEventDrivenThemeChangeRef = useRef<boolean>(false);
 
     // 图片加载状态
     const imageStateRef = useRef<ImageLoadingState>(createImageLoadingState());
@@ -116,6 +118,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     // 监听主题切换事件
     useEffect(() => {
       const handleThemeChanging = (): void => {
+        isEventDrivenThemeChangeRef.current = true;
         setIsThemeChanging(true);
       };
 
@@ -124,6 +127,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         setTimeout(() => {
           setIsThemeChanging(false);
           handleLatexCheck();
+          isEventDrivenThemeChangeRef.current = false;
         }, 300);
       };
 
@@ -138,6 +142,16 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
     // 监听主题模式变化（用于非事件触发的情况）
     useEffect(() => {
+      if (!hasInitializedThemeModeRef.current) {
+        hasInitializedThemeModeRef.current = true;
+        return;
+      }
+
+      if (isEventDrivenThemeChangeRef.current) {
+        handleLatexCheck();
+        return;
+      }
+
       // 当主题发生变化时，暂时将公式容器设为不可见，避免卡顿
       setIsThemeChanging(true);
       const timer = setTimeout(() => {

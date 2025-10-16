@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState, useCallback } from "react";
 import { Box } from "@mui/material";
 import { FixedSizeList, type ListChildComponentProps } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -140,6 +140,100 @@ const animationVariantsCache = new cache.SmartCache<string, typeof itemVariants>
   cleanupThreshold: 0.8,
   cleanupRatio: 0.3
 });
+
+interface FileListLayoutMetrics {
+  height: number;
+  needsScrolling: boolean;
+}
+
+const TOP_ELEMENTS_ESTIMATE = 180;
+const BOTTOM_RESERVED_SPACE = 50;
+const VIEWPORT_FALLBACK_HEIGHT = 720;
+
+const calculateLayoutMetrics = ({
+  fileCount,
+  rowHeight,
+  isSmallScreen,
+  hasReadmePreview,
+  hoverExtraSpace,
+  viewportHeight,
+}: {
+  fileCount: number;
+  rowHeight: number;
+  isSmallScreen: boolean;
+  hasReadmePreview: boolean;
+  hoverExtraSpace: number;
+  viewportHeight: number | null;
+}): FileListLayoutMetrics => {
+  const effectiveViewport = Math.max(
+    VIEWPORT_FALLBACK_HEIGHT,
+    (viewportHeight ?? VIEWPORT_FALLBACK_HEIGHT)
+  );
+
+  const maxAvailableHeight = Math.max(
+    LIST_HEIGHT_CONFIG.minVisibleItems * rowHeight,
+    effectiveViewport - TOP_ELEMENTS_ESTIMATE - BOTTOM_RESERVED_SPACE
+  );
+
+  const contentHeight = fileCount * rowHeight;
+  const requiresScroll =
+    contentHeight > maxAvailableHeight ||
+    (!isSmallScreen && fileCount >= 10);
+
+  if (!requiresScroll) {
+    let paddingMultiplier;
+    if (fileCount <= 2) {
+      paddingMultiplier = isSmallScreen ? 12 : 20;
+    } else if (fileCount <= 5) {
+      paddingMultiplier = isSmallScreen ? 16 : 24;
+    } else {
+      paddingMultiplier = isSmallScreen ? 20 : 28;
+    }
+
+    const compactHeight = contentHeight + paddingMultiplier;
+    const height = Math.min(compactHeight, maxAvailableHeight);
+
+    return {
+      height,
+      needsScrolling: false,
+    };
+  }
+
+  let scrollModeHeight: number;
+
+  if (fileCount <= LIST_HEIGHT_CONFIG.maxVisibleItems) {
+    scrollModeHeight = Math.min(
+      contentHeight + hoverExtraSpace,
+      maxAvailableHeight,
+    );
+  } else {
+    scrollModeHeight = Math.min(
+      LIST_HEIGHT_CONFIG.maxVisibleItems * rowHeight + hoverExtraSpace,
+      maxAvailableHeight,
+    );
+  }
+
+  if (hasReadmePreview) {
+    let heightReduction;
+    if (fileCount <= LIST_HEIGHT_CONFIG.veryFewItemsThreshold) {
+      heightReduction = LIST_HEIGHT_CONFIG.readmePreviewHeightReduction.few;
+    } else if (fileCount <= LIST_HEIGHT_CONFIG.maxVisibleItems) {
+      heightReduction = LIST_HEIGHT_CONFIG.readmePreviewHeightReduction.normal;
+    } else {
+      heightReduction = LIST_HEIGHT_CONFIG.readmePreviewHeightReduction.many;
+    }
+
+    scrollModeHeight = Math.max(
+      scrollModeHeight - heightReduction,
+      LIST_HEIGHT_CONFIG.minVisibleItems * rowHeight,
+    );
+  }
+
+  return {
+    height: scrollModeHeight,
+    needsScrolling: true,
+  };
+};
 
 /**
  * 根据滚动速度动态生成动画变体（带智能缓存）
@@ -293,8 +387,6 @@ const FileList = React.memo<FileListProps>(
     currentPath,
     hasReadmePreview = false,
   }) => {
-    const [availableHeight, setAvailableHeight] = useState(0);
-    const [needsScrolling, setNeedsScrolling] = useState(false);
     const { isScrolling, scrollSpeed, handleScroll: handleScrollEvent } = useOptimizedScroll({
       maxSamples: 5,
       scrollEndDelay: 200,
@@ -341,119 +433,49 @@ const FileList = React.memo<FileListProps>(
       ? LIST_HEIGHT_CONFIG.containerPadding.few
       : LIST_HEIGHT_CONFIG.containerPadding.normal;
 
+    const computeMetrics = useCallback((): FileListLayoutMetrics => {
+      const viewportHeight = typeof window !== "undefined" ? window.innerHeight : null;
+      return calculateLayoutMetrics({
+        fileCount: contents.length,
+        rowHeight,
+        isSmallScreen,
+        hasReadmePreview,
+        hoverExtraSpace,
+        viewportHeight,
+      });
+    }, [contents.length, rowHeight, isSmallScreen, hasReadmePreview, hoverExtraSpace]);
+
+    const [layoutMetrics, setLayoutMetrics] = useState<FileListLayoutMetrics>(() => computeMetrics());
+    const { height: availableHeight, needsScrolling } = layoutMetrics;
+
     // 监听窗口大小变化和文件数量变化
     useEffect(() => {
-      // 计算可用高度的函数，考虑文件数量
-      const calculateAvailableHeight = (): number => {
-        // 获取视口高度
-        const viewportHeight = window.innerHeight;
-        // 估计顶部导航栏和面包屑的高度（可以根据实际情况调整）
-        const topElementsHeight = 180; // 包括导航栏、面包屑和上下 padding
-        // 底部预留空间
-        const bottomMargin = 50;
+      setLayoutMetrics(computeMetrics());
 
-        // 计算理论上的最大可用高度
-        const maxAvailableHeight =
-          viewportHeight - topElementsHeight - bottomMargin;
+      if (typeof window === "undefined") {
+        return;
+      }
 
-        // 文件数量
-        const fileCount = contents.length;
+      let rafId: number | null = null;
 
-        // 计算实际内容高度（所有文件项的总高度）
-        const contentHeight = fileCount * rowHeight;
-
-        // 判断是否需要滚动
-        // 1. 内容高度超过容器高度时启用滚动
-        // 2. 在桌面端（非小屏幕）且文件数量大于等于10个时启用滚动
-        const needsScrolling =
-          contentHeight > maxAvailableHeight ||
-          (!isSmallScreen && fileCount >= 10);
-        setNeedsScrolling(needsScrolling);
-
-        // 非滚动模式下的高度计算（文件数量小于10个且内容高度不超过最大可用高度）
-        if (!needsScrolling) {
-          // 根据文件数量调整容器高度
-          let paddingMultiplier;
-          if (fileCount <= 2) {
-            // 极少量文件，使用最紧凑的设置
-            paddingMultiplier = isSmallScreen ? 12 : 20;
-          } else if (fileCount <= 5) {
-            // 少量文件，使用适中的设置
-            paddingMultiplier = isSmallScreen ? 16 : 24;
-          } else {
-            // 中等数量文件，使用稍大的设置
-            paddingMultiplier = isSmallScreen ? 20 : 28;
-          }
-
-          const compactHeight = contentHeight + paddingMultiplier;
-          return Math.min(compactHeight, maxAvailableHeight);
-        }
-
-        // 滚动模式下的高度计算
-        let scrollModeHeight;
-
-        if (fileCount <= LIST_HEIGHT_CONFIG.maxVisibleItems) {
-          // 文件数量不超过最大显示数量时，显示所有文件
-          // 在滚动模式下也考虑阴影效果，但只需要为顶部和底部的文件项添加额外空间
-          scrollModeHeight = Math.min(
-            contentHeight + hoverExtraSpace,
-            maxAvailableHeight,
-          );
-        } else {
-          // 文件数量超过最大显示数量时，限制高度为最多显示maxVisibleItems个文件
-          // 同样考虑阴影效果
-          scrollModeHeight = Math.min(
-            LIST_HEIGHT_CONFIG.maxVisibleItems * rowHeight + hoverExtraSpace,
-            maxAvailableHeight,
-          );
-        }
-
-        // 如果有README预览，减少列表高度
-        if (hasReadmePreview) {
-          // 根据文件数量选择不同的减少值
-          let heightReduction;
-          if (fileCount <= LIST_HEIGHT_CONFIG.veryFewItemsThreshold) {
-            heightReduction =
-              LIST_HEIGHT_CONFIG.readmePreviewHeightReduction.few;
-          } else if (fileCount <= LIST_HEIGHT_CONFIG.maxVisibleItems) {
-            heightReduction =
-              LIST_HEIGHT_CONFIG.readmePreviewHeightReduction.normal;
-          } else {
-            heightReduction =
-              LIST_HEIGHT_CONFIG.readmePreviewHeightReduction.many;
-          }
-
-          // 应用高度减少，但确保不会小于最小高度
-          scrollModeHeight = Math.max(
-            scrollModeHeight - heightReduction,
-            LIST_HEIGHT_CONFIG.minVisibleItems * rowHeight,
-          );
-        }
-
-        return scrollModeHeight;
-      };
-
-      // 初始计算
-      setAvailableHeight(calculateAvailableHeight());
-
-      // 添加窗口大小变化事件监听
       const handleResize = (): void => {
-        setAvailableHeight(calculateAvailableHeight());
+        if (rafId !== null) {
+          window.cancelAnimationFrame(rafId);
+        }
+        rafId = window.requestAnimationFrame(() => {
+          setLayoutMetrics(computeMetrics());
+        });
       };
 
       window.addEventListener("resize", handleResize);
 
-      // 清理函数
       return () => {
+        if (rafId !== null) {
+          window.cancelAnimationFrame(rafId);
+        }
         window.removeEventListener("resize", handleResize);
       };
-    }, [
-      contents.length,
-      rowHeight,
-      isSmallScreen,
-      hasReadmePreview,
-      hoverExtraSpace,
-    ]); // 添加 hoverExtraSpace 作为依赖项
+    }, [computeMetrics]);
 
     // 仅当相关数据变化时才更新列表项数据
     const itemData = useMemo(

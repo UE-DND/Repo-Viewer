@@ -3,11 +3,11 @@ import type { ComponentType, ReactNode } from 'react';
 /**
  * 懒加载预览选项接口
  */
-export interface LazyPreviewOptions {
+export interface LazyPreviewOptions<P = Record<string, unknown>> {
   /** 加载提示文本 */
   loadingText?: string;
   /** 自定义加载回退组件 */
-  fallback?: ReactNode;
+  fallback?: ReactNode | ((props: P) => ReactNode);
   /** 自定义错误边界组件 */
   errorBoundary?: ComponentType<{ error: Error; retry: () => void; children: ReactNode }>;
 }

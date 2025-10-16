@@ -20,6 +20,7 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string)
   const [readmeLoaded, setReadmeLoaded] = useState<boolean>(false);
 
   const currentPathRef = useRef<string>(currentPath);
+  const lastReadmePathRef = useRef<string | null>(null);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
@@ -64,9 +65,6 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string)
 
   // 监听内容变化，自动加载 README
   useEffect(() => {
-    // 重置 README 加载状态
-    setReadmeLoaded(false);
-
     // 查找 README 文件
     const readmeItem = contents.find(item =>
       item.type === 'file' &&
@@ -75,13 +73,23 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string)
     );
 
     if (readmeItem !== undefined) {
+      const nextReadmePath = readmeItem.path;
+      const isSameReadme = lastReadmePathRef.current === nextReadmePath;
+
+      if (isSameReadme && (loadingReadme || readmeLoaded)) {
+        return;
+      }
+
+      lastReadmePathRef.current = nextReadmePath;
       void loadReadmeContent(readmeItem);
     } else {
+      lastReadmePathRef.current = null;
       setReadmeContent(null);
+      setLoadingReadme(false);
       // README 不存在时也设置为已加载完成
       setReadmeLoaded(true);
     }
-  }, [contents, loadReadmeContent]);
+  }, [contents, loadReadmeContent, loadingReadme, readmeLoaded]);
 
   return {
     readmeContent,

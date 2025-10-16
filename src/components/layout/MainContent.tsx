@@ -17,7 +17,7 @@ import {
   usePreviewContext,
   useDownloadContext,
 } from "@/contexts/unified";
-import { FileListSkeleton } from "@/components/ui/skeletons";
+import { FileListSkeleton, MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 import { getPreviewFromUrl } from "@/utils/routing/urlManager";
 import { logger } from "@/utils";
 import DynamicSEO from "@/components/seo/DynamicSEO";
@@ -364,6 +364,10 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     />
   );
 
+  const shouldShowReadmeSection = hasReadmeFile;
+  const hasReadmeContent = typeof readmeContent === "string" && readmeContent.trim().length > 0;
+  const shouldShowReadmeSkeleton = shouldShowReadmeSection && (!readmeLoaded || loadingReadme);
+
   return (
     <Container
       component="main"
@@ -448,14 +452,14 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
             handleFolderDownloadClick={handleFolderDownloadClick}
             handleCancelDownload={handleCancelDownload}
             currentPath={currentPath}
-            hasReadmePreview={(readmeContent ?? "").length > 0 && hasReadmeFile}
+            hasReadmePreview={hasReadmeFile}
             data-oid="_qfxtvv"
           />
 
           {/* README预览 - 底部展示 */}
-          {(readmeContent ?? "").length > 0 && readmeLoaded && !loadingReadme && (
+          {shouldShowReadmeSection && (
             <Box
-              className="readme-container fade-in"
+              className="readme-container"
               sx={{
                 position: "relative",
                 width: "100%",
@@ -471,19 +475,42 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   fontWeight: 600,
                   mb: 2,
                   display: "flex",
-                  alignItems: "center",
-                  color: "text.primary",
-                }}
-                data-oid="iawc_6m"
-              />
+                alignItems: "center",
+                color: "text.primary",
+              }}
+              data-oid="iawc_6m"
+            />
 
-              <LazyMarkdownPreview
-                readmeContent={readmeContent}
-                loadingReadme={false}
-                isSmallScreen={isSmallScreen}
-                lazyLoad={false}
-                data-oid="6nohd:r"
-              />
+              {shouldShowReadmeSkeleton ? (
+                <MarkdownPreviewSkeleton
+                  isSmallScreen={isSmallScreen}
+                  data-oid="readme-skeleton"
+                />
+              ) : hasReadmeContent ? (
+                <LazyMarkdownPreview
+                  readmeContent={readmeContent}
+                  loadingReadme={false}
+                  isSmallScreen={isSmallScreen}
+                  lazyLoad={false}
+                  data-oid="6nohd:r"
+                />
+              ) : readmeLoaded ? (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    px: { xs: 2, sm: 3, md: 4 },
+                    py: { xs: 2, sm: 3 },
+                    borderRadius: 2,
+                    bgcolor: "background.paper",
+                    border: "1px solid",
+                    borderColor: "divider",
+                  }}
+                  data-oid="readme-empty"
+                >
+                  README 内容为空或加载失败。
+                </Typography>
+              ) : null}
             </Box>
           )}
 

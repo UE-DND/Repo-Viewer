@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { DefaultLoadingFallback } from '../components/DefaultLoadingFallback';
 import { LazyLoadErrorBoundary } from '../components/LazyLoadErrorBoundary';
 import type { LazyPreviewOptions } from '../types';
@@ -16,14 +16,28 @@ import type { LazyPreviewOptions } from '../types';
  */
 export function createLazyPreviewComponent<P = Record<string, unknown>>(
   importFn: () => Promise<{ default: ComponentType<P> }>,
-  options: LazyPreviewOptions = {}
+  options: LazyPreviewOptions<P> = {}
 ): React.FC<P> {
   const LazyComponent = lazy(importFn);
 
   const WrappedComponent: React.FC<P> = (props) => {
-    const fallback = options.fallback ?? (
-      <DefaultLoadingFallback {...(typeof options.loadingText === 'string' && options.loadingText.length > 0 ? { loadingText: options.loadingText } : {})} />
-    );
+    const resolveFallback = (): ReactNode => {
+      if (typeof options.fallback === 'function') {
+        return options.fallback(props);
+      }
+
+      if (options.fallback !== undefined) {
+        return options.fallback;
+      }
+
+      return (
+        <DefaultLoadingFallback
+          {...(typeof options.loadingText === 'string' && options.loadingText.length > 0 ? { loadingText: options.loadingText } : {})}
+        />
+      );
+    };
+
+    const fallback = resolveFallback();
 
     return (
       <LazyLoadErrorBoundary>
