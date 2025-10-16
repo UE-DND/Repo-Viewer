@@ -352,8 +352,23 @@ class ErrorManagerClass {
            'code' in error && 'category' in error && 'level' in error;
   }
 
-  // 添加到错误历史
+  /**
+   * 添加到错误历史
+   * 
+   * 使用双重清理策略：按时间和按数量。
+   * - 清理超过1小时的旧错误
+   * - 限制历史记录数量
+   */
   private addToHistory(error: AppError): void {
+    const now = Date.now();
+    const maxAge = 3600000; // 1小时（毫秒）
+    
+    // 清理超过1小时的旧错误
+    this.errorHistory = this.errorHistory.filter(
+      e => (now - e.timestamp) < maxAge
+    );
+    
+    // 添加新错误到历史记录开头
     this.errorHistory.unshift(error);
 
     // 限制历史记录大小
@@ -495,8 +510,30 @@ class ErrorManagerClass {
  */
 export const ErrorManager = new ErrorManagerClass();
 
-// 全局错误处理
+// 错误节流控制
+let errorThrottleTimer: NodeJS.Timeout | null = null;
+let errorThrottled = false;
+const ERROR_THROTTLE_MS = 1000; // 1秒内最多处理一次错误
+
+let promiseRejectionThrottleTimer: NodeJS.Timeout | null = null;
+let promiseRejectionThrottled = false;
+const PROMISE_REJECTION_THROTTLE_MS = 1000; // 1秒内最多处理一次Promise拒绝
+
+/**
+ * 全局错误处理
+ * 
+ * 使用节流机制避免短时间内大量错误导致性能问题。
+ */
 window.addEventListener('error', (event) => {
+  // 如果正在节流中，忽略此次错误
+  if (errorThrottled) {
+    return;
+  }
+
+  // 设置节流标志
+  errorThrottled = true;
+
+  // 处理错误
   const error = event.error instanceof Error ? event.error : new Error(String(event.error));
   ErrorManager.captureError(error, {
     component: 'window',
@@ -507,13 +544,48 @@ window.addEventListener('error', (event) => {
       colno: event.colno
     }
   });
+
+  // 清除之前的定时器
+  if (errorThrottleTimer !== null) {
+    clearTimeout(errorThrottleTimer);
+  }
+
+  // 设置新的定时器，在指定时间后解除节流
+  errorThrottleTimer = setTimeout(() => {
+    errorThrottled = false;
+    errorThrottleTimer = null;
+  }, ERROR_THROTTLE_MS);
 });
 
-// 未处理的Promise拒绝
+/**
+ * 未处理的Promise拒绝处理
+ * 
+ * 使用节流机制避免短时间内大量Promise拒绝导致性能问题。
+ */
 window.addEventListener('unhandledrejection', (event) => {
+  // 如果正在节流中，忽略此次错误
+  if (promiseRejectionThrottled) {
+    return;
+  }
+
+  // 设置节流标志
+  promiseRejectionThrottled = true;
+
+  // 处理错误
   const errorMessage = typeof event.reason === 'string' ? event.reason : String(event.reason);
   ErrorManager.captureError(new Error(errorMessage), {
     component: 'window',
     action: 'unhandled_promise_rejection'
   });
+
+  // 清除之前的定时器
+  if (promiseRejectionThrottleTimer !== null) {
+    clearTimeout(promiseRejectionThrottleTimer);
+  }
+
+  // 设置新的定时器，在指定时间后解除节流
+  promiseRejectionThrottleTimer = setTimeout(() => {
+    promiseRejectionThrottled = false;
+    promiseRejectionThrottleTimer = null;
+  }, PROMISE_REJECTION_THROTTLE_MS);
 });

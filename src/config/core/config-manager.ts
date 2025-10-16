@@ -35,6 +35,26 @@ export class ConfigManager {
   }
 
   /**
+   * 重置单例实例（用于测试）
+   * 
+   * 在测试环境中重置单例实例，确保每个测试的独立性。
+   * 
+   * @warning 仅在测试环境中使用，生产环境不应调用此方法
+   */
+  static resetInstance(): void {
+    ConfigManager.instance = null;
+  }
+
+  /**
+   * 检查是否已创建实例
+   * 
+   * @returns 如果实例已创建返回 true
+   */
+  static hasInstance(): boolean {
+    return ConfigManager.instance !== null;
+  }
+
+  /**
    * 获取配置
    * 
    * 获取当前加载的配置对象，如果未加载则自动加载。
@@ -91,6 +111,27 @@ export class ConfigManager {
     });
   }
 
+  // 验证配置
+  private validateConfig(config: Config): void {
+    // 验证必需的 GitHub 仓库配置
+    if (config.github.repoOwner.trim() === '') {
+      throw new Error('GitHub 仓库配置不完整：缺少 repoOwner');
+    }
+
+    if (config.github.repoName.trim() === '') {
+      throw new Error('GitHub 仓库配置不完整：缺少 repoName');
+    }
+
+    if (config.github.repoBranch.trim() === '') {
+      throw new Error('GitHub 仓库配置不完整：缺少 repoBranch');
+    }
+
+    // 验证站点配置
+    if (config.site.title.trim() === '') {
+      throw new Error('站点配置不完整：缺少 title');
+    }
+  }
+
   // 从环境变量加载配置
   private loadConfig(): Config {
     const env = this.getEnvSource();
@@ -102,7 +143,7 @@ export class ConfigManager {
       resolveEnvWithMapping(stringEnv, 'CONSOLE_LOGGING', 'false')
     );
 
-    return {
+    const config: Config = {
       site: {
         title: resolveEnvWithMapping(stringEnv, 'SITE_TITLE', CONFIG_DEFAULTS.SITE_TITLE),
         description: resolveEnvWithMapping(stringEnv, 'SITE_DESCRIPTION', CONFIG_DEFAULTS.SITE_DESCRIPTION),
@@ -148,6 +189,11 @@ export class ConfigManager {
       },
       tokens: this.loadTokens(env)
     };
+
+    // 验证配置
+    this.validateConfig(config);
+
+    return config;
   }
 
   // 加载Token配置

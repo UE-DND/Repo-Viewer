@@ -1,4 +1,4 @@
-import { getTokenCount, hasToken, searchFiles } from '@/services/github';
+import { GitHub } from '@/services/github';
 import { logger } from '../logging/logger';
 import axios from 'axios';
 
@@ -70,8 +70,8 @@ export async function checkTokenStatus(): Promise<{
   serverToken: { hasToken: boolean; tokenCount: number };
 }> {
   // 获取前端token状态
-  const clientTokenCount = getTokenCount();
-  const hasClientToken = hasToken();
+  const clientTokenCount = GitHub.Auth.getTokenCount();
+  const hasClientToken = GitHub.Auth.hasToken();
 
   // 获取服务端token状态
   let serverTokenStatus = { hasToken: false, tokenCount: 0 };
@@ -131,7 +131,7 @@ export async function checkTokenStatus(): Promise<{
 export async function testApiSearch(): Promise<boolean> {
   try {
     logger.info('正在测试GitHub API搜索...');
-    const result = await searchFiles('test', '', true);
+    const result = await GitHub.Search.searchFiles('test', '', true);
     logger.info(`搜索成功! 找到 ${result.length.toString()} 个结果`);
     logger.debug('搜索结果:', result);
     return true;

@@ -43,10 +43,54 @@ interface FileListItemProps {
 }
 
 /**
+ * 自定义比较函数
+ * 
+ * 优化渲染性能：只在必要的 props 变化时才重新渲染。
+ */
+function arePropsEqual(
+  prevProps: FileListItemProps,
+  nextProps: FileListItemProps
+): boolean {
+  // 使用 sha 来判断 item 是否变化（更可靠）
+  const itemUnchanged = prevProps.item.sha === nextProps.item.sha &&
+                        prevProps.item.name === nextProps.item.name &&
+                        prevProps.item.type === nextProps.item.type;
+  
+  // 检查下载状态
+  const downloadStateUnchanged = 
+    prevProps.downloadingPath === nextProps.downloadingPath &&
+    prevProps.downloadingFolderPath === nextProps.downloadingFolderPath &&
+    prevProps.folderDownloadProgress === nextProps.folderDownloadProgress;
+  
+  // 检查路径
+  const pathUnchanged = prevProps.currentPath === nextProps.currentPath;
+  
+  // 检查回调函数（如果使用 useCallback，这些应该是稳定的）
+  const callbacksUnchanged = 
+    prevProps.handleItemClick === nextProps.handleItemClick &&
+    prevProps.handleDownloadClick === nextProps.handleDownloadClick &&
+    prevProps.handleFolderDownloadClick === nextProps.handleFolderDownloadClick &&
+    prevProps.handleCancelDownload === nextProps.handleCancelDownload;
+  
+  // 检查 contents 长度（用于涟漪效果优化）
+  const contentsLengthUnchanged = 
+    (prevProps.contents?.length ?? 0) === (nextProps.contents?.length ?? 0);
+  
+  // 所有关键 props 都未变化时返回 true（不重新渲染）
+  return itemUnchanged && 
+         downloadStateUnchanged && 
+         pathUnchanged && 
+         callbacksUnchanged &&
+         contentsLengthUnchanged;
+}
+
+/**
  * 文件列表项组件
  * 
  * 显示单个文件或文件夹，包含图标、名称和下载功能。
  * 支持下载进度显示和取消操作。
+ * 
+ * 使用自定义比较函数优化渲染性能，避免不必要的重新渲染。
  */
 const FileListItem = memo<FileListItemProps>(
   ({
@@ -342,6 +386,7 @@ const FileListItem = memo<FileListItemProps>(
       </ListItem>
     );
   },
+  arePropsEqual  // 使用自定义比较函数
 );
 
 FileListItem.displayName = "FileListItem";

@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GitHubContent } from '@/types';
-import { getDefaultBranchName, setCurrentBranch, getCurrentBranch, getBranches, getFileContent, getContents } from '@/services/github';
+import { GitHub } from '@/services/github';
 import { logger } from '@/utils';
+import { requestManager } from '@/utils/request/requestManager';
+import { handleError } from '@/utils/error/errorHandler';
 import { getBranchFromUrl, getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '@/utils/routing/urlManager';
 import type { NavigationDirection } from '@/contexts/unified';
 import { getFeaturesConfig, getGithubConfig } from '@/config';
@@ -17,7 +19,7 @@ const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 // 获取仓库信息
 const GITHUB_REPO_OWNER = githubConfig.repoOwner;
 const GITHUB_REPO_NAME = githubConfig.repoName;
-const DEFAULT_BRANCH = getDefaultBranchName();
+const DEFAULT_BRANCH = GitHub.Branch.getDefaultBranchName();
 
 /**
  * GitHub内容管理Hook
@@ -88,13 +90,13 @@ export const useGitHubContent = (): {
   const [currentBranch, setCurrentBranchState] = useState<string>(() => {
     const branchFromUrl = getBranchFromUrl().trim();
     if (branchFromUrl.length > 0) {
-      setCurrentBranch(branchFromUrl);
+      GitHub.Branch.setCurrentBranch(branchFromUrl);
       return branchFromUrl;
     }
-    return getCurrentBranch();
+    return GitHub.Branch.getCurrentBranch();
   });
   const [availableBranches, setAvailableBranches] = useState<string[]>(() => {
-    const initial = getCurrentBranch();
+    const initial = GitHub.Branch.getCurrentBranch();
     return Array.from(new Set([DEFAULT_BRANCH, initial]));
   });
   const [branchLoading, setBranchLoading] = useState<boolean>(false);
@@ -103,9 +105,6 @@ export const useGitHubContent = (): {
   const isInitialLoad = useRef<boolean>(true);
   const currentPathRef = useRef<string>(currentPath);
   const currentBranchRef = useRef<string>(currentBranch);
-  const defaultBranchRef = useRef<string>(DEFAULT_BRANCH);
-  const requestIdCounterRef = useRef(0);
-  const activeRequestIdRef = useRef(0);
   const refreshTargetPathRef = useRef<string | null>(null);
   const isRefreshInProgressRef = useRef(false);
 
@@ -132,16 +131,16 @@ export const useGitHubContent = (): {
           branchSet.add(trimmed);
         }
       });
-      branchSet.add(defaultBranchRef.current);
+      branchSet.add(DEFAULT_BRANCH);
       branchSet.add(currentBranchRef.current);
 
       const branchArray = Array.from(branchSet);
       branchArray.sort((a, b) => a.localeCompare(b, 'zh-CN'));
       branchArray.sort((a, b) => {
-        if (a === defaultBranchRef.current) {
+        if (a === DEFAULT_BRANCH) {
           return -1;
         }
-        if (b === defaultBranchRef.current) {
+        if (b === DEFAULT_BRANCH) {
           return 1;
         }
         return 0;
@@ -154,7 +153,7 @@ export const useGitHubContent = (): {
     setBranchLoading(true);
     setBranchError(null);
     try {
-      const branches = await getBranches();
+      const branches = await GitHub.Branch.getBranches();
       mergeBranchList(branches);
     } catch (error) {
       const message = error instanceof Error ? error.message : '未知错误';
@@ -170,7 +169,7 @@ export const useGitHubContent = (): {
   }, [loadBranches]);
 
   // 加载README内容
-  const loadReadmeContent = useCallback(async (readmeItem: GitHubContent, requestId?: number) => {
+  const loadReadmeContent = useCallback(async (readmeItem: GitHubContent) => {
     if (readmeItem.download_url === null || readmeItem.download_url === '') {
       return;
     }
@@ -184,12 +183,7 @@ export const useGitHubContent = (): {
     setReadmeLoaded(false); // 重置加载状态
 
     try {
-      const content = await getFileContent(readmeItem.download_url);
-
-      if (requestId !== undefined && activeRequestIdRef.current !== requestId) {
-        logger.debug(`忽略过期的 README 响应: ${readmeItem.path}`);
-        return;
-      }
+      const content = await GitHub.Content.getFileContent(readmeItem.download_url);
 
       if (currentPathRef.current !== readmeDir) {
         logger.debug(`README 路径已变更，忽略: ${readmeItem.path}`);
@@ -199,40 +193,32 @@ export const useGitHubContent = (): {
       setReadmeContent(content);
       setReadmeLoaded(true); // 设置为已加载完成
     } catch (e: unknown) {
-      const error = e instanceof Error ? e : new Error('未知错误');
-      if (requestId !== undefined && activeRequestIdRef.current !== requestId) {
-        logger.debug(`忽略过期的 README 错误: ${readmeItem.path}`);
-        return;
-      }
-
-      logger.error(`加载README失败:`, error);
-      displayError(`加载 README 失败: ${error.message}`);
+      handleError(e, 'useGitHubContent.loadReadmeContent', {
+        silent: true, // 已经有 displayError，不需要额外通知
+        userMessage: `加载 README 失败: ${e instanceof Error ? e.message : '未知错误'}`
+      });
+      displayError(`加载 README 失败: ${e instanceof Error ? e.message : '未知错误'}`);
       setReadmeContent(null);
       setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
-      if (requestId === undefined || activeRequestIdRef.current === requestId) {
-        setLoadingReadme(false);
-      }
+      setLoadingReadme(false);
     }
   }, [displayError]);
 
   // 加载目录内容
   const loadContents = useCallback(async (path: string) => {
-    const requestId = ++requestIdCounterRef.current;
-    activeRequestIdRef.current = requestId;
-
     setLoading(true);
     setError(null);
     // 重置README加载状态
     setReadmeLoaded(false);
 
     try {
-      const data = await getContents(path);
-
-      if (activeRequestIdRef.current !== requestId) {
-        logger.debug(`忽略过期的目录响应: ${path}`);
-        return;
-      }
+      // 使用 requestManager 自动处理请求取消和防抖
+      const data = await requestManager.request(
+        'github-contents',
+        (signal) => GitHub.Content.getContents(path, signal),
+        { debounce: 100 } // 100ms 防抖，减少快速切换时的请求
+      );
 
       // 按类型和名称排序
       const sortedData = [...data].sort((a, b) => {
@@ -267,11 +253,6 @@ export const useGitHubContent = (): {
         logger.debug(`允许的文件类型: ${HOMEPAGE_ALLOWED_FILETYPES.join(', ')}`);
       }
 
-      if (activeRequestIdRef.current !== requestId) {
-        logger.debug(`目录响应已过期，忽略状态更新: ${path}`);
-        return;
-      }
-
       setContents(filteredData);
       logger.debug(`获取到 ${filteredData.length.toString()} 个文件/目录`);
 
@@ -282,34 +263,33 @@ export const useGitHubContent = (): {
       );
 
       if (readmeItem !== undefined) {
-        await loadReadmeContent(readmeItem, requestId);
+        await loadReadmeContent(readmeItem);
       } else {
-        if (activeRequestIdRef.current !== requestId) {
-          return;
-        }
         setReadmeContent(null);
         // README不存在时也设置为已加载完成
         setReadmeLoaded(true);
       }
     } catch (e: unknown) {
-      const error = e instanceof Error ? e : new Error('未知错误');
-      if (activeRequestIdRef.current !== requestId) {
-        logger.debug(`忽略过期的目录错误: ${path}`);
+      // 检查是否是取消错误
+      if (e instanceof Error && e.name === 'AbortError') {
+        // requestManager 已经处理了取消日志
         return;
       }
 
-      logger.error('获取内容失败:', error);
-      displayError(`获取目录内容失败: ${error.message}`);
+      // 使用统一的错误处理
+      handleError(e, 'useGitHubContent.loadContents', {
+        silent: true,
+        userMessage: `获取目录内容失败: ${e instanceof Error ? e.message : '未知错误'}`
+      });
+      displayError(`获取目录内容失败: ${e instanceof Error ? e.message : '未知错误'}`);
       setContents([]);
       // 出错时也设置为已加载完成
       setReadmeLoaded(true);
     } finally {
-      if (activeRequestIdRef.current === requestId) {
-        setLoading(false);
-        if (isRefreshInProgressRef.current) {
-          isRefreshInProgressRef.current = false;
-          refreshTargetPathRef.current = null;
-        }
+      setLoading(false);
+      if (isRefreshInProgressRef.current) {
+        isRefreshInProgressRef.current = false;
+        refreshTargetPathRef.current = null;
       }
     }
   }, [displayError, loadReadmeContent]);
@@ -344,13 +324,13 @@ export const useGitHubContent = (): {
 
   const applyBranchState = useCallback((branchName: string): string => {
     const trimmed = branchName.trim();
-    const target = trimmed.length > 0 ? trimmed : defaultBranchRef.current;
+    const target = trimmed.length > 0 ? trimmed : DEFAULT_BRANCH;
 
     if (currentBranchRef.current === target) {
       return target;
     }
 
-    setCurrentBranch(target);
+    GitHub.Branch.setCurrentBranch(target);
     currentBranchRef.current = target;
     setCurrentBranchState(target);
     mergeBranchList([target]);
@@ -408,9 +388,9 @@ export const useGitHubContent = (): {
           logger.debug(`历史导航事件，应用分支: ${branchCandidate}`);
           applyBranchState(branchCandidate);
         }
-      } else if (currentBranchRef.current !== defaultBranchRef.current) {
+      } else if (currentBranchRef.current !== DEFAULT_BRANCH) {
         logger.debug('历史导航事件，无分支信息，回退到默认分支');
-        applyBranchState(defaultBranchRef.current);
+        applyBranchState(DEFAULT_BRANCH);
       }
 
       if (state?.path !== undefined) {
@@ -457,7 +437,7 @@ export const useGitHubContent = (): {
 
   const changeBranch = useCallback((branchName: string): void => {
     const trimmed = branchName.trim();
-    const targetBranch = trimmed.length > 0 ? trimmed : defaultBranchRef.current;
+    const targetBranch = trimmed.length > 0 ? trimmed : DEFAULT_BRANCH;
 
     if (targetBranch === currentBranchRef.current) {
       logger.debug(`分支未变更，忽略：${targetBranch}`);
@@ -492,7 +472,7 @@ export const useGitHubContent = (): {
     repoOwner: GITHUB_REPO_OWNER,
     repoName: GITHUB_REPO_NAME,
     currentBranch,
-    defaultBranch: defaultBranchRef.current,
+    defaultBranch: DEFAULT_BRANCH,
     branches: availableBranches,
     branchLoading,
     branchError,

@@ -14,7 +14,7 @@ import {
 import { ColorModeContext } from "@/contexts/colorModeContext";
 import { useRefresh } from "@/hooks/useRefresh";
 import { refreshAnimation } from "@/theme/animations";
-import { clearCache } from "@/services/github";
+import { GitHub } from "@/services/github";
 import axios from "axios";
 import { getGithubConfig } from "@/config";
 import { logger } from "@/utils";
@@ -118,7 +118,7 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
 
     const executeRefresh = async (): Promise<void> => {
       try {
-        await clearCache();
+        await GitHub.Cache.clearCache();
       } catch (error) {
         logger.error("清除缓存失败:", error);
       } finally {

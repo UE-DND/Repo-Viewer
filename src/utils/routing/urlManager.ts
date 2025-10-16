@@ -1,4 +1,4 @@
-import { getCurrentBranch } from '@/services/github';
+import { GitHub } from '@/services/github';
 import { logger } from '../index';
 
 /**
@@ -11,11 +11,26 @@ export const URL_PARAMS = {
 } as const;
 
 /**
+ * 验证路径格式
+ * 
+ * 检查路径是否包含非法字符。
+ * 
+ * @param path - 待验证的路径
+ * @returns 如果路径有效返回 true
+ */
+function isValidPath(path: string): boolean {
+  // 检查是否包含 Windows/Unix 文件系统非法字符
+  const illegalChars = /[<>"|?*]/;
+  return !illegalChars.test(path);
+}
+
+/**
  * 从URL解析路径参数
  * 
  * 优先从路径段获取，向后兼容查询参数方式。
+ * 包含路径格式验证和详细的错误处理。
  * 
- * @returns 文件路径字符串
+ * @returns 文件路径字符串，如果解析失败或路径无效则返回空字符串
  */
 export function getPathFromUrl(): string {
   try {
@@ -27,15 +42,50 @@ export function getPathFromUrl(): string {
       pathname = pathname.substring(1);
     }
 
-    // 如果路径段不为空，直接返回解码后的路径
+    // 如果路径段不为空，解码并验证
     if (pathname.length > 0 && pathname !== '/') {
-      return decodeURIComponent(pathname);
+      try {
+        const decodedPath = decodeURIComponent(pathname);
+        
+        // 验证路径格式
+        if (!isValidPath(decodedPath)) {
+          logger.warn(`URL 路径包含非法字符，已忽略: ${pathname}`);
+          return '';
+        }
+        
+        return decodedPath;
+      } catch (decodeError) {
+        logger.error('URL 路径解码失败:', decodeError);
+        // 尝试返回原始路径（可能已经解码）
+        if (isValidPath(pathname)) {
+          return pathname;
+        }
+        return '';
+      }
     }
 
     // 向后兼容：如果路径段为空，尝试从查询参数获取
     const urlParams = new URLSearchParams(window.location.search);
     const path = urlParams.get(URL_PARAMS.PATH) ?? '';
-    return decodeURIComponent(path);
+    
+    if (path.length > 0) {
+      try {
+        const decodedPath = decodeURIComponent(path);
+        
+        // 验证路径格式
+        if (!isValidPath(decodedPath)) {
+          logger.warn(`查询参数路径包含非法字符，已忽略: ${path}`);
+          return '';
+        }
+        
+        return decodedPath;
+      } catch (decodeError) {
+        logger.error('查询参数路径解码失败:', decodeError);
+        return '';
+      }
+    }
+    
+    return '';
   } catch (error) {
     logger.error('解析 URL 路径参数失败:', error);
     return '';
@@ -103,16 +153,28 @@ export function getPreviewFromUrl(): string {
 }
 
 /**
- * 构建包含路径的URL
+ * URL 构建结果接口
+ */
+interface UrlBuildResult {
+  url: string;
+  state: {
+    path: string;
+    preview?: string;
+    branch: string;
+  };
+}
+
+/**
+ * 统一的 URL 构建核心函数
  * 
- * 根据路径、预览参数和分支构建完整URL。
+ * 将路径、预览参数和分支名称构建为完整的URL和状态对象。
  * 
  * @param path - 文件路径
  * @param preview - 预览文件路径（可选）
  * @param branch - 分支名称（可选）
- * @returns 构建的URL字符串（不包含域名）
+ * @returns URL和状态对象
  */
-export function buildUrlWithParams(path: string, preview?: string, branch?: string): string {
+function buildUrl(path: string, preview?: string, branch?: string): UrlBuildResult {
   // 将路径编码为 URL 路径段
   const encodedPath = path.length > 0 ? encodeURI(path) : '';
 
@@ -121,7 +183,7 @@ export function buildUrlWithParams(path: string, preview?: string, branch?: stri
 
   const queryParams = new URLSearchParams();
 
-  const branchValue = branch ?? getCurrentBranch();
+  const branchValue = branch ?? GitHub.Branch.getCurrentBranch();
   const activeBranch = branchValue.trim();
 
   if (activeBranch.length > 0) {
@@ -141,7 +203,28 @@ export function buildUrlWithParams(path: string, preview?: string, branch?: stri
     url += `#preview=${encodeURI(fileName ?? '')}`;
   }
 
-  return url;
+  return {
+    url,
+    state: {
+      path,
+      ...(preview !== undefined ? { preview } : {}),
+      branch: activeBranch
+    }
+  };
+}
+
+/**
+ * 构建包含路径的URL
+ * 
+ * 根据路径、预览参数和分支构建完整URL。
+ * 
+ * @param path - 文件路径
+ * @param preview - 预览文件路径（可选）
+ * @param branch - 分支名称（可选）
+ * @returns 构建的URL字符串（不包含域名）
+ */
+export function buildUrlWithParams(path: string, preview?: string, branch?: string): string {
+  return buildUrl(path, preview, branch).url;
 }
 
 /**
@@ -156,11 +239,9 @@ export function buildUrlWithParams(path: string, preview?: string, branch?: stri
  */
 export function updateUrlWithoutHistory(path: string, preview?: string, branch?: string): void {
   try {
-    const newUrl = buildUrlWithParams(path, preview, branch);
-    const branchValue = branch ?? getCurrentBranch();
-    const activeBranch = branchValue.trim();
-    window.history.replaceState({ path, preview, branch: activeBranch }, '', newUrl);
-    logger.debug(`URL 已更新（不添加历史记录）: ${newUrl}`);
+    const { url, state } = buildUrl(path, preview, branch);
+    window.history.replaceState(state, '', url);
+    logger.debug(`URL 已更新（不添加历史记录）: ${url}`);
   } catch (error) {
     logger.error('更新 URL 失败:', error);
   }
@@ -178,11 +259,9 @@ export function updateUrlWithoutHistory(path: string, preview?: string, branch?:
  */
 export function updateUrlWithHistory(path: string, preview?: string, branch?: string): void {
   try {
-    const newUrl = buildUrlWithParams(path, preview, branch);
-    const branchValue = branch ?? getCurrentBranch();
-    const activeBranch = branchValue.trim();
-    window.history.pushState({ path, preview, branch: activeBranch }, '', newUrl);
-    logger.debug(`URL 已更新（添加历史记录）: ${newUrl}`);
+    const { url, state } = buildUrl(path, preview, branch);
+    window.history.pushState(state, '', url);
+    logger.debug(`URL 已更新（添加历史记录）: ${url}`);
   } catch (error) {
     logger.error('更新 URL 失败:', error);
   }

@@ -81,43 +81,32 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
 
   // 检测当前目录中是否有README.md文件
   const hasReadmeFile = useMemo(() => {
-    if (contents.length === 0) {
-      return false;
-    }
-
-    // 检查是否有任何名称为README.md的文件（不区分大小写）
     return contents.some((item) => {
+      if (item.type !== 'file') {
+        return false;
+      }
       const fileName = item.name.toLowerCase();
-      return fileName === "readme.md" || fileName === "readme.markdown";
+      return ['readme.md', 'readme.markdown', 'readme.mdown'].includes(fileName);
     });
   }, [contents]);
 
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
     const segments: BreadcrumbSegment[] = [{ name: "Home", path: "" }];
-    const normalizedCurrentPath = currentPath.trim();
-
-    if (normalizedCurrentPath.length === 0) {
+    
+    const normalizedPath = currentPath.trim();
+    if (normalizedPath === '') {
       return segments;
     }
-
-    const pathParts = normalizedCurrentPath
-      .split("/")
-      .filter((part) => part.length > 0);
-
-    let currentSegmentPath = "";
-
-    pathParts.forEach((part) => {
-      currentSegmentPath = currentSegmentPath.length > 0
-        ? `${currentSegmentPath}/${part}`
-        : part;
-
-      segments.push({
-        name: part,
-        path: currentSegmentPath,
-      });
-    });
-
+    
+    const pathParts = normalizedPath.split("/").filter(Boolean);
+    
+    pathParts.reduce((accPath, part) => {
+      const segmentPath = accPath !== '' ? `${accPath}/${part}` : part;
+      segments.push({ name: part, path: segmentPath });
+      return segmentPath;
+    }, '');
+    
     return segments;
   }, [currentPath]);
 

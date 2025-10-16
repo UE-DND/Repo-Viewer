@@ -1,12 +1,6 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
 import type { GitHubContent } from '@/types';
-import { 
-  getContents, 
-  getFileContent, 
-  getBranches, 
-  setCurrentBranch,
-  getDefaultBranchName 
-} from '@/services/github';
+import { GitHub } from '@/services/github';
 import { logger } from '@/utils';
 import { 
   getBranchFromUrl, 
@@ -250,7 +244,7 @@ export function useGitHubContentStateMachine(): {
   refreshContents: () => void;
   refreshBranches: () => Promise<void>;
 } {
-  const defaultBranch = getDefaultBranchName();
+  const defaultBranch = GitHub.Branch.getDefaultBranchName();
   const initialPath = getPathFromUrl();
   const branchFromUrl = getBranchFromUrl();
   const initialBranch = branchFromUrl.length > 0 ? branchFromUrl : defaultBranch;
@@ -283,7 +277,7 @@ export function useGitHubContentStateMachine(): {
     });
 
     try {
-      const data = await getContents(path);
+      const data = await GitHub.Content.getContents(path);
       
       // 排序
       const sortedData = [...data].sort((a, b) => {
@@ -310,7 +304,7 @@ export function useGitHubContentStateMachine(): {
       if (downloadUrl !== null && downloadUrl !== undefined && downloadUrl.length > 0) {
         dispatch({ type: 'README_LOADING', loading: true });
         try {
-          const content = await getFileContent(downloadUrl);
+          const content = await GitHub.Content.getFileContent(downloadUrl);
           dispatch({ type: 'LOAD_README', content, requestId });
         } catch (error) {
           logger.error('加载 README 失败', error);
@@ -329,7 +323,7 @@ export function useGitHubContentStateMachine(): {
     dispatch({ type: 'START_BRANCH_LOADING' });
     
     try {
-      const branches = await getBranches();
+      const branches = await GitHub.Branch.getBranches();
       dispatch({ type: 'BRANCH_LOAD_SUCCESS', branches });
     } catch (error) {
       const message = error instanceof Error ? error.message : '未知错误';
@@ -353,7 +347,7 @@ export function useGitHubContentStateMachine(): {
    */
   const changeBranch = useCallback((branch: string) => {
     dispatch({ type: 'CHANGE_BRANCH', branch });
-    setCurrentBranch(branch);
+    GitHub.Branch.setCurrentBranch(branch);
   }, []);
 
   /**

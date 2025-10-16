@@ -38,8 +38,10 @@ export const events = eventEmitter;
 
 // 错误管理工具
 import { ErrorManager as ErrorManagerClass } from './error/ErrorManager';
+import * as errorHandlerModule from './error/errorHandler';
 export const error = {
-  ErrorManager: ErrorManagerClass
+  ErrorManager: ErrorManagerClass,
+  ...errorHandlerModule
 };
 
 // PDF相关工具
@@ -61,6 +63,12 @@ export const routing = urlManager;
 // 重试工具
 import * as retryUtils from './retry/retryUtils';
 export const retry = retryUtils;
+
+// 请求管理工具
+import { requestManager as requestManagerInstance } from './request/requestManager';
+export const request = {
+  manager: requestManagerInstance
+};
 
 // 缓存工具
 import * as SmartCacheModule from './cache/SmartCache';
@@ -136,3 +144,5 @@ export const performance = {
 // 类型导出（保持类型的扁平导出以便使用）
 export type { RetryOptions } from './retry/retryUtils';
 export type { SmartCacheOptions } from './cache/SmartCache';
+export type { RequestOptions } from './request/requestManager';
+export type { ErrorHandlerOptions } from './error/errorHandler';

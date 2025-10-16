@@ -6,8 +6,9 @@ import type {
   DownloadAction,
   GitHubContent
 } from '@/types';
-import { getContents } from '@/services/github';
+import { GitHub } from '@/services/github';
 import { logger } from '@/utils';
+import { requestManager } from '@/utils/request/requestManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 
 // 下载状态初始值
@@ -182,7 +183,11 @@ export const useDownload = (onError: (message: string) => void): {
   ): Promise<void> {
     try {
       // 获取文件夹内容
-      const contents = await getContents(folderPath, signal);
+      // 使用 requestManager 避免重复请求
+      const contents = await requestManager.request(
+        `download-folder-${folderPath}`,
+        (requestSignal) => GitHub.Content.getContents(folderPath, requestSignal)
+      );
 
       // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {

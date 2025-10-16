@@ -48,17 +48,31 @@ export const getFileIcon = (filename: string): React.ElementType => {
 };
 
 /**
+ * 通用的文件扩展名检测函数
+ * 
+ * 检查文件名是否具有指定的扩展名列表中的任何一个。
+ * 
+ * @param filename - 文件名
+ * @param extensions - 扩展名数组（可以带或不带前缀点）
+ * @returns 如果文件扩展名匹配返回true
+ */
+function checkFileExtension(filename: string, extensions: string[]): boolean {
+  const lowerCaseFileName = filename.toLowerCase();
+  return extensions.some(ext => {
+    // 确保扩展名以点开头
+    const normalizedExt = ext.startsWith('.') ? ext : `.${ext}`;
+    return lowerCaseFileName.endsWith(normalizedExt);
+  });
+}
+
+/**
  * 检查是否为图像文件
  * 
  * @param filename - 文件名
  * @returns 如果是图像文件返回true
  */
 export const isImageFile = (filename: string): boolean => {
-  const extension = filename.split('.').pop()?.toLowerCase();
-  if (typeof extension === 'string' && extension.length > 0) {
-    return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(extension);
-  }
-  return false;
+  return checkFileExtension(filename, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp']);
 };
 
 /**
@@ -68,8 +82,7 @@ export const isImageFile = (filename: string): boolean => {
  * @returns 如果是PDF文件返回true
  */
 export const isPdfFile = (filename: string): boolean => {
-  const extension = filename.split('.').pop()?.toLowerCase();
-  return extension === 'pdf';
+  return checkFileExtension(filename, ['pdf']);
 };
 
 /**
@@ -79,8 +92,7 @@ export const isPdfFile = (filename: string): boolean => {
  * @returns 如果是Markdown文件返回true
  */
 export const isMarkdownFile = (filename: string): boolean => {
-  const extension = filename.split('.').pop()?.toLowerCase();
-  return extension === 'md';
+  return checkFileExtension(filename, ['md']);
 };
 
 /**
@@ -90,9 +102,7 @@ export const isMarkdownFile = (filename: string): boolean => {
  * @returns 如果是Word文档返回true
  */
 export const isWordFile = (fileName: string): boolean => {
-  const wordExtensions = ['.doc', '.docx', '.docm'];
-  const lowerCaseFileName = fileName.toLowerCase();
-  return wordExtensions.some(ext => lowerCaseFileName.endsWith(ext));
+  return checkFileExtension(fileName, ['doc', 'docx', 'docm']);
 };
 
 /**
@@ -102,9 +112,7 @@ export const isWordFile = (fileName: string): boolean => {
  * @returns 如果是Excel文档返回true
  */
 export const isExcelFile = (fileName: string): boolean => {
-  const excelExtensions = ['.xls', '.xlsx', '.xlsm', '.xlsb', '.csv'];
-  const lowerCaseFileName = fileName.toLowerCase();
-  return excelExtensions.some(ext => lowerCaseFileName.endsWith(ext));
+  return checkFileExtension(fileName, ['xls', 'xlsx', 'xlsm', 'xlsb', 'csv']);
 };
 
 /**
@@ -114,7 +122,5 @@ export const isExcelFile = (fileName: string): boolean => {
  * @returns 如果是PowerPoint文档返回true
  */
 export const isPPTFile = (fileName: string): boolean => {
-  const pptExtensions = ['.ppt', '.pptx', '.pptm', '.pps', '.ppsx'];
-  const lowerCaseFileName = fileName.toLowerCase();
-  return pptExtensions.some(ext => lowerCaseFileName.endsWith(ext));
+  return checkFileExtension(fileName, ['ppt', 'pptx', 'pptm', 'pps', 'ppsx']);
 };

@@ -30,6 +30,16 @@ export interface SmartCacheOptions {
    * TTL（生存时间）毫秒，可选
    */
   ttl?: number;
+  
+  /**
+   * 时间权重 - 用于得分计算，越大则时间因素影响越大
+   */
+  timeWeight?: number;
+  
+  /**
+   * 频率权重 - 用于得分计算，越大则访问频率影响越大
+   */
+  frequencyWeight?: number;
 }
 
 /**
@@ -44,12 +54,16 @@ export class SmartCache<K, V> {
   private readonly cleanupThreshold: number;
   private readonly cleanupRatio: number;
   private readonly ttl: number | undefined;
+  private readonly timeWeight: number;
+  private readonly frequencyWeight: number;
   
   constructor(options: SmartCacheOptions = {}) {
     this.maxSize = options.maxSize ?? 50;
     this.cleanupThreshold = options.cleanupThreshold ?? 0.8;
     this.cleanupRatio = options.cleanupRatio ?? 0.2;
     this.ttl = options.ttl;
+    this.timeWeight = options.timeWeight ?? 1;
+    this.frequencyWeight = options.frequencyWeight ?? 1;
   }
   
   /**
@@ -144,7 +158,13 @@ export class SmartCache<K, V> {
   
   /**
    * 清理缓存，移除最少使用的条目
-   * 使用混合策略：结合访问频率和最后访问时间
+   * 
+   * 使用可配置的混合策略：结合访问频率和最后访问时间。
+   * 得分公式：(频率 × 频率权重) / (1 + 时间因子 × 时间权重)
+   * 
+   * - 访问频率高的条目得分高
+   * - 最近访问的条目得分高
+   * - 可通过调整权重来平衡 LRU 和 LFU 策略
    */
   private cleanup(): void {
     const entries = Array.from(this.cache.entries());
@@ -152,13 +172,16 @@ export class SmartCache<K, V> {
     
     // 计算每个条目的得分（越低越容易被清理）
     const scoredEntries = entries.map(([key, entry]) => {
-      // 基于访问频率和时间计算得分
-      const timeFactor = (now - entry.lastAccess) / 1000; // 转换为秒
+      // 时间因子：以分钟为单位
+      const timeFactor = (now - entry.lastAccess) / 60000;
+      // 频率因子：访问次数
       const frequencyFactor = entry.hitCount;
       
-      // 得分公式：访问频率 / (1 + 时间因子)
-      // 访问频率高且最近访问的条目得分高
-      const score = frequencyFactor / (1 + timeFactor / 60); // 每分钟衰减
+      // 可配置的得分公式
+      // - frequencyWeight 越大，越偏向 LFU（最不经常使用）
+      // - timeWeight 越大，越偏向 LRU（最近最少使用）
+      const score = (frequencyFactor * this.frequencyWeight) / 
+                    (1 + timeFactor * this.timeWeight);
       
       return { key, score };
     });

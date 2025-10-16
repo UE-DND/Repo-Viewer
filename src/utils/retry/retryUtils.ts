@@ -29,6 +29,12 @@ export interface RetryOptions {
    * @param error - 上次尝试的错误
    */
   onRetry?: (attempt: number, error: unknown) => void;
+  
+  /**
+   * 是否静默重试（不打印日志）
+   * 默认为 false
+   */
+  silent?: boolean;
 }
 
 /**
@@ -72,7 +78,7 @@ export async function withRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions
 ): Promise<T> {
-  const {
+  const { silent = false, 
     maxRetries,
     backoff,
     shouldRetry = () => true,
@@ -104,9 +110,11 @@ export async function withRetry<T>(
           onRetry(attempt, error);
         }
         
-        // 记录重试日志
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.debug(`重试操作 (尝试 ${String(attempt + 1)}/${String(maxRetries + 1)})，延迟 ${String(delay)}ms: ${errorMessage}`);
+        // 记录重试日志（除非设置为静默）
+        if (!silent) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          logger.debug(`重试操作 (尝试 ${String(attempt + 1)}/${String(maxRetries + 1)})，延迟 ${String(delay)}ms: ${errorMessage}`);
+        }
         
         // 等待指定时间后重试
         await new Promise(resolve => setTimeout(resolve, delay));

@@ -68,6 +68,33 @@ export function getAuthHeaders(): HeadersInit {
 }
 
 /**
+ * 更新 Token 的 Rate Limit 状态
+ * 
+ * 从成功的 API 响应中提取 rate limit 信息并更新 token 状态。
+ * 
+ * @param response - API 响应对象
+ * @returns void
+ */
+export function updateTokenRateLimitFromResponse(response: Response): void {
+  const currentToken = tokenManager.getCurrentToken();
+  if (currentToken === '') {
+    return;
+  }
+
+  const remainingHeader = response.headers.get('x-ratelimit-remaining');
+  const resetHeader = response.headers.get('x-ratelimit-reset');
+
+  if (remainingHeader !== null && resetHeader !== null) {
+    const remaining = parseInt(remainingHeader, 10);
+    const reset = parseInt(resetHeader, 10);
+
+    if (!isNaN(remaining) && !isNaN(reset)) {
+      tokenManager.updateTokenRateLimit(currentToken, remaining, reset);
+    }
+  }
+}
+
+/**
  * 处理GitHub API错误
  * 
  * 统一处理GitHub API返回的错误响应，包括rate limit信息和错误详情。
@@ -155,6 +182,15 @@ export function transformImageUrl(src: string | undefined, markdownFilePath: str
 }
 
 /**
+ * 获取 Token 管理器实例
+ * 
+ * @returns TokenManager 实例
+ */
+export function getTokenManager(): GitHubTokenManager {
+  return tokenManager;
+}
+
+/**
  * GitHub认证服务对象
  * 
  * 为了向后兼容性，导出包含所有认证相关函数的常量对象。
@@ -167,6 +203,8 @@ export const GitHubAuth = {
   setLocalToken,
   getAuthHeaders,
   handleApiError,
+  updateTokenRateLimitFromResponse,
+  getTokenManager,
   markProxyServiceFailed,
   getCurrentProxyService,
   resetFailedProxyServices,

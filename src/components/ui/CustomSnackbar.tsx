@@ -32,7 +32,7 @@ const CustomSnackbar = memo(
 
       const handleDismiss = (): void => {
         if (isDownloadRelated()) {
-          eventEmitter.dispatch(EVENTS.CANCEL_DOWNLOAD, id);
+          eventEmitter.dispatch(EVENTS.CANCEL_DOWNLOAD, { downloadId: String(id) });
         }
         closeSnackbar(id);
       };
