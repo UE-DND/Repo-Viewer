@@ -106,6 +106,7 @@ const FileListItem = memo<FileListItemProps>(
     contents = [], // 提供默认空数组值
   }) => {
     const theme = useTheme();
+    const [isHoveringDownload, setIsHoveringDownload] = React.useState(false);
 
     const isDownloading = downloadingPath === item.path;
     const isFolderDownloading = downloadingFolderPath === item.path;
@@ -186,6 +187,14 @@ const FileListItem = memo<FileListItemProps>(
       [handleCancelDownload],
     );
 
+    const handleDownloadMouseEnter = React.useCallback(() => {
+      setIsHoveringDownload(true);
+    }, []);
+
+    const handleDownloadMouseLeave = React.useCallback(() => {
+      setIsHoveringDownload(false);
+    }, []);
+
     return (
       <ListItem
         disablePadding
@@ -239,6 +248,8 @@ const FileListItem = memo<FileListItemProps>(
                   transform: "translateY(-50%)",
                   zIndex: 2,
                 }}
+                onMouseEnter={handleDownloadMouseEnter}
+                onMouseLeave={handleDownloadMouseLeave}
                 data-oid="p5-7:mp"
               >
                 <IconButton
@@ -284,6 +295,7 @@ const FileListItem = memo<FileListItemProps>(
                         data-oid="0oqwaa-"
                       />
 
+                      {/* 只在悬停时显示取消图标 */}
                       <Box
                         sx={{
                           top: 0,
@@ -294,12 +306,23 @@ const FileListItem = memo<FileListItemProps>(
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
+                          opacity: isHoveringDownload ? 1 : 0,
+                          transition: "opacity 0.2s ease-in-out",
+                          backgroundColor: isHoveringDownload 
+                            ? alpha(theme.palette.error.main, 0.1)
+                            : "transparent",
+                          borderRadius: "50%",
                         }}
                         data-oid="g-4-y6c"
                       >
                         <CancelIcon
                           fontSize="small"
-                          sx={{ fontSize: "0.8rem", color: "error.main" }}
+                          sx={{ 
+                            fontSize: "0.8rem", 
+                            color: "error.main",
+                            transform: isHoveringDownload ? "scale(1)" : "scale(0.8)",
+                            transition: "transform 0.2s ease-in-out",
+                          }}
                           data-oid="6_m3uc-"
                         />
                       </Box>

@@ -276,11 +276,11 @@ export default defineConfig(({ mode }) => {
         'react-markdown',
         'remark-gfm',
         'remark-math',
-        'rehype-katex'
+        'rehype-katex',
+        'jszip'
       ],
       exclude: [
-        'katex',
-        'jszip'
+        'katex'
       ]
     },
     define: {

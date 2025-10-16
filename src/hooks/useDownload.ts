@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useRef } from 'react';
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type {
   DownloadState,
@@ -57,6 +57,7 @@ function downloadReducer(state: DownloadState, action: DownloadAction): Download
         isCancelled: true
       };
     case 'RESET_DOWNLOAD_STATE':
+      return initialDownloadState;
     default:
       return state;
   }
@@ -249,7 +250,7 @@ export const useDownload = (onError: (message: string) => void): {
     const signal = abortControllerRef.current.signal;
 
     try {
-      const zip = new JSZip.default();
+      const zip = new JSZip();
 
       // 递归获取文件夹内容
       const allFiles: { path: string; url: string }[] = [];
