@@ -17,6 +17,7 @@ import {
   filterAndNormalizeGitHubContents,
   validateGitHubContentsArray
 } from '../schemas/dataTransformers';
+import { SmartCache } from '@/utils/cache/SmartCache';
 
 const ROOT_PATH_KEY = '__root__';
 
@@ -51,12 +52,18 @@ let initializationAttempts = 0;
 const MAX_INIT_ATTEMPTS = 3;
 
 // 降级缓存：当主缓存系统不可用时使用的内存缓存
-const fallbackCache = new Map<string, { data: unknown; timestamp: number }>();
+// 使用 SmartCache（混合 LRU/LFU 策略）
 const FALLBACK_CACHE_TTL = 5 * 60 * 1000; // 5分钟
 const FALLBACK_CACHE_MAX_SIZE = 50; // 最多缓存50个条目
+const fallbackCache = new SmartCache<string, unknown>({
+  maxSize: FALLBACK_CACHE_MAX_SIZE,
+  ttl: FALLBACK_CACHE_TTL,
+  cleanupThreshold: 0.8,
+  cleanupRatio: 0.2
+});
 
 /**
- * 确保缓存初始化（带降级机制）
+ * 确保缓存初始化
  * 
  * 初始化策略：
  * 1. 尝试初始化主缓存系统（IndexedDB/LocalStorage）
@@ -109,20 +116,7 @@ async function ensureCacheInitialized(): Promise<void> {
  * @returns 缓存的数据或 null
  */
 function getFallbackCache(key: string): unknown {
-  const cached = fallbackCache.get(key);
-  
-  if (cached === undefined) {
-    return null;
-  }
-  
-  // 检查是否过期
-  const now = Date.now();
-  if (now - cached.timestamp > FALLBACK_CACHE_TTL) {
-    fallbackCache.delete(key);
-    return null;
-  }
-  
-  return cached.data;
+  return fallbackCache.get(key);
 }
 
 /**
@@ -132,19 +126,7 @@ function getFallbackCache(key: string): unknown {
  * @param data - 要缓存的数据
  */
 function setFallbackCache(key: string, data: unknown): void {
-  // 限制缓存大小，避免内存溢出
-  if (fallbackCache.size >= FALLBACK_CACHE_MAX_SIZE) {
-    // 删除最旧的条目
-    const firstKey = fallbackCache.keys().next().value;
-    if (firstKey !== undefined) {
-      fallbackCache.delete(firstKey);
-    }
-  }
-  
-  fallbackCache.set(key, {
-    data,
-    timestamp: Date.now()
-  });
+  fallbackCache.set(key, data);
 }
 
 /**

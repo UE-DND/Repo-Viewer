@@ -15,6 +15,8 @@ import {
   saveItemToIndexedDB,
   saveItemToLocalStorage,
 } from './CachePersistence';
+import { LRUCache } from './LRUCache';
+import { getMinK } from '@/utils/data-structures/MinHeap';
 
 /**
  * 高级缓存类
@@ -26,7 +28,7 @@ import {
  * @template V - 缓存值类型
  */
 export class AdvancedCache<K extends string, V> {
-  private readonly cache: Map<K, CacheItemMeta>;
+  private readonly cache: LRUCache<K>;
   private readonly config: CacheConfig;
   private readonly stats: CacheStats;
   private cleanupTimer: ReturnType<typeof setInterval> | null = null;
@@ -34,7 +36,7 @@ export class AdvancedCache<K extends string, V> {
   private db: IDBDatabase | null = null;
 
   constructor(config: CacheConfig) {
-    this.cache = new Map();
+    this.cache = new LRUCache<K>(config.maxSize);
     this.config = { ...config };
     this.stats = {
       hits: 0,
@@ -131,8 +133,7 @@ export class AdvancedCache<K extends string, V> {
     item.accessCount++;
     item.lastAccess = now;
 
-    this.cache.delete(key);
-    this.cache.set(key, item);
+    // LRUCache 的 get 方法已自动将节点移动到尾部
 
     if (this.config.enablePersistence) {
       this.saveItemToPersistence(keyStr, item).catch((error: unknown) => {
@@ -190,16 +191,29 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 清理最少使用的缓存项
+   * 
+   * @param count - 要清理的项目数量
+   */
   private async cleanupLeastUsed(count: number): Promise<void> {
-    const items = Array.from(this.cache.entries())
-      .sort(([, a], [, b]) => {
-        const scoreA = a.accessCount * 1000 + a.lastAccess;
-        const scoreB = b.accessCount * 1000 + b.lastAccess;
-        return scoreA - scoreB;
-      })
-      .slice(0, count);
+    // 收集所有条目及其评分
+    const items: { key: K; score: number }[] = [];
+    
+    this.cache.forEach((item, key) => {
+      const score = item.accessCount * 1000 + item.lastAccess;
+      items.push({ key, score });
+    });
 
-    for (const [key] of items) {
+    // 使用最小堆获取评分最低的 k 个元素
+    const leastUsed = getMinK(
+      items,
+      count,
+      (a, b) => a.score - b.score
+    );
+
+    // 删除这些项目
+    for (const { key } of leastUsed) {
       await this.delete(key);
     }
   }
@@ -460,10 +474,3 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 }
-
-/**
- * LRU缓存别名
- * 
- * AdvancedCache的别名，提供向后兼容性。
- */
-export const LRUCache = AdvancedCache;

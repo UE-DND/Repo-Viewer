@@ -1,7 +1,8 @@
 import { logger } from '@/utils';
 import { getCurrentBranch } from '../core/Config';
 import type { CacheStats } from './CacheTypes';
-import { AdvancedCache, LRUCache } from './AdvancedCache';
+import { AdvancedCache } from './AdvancedCache';
+import { LRUCache } from './LRUCache';
 import { CONTENT_CACHE_CONFIG, FILE_CACHE_CONFIG } from './CacheConfig';
 
 const CONTENT_CACHE_ROOT_KEY = '__root__';

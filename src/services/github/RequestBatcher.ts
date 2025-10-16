@@ -1,5 +1,7 @@
 import { logger, retry } from '@/utils';
 import type { RetryOptions } from '@/utils';
+import { createTimeWheel } from '@/utils/data-structures/TimeWheel';
+import type { TimeWheel } from '@/utils/data-structures/TimeWheel';
 
 /**
  * 批处理请求接口
@@ -10,6 +12,14 @@ interface BatchedRequest<T = unknown> {
   timestamp: number;
   priority: 'high' | 'medium' | 'low';
   retryCount: number;
+}
+
+/**
+ * 请求指纹数据
+ */
+interface FingerprintData {
+  result: unknown;
+  hitCount: number;
 }
 
 /**
@@ -24,44 +34,24 @@ export class RequestBatcher {
   // 进行中的请求
   private readonly pendingRequests = new Map<string, Promise<unknown>>();
 
-  // 请求指纹缓存（用于去重）
-  private readonly requestFingerprints = new Map<string, {
-    result: unknown;
-    timestamp: number;
-    hitCount: number;
-  }>();
+  // 请求指纹缓存（使用时间轮管理过期）
+  private readonly fingerprintWheel: TimeWheel<FingerprintData>;
 
   private batchTimeout: number | null = null;
   private readonly batchDelay = 20; // 批处理延迟毫秒
   private readonly maxRetries = 3; // 最大重试次数
   private readonly fingerprintTTL = 5 * 60 * 1000; // 指纹缓存5分钟
-  private readonly cleanupInterval: number;
 
   constructor() {
-    // 定期清理过期的指纹缓存
-    this.cleanupInterval = window.setInterval(() => {
-      this.cleanupExpiredFingerprints();
-    }, 60 * 1000); // 每分钟清理一次
-  }
-
-  // 清理过期的指纹缓存
-  private cleanupExpiredFingerprints(): void {
-    const now = Date.now();
-    const expiredKeys: string[] = [];
-
-    for (const [key, fingerprint] of this.requestFingerprints.entries()) {
-      if (now - fingerprint.timestamp > this.fingerprintTTL) {
-        expiredKeys.push(key);
-      }
-    }
-
-    expiredKeys.forEach(key => {
-      this.requestFingerprints.delete(key);
+    // 使用时间轮管理指纹缓存
+    // 每个槽覆盖 1 分钟，共 10 个槽（覆盖 10 分钟，超过 TTL）
+    this.fingerprintWheel = createTimeWheel<FingerprintData>({
+      slotDuration: 60 * 1000, // 1 分钟
+      totalSlots: 10, // 10 个槽
+      tickInterval: 30 * 1000 // 每 30 秒清理一次
     });
 
-    if (expiredKeys.length > 0) {
-      logger.debug(`清理了 ${expiredKeys.length.toString()} 个过期的请求指纹`);
-    }
+    logger.debug('RequestBatcher 已启动，使用时间轮管理指纹缓存');
   }
 
   // 生成请求指纹（用于去重）
@@ -78,15 +68,13 @@ export class RequestBatcher {
    * @returns void
    */
   public destroy(): void {
-    if (this.cleanupInterval !== 0 && !isNaN(this.cleanupInterval)) {
-      clearInterval(this.cleanupInterval);
-    }
     if (this.batchTimeout !== null && this.batchTimeout !== 0 && !isNaN(this.batchTimeout)) {
       clearTimeout(this.batchTimeout);
     }
     this.batchedRequests.clear();
     this.pendingRequests.clear();
-    this.requestFingerprints.clear();
+    this.fingerprintWheel.destroy();
+    logger.debug('RequestBatcher 已销毁');
   }
 
   /**
@@ -125,12 +113,12 @@ export class RequestBatcher {
 
     // 检查是否可以去重
     if (!skipDeduplication) {
-      const cachedResult = this.requestFingerprints.get(fingerprint);
-      if (cachedResult !== undefined && (Date.now() - cachedResult.timestamp < this.fingerprintTTL)) {
+      const cachedData = this.fingerprintWheel.get(fingerprint);
+      if (cachedData !== undefined) {
         // 增加命中次数
-        cachedResult.hitCount++;
-        logger.debug(`请求去重命中: ${key}，命中次数: ${cachedResult.hitCount.toString()}`);
-        return Promise.resolve(cachedResult.result as T);
+        cachedData.hitCount++;
+        logger.debug(`请求去重命中: ${key}，命中次数: ${cachedData.hitCount.toString()}`);
+        return Promise.resolve(cachedData.result as T);
       }
     }
 
@@ -223,13 +211,12 @@ export class RequestBatcher {
       // 使用通用重试逻辑执行请求
       const result = await retry.withRetry(executeRequest, retryOptions);
 
-      // 缓存成功的请求结果（如果启用去重）
+      // 缓存成功的请求结果
       if (!skipDeduplication) {
-        this.requestFingerprints.set(fingerprint, {
+        this.fingerprintWheel.add(fingerprint, {
           result,
-          timestamp: Date.now(),
           hitCount: 1
-        });
+        }, this.fingerprintTTL);
       }
 
       // 所有批处理请求都收到相同的结果
@@ -259,15 +246,24 @@ export class RequestBatcher {
   /**
    * 获取批处理器统计信息
    * 
-   * @returns 包含待处理请求数、批处理请求数、缓存大小和命中次数的对象
+   * @returns 包含待处理请求数、批处理请求数、缓存大小和时间轮统计的对象
    */
-  public getStats(): { pendingRequests: number; batchedRequests: number; fingerprintCache: number; fingerprintHits: number } {
+  public getStats(): { 
+    pendingRequests: number; 
+    batchedRequests: number; 
+    fingerprintCache: number;
+    timeWheelStats: {
+      totalEntries: number;
+      slotsUsed: number;
+      averageEntriesPerSlot: number;
+      currentSlot: number;
+    };
+  } {
     return {
       pendingRequests: this.pendingRequests.size,
       batchedRequests: this.batchedRequests.size,
-      fingerprintCache: this.requestFingerprints.size,
-      fingerprintHits: Array.from(this.requestFingerprints.values())
-        .reduce((sum, fp) => sum + fp.hitCount, 0)
+      fingerprintCache: this.fingerprintWheel.size,
+      timeWheelStats: this.fingerprintWheel.getStats()
     };
   }
 
@@ -279,7 +275,7 @@ export class RequestBatcher {
    * @returns void
    */
   public clearCache(): void {
-    this.requestFingerprints.clear();
+    this.fingerprintWheel.clear();
     logger.debug('已清除请求指纹缓存');
   }
 

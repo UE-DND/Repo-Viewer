@@ -87,7 +87,7 @@ export default defineConfig(({ mode }) => {
 
             if (req.url?.startsWith('/api/github')) {
               try {
-                logger.log('处理 API 请求:', req.url);
+                logger.log('处理 API 请求:', decodeURIComponent(req.url));
 
                 const module = await import('./api/github');
                 const handler = module.default;
