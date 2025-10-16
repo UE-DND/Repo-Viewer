@@ -16,7 +16,7 @@ import {
 } from "@mui/icons-material";
 import type { FC, ReactNode, RefObject } from "react";
 import type { NavigationDirection } from "@/contexts/unified";
-import { g3Styles } from "@/utils";
+import { theme as themeUtils } from "@/utils";
 
 /**
  * 面包屑导航组件属性接口
@@ -137,7 +137,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
             px: compact ? { xs: 0.75, sm: 1 } : { xs: 1, sm: 1.2 },
             py: compact ? { xs: 0.5, sm: 0.6 } : { xs: 0.75, sm: 1 },
             bgcolor: compact ? "transparent" : "background.paper",
-            borderRadius: g3Styles.breadcrumb().borderRadius,
+            borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.breadcrumb),
             boxShadow: compact ? "none" : "0px 2px 6px rgba(0, 0, 0, 0.05)",
             "& .MuiBreadcrumbs-ol": {
               alignItems: "center",
@@ -163,7 +163,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
             "& .MuiBreadcrumbs-collapsed": {
               color: theme.palette.primary.main,
               backgroundColor: alpha(theme.palette.primary.main, 0.07),
-              borderRadius: g3Styles.breadcrumbItem().borderRadius,
+              borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.breadcrumbItem),
               px: { xs: 0.5, sm: 1 },
               py: 0.2,
               mx: { xs: 0.25, sm: 0.5 },
@@ -208,7 +208,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
                       ? { xs: 0.25, sm: 1.75 }
                       : { xs: 0.5, sm: 1.75 }
                     : { xs: 1.25, sm: 1.75 },
-                  borderRadius: g3Styles.breadcrumbItem().borderRadius,
+                  borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.breadcrumbItem),
                   bgcolor: alpha(theme.palette.primary.main, 0.06),
                   fontWeight: 500,
                   height: compact
@@ -266,7 +266,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
                   py: compact
                     ? { xs: 0.25, sm: 0.4 }
                     : { xs: 0.5, sm: 0.75 },
-                  borderRadius: g3Styles.breadcrumbItem().borderRadius,
+                  borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.breadcrumbItem),
                   bgcolor: isHome
                     ? alpha(theme.palette.primary.main, 0.08)
                     : "transparent",

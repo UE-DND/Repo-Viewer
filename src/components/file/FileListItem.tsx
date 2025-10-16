@@ -16,7 +16,7 @@ import {
   Download as DownloadIcon,
   Cancel as CancelIcon,
 } from "@mui/icons-material";
-import { getFileIcon, logger, g3Styles } from "@/utils";
+import { file, logger, theme as themeUtils } from "@/utils";
 import type { GitHubContent } from "@/types";
 import { getFeaturesConfig } from "@/config";
 
@@ -68,7 +68,7 @@ const FileListItem = memo<FileListItemProps>(
     const isItemDownloading = isDownloading || isFolderDownloading;
 
     const IconComponent = React.useMemo(() => {
-      return item.type === "dir" ? FolderIcon : getFileIcon(item.name);
+      return item.type === "dir" ? FolderIcon : file.getFileIcon(item.name);
     }, [item.type, item.name]);
 
     // 检查是否是首页文件夹（用于显示过滤）
@@ -174,7 +174,7 @@ const FileListItem = memo<FileListItemProps>(
                     bgcolor: "background.paper",
                     color: "text.primary",
                     boxShadow: 3,
-                    borderRadius: g3Styles.tooltip().borderRadius,
+                    borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.tooltip),
                     p: 1.5,
                     border: "1px solid",
                     borderColor: "divider",
@@ -276,7 +276,7 @@ const FileListItem = memo<FileListItemProps>(
           disableRipple={disableRipple}
           disableTouchRipple={disableTouchRipple}
           sx={{
-            borderRadius: g3Styles.fileListItem().borderRadius,
+            borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.fileListItem),
             transition:
               "transform 0.1s ease-in-out, background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out",
             "&:hover": {

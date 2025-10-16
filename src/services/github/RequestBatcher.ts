@@ -1,4 +1,5 @@
-import { logger } from '@/utils';
+import { logger, retry } from '@/utils';
+import type { RetryOptions } from '@/utils';
 
 /**
  * 批处理请求接口
@@ -201,7 +202,6 @@ export class RequestBatcher {
     skipDeduplication: boolean
   ): Promise<void> {
     const queue = this.batchedRequests.get(key) ?? [];
-    let lastError: unknown = null;
 
     // 按优先级排序
     queue.sort((a, b) => {
@@ -209,47 +209,44 @@ export class RequestBatcher {
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
 
-    // 重试逻辑
-    for (let retryCount = 0; retryCount <= this.maxRetries; retryCount++) {
-      try {
-        const result = await executeRequest();
-
-        // 缓存成功的请求结果（如果启用去重）
-        if (!skipDeduplication) {
-          this.requestFingerprints.set(fingerprint, {
-            result,
-            timestamp: Date.now(),
-            hitCount: 1
-          });
-        }
-
-        // 所有批处理请求都收到相同的结果
-        queue.forEach(request => {
-          request.resolve(result);
-        });
-        this.batchedRequests.delete(key);
-        return;
-
-      } catch (error: unknown) {
-        lastError = error;
+    // 配置重试选项
+    const retryOptions: RetryOptions = {
+      maxRetries: this.maxRetries,
+      backoff: (attempt) => Math.min(1000 * Math.pow(2, attempt), 5000), // 指数退避，最大5秒
+      onRetry: (attempt, error) => {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.warn(`请求失败 (尝试 ${(retryCount + 1).toString()}/${(this.maxRetries + 1).toString()}): ${key}`, errorMessage);
-
-        // 如果不是最后一次重试，等待一段时间
-        if (retryCount < this.maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // 指数退避，最大5秒
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
+        logger.warn(`请求失败 (尝试 ${(attempt + 2).toString()}/${(this.maxRetries + 1).toString()}): ${key}`, errorMessage);
       }
-    }
+    };
 
-    // 所有重试都失败了
-    logger.error(`请求最终失败: ${key}`, lastError);
-    queue.forEach(request => {
-      request.retryCount++;
-      request.reject(lastError);
-    });
-    this.batchedRequests.delete(key);
+    try {
+      // 使用通用重试逻辑执行请求
+      const result = await retry.withRetry(executeRequest, retryOptions);
+
+      // 缓存成功的请求结果（如果启用去重）
+      if (!skipDeduplication) {
+        this.requestFingerprints.set(fingerprint, {
+          result,
+          timestamp: Date.now(),
+          hitCount: 1
+        });
+      }
+
+      // 所有批处理请求都收到相同的结果
+      queue.forEach(request => {
+        request.resolve(result);
+      });
+      this.batchedRequests.delete(key);
+
+    } catch (lastError: unknown) {
+      // 所有重试都失败了
+      logger.error(`请求最终失败: ${key}`, lastError);
+      queue.forEach(request => {
+        request.retryCount++;
+        request.reject(lastError);
+      });
+      this.batchedRequests.delete(key);
+    }
   }
 
   // 处理批处理队列

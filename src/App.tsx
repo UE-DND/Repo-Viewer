@@ -13,7 +13,7 @@ import MainContent from "@/components/layout/MainContent";
 import ToolbarButtons from "@/components/layout/ToolbarButtons";
 import { SITE_TITLE } from "@/constants";
 import { clearCache, getTokenCount, hasToken } from "@/services/github";
-import { logger, debounce } from "@/utils";
+import { logger, performance } from "@/utils";
 import SEO from "@/components/seo/SEO";
 import Footer from "@/components/layout/Footer";
 import { FaviconManager } from "@/components/ui/DynamicIcon";
@@ -131,7 +131,7 @@ const App = React.memo(() => {
 
     // 使用 debounce 进一步优化，减少高频滚动时的函数调用
     // 16ms 约等于 60fps，与 RAF 配合使用效果最佳
-    const debouncedHandleScroll = debounce(handleScroll, 16);
+    const debouncedHandleScroll = performance.debounce(handleScroll, 16);
 
     window.addEventListener('scroll', debouncedHandleScroll, { passive: true });
 

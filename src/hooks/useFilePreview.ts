@@ -3,7 +3,7 @@ import { useTheme } from '@mui/material';
 import type { PreviewState, PreviewAction, GitHubContent } from '@/types';
 import { OfficeFileType } from '@/types';
 import { transformImageUrl, getFileContent } from '@/services/github';
-import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger, openPDFPreview } from '@/utils';
+import { file, logger, pdf } from '@/utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 
@@ -214,7 +214,7 @@ export const useFilePreview = (
 
     const fileNameLower = item.name.toLowerCase();
 
-    if (isMarkdownFile(fileNameLower)) {
+    if (file.isMarkdownFile(fileNameLower)) {
         updateUrlWithHistory(dirPath, item.path);
         dispatch({ type: 'SET_MD_LOADING', loading: true });
 
@@ -228,10 +228,10 @@ export const useFilePreview = (
           dispatch({ type: 'SET_MD_LOADING', loading: false });
         }
       }
-      else if (isPdfFile(fileNameLower)) {
+      else if (file.isPdfFile(fileNameLower)) {
         // 使用新的 PDF 预览工具函数
         try {
-          await openPDFPreview({
+          await pdf.openPDFPreview({
             fileName: item.name,
             downloadUrl: item.download_url,
             theme: muiTheme,
@@ -245,7 +245,7 @@ export const useFilePreview = (
         }
         return;
       }
-      else if (isImageFile(fileNameLower)) {
+      else if (file.isImageFile(fileNameLower)) {
         // 图片预览
         dispatch({ type: 'SET_IMAGE_LOADING', loading: true });
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });
@@ -264,15 +264,15 @@ export const useFilePreview = (
         } finally {
           dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
         }
-    } else if (isWordFile(fileNameLower)) {
+    } else if (file.isWordFile(fileNameLower)) {
       // 使用统一的Office预览组件
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.WORD);
-    } else if (isExcelFile(fileNameLower)) {
+    } else if (file.isExcelFile(fileNameLower)) {
       // 使用统一的Office预览组件
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.EXCEL);
-    } else if (isPPTFile(fileNameLower)) {
+    } else if (file.isPPTFile(fileNameLower)) {
       // 使用统一的Office预览组件
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.PPT);

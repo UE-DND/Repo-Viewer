@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import type { MotionStyle } from "framer-motion";
 import FileListItem from "./FileListItem";
 import type { GitHubContent } from "@/types";
-import { responsiveG3Styles } from "@/utils";
+import { theme, cache } from "@/utils";
 
 /**
  * 虚拟列表项数据接口
@@ -129,15 +129,19 @@ const listAnimationVariants = {
 /**
  * 动画变体缓存
  * 
- * 使用 Map 缓存已计算的动画变体，避免重复计算。
- * 缓存键格式: `${speed}-${isScrolling}`
+ * 使用智能缓存管理已计算的动画变体，自动清理最少使用的条目。
+ * 采用混合 LRU/LFU 策略，结合访问频率和时间衰减。
  * 
- * 性能提升：在高频滚动场景下减少 70-80% 的重复计算
+ * 性能提升：在高频滚动场景下减少 70-80% 的重复计算，同时优化内存使用
  */
-const animationVariantsCache = new Map<string, typeof itemVariants>();
+const animationVariantsCache = new cache.SmartCache<string, typeof itemVariants>({
+  maxSize: 50,
+  cleanupThreshold: 0.8,
+  cleanupRatio: 0.3
+});
 
 /**
- * 根据滚动速度动态生成动画变体（带缓存）
+ * 根据滚动速度动态生成动画变体（带智能缓存）
  * 
  * @param speed - 滚动速度（0-1之间的标准化值）
  * @param isScrolling - 是否正在滚动
@@ -147,9 +151,9 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean): typeof ite
   // 生成缓存键
   const cacheKey = `${speed.toFixed(2)}-${isScrolling ? '1' : '0'}`;
   
-  // 尝试从缓存获取
+  // 尝试从智能缓存获取
   const cached = animationVariantsCache.get(cacheKey);
-  if (cached !== undefined) {
+  if (cached !== null) {
     return cached;
   }
 
@@ -191,15 +195,7 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean): typeof ite
     variants = itemVariants;
   }
 
-  // 存入缓存（限制缓存大小，避免内存泄漏）
-  if (animationVariantsCache.size > 50) {
-    // 当缓存超过 50 个条目时，清除最旧的条目
-    const firstKey = animationVariantsCache.keys().next().value;
-    if (firstKey !== undefined) {
-      animationVariantsCache.delete(firstKey);
-    }
-  }
-  
+  // 存入智能缓存（自动管理容量和清理）
   animationVariantsCache.set(cacheKey, variants);
   return variants;
 };
@@ -564,7 +560,7 @@ const FileList = React.memo<FileListProps>(
     const containerStyle = {
       width: "100%",
       bgcolor: "background.paper",
-      borderRadius: responsiveG3Styles.fileListContainer(isSmallScreen),
+      borderRadius: theme.responsiveG3Styles.fileListContainer(isSmallScreen),
       mb: 2,
       overflow: "hidden",
       boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.05)",
