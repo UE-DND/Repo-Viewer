@@ -112,7 +112,7 @@ const Footer: React.FC = () => {
                 textAlign: "center",
               }}
             >
-              Built with{" "}
+              Presented by{" "}
               <Link
                 color="primary"
                 href="https://github.com/UE-DND/Repo-Viewer"
@@ -150,7 +150,7 @@ const Footer: React.FC = () => {
             }}
             data-oid="78vii.:"
           >
-            Built with{" "}
+            Presented by{" "}
             <Link
               color="primary"
               href="https://github.com/UE-DND/Repo-Viewer"
