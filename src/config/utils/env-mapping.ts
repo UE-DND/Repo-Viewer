@@ -29,6 +29,30 @@ const normalizeEnvValue = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+/**
+ * 检查是否在生产环境
+ * 
+ * 使用多个环境标志进行严格检查，确保在生产环境中不会泄露敏感信息。
+ * 
+ * @param env - 环境变量记录
+ * @param isProdLike - 调用者提供的生产环境标志
+ * @returns 是否在生产环境
+ */
+function isProductionEnvironment(env: MutableEnvRecord, isProdLike: boolean): boolean {
+  // 检查多个环境标志
+  const nodeEnv = env['NODE_ENV'] ?? runtimeProcessEnv?.['NODE_ENV'];
+  const mode = env['MODE'] ?? runtimeProcessEnv?.['MODE'];
+  const viteProd = env['PROD'] ?? runtimeProcessEnv?.['PROD'];
+  
+  // 任何一个标志表明是生产环境，就返回 true
+  return (
+    isProdLike ||
+    nodeEnv === 'production' ||
+    mode === 'production' ||
+    viteProd === 'true'
+  );
+}
+
 export function applyEnvMappingForVite(
   env: MutableEnvRecord,
   options: EnvMappingOptions = {}
@@ -46,8 +70,11 @@ export function applyEnvMappingForVite(
     }
   });
 
-  // 2) PAT 同步（仅在非生产模式下），避免生产构建把令牌注入前端
-  if (!isProdLike) {
+  // 2) PAT 同步（仅在开发模式下），避免生产构建把令牌注入前端
+  // 使用严格的生产环境检查
+  const isProduction = isProductionEnvironment(env, isProdLike);
+  
+  if (!isProduction) {
     const plainPrefix = 'GITHUB_PAT';
     const vitePrefix = 'VITE_GITHUB_PAT';
 
@@ -74,6 +101,38 @@ export function applyEnvMappingForVite(
   }
 }
 
+/**
+ * 查找环境变量
+ * 
+ * 从环境变量记录中查找指定键的值，支持运行时环境变量回退。
+ * 
+ * @param env - 环境变量记录
+ * @param key - 环境变量键名
+ * @returns 环境变量值，如果未找到则返回 undefined
+ */
+function lookupEnv(env: EnvLookupRecord, key: string): string | undefined {
+  const value = normalizeEnvValue(env[key]);
+  if (value !== undefined) {
+    return value;
+  }
+  
+  if (runtimeProcessEnv !== undefined) {
+    return normalizeEnvValue(runtimeProcessEnv[key]);
+  }
+  
+  return undefined;
+}
+
+/**
+ * 解析环境变量（支持映射）
+ * 
+ * 查找环境变量值，支持Vite前缀映射和后备值。
+ * 
+ * @param env - 环境变量记录
+ * @param plainKey - 无前缀的键名
+ * @param fallback - 后备值
+ * @returns 解析后的环境变量值
+ */
 export const resolveEnvWithMapping = (
   env: EnvLookupRecord,
   plainKey: string,
@@ -82,28 +141,16 @@ export const resolveEnvWithMapping = (
   // 优先使用VITE_前缀的变量（如果存在）
   const viteKey = ENV_MAPPING[plainKey as keyof typeof ENV_MAPPING];
   if (typeof viteKey === 'string') {
-    const viteValue = normalizeEnvValue(env[viteKey]);
+    // 尝试查找 VITE_ 前缀变量
+    const viteValue = lookupEnv(env, viteKey);
     if (viteValue !== undefined) {
       return viteValue;
     }
 
     // 如果VITE_变量不存在，尝试使用无前缀变量
-    const plainValue = normalizeEnvValue(env[plainKey]);
+    const plainValue = lookupEnv(env, plainKey);
     if (plainValue !== undefined) {
       return plainValue;
-    }
-
-    // 检查runtime环境变量
-    if (runtimeProcessEnv !== undefined) {
-      const runtimeViteValue = normalizeEnvValue(runtimeProcessEnv[viteKey]);
-      if (runtimeViteValue !== undefined) {
-        return runtimeViteValue;
-      }
-
-      const runtimePlainValue = normalizeEnvValue(runtimeProcessEnv[plainKey]);
-      if (runtimePlainValue !== undefined) {
-        return runtimePlainValue;
-      }
     }
   }
 

@@ -1,13 +1,24 @@
 import type { Theme, SxProps } from "@mui/material";
 import { alpha } from "@mui/material";
-import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { responsiveG3Styles, g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 const SYSTEM_FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'";
 const MONO_FONT =
   "var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace)";
 
-export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<Theme> => {
+/**
+ * 创建Markdown样式
+ * 
+ * 根据主题、LaTeX公式数量和屏幕大小生成Markdown预览的样式配置。
+ * 
+ * @param theme - Material-UI主题对象
+ * @param latexCount - LaTeX公式数量（用于性能优化）
+ * @param isSmallScreen - 是否为小屏幕，默认false
+ * @returns Material-UI SxProps样式对象
+ */
+export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallScreen = false): SxProps<Theme> => {
+  const containerBorderRadius = responsiveG3Styles.readmeContainer(isSmallScreen);
   const isDark = theme.palette.mode === "dark";
   const textColor = theme.palette.text.primary;
   const secondaryTextColor = theme.palette.text.secondary;
@@ -31,7 +42,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
   px: { xs: 2.5, sm: 4 },
   mt: 2,
   mb: 3,
-  borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
+  borderRadius: containerBorderRadius,
   bgcolor: "background.paper",
   border: "1px solid",
   borderColor: "divider",
@@ -39,7 +50,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
   "& .markdown-body": {
     color: `${textColor} !important`,
     backgroundColor: "transparent !important",
-    fontSize: "1rem",
+    fontSize: { xs: "0.875rem", sm: "1rem" },
     lineHeight: 1.7,
     wordBreak: "break-word",
     fontFamily: SYSTEM_FONT,
@@ -206,7 +217,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
   "& .markdown-body pre > code": {
     display: "block",
     fontFamily: MONO_FONT,
-    fontSize: "0.875rem",
+    fontSize: { xs: "0.8125rem", sm: "0.875rem" },
     lineHeight: 1.55,
     backgroundColor: codeSurfaceColor, // 行间代码块背景色
     borderRadius: "inherit",
@@ -219,7 +230,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
 
   "& .markdown-body :not(pre) > code": {
     fontFamily: MONO_FONT,
-    fontSize: "0.875em",
+    fontSize: { xs: "0.8125em", sm: "0.875em" },
     backgroundColor: codeSurfaceColor,
     borderRadius: "6px",
     padding: "0.2em 0.4em",
@@ -276,7 +287,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number): SxProps<
 
   // LaTeX公式样式
   "& .markdown-body .math": {
-    fontSize: "1.08em",
+    fontSize: { xs: "1em", sm: "1.08em" },
     margin: "0.5em 0",
   },
   "& .markdown-body .math-inline": {

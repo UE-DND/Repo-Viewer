@@ -2,18 +2,26 @@ import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
-import { GitHubAuth } from './GitHubAuth';
+import { getAuthHeaders } from './Auth';
 
 // GitHub预取服务，使用模块导出而非类
 const batcher = new RequestBatcher();
 
-// 智能预取目录内容（增强版）
+/**
+ * 智能预取目录内容
+ * 
+ * 根据优先级延迟预加载指定路径的内容，不阻塞用户操作。
+ * 
+ * @param path - 要预取的目录路径
+ * @param priority - 预取优先级，默认为'low'
+ * @returns void
+ */
 export function prefetchContents(path: string, priority: 'high' | 'medium' | 'low' = 'low'): void {
   // 使用低优先级预加载，不影响用户操作
   const delay = priority === 'high' ? 0 : priority === 'medium' ? 100 : 200;
   setTimeout(() => {
     // 动态导入避免循环依赖
-    void import('./GitHubContentService').then(({ getContents }) => {
+    void import('./ContentService').then(({ getContents }) => {
       void getContents(path).catch(() => {
         // 忽略错误
       });
@@ -21,14 +29,22 @@ export function prefetchContents(path: string, priority: 'high' | 'medium' | 'lo
   }, delay);
 }
 
-// 批量预加载多个路径
+/**
+ * 批量预加载多个路径
+ * 
+ * 并发预加载多个路径的内容，自动控制并发数量。
+ * 
+ * @param paths - 路径数组
+ * @param maxConcurrency - 最大并发数，默认为3
+ * @returns Promise，所有预加载完成后解析
+ */
 export async function batchPrefetchContents(paths: string[], maxConcurrency = 3): Promise<void> {
   if (paths.length === 0) {
     return;
   }
 
     // 动态导入避免循环依赖
-  const { getContents } = await import('./GitHubContentService');
+  const { getContents } = await import('./ContentService');
 
   // 限制并发数量防止网络资源过耗
   for (let i = 0; i < paths.length; i += maxConcurrency) {
@@ -46,7 +62,14 @@ export async function batchPrefetchContents(paths: string[], maxConcurrency = 3)
   }
 }
 
-// 智能预加载相关内容（增强版）
+/**
+ * 智能预加载相关内容
+ * 
+ * 根据内容类型和优先级智能预加载相关的目录和文件。
+ * 
+ * @param contents - GitHub内容数组
+ * @returns Promise，预加载完成后解析
+ */
 export async function prefetchRelatedContent(contents: GitHubContent[]): Promise<void> {
     try {
       // 按类型和大小分组
@@ -166,7 +189,7 @@ async function prefetchFilesWithPriority(
     }
 
   // 动态导入避免循环依赖
-  const { getFileContent } = await import('./GitHubContentService');
+  const { getFileContent } = await import('./ContentService');
 
   // 使用增强的批处理器预加载
   const prefetchPromises = fileUrls.map(url =>
@@ -177,7 +200,7 @@ async function prefetchFilesWithPriority(
     }, {
         priority,
         method: 'GET',
-        headers: GitHubAuth.getAuthHeaders() as Record<string, string>,
+        headers: getAuthHeaders() as Record<string, string>,
         skipDeduplication: false
       }).catch(() => null) // 忽略预加载失败
     );

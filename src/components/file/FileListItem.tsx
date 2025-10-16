@@ -16,7 +16,7 @@ import {
   Download as DownloadIcon,
   Cancel as CancelIcon,
 } from "@mui/icons-material";
-import { getFileIcon, logger, g3Styles } from "@/utils";
+import { file, logger, theme as themeUtils } from "@/utils";
 import type { GitHubContent } from "@/types";
 import { getFeaturesConfig } from "@/config";
 
@@ -26,6 +26,9 @@ const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 const HIDE_MAIN_FOLDER_DOWNLOAD = featuresConfig.hideDownload.enabled;
 const HIDE_DOWNLOAD_FOLDERS = featuresConfig.hideDownload.hiddenFolders;
 
+/**
+ * 文件列表项组件属性接口
+ */
 interface FileListItemProps {
   item: GitHubContent;
   downloadingPath: string | null;
@@ -39,6 +42,56 @@ interface FileListItemProps {
   contents?: GitHubContent[];
 }
 
+/**
+ * 自定义比较函数
+ * 
+ * 优化渲染性能：只在必要的 props 变化时才重新渲染。
+ */
+function arePropsEqual(
+  prevProps: FileListItemProps,
+  nextProps: FileListItemProps
+): boolean {
+  // 使用 sha 来判断 item 是否变化（更可靠）
+  const itemUnchanged = prevProps.item.sha === nextProps.item.sha &&
+                        prevProps.item.name === nextProps.item.name &&
+                        prevProps.item.type === nextProps.item.type;
+  
+  // 检查下载状态
+  const downloadStateUnchanged = 
+    prevProps.downloadingPath === nextProps.downloadingPath &&
+    prevProps.downloadingFolderPath === nextProps.downloadingFolderPath &&
+    prevProps.folderDownloadProgress === nextProps.folderDownloadProgress;
+  
+  // 检查路径
+  const pathUnchanged = prevProps.currentPath === nextProps.currentPath;
+  
+  // 检查回调函数（如果使用 useCallback，这些应该是稳定的）
+  const callbacksUnchanged = 
+    prevProps.handleItemClick === nextProps.handleItemClick &&
+    prevProps.handleDownloadClick === nextProps.handleDownloadClick &&
+    prevProps.handleFolderDownloadClick === nextProps.handleFolderDownloadClick &&
+    prevProps.handleCancelDownload === nextProps.handleCancelDownload;
+  
+  // 检查 contents 长度（用于涟漪效果优化）
+  const contentsLengthUnchanged = 
+    (prevProps.contents?.length ?? 0) === (nextProps.contents?.length ?? 0);
+  
+  // 所有关键 props 都未变化时返回 true（不重新渲染）
+  return itemUnchanged && 
+         downloadStateUnchanged && 
+         pathUnchanged && 
+         callbacksUnchanged &&
+         contentsLengthUnchanged;
+}
+
+/**
+ * 文件列表项组件
+ * 
+ * 显示单个文件或文件夹，包含图标、名称和下载功能。
+ * 支持下载进度显示和取消操作。
+ * 
+ * 使用自定义比较函数优化渲染性能，避免不必要的重新渲染。
+ */
 const FileListItem = memo<FileListItemProps>(
   ({
     item,
@@ -53,13 +106,23 @@ const FileListItem = memo<FileListItemProps>(
     contents = [], // 提供默认空数组值
   }) => {
     const theme = useTheme();
+    const [isHoveringDownload, setIsHoveringDownload] = React.useState(false);
+    const [hoverCount, setHoverCount] = React.useState(0);
 
     const isDownloading = downloadingPath === item.path;
     const isFolderDownloading = downloadingFolderPath === item.path;
     const isItemDownloading = isDownloading || isFolderDownloading;
 
+    // 当下载状态改变时重置悬停计数
+    React.useEffect(() => {
+      if (!isItemDownloading) {
+        setHoverCount(0);
+        setIsHoveringDownload(false);
+      }
+    }, [isItemDownloading]);
+
     const IconComponent = React.useMemo(() => {
-      return item.type === "dir" ? FolderIcon : getFileIcon(item.name);
+      return item.type === "dir" ? FolderIcon : file.getFileIcon(item.name);
     }, [item.type, item.name]);
 
     // 检查是否是首页文件夹（用于显示过滤）
@@ -133,6 +196,23 @@ const FileListItem = memo<FileListItemProps>(
       [handleCancelDownload],
     );
 
+    const handleDownloadMouseEnter = React.useCallback(() => {
+      if (isItemDownloading) {
+        setHoverCount(prev => {
+          const newCount = prev + 1;
+          // 只有第二次及以后的悬停才显示取消图标
+          if (newCount >= 2) {
+            setIsHoveringDownload(true);
+          }
+          return newCount;
+        });
+      }
+    }, [isItemDownloading]);
+
+    const handleDownloadMouseLeave = React.useCallback(() => {
+      setIsHoveringDownload(false);
+    }, []);
+
     return (
       <ListItem
         disablePadding
@@ -150,14 +230,14 @@ const FileListItem = memo<FileListItemProps>(
             <Tooltip
               title={
                 isItemDownloading
-                  ? "取消下载"
+                  ? (hoverCount >= 2 ? "取消下载" : "")
                   : item.type === "file"
                     ? `下载 ${item.name}`
                     : `下载文件夹 ${item.name}`
               }
               disableInteractive
               placement="left"
-              enterDelay={300}
+              enterDelay={isItemDownloading ? 0 : 300}
               leaveDelay={0}
               slotProps={{
                 tooltip: {
@@ -165,7 +245,7 @@ const FileListItem = memo<FileListItemProps>(
                     bgcolor: "background.paper",
                     color: "text.primary",
                     boxShadow: 3,
-                    borderRadius: g3Styles.tooltip().borderRadius,
+                    borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.tooltip),
                     p: 1.5,
                     border: "1px solid",
                     borderColor: "divider",
@@ -186,6 +266,8 @@ const FileListItem = memo<FileListItemProps>(
                   transform: "translateY(-50%)",
                   zIndex: 2,
                 }}
+                onMouseEnter={handleDownloadMouseEnter}
+                onMouseLeave={handleDownloadMouseLeave}
                 data-oid="p5-7:mp"
               >
                 <IconButton
@@ -202,7 +284,7 @@ const FileListItem = memo<FileListItemProps>(
                   }
                   onClick={
                     isItemDownloading
-                      ? onCancelDownload
+                      ? (isHoveringDownload ? onCancelDownload : undefined)
                       : item.type === "file"
                         ? handleFileDownloadClick
                         : handleFileFolderDownloadClick
@@ -231,6 +313,7 @@ const FileListItem = memo<FileListItemProps>(
                         data-oid="0oqwaa-"
                       />
 
+                      {/* 第二次及以后悬停时显示取消图标 */}
                       <Box
                         sx={{
                           top: 0,
@@ -241,12 +324,24 @@ const FileListItem = memo<FileListItemProps>(
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
+                          opacity: isHoveringDownload ? 1 : 0,
+                          transition: "opacity 0.2s ease-in-out",
+                          backgroundColor: isHoveringDownload 
+                            ? alpha(theme.palette.error.main, 0.1)
+                            : "transparent",
+                          borderRadius: "50%",
+                          pointerEvents: isHoveringDownload ? "auto" : "none",
                         }}
                         data-oid="g-4-y6c"
                       >
                         <CancelIcon
                           fontSize="small"
-                          sx={{ fontSize: "0.8rem", color: "error.main" }}
+                          sx={{ 
+                            fontSize: "0.8rem", 
+                            color: "error.main",
+                            transform: isHoveringDownload ? "scale(1)" : "scale(0.8)",
+                            transition: "transform 0.2s ease-in-out",
+                          }}
                           data-oid="6_m3uc-"
                         />
                       </Box>
@@ -267,7 +362,7 @@ const FileListItem = memo<FileListItemProps>(
           disableRipple={disableRipple}
           disableTouchRipple={disableTouchRipple}
           sx={{
-            borderRadius: g3Styles.fileListItem().borderRadius,
+            borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.fileListItem),
             transition:
               "transform 0.1s ease-in-out, background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out",
             "&:hover": {
@@ -333,6 +428,7 @@ const FileListItem = memo<FileListItemProps>(
       </ListItem>
     );
   },
+  arePropsEqual  // 使用自定义比较函数
 );
 
 FileListItem.displayName = "FileListItem";

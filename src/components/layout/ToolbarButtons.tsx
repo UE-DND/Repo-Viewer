@@ -1,5 +1,10 @@
 import { useContext, useState, useCallback, useEffect } from "react";
-import { Box, IconButton, Tooltip, useTheme } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Tooltip,
+  useTheme,
+} from "@mui/material";
 import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
@@ -8,26 +13,51 @@ import {
 } from "@mui/icons-material";
 import { ColorModeContext } from "@/contexts/colorModeContext";
 import { useRefresh } from "@/hooks/useRefresh";
-import { pulseAnimation, refreshAnimation } from "@/theme/animations";
-import { GitHubService } from "@/services/github";
+import { refreshAnimation } from "@/theme/animations";
+import { GitHub } from "@/services/github";
 import axios from "axios";
 import { getGithubConfig } from "@/config";
 import { logger } from "@/utils";
+import { useContentContext } from "@/contexts/unified";
 
+/**
+ * 仓库信息接口
+ */
 interface RepoInfo {
   repoOwner: string;
   repoName: string;
 }
 
+/**
+ * GitHub配置状态类型
+ */
 type GitHubConfigStatus = "success" | "error";
 
+/**
+ * GitHub配置响应接口
+ */
 interface GitHubConfigResponse {
   status?: GitHubConfigStatus;
   data?: Partial<RepoInfo>;
 }
 
-// 工具栏按钮组件
-const ToolbarButtons: React.FC = () => {
+/**
+ * 工具栏按钮组件属性接口
+ */
+interface ToolbarButtonsProps {
+  showBreadcrumbInToolbar?: boolean;
+  isSmallScreen?: boolean;
+}
+
+/**
+ * 工具栏按钮组件
+ * 
+ * 提供主题切换、刷新和跳转到GitHub等功能按钮。
+ */
+const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
+  showBreadcrumbInToolbar = false,
+  isSmallScreen = false,
+}) => {
   const { toggleColorMode } = useContext(ColorModeContext);
   const theme = useTheme();
   const handleRefresh = useRefresh();
@@ -39,6 +69,16 @@ const ToolbarButtons: React.FC = () => {
       repoName: githubConfig.repoName,
     };
   });
+  const {
+    currentBranch,
+    defaultBranch,
+    currentPath,
+    branches: _branches,
+    branchLoading: _branchLoading,
+    branchError: _branchError,
+    setCurrentBranch: _setCurrentBranch,
+    refreshBranches,
+  } = useContentContext();
 
   // 在组件加载时获取仓库信息
   useEffect(() => {
@@ -78,11 +118,12 @@ const ToolbarButtons: React.FC = () => {
 
     const executeRefresh = async (): Promise<void> => {
       try {
-        await GitHubService.clearCache();
+        await GitHub.Cache.clearCache();
       } catch (error) {
         logger.error("清除缓存失败:", error);
       } finally {
         handleRefresh();
+        void refreshBranches();
 
         // 动画完成后重置状态
         window.setTimeout(() => {
@@ -92,13 +133,11 @@ const ToolbarButtons: React.FC = () => {
     };
 
     void executeRefresh();
-  }, [handleRefresh, isRefreshing]);
+  }, [handleRefresh, isRefreshing, refreshBranches]);
 
   // 处理主题切换按钮点击
   const onThemeToggleClick = useCallback(() => {
-    // 设置标记，表明这是一个主题切换操作，防止触发README重新加载
-    document.documentElement.setAttribute("data-theme-change-only", "true");
-    // 执行主题切换
+    // 执行主题切换（事件将在 useThemeMode 中自动发出）
     toggleColorMode();
   }, [toggleColorMode]);
 
@@ -106,42 +145,87 @@ const ToolbarButtons: React.FC = () => {
   const onGitHubClick = useCallback(() => {
     const { repoOwner, repoName } = repoInfo;
 
-    // 从当前URL获取路径
-    const pathname = window.location.pathname.slice(1); // 移除开头的 '/'
+    const pathname = window.location.pathname.slice(1);
     const hash = window.location.hash;
+    const activeBranch = currentBranch !== "" ? currentBranch : defaultBranch;
+    const encodedBranch = encodeURIComponent(activeBranch);
 
-    // 构造GitHub URL
+    const encodeSegment = (segment: string): string => {
+      try {
+        return encodeURIComponent(decodeURIComponent(segment));
+      } catch (error) {
+        logger.debug("路径片段解码失败，使用原始片段", error);
+        return encodeURIComponent(segment);
+      }
+    };
+
+    const safePath = pathname
+      .split("/")
+      .filter((segment) => segment.length > 0)
+      .map(encodeSegment)
+      .join("/");
+
     let githubUrl = `https://github.com/${repoOwner}/${repoName}`;
 
-    // 检查是否有预览文件（hash中包含 #preview=文件名）
     const previewRegex = /#preview=([^&]+)/;
     const previewMatch = previewRegex.exec(hash);
-    const hasPathname = pathname.length > 0;
     const previewTarget = previewMatch?.[1];
+    const hasPathname = safePath.length > 0;
+
     if (
       typeof previewTarget === "string" &&
       previewTarget.length > 0 &&
       hasPathname
     ) {
-      // 预览文件：拼接路径 + 文件名
-      const fileName = decodeURIComponent(previewTarget);
-      githubUrl += `/blob/main/${pathname}/${fileName}`;
+      let decodedFileName = previewTarget;
+      try {
+        decodedFileName = decodeURIComponent(previewTarget);
+      } catch (error) {
+        logger.debug("预览文件名解码失败，使用原始值", error);
+      }
+      const safeFileName = encodeURIComponent(decodedFileName);
+      githubUrl += `/blob/${encodedBranch}/${safePath}/${safeFileName}`;
     } else if (hasPathname) {
-      // 浏览目录：使用当前路径
-      githubUrl += `/tree/main/${pathname}`;
+      githubUrl += `/tree/${encodedBranch}/${safePath}`;
+    } else {
+      githubUrl += `/tree/${encodedBranch}`;
     }
 
     window.open(githubUrl, "_blank");
-  }, [repoInfo]);
+  }, [repoInfo, currentBranch, defaultBranch]);
+
+  // 保留分支逻辑但不显示UI：这些代码确保分支功能的后台逻辑正常工作
+  // branchLabelId, handleBranchChange, handleBranchOpen, branchOptions 等
+  // 虽然不再渲染UI，但保留这些逻辑以备将来需要或其他组件调用
+
+  const isHomePage = currentPath.trim().length === 0;
+  const shouldHideButtons = isSmallScreen && showBreadcrumbInToolbar && !isHomePage;
+
   return (
-    <Box sx={{ display: "flex", gap: 1 }} data-oid="7:zr_jb">
+    <Box
+      sx={{
+        display: "flex",
+        gap: 1,
+        alignItems: "center",
+        transform: shouldHideButtons
+          ? { xs: 'translateX(120px)', sm: 'translateX(0)' }
+          : 'translateX(0)',
+        opacity: shouldHideButtons ? 0 : 1,
+        transition: shouldHideButtons
+          ? 'none'
+          : 'all 0.2s ease-out',
+        pointerEvents: shouldHideButtons ? 'none' : 'auto',
+        position: shouldHideButtons ? { xs: 'absolute', sm: 'relative' } : 'relative',
+        right: shouldHideButtons ? { xs: 0, sm: 'auto' } : 'auto',
+      }}
+      data-oid="7:zr_jb"
+    >
       <Tooltip title="在GitHub中查看" data-oid="f.rvw_c">
         <IconButton
           color="inherit"
           onClick={onGitHubClick}
           sx={{
             "&:hover": {
-              animation: `${pulseAnimation} 0.4s ease`,
               color: theme.palette.primary.light,
             },
           }}
@@ -187,7 +271,6 @@ const ToolbarButtons: React.FC = () => {
           color="inherit"
           sx={{
             "&:hover": {
-              animation: `${pulseAnimation} 0.4s ease`,
               color:
                 theme.palette.mode === "dark"
                   ? theme.palette.warning.light

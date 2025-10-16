@@ -5,13 +5,21 @@ import { logger } from '@/utils';
 // 内部状态变量
 let _forceServerProxy: boolean | null = null;
 
-// 获取是否强制使用服务端代理
+/**
+ * 获取是否强制使用服务端代理
+ * 
+ * @returns 如果需要强制使用服务端代理返回true
+ */
 export function getForceServerProxy(): boolean {
   _forceServerProxy ??= calculateForceServerProxy();
   return _forceServerProxy;
 }
 
-// 重新计算并刷新强制代理配置
+/**
+ * 重新计算并刷新强制代理配置
+ * 
+ * @returns void
+ */
 export function refreshConfig(): void {
   _forceServerProxy = calculateForceServerProxy();
 }
@@ -38,7 +46,13 @@ function calculateForceServerProxy(): boolean {
     }
   }
 
-// 获取代理配置详情（用于调试）
+/**
+ * 获取代理配置详情
+ * 
+ * 返回当前代理配置的详细信息，主要用于调试。
+ * 
+ * @returns 代理配置详情对象
+ */
 export function getProxyConfigDetails(): {
   forceServerProxy: boolean;
   isDev: boolean;
@@ -66,7 +80,11 @@ export function getProxyConfigDetails(): {
     };
   }
 
-// 检查是否应该使用服务端API
+/**
+ * 检查是否应该使用服务端API
+ * 
+ * @returns 如果应该使用服务端API返回true
+ */
 export function shouldUseServerAPI(): boolean {
     // 基础的强制代理检查
     if (getForceServerProxy()) {
@@ -81,7 +99,11 @@ export function shouldUseServerAPI(): boolean {
     return false;
   }
 
-// 获取推荐的请求策略
+/**
+ * 获取推荐的请求策略
+ * 
+ * @returns 请求策略类型
+ */
 export function getRequestStrategy(): 'server-api' | 'direct-api' | 'hybrid' {
   const config = getConfig();
 

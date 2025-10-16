@@ -21,21 +21,29 @@ declare global {
 const developerConfig = getDeveloperConfig();
 const allowConsoleOutput = developerConfig.mode || developerConfig.consoleLogging;
 
-// 初始化日志系统
+/**
+ * 初始化日志系统
+ * 
+ * 在非开发模式下禁用 console 输出以提升性能和减少包大小。
+ * 使用 queueMicrotask 异步执行以避免阻塞初始渲染。
+ */
 if (!allowConsoleOutput) {
-  const noop = (..._args: unknown[]): undefined => undefined;
-  // eslint-disable-next-line no-console
-  console.log = noop;
-  // eslint-disable-next-line no-console
-  console.info = noop;
-  // eslint-disable-next-line no-console
-  console.debug = noop;
-  // eslint-disable-next-line no-console
-  console.group = noop as typeof console.group;
-  // eslint-disable-next-line no-console
-  console.groupCollapsed = noop as typeof console.groupCollapsed;
-  // eslint-disable-next-line no-console
-  console.groupEnd = (): undefined => undefined;
+  // 使用 microtask 队列异步执行，避免阻塞主线程
+  queueMicrotask(() => {
+    const noop = (..._args: unknown[]): undefined => undefined;
+    // eslint-disable-next-line no-console
+    console.log = noop;
+    // eslint-disable-next-line no-console
+    console.info = noop;
+    // eslint-disable-next-line no-console
+    console.debug = noop;
+    // eslint-disable-next-line no-console
+    console.group = noop as typeof console.group;
+    // eslint-disable-next-line no-console
+    console.groupCollapsed = noop as typeof console.groupCollapsed;
+    // eslint-disable-next-line no-console
+    console.groupEnd = (): undefined => undefined;
+  });
 }
 
 

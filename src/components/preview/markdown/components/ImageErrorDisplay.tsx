@@ -9,11 +9,19 @@ import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
+/**
+ * 图片错误显示组件属性接口
+ */
 interface ImageErrorDisplayProps {
   imgSrc: string;
   onRetry: () => void;
 }
 
+/**
+ * 图片错误显示组件
+ * 
+ * 当Markdown中的图片加载失败时显示错误信息和重试按钮。
+ */
 export const ImageErrorDisplay: React.FC<ImageErrorDisplayProps> = ({
   imgSrc,
   onRetry,

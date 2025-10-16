@@ -9,6 +9,9 @@ import {
 import type { ImageLoadingState } from "../utils/imageUtils";
 import { ImageErrorDisplay } from "./ImageErrorDisplay";
 
+/**
+ * Markdown图片组件属性接口
+ */
 interface MarkdownImageProps
   extends Omit<
     React.ImgHTMLAttributes<HTMLImageElement>,
@@ -21,6 +24,11 @@ interface MarkdownImageProps
   imageState: ImageLoadingState;
 }
 
+/**
+ * Markdown图片组件
+ * 
+ * 处理Markdown中的图片显示，支持代理加载和错误处理。
+ */
 export const MarkdownImage: React.FC<MarkdownImageProps> = ({
   src,
   alt,

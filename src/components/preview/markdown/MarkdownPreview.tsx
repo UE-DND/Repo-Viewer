@@ -26,6 +26,12 @@ import { MarkdownLink } from "./components/MarkdownLink";
 import { logger } from "@/utils";
 import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 
+/**
+ * Markdown预览组件
+ * 
+ * 渲染Markdown内容，支持GFM语法、LaTeX公式、代码高亮等。
+ * 包含图片代理处理、懒加载和主题切换优化。
+ */
 const MarkdownPreview = memo<MarkdownPreviewProps>(
   ({
     readmeContent,
@@ -107,23 +113,37 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
       };
     }, [isLazyLoadEnabled, shouldRender]);
 
-    // 添加主题切换检测
+    // 监听主题切换事件
     useEffect(() => {
-      // 检查是否是仅主题切换操作
-      const isThemeChangeOnly =
-        document.documentElement.getAttribute("data-theme-change-only") ===
-        "true";
+      const handleThemeChanging = (): void => {
+        setIsThemeChanging(true);
+      };
 
+      const handleThemeChanged = (): void => {
+        // 主题切换完成后再显示公式并检测 LaTeX 数量
+        setTimeout(() => {
+          setIsThemeChanging(false);
+          handleLatexCheck();
+        }, 300);
+      };
+
+      window.addEventListener('theme:changing', handleThemeChanging);
+      window.addEventListener('theme:changed', handleThemeChanged);
+
+      return () => {
+        window.removeEventListener('theme:changing', handleThemeChanging);
+        window.removeEventListener('theme:changed', handleThemeChanged);
+      };
+    }, [handleLatexCheck]);
+
+    // 监听主题模式变化（用于非事件触发的情况）
+    useEffect(() => {
       // 当主题发生变化时，暂时将公式容器设为不可见，避免卡顿
       setIsThemeChanging(true);
       const timer = setTimeout(() => {
         setIsThemeChanging(false);
-
-        // 检测LaTeX公式数量（仅在非主题切换操作或初始加载时进行）
-        if (!isThemeChangeOnly) {
-          handleLatexCheck();
-        }
-      }, 300); // 主题切换动画完成后再显示公式
+        handleLatexCheck();
+      }, 300);
 
       return () => {
         clearTimeout(timer);
@@ -212,7 +232,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
           square
           elevation={0}
           className={isThemeChanging ? "theme-transition-katex" : ""}
-          sx={createMarkdownStyles(theme, latexCount)}
+          sx={createMarkdownStyles(theme, latexCount, isSmallScreen)}
           data-oid=":p7j.31"
         >
           {shouldRender && !isThemeChanging && (

@@ -1,4 +1,6 @@
-// 缓存配置
+/**
+ * 缓存配置接口
+ */
 export interface CacheConfig {
   // 基础TTL配置
   defaultTTL: number;
@@ -24,7 +26,9 @@ export interface CacheConfig {
   prefetchDelay: number; // 预加载延迟（毫秒）
 }
 
-// 缓存统计接口
+/**
+ * 缓存统计接口
+ */
 export interface CacheStats {
   hits: number;
   misses: number;
@@ -34,7 +38,9 @@ export interface CacheStats {
   lastCleanup: number;
 }
 
-// 缓存项元数据
+/**
+ * 缓存项元数据接口
+ */
 export interface CacheItemMeta {
   value: unknown;
   timestamp: number;

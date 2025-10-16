@@ -1,12 +1,20 @@
 import { memo, type ReactElement } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
+/**
+ * 加载旋转器组件属性接口
+ */
 interface LoadingSpinnerProps {
   message?: string;
   isSmallScreen: boolean;
   fullHeight?: boolean;
 }
 
+/**
+ * 加载旋转器组件
+ * 
+ * 显示加载状态的旋转动画和可选消息。
+ */
 const LoadingSpinner = memo<LoadingSpinnerProps>(
   ({ message = "加载中...", isSmallScreen, fullHeight = false }): ReactElement => {
     const normalizedMessage = message.trim();

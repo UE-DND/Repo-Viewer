@@ -9,6 +9,9 @@ import {
 } from "@mui/material";
 import { KeyboardArrowUp as ArrowUpIcon } from "@mui/icons-material";
 
+/**
+ * 返回顶部浮动按钮组件属性接口
+ */
 interface ScrollToTopFabProps {
   /** 显示按钮的滚动阈值（像素） */
   threshold?: number;
@@ -20,6 +23,12 @@ interface ScrollToTopFabProps {
   showOnlyWithContent?: boolean;
 }
 
+/**
+ * 返回顶部浮动按钮组件
+ * 
+ * 滚动超过阈值时显示，点击平滑滚动到页面顶部。
+ * 支持响应式设计和自定义样式。
+ */
 const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
   threshold = 200,
   scrollDuration = 800,
@@ -59,7 +68,15 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
     const hasContent = showOnlyWithContent
       ? document.body.scrollHeight > window.innerHeight
       : true;
-    setIsVisible(scrollTop > threshold && hasContent);
+    const shouldBeVisible = scrollTop > threshold && hasContent;
+
+    // 可见性改变时更新状态，避免复杂重渲染
+    setIsVisible((prev) => {
+      if (prev === shouldBeVisible) {
+        return prev;
+      }
+      return shouldBeVisible;
+    });
   }, [getScrollTop, threshold, showOnlyWithContent]);
 
   // 平滑滚动到顶部
@@ -96,21 +113,27 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
       return undefined;
     }
 
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let rafId: number | null = null;
 
     const handleScroll = (): void => {
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
+      // 使用 requestAnimationFrame 节流
+      if (rafId !== null) {
+        return;
       }
-      timeoutId = setTimeout(checkScrollPosition, 10);
+
+      rafId = requestAnimationFrame(() => {
+        checkScrollPosition();
+        rafId = null;
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     checkScrollPosition();
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
       }
     };
   }, [checkScrollPosition]);

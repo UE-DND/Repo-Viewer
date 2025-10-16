@@ -1,11 +1,18 @@
 import { logger } from "@/utils";
 
-// LaTeX错误处理函数
+/**
+ * KaTeX错误处理函数
+ * 
+ * @param message - 错误消息
+ * @returns void
+ */
 export const handleKatexError = (message: string): void => {
   logger.warn("[KaTeX] 公式渲染错误:", message);
 };
 
-// 定义KaTeX选项
+/**
+ * KaTeX配置选项
+ */
 export const katexOptions = {
   throwOnError: false, // 不因渲染错误而中断
   strict: false, // 非严格模式，更宽容地处理语法
