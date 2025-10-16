@@ -19,27 +19,31 @@ import {
 } from '../schemas/dataTransformers';
 import { SmartCache } from '@/utils/cache/SmartCache';
 
-const ROOT_PATH_KEY = '__root__';
-
 /**
  * 构建内容缓存键
  * 
  * 使用标准哈希函数生成紧凑且可靠的缓存键。
  * 采用改进的 cyrb53 算法，提供良好的分布性和低冲突率。
+ * 添加前缀和版本号，避免与其他缓存键冲突。
  * 
  * @param path - 文件/目录路径
  * @param branch - Git 分支名
- * @returns 优化的缓存键（格式: c_<hash>）
+ * @returns 优化的缓存键（格式: content:v2:<hash>）
  * 
  * @example
  * buildContentsCacheKey('src/components', 'main')
- * // => 'c_a3f2d9e8b1c4f7'
+ * // => 'content:v2:a3f2d9e8b1c4f7'
+ * 
+ * buildContentsCacheKey('', 'main')
+ * // => 'content:v2:d4e5f6a7b8c9d0' (根目录使用 '/' 作为规范化路径)
  */
 function buildContentsCacheKey(path: string, branch: string): string {
-  const normalizedPath = path === '' ? ROOT_PATH_KEY : path;
+  // 使用 '/' 作为根目录的规范化路径，避免与实际路径冲突
+  const normalizedPath = path === '' ? '/' : path;
   const keyString = `${branch}:${normalizedPath}`;
   const hash = hashStringSync(keyString);
-  return `c_${hash}`;
+  // 添加前缀和版本号，避免与其他缓存键冲突
+  return `content:v2:${hash}`;
 }
 
 // GitHub内容服务，使用模块导出而非类

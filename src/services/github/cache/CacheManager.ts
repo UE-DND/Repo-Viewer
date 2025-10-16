@@ -21,7 +21,7 @@ class CacheManagerImpl {
   /**
    * 初始化缓存管理器
    * 
-   * 初始化内容缓存和文件缓存的持久化存储。
+   * 并行创建和初始化内容缓存和文件缓存的持久化存储，提高初始化性能。
    * 
    * @returns Promise，初始化完成后解析
    * @throws 当缓存初始化失败时抛出错误
@@ -32,16 +32,22 @@ class CacheManagerImpl {
     }
 
     try {
-      this.contentCache = new AdvancedCache<string, unknown>(CONTENT_CACHE_CONFIG);
-      this.fileCache = new AdvancedCache<string, string>(FILE_CACHE_CONFIG);
-
-      const contentInitPromise = this.contentCache.initializePersistence();
-      const fileInitPromise = this.fileCache.initializePersistence();
-      await Promise.all([
-        contentInitPromise,
-        fileInitPromise,
+      // 并行创建和初始化缓存实例，提高初始化性能
+      const [contentCache, fileCache] = await Promise.all([
+        (async () => {
+          const cache = new AdvancedCache<string, unknown>(CONTENT_CACHE_CONFIG);
+          await cache.initializePersistence();
+          return cache;
+        })(),
+        (async () => {
+          const cache = new AdvancedCache<string, string>(FILE_CACHE_CONFIG);
+          await cache.initializePersistence();
+          return cache;
+        })()
       ]);
-
+      
+      this.contentCache = contentCache;
+      this.fileCache = fileCache;
       this.initialized = true;
       logger.info('缓存管理器初始化完成');
     } catch (error) {

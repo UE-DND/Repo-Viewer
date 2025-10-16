@@ -107,11 +107,16 @@ export class RequestBatcher {
       headers = {},
       skipDeduplication = false
     } = options;
+    
+    // 检查是否有相同的请求正在进行
+    if (this.pendingRequests.has(key)) {
+      logger.debug(`请求合并: ${key}`);
+      return this.pendingRequests.get(key) as Promise<T>;
+    }
 
-    // 生成请求指纹
+    // 生成请求指纹并检查缓存，避免不必要的指纹生成
     const fingerprint = this.generateFingerprint(key, method, headers);
-
-    // 检查是否可以去重
+    
     if (!skipDeduplication) {
       const cachedData = this.fingerprintWheel.get(fingerprint);
       if (cachedData !== undefined) {
@@ -120,12 +125,6 @@ export class RequestBatcher {
         logger.debug(`请求去重命中: ${key}，命中次数: ${cachedData.hitCount.toString()}`);
         return Promise.resolve(cachedData.result as T);
       }
-    }
-
-    // 检查是否有相同的请求正在进行
-    if (this.pendingRequests.has(key)) {
-      logger.debug(`请求合并: ${key}`);
-      return this.pendingRequests.get(key) as Promise<T>;
     }
 
     return new Promise<T>((resolve, reject) => {

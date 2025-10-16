@@ -13,6 +13,8 @@ import type { PathManagementState } from './types';
  * @returns 路径管理状态和操作函数
  */
 export function usePathManagement(branch: string): PathManagementState {
+  const [isThemeChanging, setIsThemeChanging] = useState<boolean>(false);
+
   // 尝试从URL获取路径
   const getSavedPath = (): string => {
     try {
@@ -27,6 +29,25 @@ export function usePathManagement(branch: string): PathManagementState {
       return '';
     }
   };
+
+  // 监听主题切换事件
+  useEffect(() => {
+    const handleThemeChanging = (): void => {
+      setIsThemeChanging(true);
+    };
+
+    const handleThemeChanged = (): void => {
+      setIsThemeChanging(false);
+    };
+
+    window.addEventListener('theme:changing', handleThemeChanging);
+    window.addEventListener('theme:changed', handleThemeChanged);
+
+    return () => {
+      window.removeEventListener('theme:changing', handleThemeChanging);
+      window.removeEventListener('theme:changed', handleThemeChanged);
+    };
+  }, []);
 
   const [currentPath, setCurrentPathState] = useState<string>(getSavedPath());
   const [navigationDirection, setNavigationDirection] = useState<NavigationDirection>('none');
@@ -64,23 +85,23 @@ export function usePathManagement(branch: string): PathManagementState {
 
   // 处理路径变化时的 URL 更新
   useEffect(() => {
-    // 检查是否是仅主题切换的操作
-    const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
-    
-    if (!isThemeChangeOnly) {
-      // 只有在非初始加载时更新URL
-      if (!isInitialLoad.current) {
-        updateUrlWithHistory(currentPath, undefined, currentBranchRef.current);
-      } else {
-        // 初始加载时，如果URL中已有path参数，则不需要更新URL
-        const urlPath = getPathFromUrl();
-        if (currentPath !== urlPath) {
-          updateUrlWithoutHistory(currentPath, undefined, currentBranchRef.current);
-        }
-        isInitialLoad.current = false;
-      }
+    // 主题切换期间跳过 URL 更新
+    if (isThemeChanging) {
+      return;
     }
-  }, [currentPath]);
+    
+    // 只有在非初始加载时更新URL
+    if (!isInitialLoad.current) {
+      updateUrlWithHistory(currentPath, undefined, currentBranchRef.current);
+    } else {
+      // 初始加载时，如果URL中已有path参数，则不需要更新URL
+      const urlPath = getPathFromUrl();
+      if (currentPath !== urlPath) {
+        updateUrlWithoutHistory(currentPath, undefined, currentBranchRef.current);
+      }
+      isInitialLoad.current = false;
+    }
+  }, [currentPath, isThemeChanging]);
 
   // 监听浏览器历史导航事件
   useEffect(() => {

@@ -38,7 +38,6 @@ let currentConfig: ConfigInfo = { ...DEFAULT_CONFIG };
 
 // 初始化状态
 let isInitialized = false;
-let isLoading = false;
 let initPromise: Promise<ConfigInfo> | null = null;
 
 const isConfigApiSuccessResponse = (value: unknown): value is ConfigApiSuccessResponse => {
@@ -167,22 +166,23 @@ const isServiceInitialized = (): boolean => isInitialized;
  * 初始化配置服务
  * 
  * 从API加载配置信息并更新文档标题。
- * 如果已经初始化，直接返回当前配置。
+ * 使用 Promise 缓存防止竞态条件，确保配置只加载一次。
  * 
  * @returns Promise，解析为配置信息对象
  */
 const init = (): Promise<ConfigInfo> => {
+  // 已初始化，直接返回当前配置
   if (isInitialized) {
     return Promise.resolve(currentConfig);
   }
 
-  if (isLoading && initPromise !== null) {
+  // 正在初始化，返回缓存的 Promise
+  if (initPromise !== null) {
     return initPromise;
   }
-
-  isLoading = true;
-
-  const promise = loadConfig()
+  
+  // 先设置 initPromise，防止竞态条件
+  initPromise = loadConfig()
     .then(config => {
       isInitialized = true;
       updateDocumentTitle(config.siteTitle);
@@ -190,15 +190,12 @@ const init = (): Promise<ConfigInfo> => {
     })
     .catch((error: unknown) => {
       logger.error('配置初始化失败', error);
-      return currentConfig;
-    })
-    .finally(() => {
-      isLoading = false;
+      // 失败时重置 initPromise，允许重试
       initPromise = null;
+      return currentConfig;
     });
-
-  initPromise = promise;
-  return promise;
+  
+  return initPromise;
 };
 
 /**

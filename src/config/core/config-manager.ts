@@ -19,6 +19,8 @@ export class ConfigManager {
   private static instance: ConfigManager | null = null;
   private config: Config | null = null;
   private listeners: Set<ConfigChangeListener>;
+  private hotReloadEnabled = false;
+  private hotReloadHandler: (() => void) | null = null;
 
   private constructor() {
     this.listeners = new Set<ConfigChangeListener>();
@@ -95,6 +97,82 @@ export class ConfigManager {
   onConfigChange(listener: ConfigChangeListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * 启用配置热更新
+   * 
+   * 在开发环境中启用配置热更新功能。
+   * 监听自定义 'config:reload' 事件来触发配置重载。
+   * 
+   * @returns void
+   * 
+   * @example
+   * // 手动触发配置重载：
+   * window.dispatchEvent(new CustomEvent('config:reload'));
+   */
+  enableHotReload(): void {
+    if (this.hotReloadEnabled) {
+      return;
+    }
+
+    // 只在浏览器环境中启用
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this.hotReloadHandler = () => {
+      const config = this.getConfig();
+      if (config.developer.mode || config.developer.consoleLogging) {
+        // eslint-disable-next-line no-console
+        console.log('[ConfigManager] 检测到配置重载事件，重新加载配置...');
+      }
+      this.reloadConfig();
+    };
+
+    window.addEventListener('config:reload', this.hotReloadHandler);
+    this.hotReloadEnabled = true;
+
+    const config = this.getConfig();
+    if (config.developer.mode || config.developer.consoleLogging) {
+      // eslint-disable-next-line no-console
+      console.log('[ConfigManager] 配置热更新已启用。使用 window.dispatchEvent(new CustomEvent("config:reload")) 触发重载。');
+    }
+  }
+
+  /**
+   * 禁用配置热更新
+   * 
+   * 移除配置热更新监听器。
+   * 
+   * @returns void
+   */
+  disableHotReload(): void {
+    if (!this.hotReloadEnabled || this.hotReloadHandler === null) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('config:reload', this.hotReloadHandler);
+    }
+
+    this.hotReloadHandler = null;
+    this.hotReloadEnabled = false;
+
+    const config = this.getConfig();
+    if (config.developer.mode || config.developer.consoleLogging) {
+      // eslint-disable-next-line no-console
+      console.log('[ConfigManager] 配置热更新已禁用');
+    }
+  }
+
+  /**
+   * 检查是否启用了热更新
+   * 
+   * @returns 如果热更新已启用返回 true
+   */
+  isHotReloadEnabled(): boolean {
+    return this.hotReloadEnabled;
   }
 
   // 通知配置变更
@@ -198,26 +276,28 @@ export class ConfigManager {
 
   // 加载Token配置
   private loadTokens(env: EnvSource): Config['tokens'] {
-    const tokens: string[] = [];
-
+    const tokens = new Set<string>();
+    
+    // 提取辅助函数：添加有效的 token
+    const addTokenIfValid = (key: string): void => {
+      const token = this.getEnvString(env, key);
+      if (token !== undefined && EnvParser.validateToken(token)) {
+        tokens.add(token.trim());
+      }
+    };
+    
+    // 遍历所有前缀，检查不带数字和带数字的版本
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
       // 检查不带数字的版本
-      const baseToken = this.getEnvString(env, prefix);
-      if (baseToken !== undefined && EnvParser.validateToken(baseToken)) {
-        tokens.push(baseToken.trim());
-      }
-
-      // 检查带数字的版本
+      addTokenIfValid(prefix);
+      
+      // 检查带数字的版本（1到MAX_PAT_NUMBER）
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
-        const tokenKey = prefix + String(i);
-        const token = this.getEnvString(env, tokenKey);
-        if (token !== undefined && EnvParser.validateToken(token)) {
-          tokens.push(token.trim());
-        }
+        addTokenIfValid(prefix + String(i));
       }
     });
-
-    const uniqueTokens = [...new Set(tokens)];
+    
+    const uniqueTokens = Array.from(tokens);
     return {
       githubPATs: uniqueTokens,
       totalCount: uniqueTokens.length
@@ -237,20 +317,22 @@ export class ConfigManager {
     const envSource: EnvSource = env ?? processEnv ?? {};
     const patEnvVars: Record<string, string> = {};
 
+    // 提取辅助函数：添加有效的 PAT 到 Vite define 对象
+    const addPATIfValid = (key: string): void => {
+      const token = this.getEnvString(envSource, key);
+      if (token !== undefined && EnvParser.validateToken(token)) {
+        patEnvVars[`process.env.${key}`] = JSON.stringify(token);
+      }
+    };
+
+    // 遍历所有前缀，检查不带数字和带数字的版本
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
       // 检查不带数字的版本
-      const baseToken = this.getEnvString(envSource, prefix);
-      if (baseToken !== undefined && EnvParser.validateToken(baseToken)) {
-        patEnvVars[`process.env.${prefix}`] = JSON.stringify(baseToken);
-      }
-
-      // 检查带数字的版本
+      addPATIfValid(prefix);
+      
+      // 检查带数字的版本（1到MAX_PAT_NUMBER）
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
-        const tokenKey = prefix + String(i);
-        const token = this.getEnvString(envSource, tokenKey);
-        if (token !== undefined && EnvParser.validateToken(token)) {
-          patEnvVars[`process.env.${tokenKey}`] = JSON.stringify(token);
-        }
+        addPATIfValid(prefix + String(i));
       }
     });
 
@@ -378,5 +460,17 @@ export class ConfigManager {
  * 配置管理器单例实例
  * 
  * 全局配置管理器，用于访问和管理应用配置。
+ * 在开发环境中自动启用配置热更新功能。
  */
 export const configManager = ConfigManager.getInstance();
+
+// 在开发环境中自动启用热更新
+if (typeof window !== 'undefined') {
+  // 延迟启用，确保配置已加载
+  window.setTimeout(() => {
+    const config = configManager.getConfig();
+    if (config.runtime.isDev && config.developer.mode) {
+      configManager.enableHotReload();
+    }
+  }, 0);
+}

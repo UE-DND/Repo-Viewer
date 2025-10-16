@@ -623,15 +623,15 @@ body.refreshing .image-preview-container {
 }
 
 /* 主题切换时对README容器的特殊处理 */
-html[data-theme-change-only="true"] body.theme-transition .readme-container {
+body.theme-transition .readme-container {
   transform: scale(0.99) !important;
   opacity: 0.6 !important;
   transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
-              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+    opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
 }
 
 /* 主题切换期间保持内容可见性 */
-html[data-theme-change-only="true"] .readme-container .MuiPaper-root {
+body.theme-transition .readme-container .MuiPaper-root {
   transition: background-color 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
 }
 

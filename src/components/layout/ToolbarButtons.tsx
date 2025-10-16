@@ -137,9 +137,7 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
 
   // 处理主题切换按钮点击
   const onThemeToggleClick = useCallback(() => {
-    // 设置标记，表明这是一个主题切换操作，防止触发README重新加载
-    document.documentElement.setAttribute("data-theme-change-only", "true");
-    // 执行主题切换
+    // 执行主题切换（事件将在 useThemeMode 中自动发出）
     toggleColorMode();
   }, [toggleColorMode]);
 

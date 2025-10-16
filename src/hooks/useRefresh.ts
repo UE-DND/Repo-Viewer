@@ -19,10 +19,30 @@ export const useRefresh = (): (() => void) => {
   const startTimeRef = useRef<number>(0);
   const currentPathRef = useRef(currentPath);
   const refreshTargetPathRef = useRef<string | null>(null);
+  const isThemeChangingRef = useRef<boolean>(false);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
+
+  // 监听主题切换事件
+  useEffect(() => {
+    const handleThemeChanging = (): void => {
+      isThemeChangingRef.current = true;
+    };
+
+    const handleThemeChanged = (): void => {
+      isThemeChangingRef.current = false;
+    };
+
+    window.addEventListener('theme:changing', handleThemeChanging);
+    window.addEventListener('theme:changed', handleThemeChanged);
+
+    return () => {
+      window.removeEventListener('theme:changing', handleThemeChanging);
+      window.removeEventListener('theme:changed', handleThemeChanged);
+    };
+  }, []);
 
   useEffect(() => {
     if (refreshingRef.current && !loading) {
@@ -58,9 +78,9 @@ export const useRefresh = (): (() => void) => {
   }, [loading]);
 
   return useCallback(() => {
-    const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
-    if (isThemeChangeOnly) {
-      logger.info('检测到主题切换操作，跳过内容刷新');
+    // 主题切换期间跳过刷新
+    if (isThemeChangingRef.current) {
+      logger.info('主题切换中，跳过内容刷新');
       return;
     }
 

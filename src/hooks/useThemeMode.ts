@@ -121,8 +121,6 @@ export const useThemeMode = (): {
     }
   }, [isAutoMode, mode]);
 
-  document.documentElement.setAttribute('data-theme-change-only', 'false');
-
   useEffect(() => {
     const themeData = JSON.stringify({
       mode,
@@ -133,9 +131,10 @@ export const useThemeMode = (): {
 
     removeLatexElements();
 
-    setTimeout(() => {
-      document.documentElement.setAttribute('data-theme-change-only', 'true');
+    // 发出主题切换开始事件
+    window.dispatchEvent(new CustomEvent('theme:changing'));
 
+    setTimeout(() => {
       setIsTransitioning(true);
       document.body.classList.add('theme-transition');
       document.documentElement.setAttribute('data-theme', mode);
@@ -146,7 +145,10 @@ export const useThemeMode = (): {
         setTimeout(() => {
           setIsTransitioning(false);
 
-          document.documentElement.setAttribute('data-theme-change-only', 'false');
+          // 发出主题切换完成事件
+          window.dispatchEvent(new CustomEvent('theme:changed', {
+            detail: { mode, isAutoMode }
+          }));
 
           setTimeout(() => {
             restoreLatexElements();

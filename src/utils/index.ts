@@ -78,6 +78,10 @@ export const cache = SmartCacheModule;
 import * as hashUtils from './crypto/hashUtils';
 export const crypto = hashUtils;
 
+// 内容处理工具
+import * as contentFilters from './content';
+export const content = contentFilters;
+
 // 主题相关工具
 import * as g3Curves from '@/theme/g3Curves';
 export const theme = g3Curves;
@@ -146,3 +150,4 @@ export type { RetryOptions } from './retry/retryUtils';
 export type { SmartCacheOptions } from './cache/SmartCache';
 export type { RequestOptions } from './request/requestManager';
 export type { ErrorHandlerOptions } from './error/errorHandler';
+export type { HomepageFilterConfig } from './content';
