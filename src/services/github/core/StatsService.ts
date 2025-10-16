@@ -1,6 +1,6 @@
 import { CacheManager } from '../cache/CacheManager';
 import { ProxyService } from '../proxy/ProxyService';
-import { GitHubAuth } from './Auth';
+import { resetFailedProxyServices } from './Auth';
 
 // GitHub统计服务，使用模块导出而非类
 
@@ -15,7 +15,7 @@ export async function clearCache(): Promise<void> {
   await CacheManager.clearAllCaches();
   const { clearBatcherCache } = await import('./ContentService');
   clearBatcherCache();
-  GitHubAuth.resetFailedProxyServices();
+  resetFailedProxyServices();
 }
 
 /**

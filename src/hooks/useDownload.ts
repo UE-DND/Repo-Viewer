@@ -6,7 +6,7 @@ import type {
   DownloadAction,
   GitHubContent
 } from '@/types';
-import { GitHubService } from '@/services/github';
+import { getContents } from '@/services/github';
 import { logger } from '@/utils';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 
@@ -182,7 +182,7 @@ export const useDownload = (onError: (message: string) => void): {
   ): Promise<void> {
     try {
       // 获取文件夹内容
-      const contents = await GitHubService.getContents(folderPath, signal);
+      const contents = await getContents(folderPath, signal);
 
       // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {

@@ -2,7 +2,7 @@ import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 import type { PreviewState, PreviewAction, GitHubContent } from '@/types';
 import { OfficeFileType } from '@/types';
-import { GitHubService } from '@/services/github';
+import { transformImageUrl, getFileContent } from '@/services/github';
 import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger, openPDFPreview } from '@/utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
@@ -209,7 +209,7 @@ export const useFilePreview = (
       if (getForceServerProxy()) {
         proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
       } else {
-        proxyUrl = GitHubService.transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url;
+        proxyUrl = transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url;
       }
 
     const fileNameLower = item.name.toLowerCase();
@@ -219,7 +219,7 @@ export const useFilePreview = (
         dispatch({ type: 'SET_MD_LOADING', loading: true });
 
         try {
-          const content = await GitHubService.getFileContent(item.download_url);
+          const content = await getFileContent(item.download_url);
           dispatch({ type: 'SET_MD_PREVIEW', content, item });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '未知错误';

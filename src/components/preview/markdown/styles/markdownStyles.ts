@@ -17,7 +17,7 @@ const MONO_FONT =
  * @param isSmallScreen - 是否为小屏幕，默认false
  * @returns Material-UI SxProps样式对象
  */
-export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallScreen: boolean = false): SxProps<Theme> => {
+export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallScreen = false): SxProps<Theme> => {
   const containerBorderRadius = responsiveG3Styles.readmeContainer(isSmallScreen);
   const isDark = theme.palette.mode === "dark";
   const textColor = theme.palette.text.primary;

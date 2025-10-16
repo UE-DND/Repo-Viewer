@@ -1,8 +1,23 @@
 import type { GitHubContent } from '@/types';
-import { GitHubAuth } from './Auth';
-import { GitHubSearchService } from './SearchService';
+import { 
+  getTokenCount as authGetTokenCount,
+  hasToken as authHasToken,
+  setLocalToken as authSetLocalToken,
+  markProxyServiceFailed as authMarkProxyServiceFailed,
+  getCurrentProxyService as authGetCurrentProxyService,
+  resetFailedProxyServices as authResetFailedProxyServices,
+  transformImageUrl as authTransformImageUrl
+} from './Auth';
+import { 
+  searchWithGitHubApi as searchWithApi,
+  searchFiles as searchFilesImpl
+} from './SearchService';
 import { GitHubPrefetchService } from './PrefetchService';
-import { GitHubStatsService } from './StatsService';
+import { 
+  clearCache as statsClearCache,
+  getCacheStats as statsGetCacheStats,
+  getNetworkStats as statsGetNetworkStats
+} from './StatsService';
 import {
   getConfig,
   getCurrentBranch as getActiveBranch,
@@ -20,7 +35,7 @@ import { getBranches as fetchBranches } from './BranchService';
  * @returns 已配置的GitHub Personal Access Token数量
  */
 export function getTokenCount(): number {
-  return GitHubAuth.getTokenCount();
+  return authGetTokenCount();
 }
 
 /**
@@ -29,7 +44,7 @@ export function getTokenCount(): number {
  * @returns 如果至少配置了一个有效token则返回true
  */
 export function hasToken(): boolean {
-  return GitHubAuth.hasToken();
+  return authHasToken();
 }
 
 /**
@@ -41,7 +56,7 @@ export function hasToken(): boolean {
  * @returns void
  */
 export function setLocalToken(token: string): void {
-  GitHubAuth.setLocalToken(token);
+  authSetLocalToken(token);
 }
 
 /**
@@ -135,7 +150,7 @@ export async function searchWithGitHubApi(
   currentPath = '',
   fileTypeFilter?: string
 ): Promise<GitHubContent[]> {
-  return GitHubSearchService.searchWithGitHubApi(searchTerm, currentPath, fileTypeFilter);
+  return searchWithApi(searchTerm, currentPath, fileTypeFilter);
 }
 
 /**
@@ -153,7 +168,7 @@ export async function searchFiles(
   recursive = false,
   fileTypeFilter?: string
 ): Promise<GitHubContent[]> {
-  return GitHubSearchService.searchFiles(searchTerm, currentPath, recursive, fileTypeFilter);
+  return searchFilesImpl(searchTerm, currentPath, recursive, fileTypeFilter);
 }
 
 /**
@@ -185,7 +200,7 @@ export async function batchPrefetchContents(paths: string[], maxConcurrency = 3)
  * @returns void
  */
 export function markProxyServiceFailed(proxyUrl: string): void {
-  GitHubAuth.markProxyServiceFailed(proxyUrl);
+  authMarkProxyServiceFailed(proxyUrl);
 }
 
 /**
@@ -194,7 +209,7 @@ export function markProxyServiceFailed(proxyUrl: string): void {
  * @returns 当前活跃的代理服务URL
  */
 export function getCurrentProxyService(): string {
-  return GitHubAuth.getCurrentProxyService();
+  return authGetCurrentProxyService();
 }
 
 /**
@@ -205,7 +220,7 @@ export function getCurrentProxyService(): string {
  * @returns void
  */
 export function resetFailedProxyServices(): void {
-  GitHubAuth.resetFailedProxyServices();
+  authResetFailedProxyServices();
 }
 
 /**
@@ -217,7 +232,7 @@ export function resetFailedProxyServices(): void {
  * @returns 转换后的绝对URL
  */
 export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean): string | undefined {
-  return GitHubAuth.transformImageUrl(src, markdownFilePath, useTokenMode);
+  return authTransformImageUrl(src, markdownFilePath, useTokenMode);
 }
 
 /**
@@ -226,7 +241,7 @@ export function transformImageUrl(src: string | undefined, markdownFilePath: str
  * @returns Promise，清除完成后解析
  */
 export async function clearCache(): Promise<void> {
-  return GitHubStatsService.clearCache();
+  return statsClearCache();
 }
 
 /**
@@ -234,8 +249,8 @@ export async function clearCache(): Promise<void> {
  * 
  * @returns 缓存统计对象
  */
-export function getCacheStats(): ReturnType<typeof GitHubStatsService.getCacheStats> {
-  return GitHubStatsService.getCacheStats();
+export function getCacheStats(): ReturnType<typeof statsGetCacheStats> {
+  return statsGetCacheStats();
 }
 
 /**
@@ -243,8 +258,8 @@ export function getCacheStats(): ReturnType<typeof GitHubStatsService.getCacheSt
  * 
  * @returns Promise，解析为网络统计对象
  */
-export async function getNetworkStats(): Promise<ReturnType<typeof GitHubStatsService.getNetworkStats>> {
-  return GitHubStatsService.getNetworkStats();
+export async function getNetworkStats(): Promise<ReturnType<typeof statsGetNetworkStats>> {
+  return statsGetNetworkStats();
 }
 
 /**

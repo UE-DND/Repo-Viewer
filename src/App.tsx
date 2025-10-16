@@ -12,7 +12,7 @@ import { AppContextProvider } from "@/contexts/unified";
 import MainContent from "@/components/layout/MainContent";
 import ToolbarButtons from "@/components/layout/ToolbarButtons";
 import { SITE_TITLE } from "@/constants";
-import { GitHubService } from "@/services/github";
+import { clearCache, getTokenCount, hasToken } from "@/services/github";
 import { logger, debounce } from "@/utils";
 import SEO from "@/components/seo/SEO";
 import Footer from "@/components/layout/Footer";
@@ -66,7 +66,7 @@ const App = React.memo(() => {
       // 清除缓存
       try {
         // 清除 GitHubService 中的内容缓存
-        void GitHubService.clearCache();
+        void clearCache();
 
         logger.debug("已清除所有缓存，准备返回首页");
       } catch (e) {
@@ -82,13 +82,13 @@ const App = React.memo(() => {
   // 启动时检查token状态
   useEffect(() => {
     // 在控制台显示token状态
-    const tokenCount = GitHubService.getTokenCount();
-    const hasToken = GitHubService.hasToken();
+    const tokenCount = getTokenCount();
+    const hasTokenFlag = hasToken();
     logger.info(
-      `GitHub Token状态: ${hasToken ? "已配置" : "未配置"}, Token数量: ${tokenCount.toString()}`,
+      `GitHub Token状态: ${hasTokenFlag ? "已配置" : "未配置"}, Token数量: ${tokenCount.toString()}`,
     );
 
-    if (!hasToken) {
+    if (!hasTokenFlag) {
       logger.warn(
         "未检测到GitHub Token，API搜索功能可能受限。请考虑配置Token以获取更好的搜索体验。",
       );

@@ -1,6 +1,6 @@
 import { logger } from '../logging/logger';
-// 导入GitHubService以使用其多代理机制
-import { GitHubService } from '@/services/github';
+// 导入transformImageUrl以使用其多代理机制
+import { transformImageUrl } from '@/services/github';
 
 /**
  * 获取代理URL
@@ -19,7 +19,7 @@ export const getProxiedUrl = (url: string): string => {
     if (url.length > 0 && (url.includes('raw.githubusercontent.com') || url.includes('api.github.com'))) {
       try {
         // 尝试使用GitHubService的代理机制
-        const proxiedUrl = GitHubService.transformImageUrl(url, '', true);
+        const proxiedUrl = transformImageUrl(url, '', true);
         return proxiedUrl ?? url;
       } catch (error) {
         logger.error('代理URL转换失败:', error);

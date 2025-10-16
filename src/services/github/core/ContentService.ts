@@ -3,7 +3,7 @@ import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
-import { GitHubAuth } from './Auth';
+import { getAuthHeaders } from './Auth';
 import {
   USE_TOKEN_MODE,
   getApiUrl,
@@ -134,7 +134,7 @@ async function ensureCacheInitialized(): Promise<void> {
  * @param key - 缓存键
  * @returns 缓存的数据或 null
  */
-function getFallbackCache<T>(key: string): T | null {
+function getFallbackCache(key: string): unknown {
   const cached = fallbackCache.get(key);
   
   if (cached === undefined) {
@@ -148,7 +148,7 @@ function getFallbackCache<T>(key: string): T | null {
     return null;
   }
   
-  return cached.data as T;
+  return cached.data;
 }
 
 /**
@@ -199,7 +199,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
       cachedContents = await contentCache.get(cacheKey);
     } else {
       // 使用降级缓存
-      cachedContents = getFallbackCache<GitHubContent[]>(cacheKey);
+      cachedContents = getFallbackCache(cacheKey) as GitHubContent[] | null;
     }
 
     if (cachedContents !== null && cachedContents !== undefined) {
@@ -227,7 +227,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
           logger.debug(`API请求: ${apiUrl}`);
           const result = await fetch(apiUrl, {
             method: 'GET',
-            headers: GitHubAuth.getAuthHeaders(),
+            headers: getAuthHeaders(),
             signal: signal ?? null
           });
 
@@ -240,7 +240,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
         }, {
           priority: 'high', // 内容获取优先级高
           method: 'GET',
-          headers: GitHubAuth.getAuthHeaders() as Record<string, string>
+          headers: getAuthHeaders() as Record<string, string>
         });
 
         logger.debug(`直接请求GitHub API获取内容: ${path}`);
@@ -312,7 +312,7 @@ export async function getFileContent(fileUrl: string): Promise<string> {
       cachedContent = await fileCache.get(cacheKey);
     } else {
       // 使用降级缓存
-      cachedContent = getFallbackCache<string>(cacheKey);
+      cachedContent = getFallbackCache(cacheKey) as string | null;
     }
 
     if (cachedContent !== undefined && cachedContent !== null) {
@@ -340,7 +340,7 @@ export async function getFileContent(fileUrl: string): Promise<string> {
         }
 
         return fetch(proxyUrl, {
-          headers: USE_TOKEN_MODE ? GitHubAuth.getAuthHeaders() : {}
+          headers: USE_TOKEN_MODE ? getAuthHeaders() : {}
         });
       })();
 

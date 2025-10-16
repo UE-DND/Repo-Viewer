@@ -1,4 +1,4 @@
-import { GitHubService } from "@/services/github/core/Service";
+import { getCurrentProxyService, transformImageUrl, markProxyServiceFailed } from "@/services/github";
 import type { GitHubContent } from "@/types";
 import { logger } from "@/utils";
 
@@ -81,7 +81,7 @@ export const tryDirectImageLoad = (imgSrc: string): string | null => {
     }
 
     const proxy = "https://cdn.jsdelivr.net/gh";
-    const currentProxy = GitHubService.getCurrentProxyService();
+    const currentProxy = getCurrentProxyService();
     const repoOwner = currentProxy.includes("Royfor12") ? "Royfor12" : "UE-DND";
     const repoName = currentProxy.includes("CQUT-Course-Guide-Sharing-Scheme")
       ? "CQUT-Course-Guide-Sharing-Scheme"
@@ -121,7 +121,7 @@ export const transformImageSrc = (
     logger.debug("当前Markdown文件路径:", previewingItem.path);
 
     // 使用GitHubService处理图片URL
-    const transformedSrc = GitHubService.transformImageUrl(
+    const transformedSrc = transformImageUrl(
       src,
       previewingItem.path,
       true
@@ -171,12 +171,12 @@ export const handleImageError = (
       const proxyUrl = getOriginFromUrl(imgSrc);
       // 标记该代理服务失败
       if (typeof proxyUrl === "string" && proxyUrl.length > 0) {
-        GitHubService.markProxyServiceFailed(proxyUrl);
+        markProxyServiceFailed(proxyUrl);
         logger.warn("标记代理服务失败:", proxyUrl);
       }
 
       // 获取新的代理服务
-      const currentProxy = GitHubService.getCurrentProxyService();
+      const currentProxy = getCurrentProxyService();
       logger.info("切换到新的代理服务:", currentProxy);
 
       // 如果还有可用的备选代理，重新加载图片

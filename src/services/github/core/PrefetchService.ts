@@ -2,7 +2,7 @@ import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { CacheManager } from '../cache/CacheManager';
 import { RequestBatcher } from '../RequestBatcher';
-import { GitHubAuth } from './Auth';
+import { getAuthHeaders } from './Auth';
 
 // GitHub预取服务，使用模块导出而非类
 const batcher = new RequestBatcher();
@@ -200,7 +200,7 @@ async function prefetchFilesWithPriority(
     }, {
         priority,
         method: 'GET',
-        headers: GitHubAuth.getAuthHeaders() as Record<string, string>,
+        headers: getAuthHeaders() as Record<string, string>,
         skipDeduplication: false
       }).catch(() => null) // 忽略预加载失败
     );

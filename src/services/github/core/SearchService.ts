@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { RequestBatcher } from '../RequestBatcher';
-import { GitHubAuth } from './Auth';
+import { getAuthHeaders } from './Auth';
 import {
   GITHUB_API_BASE,
   GITHUB_REPO_OWNER,
@@ -68,7 +68,7 @@ export async function searchWithGitHubApi(
           logger.debug(`搜索API请求: ${fetchUrl}`);
           const result = await fetch(fetchUrl, {
             method: 'GET',
-            headers: GitHubAuth.getAuthHeaders()
+            headers: getAuthHeaders()
           });
 
           if (!result.ok) {
@@ -80,7 +80,7 @@ export async function searchWithGitHubApi(
         }, {
           priority: 'medium', // 搜索请求中等优先级
           method: 'GET',
-          headers: GitHubAuth.getAuthHeaders() as Record<string, string>
+          headers: getAuthHeaders() as Record<string, string>
         });
         logger.debug(`直接请求GitHub API搜索: ${query}`);
       }

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { logger } from '@/utils';
 import { shouldUseServerAPI } from '../config/ProxyForceManager';
-import { GitHubAuth } from './Auth';
+import { getAuthHeaders } from './Auth';
 import {
   GITHUB_API_BASE,
   GITHUB_REPO_OWNER,
@@ -102,7 +102,7 @@ async function fetchBranchesViaServer(): Promise<string[]> {
  * @throws 当API请求失败时抛出错误
  */
 async function fetchBranchesDirect(): Promise<string[]> {
-  const headers = GitHubAuth.getAuthHeaders();
+  const headers = getAuthHeaders();
   const branches: string[] = [];
   let page = 1;
   let hasNext = true;

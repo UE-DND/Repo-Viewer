@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GitHubContent } from '@/types';
-import { GitHubService } from '@/services/github';
+import { getDefaultBranchName, setCurrentBranch, getCurrentBranch, getBranches, getFileContent, getContents } from '@/services/github';
 import { logger } from '@/utils';
 import { getBranchFromUrl, getPathFromUrl, updateUrlWithHistory, updateUrlWithoutHistory } from '@/utils/routing/urlManager';
 import type { NavigationDirection } from '@/contexts/unified';
@@ -17,7 +17,7 @@ const HOMEPAGE_ALLOWED_FOLDERS = featuresConfig.homepageFilter.allowedFolders;
 // 获取仓库信息
 const GITHUB_REPO_OWNER = githubConfig.repoOwner;
 const GITHUB_REPO_NAME = githubConfig.repoName;
-const DEFAULT_BRANCH = GitHubService.getDefaultBranch();
+const DEFAULT_BRANCH = getDefaultBranchName();
 
 /**
  * GitHub内容管理Hook
@@ -88,13 +88,13 @@ export const useGitHubContent = (): {
   const [currentBranch, setCurrentBranchState] = useState<string>(() => {
     const branchFromUrl = getBranchFromUrl().trim();
     if (branchFromUrl.length > 0) {
-      GitHubService.setCurrentBranch(branchFromUrl);
+      setCurrentBranch(branchFromUrl);
       return branchFromUrl;
     }
-    return GitHubService.getCurrentBranch();
+    return getCurrentBranch();
   });
   const [availableBranches, setAvailableBranches] = useState<string[]>(() => {
-    const initial = GitHubService.getCurrentBranch();
+    const initial = getCurrentBranch();
     return Array.from(new Set([DEFAULT_BRANCH, initial]));
   });
   const [branchLoading, setBranchLoading] = useState<boolean>(false);
@@ -154,7 +154,7 @@ export const useGitHubContent = (): {
     setBranchLoading(true);
     setBranchError(null);
     try {
-      const branches = await GitHubService.getBranches();
+      const branches = await getBranches();
       mergeBranchList(branches);
     } catch (error) {
       const message = error instanceof Error ? error.message : '未知错误';
@@ -184,7 +184,7 @@ export const useGitHubContent = (): {
     setReadmeLoaded(false); // 重置加载状态
 
     try {
-      const content = await GitHubService.getFileContent(readmeItem.download_url);
+      const content = await getFileContent(readmeItem.download_url);
 
       if (requestId !== undefined && activeRequestIdRef.current !== requestId) {
         logger.debug(`忽略过期的 README 响应: ${readmeItem.path}`);
@@ -227,7 +227,7 @@ export const useGitHubContent = (): {
     setReadmeLoaded(false);
 
     try {
-      const data = await GitHubService.getContents(path);
+      const data = await getContents(path);
 
       if (activeRequestIdRef.current !== requestId) {
         logger.debug(`忽略过期的目录响应: ${path}`);
@@ -350,7 +350,7 @@ export const useGitHubContent = (): {
       return target;
     }
 
-    GitHubService.setCurrentBranch(target);
+    setCurrentBranch(target);
     currentBranchRef.current = target;
     setCurrentBranchState(target);
     mergeBranchList([target]);
