@@ -2,6 +2,11 @@ import type { Theme, SxProps } from "@mui/material";
 import { alpha } from "@mui/material";
 import { responsiveG3Styles, g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
+export interface MarkdownStyleConfig {
+  intrinsicHeight?: number | null;
+  isShortContent?: boolean;
+}
+
 const SYSTEM_FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji'";
 const MONO_FONT =
@@ -17,7 +22,12 @@ const MONO_FONT =
  * @param isSmallScreen - 是否为小屏幕，默认false
  * @returns Material-UI SxProps样式对象
  */
-export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallScreen = false): SxProps<Theme> => {
+export const createMarkdownStyles = (
+  theme: Theme,
+  latexCount: number,
+  isSmallScreen = false,
+  config: MarkdownStyleConfig = {},
+): SxProps<Theme> => {
   const containerBorderRadius = responsiveG3Styles.readmeContainer(isSmallScreen);
   const isDark = theme.palette.mode === "dark";
   const textColor = theme.palette.text.primary;
@@ -30,11 +40,17 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallSc
     isDark ? theme.palette.common.white : theme.palette.common.black,
     isDark ? 0.2 : 0.15,
   );
+  const intrinsicHeight = typeof config.intrinsicHeight === "number" ? config.intrinsicHeight : null;
+  const isShortContent = config.isShortContent === true;
   const tableHeaderBackground = alpha(primary, isDark ? 0.2 : 0.1);
   const tableStripeBackground = alpha(
     isDark ? theme.palette.common.white : theme.palette.common.black,
     isDark ? 0.08 : 0.05,
   );
+
+  const intrinsicSizeValue = intrinsicHeight !== null
+    ? `auto ${intrinsicHeight.toString()}px`
+    : "auto clamp(320px, 62vh, 1400px)";
 
   return {
   position: "relative",
@@ -46,6 +62,9 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallSc
   bgcolor: "background.paper",
   border: "1px solid",
   borderColor: "divider",
+  contain: "content",
+  contentVisibility: isShortContent ? "visible" : "auto",
+  containIntrinsicSize: intrinsicSizeValue,
 
   "& .markdown-body": {
     color: `${textColor} !important`,
@@ -212,6 +231,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallSc
     borderRadius: g3BorderRadius(G3_PRESETS.card),
     backgroundColor: "transparent",
     border: 0,
+    padding: 0.5,
   },
 
   "& .markdown-body pre > code": {

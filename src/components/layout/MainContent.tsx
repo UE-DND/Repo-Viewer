@@ -43,6 +43,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
   // 获取主题和响应式布局
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMediumUp = useMediaQuery(theme.breakpoints.up("md"));
 
   // 创建引用
   const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
@@ -71,6 +72,15 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     closePreview,
     currentPreviewItemRef,
   } = usePreviewContext();
+
+  const [previewContentHeight, setPreviewContentHeight] = useState<number | null>(null);
+  const [viewportHeight, setViewportHeight] = useState<number>(() => {
+    if (typeof window === "undefined") {
+      return 0;
+    }
+
+    return window.innerHeight;
+  });
 
   const {
     downloadState,
@@ -157,6 +167,20 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     e.stopPropagation();
     cancelDownload();
   }, [cancelDownload]);
+
+  const handlePreviewHeightChange = useCallback((height: number): void => {
+    if (!Number.isFinite(height) || height <= 0) {
+      return;
+    }
+
+    setPreviewContentHeight((previous) => {
+      if (previous !== null && Math.abs(previous - height) < 1) {
+        return previous;
+      }
+
+      return height;
+    });
+  }, []);
 
 
   useEffect(() => {
@@ -368,6 +392,50 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
   const hasReadmeContent = typeof readmeContent === "string" && readmeContent.trim().length > 0;
   const shouldShowReadmeSkeleton = shouldShowReadmeSection && (!readmeLoaded || loadingReadme);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleResize = (): void => {
+      setViewportHeight(window.innerHeight);
+    };
+
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (previewState.previewingItem === null) {
+      setPreviewContentHeight(null);
+    }
+  }, [previewState.previewingItem]);
+
+  const overlayPaddingPx = useMemo(() => {
+    const spacingFactor = isMediumUp ? 4 : isSmallScreen ? 2 : 3;
+    const rawValue = theme.spacing(spacingFactor);
+    const parsed = Number.parseFloat(rawValue);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }, [theme, isMediumUp, isSmallScreen]);
+
+  const isPreviewCompact = useMemo(() => {
+    if (previewContentHeight === null) {
+      return false;
+    }
+
+    if (viewportHeight <= 0) {
+      return false;
+    }
+
+    const requiredHeight = previewContentHeight + overlayPaddingPx * 2;
+    return requiredHeight <= viewportHeight + 0.5;
+  }, [previewContentHeight, overlayPaddingPx, viewportHeight]);
+
   return (
     <Container
       component="main"
@@ -525,7 +593,12 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                 bottom: 0,
                 zIndex: theme.zIndex.modal + 100,
                 bgcolor: "background.default",
-                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: isPreviewCompact ? "center" : "flex-start",
+                overflowX: "hidden",
+                overflowY: isPreviewCompact ? "hidden" : "auto",
                 p: { xs: 2, sm: 3, md: 4 },
               }}
               onClick={(e) => {
@@ -540,6 +613,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   maxWidth: "1200px",
                   mx: "auto",
                   width: "100%",
+                  flexShrink: 0,
                 }}
                 data-oid="md-preview-container"
               >
@@ -550,6 +624,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   previewingItem={previewState.previewingItem}
                   onClose={closePreview}
                   lazyLoad={false}
+                  onContentHeightChange={handlePreviewHeightChange}
                   data-oid="md-file-preview"
                 />
               </Box>
