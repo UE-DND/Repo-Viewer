@@ -10,10 +10,8 @@ import { MarkdownPreviewSkeleton } from '../../../components/ui/skeletons';
 export const LazyMarkdownPreview = createLazyPreviewComponent<MarkdownPreviewProps>(
   () => import('../../../components/preview/markdown'),
   {
-    fallback: (props) => (
-      <MarkdownPreviewSkeleton
-        isSmallScreen={Boolean(props?.isSmallScreen)}
-      />
+    fallback: ({ isSmallScreen }) => (
+      <MarkdownPreviewSkeleton isSmallScreen={isSmallScreen} />
     ),
   }
 );

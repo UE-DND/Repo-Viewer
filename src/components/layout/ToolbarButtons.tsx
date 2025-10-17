@@ -1,4 +1,4 @@
-import { useContext, useState, useCallback, useEffect } from "react";
+import { useContext, useState, useCallback, useEffect, useRef } from "react";
 import {
   Box,
   IconButton,
@@ -8,12 +8,10 @@ import {
 import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
-  Refresh as RefreshIcon,
   GitHub as GitHubIcon,
 } from "@mui/icons-material";
 import { ColorModeContext } from "@/contexts/colorModeContext";
 import { useRefresh } from "@/hooks/useRefresh";
-import { refreshAnimation } from "@/theme/animations";
 import { GitHub } from "@/services/github";
 import axios from "axios";
 import { getGithubConfig } from "@/config";
@@ -61,7 +59,6 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
   const { toggleColorMode } = useContext(ColorModeContext);
   const theme = useTheme();
   const handleRefresh = useRefresh();
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [repoInfo, setRepoInfo] = useState<RepoInfo>(() => {
     const githubConfig = getGithubConfig();
     return {
@@ -79,6 +76,94 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
     setCurrentBranch: _setCurrentBranch,
     refreshBranches,
   } = useContentContext();
+
+  const BROWSER_REFRESH_FLAG = "repo-viewer:pending-refresh";
+  const refreshSyncHandledRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (): void => {
+      try {
+        sessionStorage.setItem(BROWSER_REFRESH_FLAG, "1");
+      } catch (error) {
+        logger.debug("无法在刷新前缓存状态标记", error);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (refreshSyncHandledRef.current) {
+      return;
+    }
+
+    let isActive = true;
+
+    const isReloadNavigation = (): boolean => {
+      try {
+        const entries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+        if (entries.length > 0) {
+          return entries[0].type === "reload";
+        }
+      } catch (error) {
+        logger.debug("检测浏览器刷新时发生错误", error);
+      }
+
+      return false;
+    };
+
+    const shouldTriggerRefresh = (): boolean => {
+      try {
+        if (sessionStorage.getItem(BROWSER_REFRESH_FLAG) === "1") {
+          return true;
+        }
+      } catch (error) {
+        logger.debug("读取刷新状态标记失败", error);
+      }
+
+      return isReloadNavigation();
+    };
+
+    if (!shouldTriggerRefresh()) {
+      return () => {
+        isActive = false;
+      };
+    }
+
+    refreshSyncHandledRef.current = true;
+
+    try {
+      sessionStorage.removeItem(BROWSER_REFRESH_FLAG);
+    } catch (error) {
+      logger.debug("移除刷新状态标记失败", error);
+    }
+
+    const runRefresh = async (): Promise<void> => {
+      try {
+        await GitHub.Cache.clearCache();
+      } catch (error) {
+        logger.error("清除缓存失败:", error);
+      }
+
+      if (!isActive) {
+        return;
+      }
+
+      logger.info("检测到浏览器刷新，执行同步刷新逻辑");
+      handleRefresh();
+      void refreshBranches();
+    };
+
+    void runRefresh();
+
+    return () => {
+      isActive = false;
+    };
+  }, [handleRefresh, refreshBranches]);
 
   // 在组件加载时获取仓库信息
   useEffect(() => {
@@ -107,33 +192,6 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
 
     void fetchRepoInfo();
   }, []);
-
-  // 处理刷新按钮点击
-  const onRefreshClick = useCallback(() => {
-    if (isRefreshing) {
-      return; // 防止重复点击
-    }
-
-    setIsRefreshing(true);
-
-    const executeRefresh = async (): Promise<void> => {
-      try {
-        await GitHub.Cache.clearCache();
-      } catch (error) {
-        logger.error("清除缓存失败:", error);
-      } finally {
-        handleRefresh();
-        void refreshBranches();
-
-        // 动画完成后重置状态
-        window.setTimeout(() => {
-          setIsRefreshing(false);
-        }, 600); // 与动画持续时间保持一致
-      }
-    };
-
-    void executeRefresh();
-  }, [handleRefresh, isRefreshing, refreshBranches]);
 
   // 处理主题切换按钮点击
   const onThemeToggleClick = useCallback(() => {
@@ -232,32 +290,6 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
           data-oid="jdbz_el"
         >
           <GitHubIcon data-oid="nw02ywc" />
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title="刷新页面" data-oid=":xx54uq">
-        <IconButton
-          className="refresh-button"
-          color="inherit"
-          onClick={onRefreshClick}
-          disabled={isRefreshing}
-          sx={{
-            position: "relative",
-            overflow: "visible",
-            "&:hover": {
-              color: theme.palette.primary.light,
-            },
-            "& .MuiSvgIcon-root": {
-              transition: "transform 0.2s ease-out",
-              animation: isRefreshing
-                ? `${refreshAnimation} 0.6s cubic-bezier(0.05, 0.01, 0.5, 1.0)`
-                : "none",
-              transformOrigin: "center center",
-            },
-          }}
-          data-oid="ki-r8n0"
-        >
-          <RefreshIcon data-oid="4hwa9wu" />
         </IconButton>
       </Tooltip>
 

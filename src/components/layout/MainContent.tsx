@@ -475,11 +475,11 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   fontWeight: 600,
                   mb: 2,
                   display: "flex",
-                alignItems: "center",
-                color: "text.primary",
-              }}
-              data-oid="iawc_6m"
-            />
+                  alignItems: "center",
+                  color: "text.primary",
+                }}
+                data-oid="iawc_6m"
+              />
 
               {shouldShowReadmeSkeleton ? (
                 <MarkdownPreviewSkeleton
