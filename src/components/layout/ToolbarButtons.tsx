@@ -47,6 +47,13 @@ interface ToolbarButtonsProps {
   isSmallScreen?: boolean;
 }
 
+interface RefreshSessionState {
+  version: number;
+  branch?: string;
+  path?: string;
+  timestamp: number;
+}
+
 /**
  * 工具栏按钮组件
  * 
@@ -73,17 +80,37 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
     branches: _branches,
     branchLoading: _branchLoading,
     branchError: _branchError,
-    setCurrentBranch: _setCurrentBranch,
+    setCurrentBranch,
     refreshBranches,
+    setCurrentPath,
   } = useContentContext();
 
   const BROWSER_REFRESH_FLAG = "repo-viewer:pending-refresh";
   const refreshSyncHandledRef = useRef<boolean>(false);
+  const storedRefreshStateRef = useRef<RefreshSessionState | null>(null);
+  const branchValueRef = useRef(currentBranch);
+  const pathValueRef = useRef(currentPath);
+
+  useEffect(() => {
+    branchValueRef.current = currentBranch;
+  }, [currentBranch]);
+
+  useEffect(() => {
+    pathValueRef.current = currentPath;
+  }, [currentPath]);
+
+  const buildRefreshSessionState = useCallback((): RefreshSessionState => ({
+    version: 1,
+    branch: branchValueRef.current,
+    path: pathValueRef.current,
+    timestamp: Date.now(),
+  }), []);
 
   useEffect(() => {
     const handleBeforeUnload = (): void => {
       try {
-        sessionStorage.setItem(BROWSER_REFRESH_FLAG, "1");
+        const state = buildRefreshSessionState();
+        sessionStorage.setItem(BROWSER_REFRESH_FLAG, JSON.stringify(state));
       } catch (error) {
         logger.debug("无法在刷新前缓存状态标记", error);
       }
@@ -94,7 +121,7 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [buildRefreshSessionState]);
 
   useEffect(() => {
     if (refreshSyncHandledRef.current) {
@@ -103,11 +130,53 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
 
     let isActive = true;
 
+    const readStoredRefreshState = (): RefreshSessionState | null => {
+      try {
+        const raw = sessionStorage.getItem(BROWSER_REFRESH_FLAG);
+        if (raw === null) {
+          return null;
+        }
+
+        if (raw === "1") {
+          return {
+            version: 0,
+            timestamp: Date.now(),
+          };
+        }
+
+        const parsed = JSON.parse(raw) as Partial<RefreshSessionState> | null;
+
+        if (parsed === null || typeof parsed !== "object") {
+          return null;
+        }
+
+        const state: RefreshSessionState = {
+          version: typeof parsed.version === "number" ? parsed.version : 0,
+          timestamp: typeof parsed.timestamp === "number" ? parsed.timestamp : Date.now(),
+        };
+
+        if (typeof parsed.branch === "string") {
+          state.branch = parsed.branch;
+        }
+
+        if (typeof parsed.path === "string") {
+          state.path = parsed.path;
+        }
+
+        return state;
+      } catch (error) {
+        logger.debug("解析刷新状态标记失败", error);
+        return null;
+      }
+    };
+
     const isReloadNavigation = (): boolean => {
       try {
         const entries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
-        if (entries.length > 0) {
-          return entries[0].type === "reload";
+        const navigationEntry = entries[0];
+
+        if (navigationEntry !== undefined) {
+          return navigationEntry.type === "reload";
         }
       } catch (error) {
         logger.debug("检测浏览器刷新时发生错误", error);
@@ -117,6 +186,12 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
     };
 
     const shouldTriggerRefresh = (): boolean => {
+      storedRefreshStateRef.current = readStoredRefreshState();
+
+      if (storedRefreshStateRef.current !== null) {
+        return true;
+      }
+
       try {
         if (sessionStorage.getItem(BROWSER_REFRESH_FLAG) === "1") {
           return true;
@@ -142,6 +217,37 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
       logger.debug("移除刷新状态标记失败", error);
     }
 
+    const applyStoredState = (): void => {
+      const storedState = storedRefreshStateRef.current;
+
+      if (storedState === null) {
+        return;
+      }
+
+      const targetBranch = typeof storedState.branch === "string" ? storedState.branch.trim() : "";
+      const targetPath = typeof storedState.path === "string" ? storedState.path : null;
+      let branchChanged = false;
+
+      if (targetBranch.length > 0 && targetBranch !== branchValueRef.current) {
+        setCurrentBranch(targetBranch);
+        branchChanged = true;
+      }
+
+      if (targetPath !== null) {
+        const restorePath = (): void => {
+          setCurrentPath(targetPath, "none");
+        };
+
+        if (branchChanged) {
+          window.setTimeout(restorePath, 0);
+        } else if (targetPath !== pathValueRef.current) {
+          restorePath();
+        }
+      }
+    };
+
+    applyStoredState();
+
     const runRefresh = async (): Promise<void> => {
       try {
         await GitHub.Cache.clearCache();
@@ -158,12 +264,26 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
       void refreshBranches();
     };
 
-    void runRefresh();
+    if (storedRefreshStateRef.current !== null) {
+      const schedule = typeof window.requestAnimationFrame === "function"
+        ? window.requestAnimationFrame.bind(window)
+        : (callback: FrameRequestCallback): void => {
+            window.setTimeout(() => {
+              callback(performance.now());
+            }, 0);
+          };
+
+      schedule(() => {
+        void runRefresh();
+      });
+    } else {
+      void runRefresh();
+    }
 
     return () => {
       isActive = false;
     };
-  }, [handleRefresh, refreshBranches]);
+  }, [handleRefresh, refreshBranches, setCurrentBranch, setCurrentPath]);
 
   // 在组件加载时获取仓库信息
   useEffect(() => {
