@@ -8,7 +8,6 @@
 - 📄 **文件预览**：支持多种文件格式预览，目前包括 `Markdown`、 `PDF`、`图片` 和 `Office文档`
 - ⬇️ **文件下载**：可下载单个文件或整个文件夹
 - 🌐 **SEO优化**：提高搜索引擎可见性
-- 🚀 **Vercel 加速**：通过 Vercel Serverless + 全球 CDN 直连 GitHub API，无需第三方代理
 
 ### 本地开发
 
@@ -71,7 +70,7 @@ HIDE_MAIN_FOLDER_DOWNLOAD = true||false               # 隐藏首页的主文件
 HIDE_DOWNLOAD_FOLDERS = folder1, folder2              # 首页上需要隐藏下载按钮的文件夹，可用逗号分隔
 
 # 文件下载代理设置（仅用于下载功能，不影响内容浏览）
-DOWNLOAD_PROXY_URL =                                  # 下载主代理URL（如 ghproxy.com）
+DOWNLOAD_PROXY_URL =                                  # 下载主代理URL
 DOWNLOAD_PROXY_URL_BACKUP1 =                          # 下载备用代理URL1
 DOWNLOAD_PROXY_URL_BACKUP2 =                          # 下载备用代理URL2
 
@@ -102,6 +101,10 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
 4. **部署应用**:
    - 点击`Deploy`按钮
    - Vercel将自动构建和部署你的应用
+
+### Dev 预览
+
+想要查看项目的最新开发进度？通过 [Repo-Viewer/dev](https://repoviewer-dev.uednd.top) 可以预览 `dev` 分支的最新特性。
 
 ### 许可证
 
