@@ -69,6 +69,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const isLazyLoadEnabled = lazyLoad;
     const hasReadmeContent =
       typeof readmeContent === "string" && readmeContent.length > 0;
+    const [contentVersion, setContentVersion] = useState<number>(0);
 
     // 动态加载 katex 样式
     useEffect(() => {
@@ -83,6 +84,12 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         });
       }
     }, [shouldRender, readmeContent, latexCount]);
+
+    useEffect(() => {
+      if (hasReadmeContent) {
+        setContentVersion((prev) => prev + 1);
+      }
+    }, [readmeContent, hasReadmeContent]);
 
     // 设置IntersectionObserver监听markdown容器
     useEffect(() => {
@@ -342,10 +349,15 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         >
           {shouldRender && !isThemeChanging && (
             <Box
+              key={contentVersion}
               className="markdown-body"
               data-color-mode={theme.palette.mode}
               data-light-theme="light"
               data-dark-theme="dark"
+              sx={{
+                "@keyframes fadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+                animation: "fadeIn 0.25s ease",
+              }}
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}

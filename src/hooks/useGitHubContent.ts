@@ -53,7 +53,7 @@ export const useGitHubContent = (): {
   const contentState = useContentLoading(pathState.currentPath, branchState.currentBranch);
   
   // 使用 README 内容 Hook
-  const readmeState = useReadmeContent(contentState.contents, pathState.currentPath);
+  const readmeState = useReadmeContent(contentState.contents, pathState.currentPath, branchState.currentBranch);
 
   // 处理分支切换时的副作用
   const handleBranchChange = useCallback((branch: string) => {

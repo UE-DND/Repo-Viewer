@@ -390,7 +390,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
 
   const shouldShowReadmeSection = hasReadmeFile;
   const hasReadmeContent = typeof readmeContent === "string" && readmeContent.trim().length > 0;
-  const shouldShowReadmeSkeleton = shouldShowReadmeSection && (!readmeLoaded || loadingReadme);
+  const shouldShowReadmeSkeleton = shouldShowReadmeSection && !hasReadmeContent && (!readmeLoaded || loadingReadme);
 
   useEffect(() => {
     if (typeof window === "undefined") {
