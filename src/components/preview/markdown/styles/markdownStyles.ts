@@ -227,15 +227,19 @@ export const createMarkdownStyles = (
   "& .markdown-body pre": {
     marginTop: theme.spacing(0),
     marginBottom: theme.spacing(0),
-    overflowX: "auto",
+    overflowX: "hidden",
+    overflowY: "hidden",
     borderRadius: g3BorderRadius(G3_PRESETS.card),
     backgroundColor: "transparent",
     border: 0,
     padding: 0.5,
+    maxWidth: "100%",
   },
 
   "& .markdown-body pre > code": {
     display: "block",
+    width: "100%",
+    maxWidth: "100%",
     fontFamily: MONO_FONT,
     fontSize: { xs: "0.8125rem", sm: "0.875rem" },
     lineHeight: 1.55,
@@ -246,6 +250,10 @@ export const createMarkdownStyles = (
     color: textColor,
     boxSizing: "border-box",
     whiteSpace: "pre",
+    maxHeight: "min(56vh, 720px)",
+    overflowX: "auto",
+    overflowY: "auto",
+    WebkitOverflowScrolling: "touch",
   },
 
   "& .markdown-body :not(pre) > code": {
