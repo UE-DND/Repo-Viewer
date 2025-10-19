@@ -57,18 +57,18 @@ document.addEventListener("DOMContentLoaded", (): void => {
   logger.debug("LaTeX渲染优化已启用");
 });
 
-// 使用更轻量级、优化的根组件
 const rootElement = document.getElementById("root");
 if (rootElement === null) {
   throw new Error('找不到根元素：请确保 HTML 中存在 id="root" 的元素');
 }
 
 ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode data-oid="6an7u6a">
-    <SEOProvider data-oid="doscrxm">
-      <ThemeProvider data-oid="d_mpj1:">
+// 开发环境已启用React严格模式以帮助发现潜在的错误，进行刷新后页面抽动属正常现象
+  <React.StrictMode>
+    <SEOProvider>
+      <ThemeProvider>
         <ResponsiveSnackbarProvider>
-          <App data-oid="xf913mc" />
+          <App />
         </ResponsiveSnackbarProvider>
       </ThemeProvider>
     </SEOProvider>

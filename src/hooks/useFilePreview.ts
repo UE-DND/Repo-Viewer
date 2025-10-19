@@ -277,7 +277,7 @@ export const useFilePreview = (
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.PPT);
     } else {
-      onError('不支持的文件类型');
+      onError('不支持预览该文件类型');
     }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';

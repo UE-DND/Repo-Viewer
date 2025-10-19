@@ -94,6 +94,7 @@ export const useThemeMode = (): {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const modeRef = useRef(mode);
   const isAutoModeRef = useRef(isAutoMode);
+  const isInitialRenderRef = useRef(true);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -129,20 +130,29 @@ export const useThemeMode = (): {
     });
     localStorage.setItem('themeData', themeData);
 
+    const isInitialRender = isInitialRenderRef.current;
+    if (isInitialRender) {
+      isInitialRenderRef.current = false;
+      document.documentElement.setAttribute('data-theme', mode);
+      return;
+    }
+
     removeLatexElements();
 
     // 发出主题切换开始事件
     window.dispatchEvent(new CustomEvent('theme:changing'));
 
-    setTimeout(() => {
+    let transitionTimeout: number | null = null;
+
+    const startTransition = window.setTimeout(() => {
       setIsTransitioning(true);
       document.body.classList.add('theme-transition');
       document.documentElement.setAttribute('data-theme', mode);
 
-      const transitionTimeout = setTimeout(() => {
+      transitionTimeout = window.setTimeout(() => {
         document.body.classList.remove('theme-transition');
 
-        setTimeout(() => {
+        window.setTimeout(() => {
           setIsTransitioning(false);
 
           // 发出主题切换完成事件
@@ -150,19 +160,19 @@ export const useThemeMode = (): {
             detail: { mode, isAutoMode }
           }));
 
-          setTimeout(() => {
+          window.setTimeout(() => {
             restoreLatexElements();
           }, 100);
         }, 50);
       }, 600);
-
-      return () => {
-        clearTimeout(transitionTimeout);
-      };
     }, 10);
 
     return () => {
-      // Cleanup function
+      window.clearTimeout(startTransition);
+      if (transitionTimeout !== null) {
+        window.clearTimeout(transitionTimeout);
+      }
+      document.body.classList.remove('theme-transition');
     };
   }, [mode, isAutoMode]);
 

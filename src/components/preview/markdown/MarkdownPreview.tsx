@@ -47,6 +47,8 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
     const markdownRef = useRef<HTMLDivElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
+    const hasInitializedThemeModeRef = useRef<boolean>(false);
+    const isEventDrivenThemeChangeRef = useRef<boolean>(false);
 
     // 图片加载状态
     const imageStateRef = useRef<ImageLoadingState>(createImageLoadingState());
@@ -63,6 +65,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const isLazyLoadEnabled = lazyLoad;
     const hasReadmeContent =
       typeof readmeContent === "string" && readmeContent.length > 0;
+    const [contentVersion, setContentVersion] = useState<number>(0);
 
     // 动态加载 katex 样式
     useEffect(() => {
@@ -77,6 +80,12 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         });
       }
     }, [shouldRender, readmeContent, latexCount]);
+
+    useEffect(() => {
+      if (hasReadmeContent) {
+        setContentVersion((prev) => prev + 1);
+      }
+    }, [readmeContent, hasReadmeContent]);
 
     // 设置IntersectionObserver监听markdown容器
     useEffect(() => {
@@ -116,6 +125,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     // 监听主题切换事件
     useEffect(() => {
       const handleThemeChanging = (): void => {
+        isEventDrivenThemeChangeRef.current = true;
         setIsThemeChanging(true);
       };
 
@@ -124,6 +134,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         setTimeout(() => {
           setIsThemeChanging(false);
           handleLatexCheck();
+          isEventDrivenThemeChangeRef.current = false;
         }, 300);
       };
 
@@ -138,6 +149,16 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
     // 监听主题模式变化（用于非事件触发的情况）
     useEffect(() => {
+      if (!hasInitializedThemeModeRef.current) {
+        hasInitializedThemeModeRef.current = true;
+        return;
+      }
+
+      if (isEventDrivenThemeChangeRef.current) {
+        handleLatexCheck();
+        return;
+      }
+
       // 当主题发生变化时，暂时将公式容器设为不可见，避免卡顿
       setIsThemeChanging(true);
       const timer = setTimeout(() => {
@@ -237,10 +258,15 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         >
           {shouldRender && !isThemeChanging && (
             <Box
+              key={contentVersion}
               className="markdown-body"
               data-color-mode={theme.palette.mode}
               data-light-theme="light"
               data-dark-theme="dark"
+              sx={{
+                "@keyframes fadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+                animation: "fadeIn 0.25s ease",
+              }}
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}

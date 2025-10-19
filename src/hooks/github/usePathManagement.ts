@@ -103,6 +103,15 @@ export function usePathManagement(branch: string): PathManagementState {
     }
   }, [currentPath, isThemeChanging]);
 
+  // 同步分支变化到 URL 查询参数
+  useEffect(() => {
+    if (isThemeChanging || isInitialLoad.current) {
+      return;
+    }
+
+    updateUrlWithoutHistory(currentPathRef.current, undefined, branch);
+  }, [branch, isThemeChanging]);
+
   // 监听浏览器历史导航事件
   useEffect(() => {
     const handlePopState = (event: PopStateEvent): void => {

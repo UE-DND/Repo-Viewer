@@ -72,13 +72,7 @@ npm run lint
 
 #### 代码格式化
 
-我们使用 `EditorConfig` 进行一致的格式化，请确保你的编辑器安装了 EditorConfig 插件以自动应用格式规则。
-
----
-
-### 项目结构
-
-具体架构参见 [Arch.md](docs/Arch.md)。
+我们使用 `EditorConfig` 进行一致的格式化，请确保你的编辑器安装了相应插件以自动应用格式规则。
 
 ---
 
