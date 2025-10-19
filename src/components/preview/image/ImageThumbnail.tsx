@@ -3,6 +3,11 @@ import { Box, Button, useTheme } from '@mui/material';
 import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import type { ImageThumbnailProps } from './types';
 
+/**
+ * 图片缩略图组件
+ * 
+ * 显示图片的缩略图，点击后打开完整预览。
+ */
 const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imageUrl,
   fileName,

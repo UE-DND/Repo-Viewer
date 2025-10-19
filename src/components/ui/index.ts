@@ -1,3 +1,4 @@
+export { default as BranchSwitcher } from './BranchSwitcher';
 export { default as CustomSnackbar } from './CustomSnackbar';
 export { default as DynamicIcon } from './DynamicIcon';
 export { default as EmptyState } from './EmptyState';

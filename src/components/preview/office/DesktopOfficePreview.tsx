@@ -24,6 +24,12 @@ import { logger } from '@/utils';
 
 type DesktopOfficePreviewProps = OfficePreviewProps;
 
+/**
+ * 桌面端Office预览组件
+ * 
+ * 使用iframe嵌入Microsoft Office在线预览服务，显示Word/Excel/PPT文档。
+ * 支持加载状态、错误处理和刷新功能。
+ */
 const DesktopOfficePreview: React.FC<DesktopOfficePreviewProps> = ({
   fileUrl,
   fileType,

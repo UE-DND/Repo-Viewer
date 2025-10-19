@@ -1,5 +1,11 @@
-import { logger } from '@/utils';
+import { logger, retry } from '@/utils';
+import type { RetryOptions } from '@/utils';
+import { createTimeWheel } from '@/utils/data-structures/TimeWheel';
+import type { TimeWheel } from '@/utils/data-structures/TimeWheel';
 
+/**
+ * 批处理请求接口
+ */
 interface BatchedRequest<T = unknown> {
   resolve: (value: T) => void;
   reject: (reason: unknown) => void;
@@ -8,50 +14,44 @@ interface BatchedRequest<T = unknown> {
   retryCount: number;
 }
 
+/**
+ * 请求指纹数据
+ */
+interface FingerprintData {
+  result: unknown;
+  hitCount: number;
+}
+
+/**
+ * 请求批处理器类
+ * 
+ * 管理和优化HTTP请求，提供请求合并、去重、优先级排序和重试机制。
+ * 自动批处理相同的请求，减少网络开销并提升性能。
+ */
 export class RequestBatcher {
   private readonly batchedRequests = new Map<string, BatchedRequest[]>();
 
   // 进行中的请求
   private readonly pendingRequests = new Map<string, Promise<unknown>>();
 
-  // 请求指纹缓存（用于去重）
-  private readonly requestFingerprints = new Map<string, {
-    result: unknown;
-    timestamp: number;
-    hitCount: number;
-  }>();
+  // 请求指纹缓存（使用时间轮管理过期）
+  private readonly fingerprintWheel: TimeWheel<FingerprintData>;
 
   private batchTimeout: number | null = null;
   private readonly batchDelay = 20; // 批处理延迟毫秒
   private readonly maxRetries = 3; // 最大重试次数
   private readonly fingerprintTTL = 5 * 60 * 1000; // 指纹缓存5分钟
-  private readonly cleanupInterval: number;
 
   constructor() {
-    // 定期清理过期的指纹缓存
-    this.cleanupInterval = window.setInterval(() => {
-      this.cleanupExpiredFingerprints();
-    }, 60 * 1000); // 每分钟清理一次
-  }
-
-  // 清理过期的指纹缓存
-  private cleanupExpiredFingerprints(): void {
-    const now = Date.now();
-    const expiredKeys: string[] = [];
-
-    for (const [key, fingerprint] of this.requestFingerprints.entries()) {
-      if (now - fingerprint.timestamp > this.fingerprintTTL) {
-        expiredKeys.push(key);
-      }
-    }
-
-    expiredKeys.forEach(key => {
-      this.requestFingerprints.delete(key);
+    // 使用时间轮管理指纹缓存
+    // 每个槽覆盖 1 分钟，共 10 个槽（覆盖 10 分钟，超过 TTL）
+    this.fingerprintWheel = createTimeWheel<FingerprintData>({
+      slotDuration: 60 * 1000, // 1 分钟
+      totalSlots: 10, // 10 个槽
+      tickInterval: 30 * 1000 // 每 30 秒清理一次
     });
 
-    if (expiredKeys.length > 0) {
-      logger.debug(`清理了 ${expiredKeys.length.toString()} 个过期的请求指纹`);
-    }
+    logger.debug('RequestBatcher 已启动，使用时间轮管理指纹缓存');
   }
 
   // 生成请求指纹（用于去重）
@@ -60,20 +60,37 @@ export class RequestBatcher {
     return `${method}:${key}:${headerStr}`;
   }
 
-  // 销毁批处理器
+  /**
+   * 销毁批处理器
+   * 
+   * 清理所有定时器和缓存，释放资源。
+   * 
+   * @returns void
+   */
   public destroy(): void {
-    if (this.cleanupInterval !== 0 && !isNaN(this.cleanupInterval)) {
-      clearInterval(this.cleanupInterval);
-    }
     if (this.batchTimeout !== null && this.batchTimeout !== 0 && !isNaN(this.batchTimeout)) {
       clearTimeout(this.batchTimeout);
     }
     this.batchedRequests.clear();
     this.pendingRequests.clear();
-    this.requestFingerprints.clear();
+    this.fingerprintWheel.destroy();
+    logger.debug('RequestBatcher 已销毁');
   }
 
-  // 将请求放入批处理队列
+  /**
+   * 将请求加入批处理队列
+   * 
+   * 支持请求去重、优先级管理和智能合并相同请求。
+   * 
+   * @param key - 请求的唯一标识符（通常是URL）
+   * @param executeRequest - 执行实际请求的函数
+   * @param options - 可选配置项
+   * @param options.priority - 请求优先级，默认为'medium'
+   * @param options.method - HTTP方法，默认为'GET'
+   * @param options.headers - 请求头
+   * @param options.skipDeduplication - 是否跳过去重检查
+   * @returns Promise，解析为请求结果
+   */
   public enqueue<T>(
     key: string,
     executeRequest: () => Promise<T>,
@@ -90,25 +107,24 @@ export class RequestBatcher {
       headers = {},
       skipDeduplication = false
     } = options;
-
-    // 生成请求指纹
-    const fingerprint = this.generateFingerprint(key, method, headers);
-
-    // 检查是否可以去重
-    if (!skipDeduplication) {
-      const cachedResult = this.requestFingerprints.get(fingerprint);
-      if (cachedResult !== undefined && (Date.now() - cachedResult.timestamp < this.fingerprintTTL)) {
-        // 增加命中次数
-        cachedResult.hitCount++;
-        logger.debug(`请求去重命中: ${key}，命中次数: ${cachedResult.hitCount.toString()}`);
-        return Promise.resolve(cachedResult.result as T);
-      }
-    }
-
+    
     // 检查是否有相同的请求正在进行
     if (this.pendingRequests.has(key)) {
       logger.debug(`请求合并: ${key}`);
       return this.pendingRequests.get(key) as Promise<T>;
+    }
+
+    // 生成请求指纹并检查缓存，避免不必要的指纹生成
+    const fingerprint = this.generateFingerprint(key, method, headers);
+    
+    if (!skipDeduplication) {
+      const cachedData = this.fingerprintWheel.get(fingerprint);
+      if (cachedData !== undefined) {
+        // 增加命中次数
+        cachedData.hitCount++;
+        logger.debug(`请求去重命中: ${key}，命中次数: ${cachedData.hitCount.toString()}`);
+        return Promise.resolve(cachedData.result as T);
+      }
     }
 
     return new Promise<T>((resolve, reject) => {
@@ -173,7 +189,6 @@ export class RequestBatcher {
     skipDeduplication: boolean
   ): Promise<void> {
     const queue = this.batchedRequests.get(key) ?? [];
-    let lastError: unknown = null;
 
     // 按优先级排序
     queue.sort((a, b) => {
@@ -181,47 +196,43 @@ export class RequestBatcher {
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
 
-    // 重试逻辑
-    for (let retryCount = 0; retryCount <= this.maxRetries; retryCount++) {
-      try {
-        const result = await executeRequest();
-
-        // 缓存成功的请求结果（如果启用去重）
-        if (!skipDeduplication) {
-          this.requestFingerprints.set(fingerprint, {
-            result,
-            timestamp: Date.now(),
-            hitCount: 1
-          });
-        }
-
-        // 所有批处理请求都收到相同的结果
-        queue.forEach(request => {
-          request.resolve(result);
-        });
-        this.batchedRequests.delete(key);
-        return;
-
-      } catch (error: unknown) {
-        lastError = error;
+    // 配置重试选项
+    const retryOptions: RetryOptions = {
+      maxRetries: this.maxRetries,
+      backoff: (attempt) => Math.min(1000 * Math.pow(2, attempt), 5000), // 指数退避，最大5秒
+      onRetry: (attempt, error) => {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.warn(`请求失败 (尝试 ${(retryCount + 1).toString()}/${(this.maxRetries + 1).toString()}): ${key}`, errorMessage);
-
-        // 如果不是最后一次重试，等待一段时间
-        if (retryCount < this.maxRetries) {
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 5000); // 指数退避，最大5秒
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
+        logger.warn(`请求失败 (尝试 ${(attempt + 2).toString()}/${(this.maxRetries + 1).toString()}): ${key}`, errorMessage);
       }
-    }
+    };
 
-    // 所有重试都失败了
-    logger.error(`请求最终失败: ${key}`, lastError);
-    queue.forEach(request => {
-      request.retryCount++;
-      request.reject(lastError);
-    });
-    this.batchedRequests.delete(key);
+    try {
+      // 使用通用重试逻辑执行请求
+      const result = await retry.withRetry(executeRequest, retryOptions);
+
+      // 缓存成功的请求结果
+      if (!skipDeduplication) {
+        this.fingerprintWheel.add(fingerprint, {
+          result,
+          hitCount: 1
+        }, this.fingerprintTTL);
+      }
+
+      // 所有批处理请求都收到相同的结果
+      queue.forEach(request => {
+        request.resolve(result);
+      });
+      this.batchedRequests.delete(key);
+
+    } catch (lastError: unknown) {
+      // 所有重试都失败了
+      logger.error(`请求最终失败: ${key}`, lastError);
+      queue.forEach(request => {
+        request.retryCount++;
+        request.reject(lastError);
+      });
+      this.batchedRequests.delete(key);
+    }
   }
 
   // 处理批处理队列
@@ -231,24 +242,49 @@ export class RequestBatcher {
     // 已经在enqueue中处理了所有队列
   }
 
-  // 获取批处理器状态
-  public getStats(): { pendingRequests: number; batchedRequests: number; fingerprintCache: number; fingerprintHits: number } {
+  /**
+   * 获取批处理器统计信息
+   * 
+   * @returns 包含待处理请求数、批处理请求数、缓存大小和时间轮统计的对象
+   */
+  public getStats(): { 
+    pendingRequests: number; 
+    batchedRequests: number; 
+    fingerprintCache: number;
+    timeWheelStats: {
+      totalEntries: number;
+      slotsUsed: number;
+      averageEntriesPerSlot: number;
+      currentSlot: number;
+    };
+  } {
     return {
       pendingRequests: this.pendingRequests.size,
       batchedRequests: this.batchedRequests.size,
-      fingerprintCache: this.requestFingerprints.size,
-      fingerprintHits: Array.from(this.requestFingerprints.values())
-        .reduce((sum, fp) => sum + fp.hitCount, 0)
+      fingerprintCache: this.fingerprintWheel.size,
+      timeWheelStats: this.fingerprintWheel.getStats()
     };
   }
 
-  // 清除所有缓存
+  /**
+   * 清除所有缓存
+   * 
+   * 清除请求指纹缓存，强制下次请求重新获取数据。
+   * 
+   * @returns void
+   */
   public clearCache(): void {
-    this.requestFingerprints.clear();
+    this.fingerprintWheel.clear();
     logger.debug('已清除请求指纹缓存');
   }
 
-  // 强制取消所有等待的请求
+  /**
+   * 强制取消所有等待的请求
+   * 
+   * 取消所有在队列中等待的请求，清空批处理队列。
+   * 
+   * @returns void
+   */
   public cancelAllRequests(): void {
     for (const [, queue] of this.batchedRequests.entries()) {
       queue.forEach(request => {

@@ -21,6 +21,11 @@ import { getFileTypeName, generatePreviewUrl } from './utils';
 
 type MobileOfficePreviewProps = OfficePreviewProps;
 
+/**
+ * 移动端Office预览组件
+ * 
+ * 在移动设备上显示Office文档预览提示，引导用户使用外部应用打开。
+ */
 const MobileOfficePreview: React.FC<MobileOfficePreviewProps> = ({
   fileUrl,
   fileType,

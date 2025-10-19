@@ -99,12 +99,6 @@ body.theme-transition .MuiLinearProgress-root {
   pointer-events: none;
 }
 
-/* 为刷新按钮特别定义涟漪效果 */
-.refresh-button .MuiTouchRipple-ripple {
-  transition-duration: 600ms !important; /* 与页面过渡动画保持一致 */
-  transition-timing-function: cubic-bezier(0.05, 0.01, 0.5, 1.0) !important; /* 与页面过渡动画保持一致 */
-}
-
 .MuiTouchRipple-root {
   transform: translateZ(0);
   will-change: inherit;
@@ -623,15 +617,15 @@ body.refreshing .image-preview-container {
 }
 
 /* 主题切换时对README容器的特殊处理 */
-html[data-theme-change-only="true"] body.theme-transition .readme-container {
+body.theme-transition .readme-container {
   transform: scale(0.99) !important;
   opacity: 0.6 !important;
   transition: transform 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0),
-              opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
+    opacity 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
 }
 
 /* 主题切换期间保持内容可见性 */
-html[data-theme-change-only="true"] .readme-container .MuiPaper-root {
+body.theme-transition .readme-container .MuiPaper-root {
   transition: background-color 600ms cubic-bezier(0.05, 0.01, 0.5, 1.0) !important;
 }
 

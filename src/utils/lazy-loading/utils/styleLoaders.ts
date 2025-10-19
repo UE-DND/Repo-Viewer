@@ -1,6 +1,10 @@
 /**
- * 动态导入 katex 样式的工具函数
- * 仅在需要时才加载 katex CSS，避免首屏加载
+ * 动态加载KaTeX样式
+ * 
+ * 仅在需要时才加载KaTeX CSS，避免首屏加载。
+ * 优先使用CDN，失败时回退到本地资源。
+ * 
+ * @returns Promise，样式加载完成后解析
  */
 export const loadKatexStyles = (() => {
   let loaded = false;
@@ -82,9 +86,10 @@ export const loadKatexStyles = (() => {
 
 /**
  * 通用的动态样式加载器
- * @param href 样式文件URL
- * @param id 可选的唯一标识符，用于避免重复加载
- * @returns Promise<void>
+ * 
+ * @param href - 样式文件URL
+ * @param id - 可选的唯一标识符，用于避免重复加载
+ * @returns Promise，样式加载完成后解析
  */
 export const loadStylesheet = (href: string, id?: string): Promise<void> => {
   return new Promise((resolve, reject) => {

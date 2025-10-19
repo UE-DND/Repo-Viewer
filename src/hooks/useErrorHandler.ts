@@ -6,18 +6,33 @@ import { ErrorLevel, ErrorCategory, isNetworkError, isGitHubError, isFileOperati
 import { getDeveloperConfig } from '@/config';
 import { logger } from '@/utils';
 
+/**
+ * 错误处理器配置选项
+ */
 export interface UseErrorHandlerOptions {
+  /** 是否显示通知 */
   showNotification?: boolean;
+  /** 是否在控制台记录日志 */
   logToConsole?: boolean;
+  /** 后备错误消息 */
   fallbackMessage?: string;
 }
 
+/**
+ * 错误处理器返回值接口
+ */
 export interface ErrorHandlerReturn {
+  /** 处理错误的函数 */
   handleError: (error: Error | AppError, context?: string) => void;
+  /** 处理异步错误的函数 */
   handleAsyncError: <T>(promise: Promise<T>, context?: string) => Promise<T | null>;
+  /** 清除错误的函数 */
   clearErrors: () => void;
+  /** 错误列表 */
   errors: AppError[];
+  /** 是否有错误 */
   hasErrors: boolean;
+  /** 最后一个错误 */
   lastError: AppError | null;
 }
 
@@ -28,6 +43,15 @@ const defaultOptions: UseErrorHandlerOptions = {
   fallbackMessage: '操作失败，请稍后重试'
 };
 
+/**
+ * 错误处理Hook
+ * 
+ * 提供统一的错误处理功能，包括错误捕获、用户通知和日志记录。
+ * 支持自动清理过期错误和异步错误处理。
+ * 
+ * @param globalOptions - 错误处理配置选项
+ * @returns 错误处理器对象
+ */
 export function useErrorHandler(
   globalOptions: UseErrorHandlerOptions = defaultOptions
 ): ErrorHandlerReturn {
@@ -197,7 +221,13 @@ export function useErrorHandler(
   };
 }
 
-// 全局错误处理Hook
+/**
+ * 全局错误处理Hook
+ * 
+ * 监听全局错误事件和未处理的Promise拒绝，自动捕获并处理。
+ * 
+ * @returns 错误处理器对象
+ */
 export function useGlobalErrorHandler(): ErrorHandlerReturn {
   const globalDeveloperConfig = getDeveloperConfig();
   const errorHandler = useErrorHandler({

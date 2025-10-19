@@ -13,6 +13,11 @@ import { ImagePreviewSkeleton } from '@/components/ui/skeletons';
 import ImageToolbar from './ImageToolbar';
 import type { ImagePreviewContentProps } from './types';
 
+/**
+ * 图片预览内容组件
+ * 
+ * 显示图片预览主体内容，支持缩放、旋转和拖拽。
+ */
 const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   imageUrl,
   fileName,

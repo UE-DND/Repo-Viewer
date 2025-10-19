@@ -19,4 +19,5 @@ coverage
 .vercel
 .temp
 .tmp
-check
+.github/
+.report/

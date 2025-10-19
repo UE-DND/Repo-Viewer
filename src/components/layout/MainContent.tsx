@@ -5,6 +5,7 @@ import {
   useMediaQuery,
   Box,
   Typography,
+  Portal,
 } from "@mui/material";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
 import FileList from "@/components/file/FileList";
@@ -16,7 +17,7 @@ import {
   usePreviewContext,
   useDownloadContext,
 } from "@/contexts/unified";
-import { FileListSkeleton } from "@/components/ui/skeletons";
+import { FileListSkeleton, MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 import { getPreviewFromUrl } from "@/utils/routing/urlManager";
 import { logger } from "@/utils";
 import DynamicSEO from "@/components/seo/DynamicSEO";
@@ -25,7 +26,20 @@ import EmptyState from "@/components/ui/EmptyState";
 import type { NavigationDirection } from "@/contexts/unified";
 import type { BreadcrumbSegment, GitHubContent } from "@/types";
 
-const MainContent: React.FC = () => {
+/**
+ * 主内容区组件属性接口
+ */
+interface MainContentProps {
+  showBreadcrumbInToolbar: boolean;
+}
+
+/**
+ * 主内容区组件
+ * 
+ * 应用的主要内容区域，包含面包屑导航、文件列表、预览功能等。
+ * 自动处理URL参数和内容加载。
+ */
+const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) => {
   // 获取主题和响应式布局
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -67,45 +81,37 @@ const MainContent: React.FC = () => {
 
   // 检测当前目录中是否有README.md文件
   const hasReadmeFile = useMemo(() => {
-    if (contents.length === 0) {
-      return false;
-    }
-
-    // 检查是否有任何名称为README.md的文件（不区分大小写）
     return contents.some((item) => {
+      if (item.type !== 'file') {
+        return false;
+      }
       const fileName = item.name.toLowerCase();
-      return fileName === "readme.md" || fileName === "readme.markdown";
+      return ['readme.md', 'readme.markdown', 'readme.mdown'].includes(fileName);
     });
   }, [contents]);
 
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
     const segments: BreadcrumbSegment[] = [{ name: "Home", path: "" }];
-    const normalizedCurrentPath = currentPath.trim();
-
-    if (normalizedCurrentPath.length === 0) {
+    
+    const normalizedPath = currentPath.trim();
+    if (normalizedPath === '') {
       return segments;
     }
-
-    const pathParts = normalizedCurrentPath
-      .split("/")
-      .filter((part) => part.length > 0);
-
-    let currentSegmentPath = "";
-
-    pathParts.forEach((part) => {
-      currentSegmentPath = currentSegmentPath.length > 0
-        ? `${currentSegmentPath}/${part}`
-        : part;
-
-      segments.push({
-        name: part,
-        path: currentSegmentPath,
-      });
-    });
-
+    
+    const pathParts = normalizedPath.split("/").filter(Boolean);
+    
+    pathParts.reduce((accPath, part) => {
+      const segmentPath = accPath !== '' ? `${accPath}/${part}` : part;
+      segments.push({ name: part, path: segmentPath });
+      return segmentPath;
+    }, '');
+    
     return segments;
   }, [currentPath]);
+
+  const isHomePage = breadcrumbSegments.length <= 1;
+  const shouldShowInToolbar = showBreadcrumbInToolbar && !isHomePage;
 
   // 处理面包屑点击
   const handleBreadcrumbClick = useCallback((
@@ -152,7 +158,6 @@ const MainContent: React.FC = () => {
     cancelDownload();
   }, [cancelDownload]);
 
-
   useEffect(() => {
     const segmentCount = breadcrumbSegments.length;
 
@@ -161,18 +166,18 @@ const MainContent: React.FC = () => {
       if (segmentCount > 3) {
         setBreadcrumbsMaxItems(3);
       } else {
-        setBreadcrumbsMaxItems(0); // 少于或等于3个时不折叠
+        setBreadcrumbsMaxItems(0);
       }
       return;
     }
 
     // 桌面端逻辑
     if (segmentCount <= 3) {
-      setBreadcrumbsMaxItems(0); // 0表示不限制
+      setBreadcrumbsMaxItems(0);
       return;
     }
 
-    // 创建ResizeObserver监听容器尺寸变化
+    // 监听容器尺寸变化
     const resizeObserver = new ResizeObserver(() => {
       const container = breadcrumbsContainerRef.current;
 
@@ -180,7 +185,7 @@ const MainContent: React.FC = () => {
         return;
       }
 
-      // 如果路径太长（超过8段），则设置合理的限制
+      // 如果路径太长，则设置限制
       if (breadcrumbSegments.length > 8) {
         setBreadcrumbsMaxItems(8);
         return;
@@ -324,13 +329,51 @@ const MainContent: React.FC = () => {
     previewState.officeFileType,
   ]);
 
+  // 获取顶部栏面包屑容器
+  const [toolbarBreadcrumbContainer, setToolbarBreadcrumbContainer] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const container = document.getElementById('toolbar-breadcrumb-container');
+    setToolbarBreadcrumbContainer(container);
+  }, []);
+
+  // 渲染面包屑导航组件
+  const breadcrumbNavigation = (
+    <BreadcrumbNavigation
+      breadcrumbSegments={breadcrumbSegments}
+      handleBreadcrumbClick={handleBreadcrumbClick}
+      breadcrumbsMaxItems={breadcrumbsMaxItems}
+      isSmallScreen={isSmallScreen}
+      breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
+      compact={false}
+      data-oid="c02a2p5"
+    />
+  );
+
+  // 紧凑模式的面包屑（用于顶部栏）
+  const compactBreadcrumbNavigation = (
+    <BreadcrumbNavigation
+      breadcrumbSegments={breadcrumbSegments}
+      handleBreadcrumbClick={handleBreadcrumbClick}
+      breadcrumbsMaxItems={breadcrumbsMaxItems}
+      isSmallScreen={isSmallScreen}
+      breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
+      compact={true}
+      data-oid="c02a2p5-compact"
+    />
+  );
+
+  const shouldShowReadmeSection = hasReadmeFile;
+  const hasReadmeContent = typeof readmeContent === "string" && readmeContent.trim().length > 0;
+  const shouldShowReadmeSkeleton = shouldShowReadmeSection && !hasReadmeContent && (!readmeLoaded || loadingReadme);
+
   return (
     <Container
       component="main"
       sx={{
         flexGrow: 1,
         py: 4,
-        overflow: "hidden",
+        width: "100%",
       }}
       data-oid="7powvvf"
     >
@@ -345,14 +388,36 @@ const MainContent: React.FC = () => {
         data-oid="8ov3blv"
       />
 
-      <BreadcrumbNavigation
-        breadcrumbSegments={breadcrumbSegments}
-        handleBreadcrumbClick={handleBreadcrumbClick}
-        breadcrumbsMaxItems={breadcrumbsMaxItems}
-        isSmallScreen={isSmallScreen}
-        breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
-        data-oid="c02a2p5"
-      />
+      {/* 面包屑导航 - 根据滚动位置决定渲染位置 */}
+      {shouldShowInToolbar && toolbarBreadcrumbContainer !== null ? (
+        <Portal container={toolbarBreadcrumbContainer}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              animation: 'slideUpFadeIn 0.3s ease-out',
+              '@keyframes slideUpFadeIn': {
+                from: { opacity: 0, transform: 'translateY(10px)' },
+                to: { opacity: 1, transform: 'translateY(0)' },
+              },
+            }}
+          >
+            {compactBreadcrumbNavigation}
+          </Box>
+        </Portal>
+      ) : null}
+
+      <Box
+        sx={{
+          opacity: shouldShowInToolbar ? 0 : 1,
+          transform: shouldShowInToolbar ? 'translateY(-20px)' : 'translateY(0)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: shouldShowInToolbar ? 'none' : 'auto',
+        }}
+      >
+        {breadcrumbNavigation}
+      </Box>
 
       {loading ? (
         <FileListSkeleton
@@ -386,14 +451,14 @@ const MainContent: React.FC = () => {
             handleFolderDownloadClick={handleFolderDownloadClick}
             handleCancelDownload={handleCancelDownload}
             currentPath={currentPath}
-            hasReadmePreview={(readmeContent ?? "").length > 0 && hasReadmeFile}
+            hasReadmePreview={hasReadmeFile}
             data-oid="_qfxtvv"
           />
 
           {/* README预览 - 底部展示 */}
-          {(readmeContent ?? "").length > 0 && readmeLoaded && !loadingReadme && (
+          {shouldShowReadmeSection && (
             <Box
-              className="readme-container fade-in"
+              className="readme-container"
               sx={{
                 position: "relative",
                 width: "100%",
@@ -415,13 +480,36 @@ const MainContent: React.FC = () => {
                 data-oid="iawc_6m"
               />
 
-              <LazyMarkdownPreview
-                readmeContent={readmeContent}
-                loadingReadme={false}
-                isSmallScreen={isSmallScreen}
-                lazyLoad={false}
-                data-oid="6nohd:r"
-              />
+              {shouldShowReadmeSkeleton ? (
+                <MarkdownPreviewSkeleton
+                  isSmallScreen={isSmallScreen}
+                  data-oid="readme-skeleton"
+                />
+              ) : hasReadmeContent ? (
+                <LazyMarkdownPreview
+                  readmeContent={readmeContent}
+                  loadingReadme={false}
+                  isSmallScreen={isSmallScreen}
+                  lazyLoad={false}
+                  data-oid="6nohd:r"
+                />
+              ) : readmeLoaded ? (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    px: { xs: 2, sm: 3, md: 4 },
+                    py: { xs: 2, sm: 3 },
+                    borderRadius: 2,
+                    bgcolor: "background.paper",
+                    border: "1px solid",
+                    borderColor: "divider",
+                  }}
+                  data-oid="readme-empty"
+                >
+                  README 内容为空或加载失败。
+                </Typography>
+              ) : null}
             </Box>
           )}
 

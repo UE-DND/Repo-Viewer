@@ -7,7 +7,12 @@ import type {
 } from './apiSchemas';
 
 /**
- * 将GitHub API的内容项转换为内部GitHubContent模型
+ * 转换GitHub API内容项
+ * 
+ * 将GitHub API响应的内容项转换为内部GitHubContent模型。
+ * 
+ * @param apiItem - GitHub API内容项
+ * @returns 转换后的GitHubContent对象
  */
 export function transformGitHubContentItem(apiItem: GitHubContentItem): GitHubContent {
   const result: GitHubContent = {
@@ -40,7 +45,12 @@ export function transformGitHubContentItem(apiItem: GitHubContentItem): GitHubCo
 }
 
 /**
- * 将GitHub API的内容响应转换为内部GitHubContent数组
+ * 转换GitHub API内容响应
+ * 
+ * 将GitHub API的目录内容响应转换为GitHubContent数组。
+ * 
+ * @param apiResponse - GitHub API内容响应（可能是单个对象或数组）
+ * @returns GitHubContent数组
  */
 export function transformGitHubContentsResponse(apiResponse: GitHubContentsResponse): GitHubContent[] {
   // 如果是单个文件，包装成数组
@@ -53,7 +63,12 @@ export function transformGitHubContentsResponse(apiResponse: GitHubContentsRespo
 }
 
 /**
- * 将GitHub搜索结果的代码项转换为内部GitHubContent模型
+ * 转换GitHub搜索代码项
+ * 
+ * 将GitHub Code Search API的搜索结果项转换为GitHubContent模型。
+ * 
+ * @param searchItem - GitHub搜索代码项
+ * @returns 转换后的GitHubContent对象
  */
 export function transformGitHubSearchCodeItem(searchItem: GitHubSearchCodeItem): GitHubContent {
   const result: GitHubContent = {
@@ -77,14 +92,24 @@ export function transformGitHubSearchCodeItem(searchItem: GitHubSearchCodeItem):
 }
 
 /**
- * 将GitHub搜索响应转换为内部GitHubContent数组
+ * 转换GitHub搜索响应
+ * 
+ * 将GitHub Code Search API的响应转换为GitHubContent数组。
+ * 
+ * @param searchResponse - GitHub搜索响应
+ * @returns GitHubContent数组
  */
 export function transformGitHubSearchResponse(searchResponse: GitHubSearchResponse): GitHubContent[] {
   return searchResponse.items.map(transformGitHubSearchCodeItem);
 }
 
 /**
- * 确保GitHubContent数组的排序（目录优先，然后按名称排序）
+ * 排序GitHub内容数组
+ * 
+ * 目录优先排序，同类型按名称排序（支持数字排序）。
+ * 
+ * @param contents - GitHub内容数组
+ * @returns 排序后的GitHubContent数组
  */
 export function sortGitHubContents(contents: GitHubContent[]): GitHubContent[] {
   return [...contents].sort((a, b) => {
@@ -102,6 +127,15 @@ export function sortGitHubContents(contents: GitHubContent[]): GitHubContent[] {
 
 /**
  * 过滤和标准化GitHub内容
+ * 
+ * 根据选项过滤隐藏文件、特定文件和类型，并对结果进行排序。
+ * 
+ * @param contents - GitHub内容数组
+ * @param options - 过滤选项
+ * @param options.excludeHidden - 是否排除隐藏文件
+ * @param options.excludeFiles - 要排除的文件名列表
+ * @param options.includeOnlyTypes - 只包含的类型列表
+ * @returns 过滤和排序后的GitHubContent数组
  */
 export function filterAndNormalizeGitHubContents(
   contents: GitHubContent[],
@@ -139,6 +173,11 @@ export function filterAndNormalizeGitHubContents(
 
 /**
  * 验证GitHub内容项的完整性
+ * 
+ * 检查必需字段是否存在且有效。
+ * 
+ * @param item - GitHub内容项
+ * @returns 包含验证结果和错误列表的对象
  */
 export function validateGitHubContentItem(item: GitHubContent): {
   isValid: boolean;
@@ -170,6 +209,11 @@ export function validateGitHubContentItem(item: GitHubContent): {
 
 /**
  * 批量验证GitHub内容数组
+ * 
+ * 验证数组中每个内容项的完整性。
+ * 
+ * @param contents - GitHub内容数组
+ * @returns 包含验证结果和无效项列表的对象
  */
 export function validateGitHubContentsArray(contents: GitHubContent[]): {
   isValid: boolean;

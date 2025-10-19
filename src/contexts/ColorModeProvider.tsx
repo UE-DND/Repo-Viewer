@@ -2,12 +2,18 @@ import React, { useMemo, useState, type ReactNode } from "react";
 import { type PaletteMode, useMediaQuery } from "@mui/material";
 import { ColorModeContext } from "./colorModeContext";
 
-// 颜色模式提供者组件Props
+/**
+ * 颜色模式提供者组件属性接口
+ */
 interface ColorModeProviderProps {
   children: ReactNode;
 }
 
-// 颜色模式提供者组件
+/**
+ * 颜色模式提供者组件
+ * 
+ * 提供明暗主题切换功能和自动模式管理。
+ */
 export const ColorModeProvider: React.FC<ColorModeProviderProps> = ({
   children,
 }) => {

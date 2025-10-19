@@ -26,6 +26,12 @@ import { MarkdownLink } from "./components/MarkdownLink";
 import { logger } from "@/utils";
 import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 
+/**
+ * Markdown预览组件
+ * 
+ * 渲染Markdown内容，支持GFM语法、LaTeX公式、代码高亮等。
+ * 包含图片代理处理、懒加载和主题切换优化。
+ */
 const MarkdownPreview = memo<MarkdownPreviewProps>(
   ({
     readmeContent,
@@ -41,6 +47,8 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
     const markdownRef = useRef<HTMLDivElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
+    const hasInitializedThemeModeRef = useRef<boolean>(false);
+    const isEventDrivenThemeChangeRef = useRef<boolean>(false);
 
     // 图片加载状态
     const imageStateRef = useRef<ImageLoadingState>(createImageLoadingState());
@@ -57,6 +65,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const isLazyLoadEnabled = lazyLoad;
     const hasReadmeContent =
       typeof readmeContent === "string" && readmeContent.length > 0;
+    const [contentVersion, setContentVersion] = useState<number>(0);
 
     // 动态加载 katex 样式
     useEffect(() => {
@@ -71,6 +80,12 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
         });
       }
     }, [shouldRender, readmeContent, latexCount]);
+
+    useEffect(() => {
+      if (hasReadmeContent) {
+        setContentVersion((prev) => prev + 1);
+      }
+    }, [readmeContent, hasReadmeContent]);
 
     // 设置IntersectionObserver监听markdown容器
     useEffect(() => {
@@ -107,23 +122,49 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
       };
     }, [isLazyLoadEnabled, shouldRender]);
 
-    // 添加主题切换检测
+    // 监听主题切换事件
     useEffect(() => {
-      // 检查是否是仅主题切换操作
-      const isThemeChangeOnly =
-        document.documentElement.getAttribute("data-theme-change-only") ===
-        "true";
+      const handleThemeChanging = (): void => {
+        isEventDrivenThemeChangeRef.current = true;
+        setIsThemeChanging(true);
+      };
+
+      const handleThemeChanged = (): void => {
+        // 主题切换完成后再显示公式并检测 LaTeX 数量
+        setTimeout(() => {
+          setIsThemeChanging(false);
+          handleLatexCheck();
+          isEventDrivenThemeChangeRef.current = false;
+        }, 300);
+      };
+
+      window.addEventListener('theme:changing', handleThemeChanging);
+      window.addEventListener('theme:changed', handleThemeChanged);
+
+      return () => {
+        window.removeEventListener('theme:changing', handleThemeChanging);
+        window.removeEventListener('theme:changed', handleThemeChanged);
+      };
+    }, [handleLatexCheck]);
+
+    // 监听主题模式变化（用于非事件触发的情况）
+    useEffect(() => {
+      if (!hasInitializedThemeModeRef.current) {
+        hasInitializedThemeModeRef.current = true;
+        return;
+      }
+
+      if (isEventDrivenThemeChangeRef.current) {
+        handleLatexCheck();
+        return;
+      }
 
       // 当主题发生变化时，暂时将公式容器设为不可见，避免卡顿
       setIsThemeChanging(true);
       const timer = setTimeout(() => {
         setIsThemeChanging(false);
-
-        // 检测LaTeX公式数量（仅在非主题切换操作或初始加载时进行）
-        if (!isThemeChangeOnly) {
-          handleLatexCheck();
-        }
-      }, 300); // 主题切换动画完成后再显示公式
+        handleLatexCheck();
+      }, 300);
 
       return () => {
         clearTimeout(timer);
@@ -212,15 +253,20 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
           square
           elevation={0}
           className={isThemeChanging ? "theme-transition-katex" : ""}
-          sx={createMarkdownStyles(theme, latexCount)}
+          sx={createMarkdownStyles(theme, latexCount, isSmallScreen)}
           data-oid=":p7j.31"
         >
           {shouldRender && !isThemeChanging && (
             <Box
+              key={contentVersion}
               className="markdown-body"
               data-color-mode={theme.palette.mode}
               data-light-theme="light"
               data-dark-theme="dark"
+              sx={{
+                "@keyframes fadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+                animation: "fadeIn 0.25s ease",
+              }}
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}

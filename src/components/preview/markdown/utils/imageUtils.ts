@@ -1,4 +1,4 @@
-import { GitHubService } from "@/services/github/core/GitHubService";
+import { GitHub } from "@/services/github";
 import type { GitHubContent } from "@/types";
 import { logger } from "@/utils";
 
@@ -27,12 +27,20 @@ const getOriginFromUrl = (url: string): string | null => {
   }
 };
 
+/**
+ * 图片加载状态接口
+ */
 export interface ImageLoadingState {
   loadedImages: Set<string>;
   failedImages: Set<string>;
   imageTimers: Map<string, number>;
 }
 
+/**
+ * 创建图片加载状态对象
+ * 
+ * @returns 初始化的图片加载状态
+ */
 export const createImageLoadingState = (): ImageLoadingState => ({
   loadedImages: new Set<string>(),
   failedImages: new Set<string>(),
@@ -40,7 +48,12 @@ export const createImageLoadingState = (): ImageLoadingState => ({
 });
 
 /**
- * 尝试不同的图片加载方式
+ * 尝试直接加载图片
+ * 
+ * 从代理URL中提取原始路径，使用JSDelivr CDN加载。
+ * 
+ * @param imgSrc - 图片源URL
+ * @returns 直接加载的CDN URL，失败时返回null
  */
 export const tryDirectImageLoad = (imgSrc: string): string | null => {
   if (imgSrc.trim().length === 0) {
@@ -68,7 +81,7 @@ export const tryDirectImageLoad = (imgSrc: string): string | null => {
     }
 
     const proxy = "https://cdn.jsdelivr.net/gh";
-    const currentProxy = GitHubService.getCurrentProxyService();
+    const currentProxy = GitHub.Proxy.getCurrentProxyService();
     const repoOwner = currentProxy.includes("Royfor12") ? "Royfor12" : "UE-DND";
     const repoName = currentProxy.includes("CQUT-Course-Guide-Sharing-Scheme")
       ? "CQUT-Course-Guide-Sharing-Scheme"
@@ -83,7 +96,13 @@ export const tryDirectImageLoad = (imgSrc: string): string | null => {
 };
 
 /**
- * 处理图片路径转换
+ * 转换图片源URL
+ * 
+ * 将相对路径或原始URL转换为可访问的代理URL。
+ * 
+ * @param src - 原始图片URL
+ * @param previewingItem - 当前预览的Markdown文件项
+ * @returns 包含转换后URL和原始URL的对象
  */
 export const transformImageSrc = (
   src: string | undefined,
@@ -102,7 +121,7 @@ export const transformImageSrc = (
     logger.debug("当前Markdown文件路径:", previewingItem.path);
 
     // 使用GitHubService处理图片URL
-    const transformedSrc = GitHubService.transformImageUrl(
+    const transformedSrc = GitHub.Proxy.transformImageUrl(
       src,
       previewingItem.path,
       true
@@ -121,6 +140,14 @@ export const transformImageSrc = (
 
 /**
  * 处理图片加载错误
+ * 
+ * 当图片加载失败时，自动尝试切换代理服务或使用备用加载方式。
+ * 
+ * @param imgSrc - 当前图片URL
+ * @param originalSrc - 原始图片URL
+ * @param imageState - 图片加载状态对象
+ * @param setIsImageFailed - 设置失败状态的函数
+ * @returns 备用的图片URL，如果无可用备用则返回null
  */
 export const handleImageError = (
   imgSrc: string,
@@ -144,12 +171,12 @@ export const handleImageError = (
       const proxyUrl = getOriginFromUrl(imgSrc);
       // 标记该代理服务失败
       if (typeof proxyUrl === "string" && proxyUrl.length > 0) {
-        GitHubService.markProxyServiceFailed(proxyUrl);
+        GitHub.Proxy.markProxyServiceFailed(proxyUrl);
         logger.warn("标记代理服务失败:", proxyUrl);
       }
 
       // 获取新的代理服务
-      const currentProxy = GitHubService.getCurrentProxyService();
+      const currentProxy = GitHub.Proxy.getCurrentProxyService();
       logger.info("切换到新的代理服务:", currentProxy);
 
       // 如果还有可用的备选代理，重新加载图片
@@ -216,6 +243,13 @@ export const handleImageError = (
 
 /**
  * 处理图片加载成功
+ * 
+ * 记录成功加载的图片，清除超时计时器。
+ * 
+ * @param imgSrc - 图片URL
+ * @param imageState - 图片加载状态对象
+ * @param setIsImageLoaded - 设置加载成功状态的函数
+ * @returns void
  */
 export const handleImageLoad = (
   imgSrc: string,

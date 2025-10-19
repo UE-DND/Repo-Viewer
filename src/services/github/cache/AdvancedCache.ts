@@ -15,17 +15,28 @@ import {
   saveItemToIndexedDB,
   saveItemToLocalStorage,
 } from './CachePersistence';
+import { LRUCache } from './LRUCache';
+import { getMinK } from '@/utils/data-structures/MinHeap';
 
+/**
+ * 高级缓存类
+ * 
+ * 提供LRU缓存功能，支持持久化存储（IndexedDB/LocalStorage）、
+ * 自适应TTL、内存管理和缓存统计。
+ * 
+ * @template K - 缓存键类型（必须为string）
+ * @template V - 缓存值类型
+ */
 export class AdvancedCache<K extends string, V> {
-  private readonly cache: Map<K, CacheItemMeta>;
+  private readonly cache: LRUCache<K>;
   private readonly config: CacheConfig;
   private readonly stats: CacheStats;
-  private cleanupTimer: ReturnType<typeof setInterval> | null = null;
+  private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly dbName: string;
   private db: IDBDatabase | null = null;
 
   constructor(config: CacheConfig) {
-    this.cache = new Map();
+    this.cache = new LRUCache<K>(config.maxSize);
     this.config = { ...config };
     this.stats = {
       hits: 0,
@@ -45,6 +56,13 @@ export class AdvancedCache<K extends string, V> {
     this.startPeriodicCleanup();
   }
 
+  /**
+   * 初始化持久化存储
+   * 
+   * 优先使用IndexedDB，失败时回退到LocalStorage。
+   * 
+   * @returns Promise，初始化完成后解析
+   */
   public async initializePersistence(): Promise<void> {
     if (this.config.useIndexedDB && typeof indexedDB !== 'undefined') {
       try {
@@ -77,6 +95,14 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 获取缓存项
+   * 
+   * 从缓存中获取值，自动检查TTL并更新访问统计。
+   * 
+   * @param key - 缓存键
+   * @returns Promise，解析为缓存的值，如果不存在或已过期则返回undefined
+   */
   async get(key: K): Promise<V | undefined> {
     const keyStr = key;
     let item = this.cache.get(key);
@@ -107,8 +133,7 @@ export class AdvancedCache<K extends string, V> {
     item.accessCount++;
     item.lastAccess = now;
 
-    this.cache.delete(key);
-    this.cache.set(key, item);
+    // LRUCache 的 get 方法已自动将节点移动到尾部
 
     if (this.config.enablePersistence) {
       this.saveItemToPersistence(keyStr, item).catch((error: unknown) => {
@@ -121,8 +146,16 @@ export class AdvancedCache<K extends string, V> {
     return item.value as V;
   }
 
-  // 计算TTL 统一使用工具函数
-
+  /**
+   * 设置缓存项
+   * 
+   * 将值存储到缓存中，支持持久化和内存管理。
+   * 
+   * @param key - 缓存键
+   * @param value - 要缓存的值
+   * @param version - 版本标识，默认为'1.0'
+   * @returns Promise，设置完成后解析
+   */
   async set(key: K, value: V, version = '1.0'): Promise<void> {
     const now = Date.now();
     const keyStr = key;
@@ -149,29 +182,62 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 检查内存压力并清理缓存
+   * 
+   * 根据当前缓存负载动态调整清理比例：
+   * - 负载 >= 0.95: 清理 50% 的缓存项
+   * - 负载 >= 0.9:  清理 30% 的缓存项
+   * - 其他情况:     清理 20% 的缓存项
+   */
   private async checkMemoryPressureAndCleanup(): Promise<void> {
     const currentLoad = this.cache.size / this.config.maxSize;
+    
     if (currentLoad >= this.config.memoryPressureThreshold) {
-      const itemsToRemove = Math.floor(this.config.maxSize * 0.2);
+      // 根据压力程度动态调整清理比例
+      const cleanupRatio = currentLoad >= 0.95 ? 0.5 : 
+                          currentLoad >= 0.9 ? 0.3 : 0.2;
+      const itemsToRemove = Math.floor(this.config.maxSize * cleanupRatio);
       await this.cleanupLeastUsed(itemsToRemove);
-      logger.debug(`内存压力清理：删除了${itemsToRemove.toString()}个最少使用的缓存项`);
+      logger.debug(`内存压力清理（负载 ${(currentLoad * 100).toFixed(1)}%）：删除了${itemsToRemove.toString()}个缓存项（清理比例 ${(cleanupRatio * 100).toFixed(0)}%）`);
     }
   }
 
+  /**
+   * 清理最少使用的缓存项
+   * 
+   * @param count - 要清理的项目数量
+   */
   private async cleanupLeastUsed(count: number): Promise<void> {
-    const items = Array.from(this.cache.entries())
-      .sort(([, a], [, b]) => {
-        const scoreA = a.accessCount * 1000 + a.lastAccess;
-        const scoreB = b.accessCount * 1000 + b.lastAccess;
-        return scoreA - scoreB;
-      })
-      .slice(0, count);
+    // 收集所有条目及其评分
+    const items: { key: K; score: number }[] = [];
+    
+    this.cache.forEach((item, key) => {
+      const score = item.accessCount * 1000 + item.lastAccess;
+      items.push({ key, score });
+    });
 
-    for (const [key] of items) {
+    // 使用最小堆获取评分最低的 k 个元素
+    const leastUsed = getMinK(
+      items,
+      count,
+      (a, b) => a.score - b.score
+    );
+
+    // 删除这些项目
+    for (const { key } of leastUsed) {
       await this.delete(key);
     }
   }
 
+  /**
+   * 删除缓存项
+   * 
+   * 从缓存和持久化存储中删除指定键的值。
+   * 
+   * @param key - 缓存键
+   * @returns Promise，解析为是否成功删除
+   */
   async delete(key: K): Promise<boolean> {
     const keyStr = key;
     const result = this.cache.delete(key);
@@ -187,6 +253,13 @@ export class AdvancedCache<K extends string, V> {
     return result;
   }
 
+  /**
+   * 清空缓存
+   * 
+   * 清除所有缓存项和持久化存储。
+   * 
+   * @returns Promise，清空完成后解析
+   */
   async clear(): Promise<void> {
     this.cache.clear();
     this.stats.size = 0;
@@ -202,10 +275,20 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 获取缓存大小
+   * 
+   * @returns 当前缓存的项目数量
+   */
   size(): number {
     return this.cache.size;
   }
 
+  /**
+   * 获取缓存统计信息
+   * 
+   * @returns 缓存统计对象
+   */
   getStats(): CacheStats {
     return { ...this.stats };
   }
@@ -223,12 +306,43 @@ export class AdvancedCache<K extends string, V> {
     this.stats.memoryUsage = totalSize;
   }
 
+  /**
+   * 启动定期清理任务
+   * 
+   * 根据缓存大小动态调整清理间隔：
+   * - 缓存项 > 100: 每 2 分钟清理一次
+   * - 缓存项 > 50:  每 3 分钟清理一次
+   * - 其他情况:     每 5 分钟清理一次
+   */
   private startPeriodicCleanup(): void {
-    this.cleanupTimer = setInterval(() => {
-      this.performPeriodicCleanup().catch((error: unknown) => {
-        logger.warn('定期清理失败', error);
-      });
-    }, 5 * 60 * 1000);
+    const getCleanupInterval = (): number => {
+      const size = this.cache.size;
+      if (size > 100) {
+        return 2 * 60 * 1000; // 2 分钟
+      } else if (size > 50) {
+        return 3 * 60 * 1000; // 3 分钟
+      } else {
+        return 5 * 60 * 1000; // 5 分钟
+      }
+    };
+
+    const scheduleNextCleanup = (): void => {
+      const interval = getCleanupInterval();
+      this.cleanupTimer = setTimeout(() => {
+        this.performPeriodicCleanup()
+          .then(() => {
+            // 清理完成后，根据新的缓存大小重新安排下次清理
+            scheduleNextCleanup();
+          })
+          .catch((error: unknown) => {
+            logger.warn('定期清理失败', error);
+            // 失败后仍然继续安排下次清理
+            scheduleNextCleanup();
+          });
+      }, interval);
+    };
+
+    scheduleNextCleanup();
   }
 
   private async performPeriodicCleanup(): Promise<void> {
@@ -253,6 +367,14 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 
+  /**
+   * 预取缓存项
+   * 
+   * 延迟加载指定键的数据到缓存中。
+   * 
+   * @param keys - 要预取的键数组
+   * @returns void
+   */
   prefetch(keys: K[]): void {
     if (!this.config.enablePrefetch) {
       return;
@@ -267,9 +389,16 @@ export class AdvancedCache<K extends string, V> {
     }, this.config.prefetchDelay);
   }
 
+  /**
+   * 销毁缓存实例
+   * 
+   * 清理定时器和数据库连接。
+   * 
+   * @returns void
+   */
   destroy(): void {
     if (this.cleanupTimer !== null) {
-      clearInterval(this.cleanupTimer);
+      clearTimeout(this.cleanupTimer);
       this.cleanupTimer = null;
     }
     if (this.db !== null) {
@@ -388,5 +517,3 @@ export class AdvancedCache<K extends string, V> {
     }
   }
 }
-
-export const LRUCache = AdvancedCache;

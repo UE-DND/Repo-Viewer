@@ -1,13 +1,14 @@
 import { useReducer, useCallback, useRef } from 'react';
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type {
   DownloadState,
   DownloadAction,
   GitHubContent
 } from '@/types';
-import { GitHubService } from '@/services/github';
+import { GitHub } from '@/services/github';
 import { logger } from '@/utils';
+import { requestManager } from '@/utils/request/requestManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 
 // 下载状态初始值
@@ -56,12 +57,21 @@ function downloadReducer(state: DownloadState, action: DownloadAction): Download
         isCancelled: true
       };
     case 'RESET_DOWNLOAD_STATE':
+      return initialDownloadState;
     default:
       return state;
   }
 }
 
-// 自定义Hook，管理下载功能
+/**
+ * 下载管理Hook
+ * 
+ * 提供文件和文件夹下载功能，支持进度追踪和取消操作。
+ * 文件夹下载会打包为ZIP格式。
+ * 
+ * @param onError - 错误回调函数
+ * @returns 包含下载状态和操作函数的对象
+ */
 export const useDownload = (onError: (message: string) => void): {
   downloadState: DownloadState;
   downloadFile: (item: GitHubContent) => Promise<void>;
@@ -174,7 +184,11 @@ export const useDownload = (onError: (message: string) => void): {
   ): Promise<void> {
     try {
       // 获取文件夹内容
-      const contents = await GitHubService.getContents(folderPath, signal);
+      // 使用 requestManager 避免重复请求
+      const contents = await requestManager.request(
+        `download-folder-${folderPath}`,
+        (requestSignal) => GitHub.Content.getContents(folderPath, requestSignal)
+      );
 
       // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {
@@ -236,7 +250,7 @@ export const useDownload = (onError: (message: string) => void): {
     const signal = abortControllerRef.current.signal;
 
     try {
-      const zip = new JSZip.default();
+      const zip = new JSZip();
 
       // 递归获取文件夹内容
       const allFiles: { path: string; url: string }[] = [];

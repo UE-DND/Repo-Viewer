@@ -2,10 +2,9 @@ import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 import type { PreviewState, PreviewAction, GitHubContent } from '@/types';
 import { OfficeFileType } from '@/types';
-import { GitHubService } from '@/services/github';
-import { isImageFile, isPdfFile, isMarkdownFile, isWordFile, isExcelFile, isPPTFile, logger } from '@/utils';
+import { GitHub } from '@/services/github';
+import { file, logger, pdf } from '@/utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
-import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from '@/utils/pdf/pdfLoading';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 
 const initialPreviewState: PreviewState = {
@@ -99,6 +98,16 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
   }
 }
 
+/**
+ * 文件预览Hook
+ * 
+ * 提供文件预览功能，支持Markdown、图片、PDF和Office文档的预览。
+ * 自动处理URL参数和浏览器历史导航。
+ * 
+ * @param onError - 错误回调函数
+ * @param findFileItemByPath - 根据路径查找文件的函数
+ * @returns 文件预览状态和操作函数
+ */
 export const useFilePreview = (
   onError: (message: string) => void,
   findFileItemByPath?: (path: string) => GitHubContent | undefined
@@ -200,17 +209,17 @@ export const useFilePreview = (
       if (getForceServerProxy()) {
         proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
       } else {
-        proxyUrl = GitHubService.transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url;
+        proxyUrl = GitHub.Proxy.transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url;
       }
 
     const fileNameLower = item.name.toLowerCase();
 
-    if (isMarkdownFile(fileNameLower)) {
+    if (file.isMarkdownFile(fileNameLower)) {
         updateUrlWithHistory(dirPath, item.path);
         dispatch({ type: 'SET_MD_LOADING', loading: true });
 
         try {
-          const content = await GitHubService.getFileContent(item.download_url);
+          const content = await GitHub.Content.getFileContent(item.download_url);
           dispatch({ type: 'SET_MD_PREVIEW', content, item });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -219,270 +228,16 @@ export const useFilePreview = (
           dispatch({ type: 'SET_MD_LOADING', loading: false });
         }
       }
-      else if (isPdfFile(fileNameLower)) {
+      else if (file.isPdfFile(fileNameLower)) {
+        // 使用新的 PDF 预览工具函数
         try {
-          const newTab: Window | null = window.open('', '_blank');
-          if (newTab === null) {
-            const a = document.createElement('a');
-            a.href = item.download_url;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            return;
-          }
-
-          const themeColors = extractPDFThemeColors(muiTheme);
-          const loadingHTML = generatePDFLoadingHTML(item.name, themeColors);
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(loadingHTML, 'text/html');
-          newTab.document.documentElement.innerHTML = doc.documentElement.innerHTML;
-          Array.from(doc.head.children).forEach(child => {
-            if (child.tagName === 'STYLE' || child.tagName === 'SCRIPT' || child.tagName === 'META') {
-              newTab.document.head.appendChild(child.cloneNode(true));
-            }
+          await pdf.openPDFPreview({
+            fileName: item.name,
+            downloadUrl: item.download_url,
+            theme: muiTheme,
+            isDev: import.meta.env.DEV
           });
-
-          if (import.meta.env.DEV) {
-            try {
-              const progressEl = newTab.document.getElementById('progress');
-              const viewerEl = newTab.document.getElementById('viewer') as HTMLIFrameElement | null;
-              const loaderEl = newTab.document.getElementById('loader');
-              const progressCircle = newTab.document.getElementById('progress-circle') as SVGCircleElement | null;
-
-              // 创建 AbortController 用于取消请求
-              const abortController = new AbortController();
-              // 将 abortController 设置到新标签页的全局变量中
-              (newTab as Window & { abortController?: AbortController }).abortController = abortController;
-
-              // 注入取消下载函数与事件绑定
-              // 说明：由于通过 innerHTML 写入的内联 <script> 不会执行，
-              // 需要在父窗口侧显式提供全局函数以保证 onclick="cancelDownload()" 可用。
-              const bindCancel = (): void => {
-                const cancel = (): void => {
-                  try {
-                    abortController.abort();
-                  } catch {}
-                  const status = newTab.document.getElementById('status');
-                  if (status !== null) {
-                    status.textContent = '已取消预览';
-                  }
-                  const progress = newTab.document.getElementById('progress');
-                  if (progress !== null) {
-                    progress.textContent = '';
-                  }
-                  const btn = newTab.document.getElementById('cancel-btn') as HTMLButtonElement | null;
-                  if (btn !== null) {
-                    btn.disabled = true;
-                    btn.style.display = 'none';
-                  }
-                  window.setTimeout(() => {
-                    try { newTab.close(); } catch { /* noop */ }
-                  }, 1500);
-                };
-                (newTab as Window & { cancelDownload?: () => void }).cancelDownload = cancel;
-                const btn = newTab.document.getElementById('cancel-btn');
-                if (btn !== null) {
-                  btn.addEventListener('click', cancel, { once: true });
-                }
-              };
-              bindCancel();
-
-              const resp = await fetch(item.download_url, {
-                mode: 'cors',
-                signal: abortController.signal
-              });
-              if (!resp.ok || resp.body === null) {
-                throw new Error(`HTTP ${resp.status.toString()}`);
-              }
-
-              const contentLengthHeader = resp.headers.get('Content-Length') ?? resp.headers.get('content-length');
-              const total = contentLengthHeader !== null ? parseInt(contentLengthHeader, 10) : 0;
-              let loaded = 0;
-              const reader = resp.body.getReader();
-              const chunks: Uint8Array[] = [];
-              const formatBytes = (n: number): string => `${(n / 1048576).toFixed(2)} MB`;
-              const circumference = 2 * Math.PI * 20; // radius = 20
-
-              let result = await reader.read();
-              while (!result.done) {
-                chunks.push(result.value);
-                loaded += result.value.byteLength;
-                const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
-
-                // 更新文本进度
-                if (progressEl !== null) {
-                  progressEl.textContent = total > 0 && pct !== null
-                    ? `已下载 ${formatBytes(loaded)} / ${formatBytes(total)} (${pct.toString()}%)`
-                    : `已下载 ${formatBytes(loaded)}`;
-                }
-
-                // 更新进度条
-                if (progressCircle !== null && total > 0 && pct !== null) {
-                  progressCircle.classList.add('determinate');
-                  const dashOffset = circumference - (circumference * pct / 100);
-                  progressCircle.style.strokeDashoffset = dashOffset.toString();
-                }
-                result = await reader.read();
-              }
-
-              const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' });
-              const blobUrl = URL.createObjectURL(blob);
-              setTimeout(() => {
-                URL.revokeObjectURL(blobUrl);
-              }, 60_000);
-
-              if (viewerEl !== null) {
-                viewerEl.src = blobUrl;
-                viewerEl.style.visibility = 'visible';
-              } else {
-                newTab.location.replace(blobUrl);
-              }
-              if (loaderEl !== null) {
-                loaderEl.style.display = 'none';
-              }
-              // 隐藏取消按钮，因为加载已完成
-              const cancelBtn = newTab.document.getElementById('cancel-btn');
-              if (cancelBtn !== null) {
-                cancelBtn.style.display = 'none';
-              }
-              newTab.document.title = item.name !== '' ? item.name : 'PDF';
-            } catch (error: unknown) {
-              const errorObj = error instanceof Error ? error : new Error('未知错误');
-              // 检查是否是用户主动取消
-              if (errorObj.name === 'AbortError') {
-                // 用户取消，不显示错误信息
-                return;
-              }
-              // 使用统一的错误页面模板
-              const loaderEl = newTab.document.getElementById('loader');
-              if (loaderEl !== null) {
-                loaderEl.innerHTML = generatePDFErrorHTML(item.name, errorObj.message, item.download_url, themeColors);
-              } else {
-                newTab.location.replace(item.download_url);
-              }
-            }
-          } else {
-            try {
-              const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-              const progressEl = newTab.document.getElementById('progress');
-              const viewerEl = newTab.document.getElementById('viewer') as HTMLIFrameElement | null;
-              const loaderEl = newTab.document.getElementById('loader');
-              const progressCircle = newTab.document.getElementById('progress-circle') as SVGCircleElement | null;
-
-              // 创建 AbortController 用于取消请求
-              const abortController = new AbortController();
-              (newTab as Window & { abortController?: AbortController }).abortController = abortController;
-
-              // 注入取消下载函数与事件绑定
-              const bindCancel = (): void => {
-                const cancel = (): void => {
-                  try {
-                    abortController.abort();
-                  } catch {}
-                  const status = newTab.document.getElementById('status');
-                  if (status !== null) {
-                    status.textContent = '已取消预览';
-                  }
-                  const progress = newTab.document.getElementById('progress');
-                  if (progress !== null) {
-                    progress.textContent = '';
-                  }
-                  const btn = newTab.document.getElementById('cancel-btn') as HTMLButtonElement | null;
-                  if (btn !== null) {
-                    btn.disabled = true;
-                    btn.style.display = 'none';
-                  }
-                  window.setTimeout(() => {
-                    try { newTab.close(); } catch { /* noop */ }
-                  }, 1500);
-                };
-                (newTab as Window & { cancelDownload?: () => void }).cancelDownload = cancel;
-                const btn = newTab.document.getElementById('cancel-btn');
-                if (btn !== null) {
-                  btn.addEventListener('click', cancel, { once: true });
-                }
-              };
-              bindCancel();
-
-              const resp = await fetch(proxyUrl, {
-                mode: 'cors',
-                signal: abortController.signal
-              });
-              if (!resp.ok || resp.body === null) {
-                throw new Error(`HTTP ${resp.status.toString()}`);
-              }
-
-              const contentLengthHeader = resp.headers.get('Content-Length') ?? resp.headers.get('content-length');
-              const total = contentLengthHeader !== null ? parseInt(contentLengthHeader, 10) : 0;
-              let loaded = 0;
-              const reader = resp.body.getReader();
-              const chunks: Uint8Array[] = [];
-              const formatBytes = (n: number): string => `${(n / 1048576).toFixed(2)} MB`;
-              const circumference = 2 * Math.PI * 20; // radius = 20
-
-              let result = await reader.read();
-              while (!result.done) {
-                chunks.push(result.value);
-                loaded += result.value.byteLength;
-                const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
-
-                // 更新文本进度
-                if (progressEl !== null) {
-                  progressEl.textContent = total > 0 && pct !== null
-                    ? `已下载 ${formatBytes(loaded)} / ${formatBytes(total)} (${pct.toString()}%)`
-                    : `已下载 ${formatBytes(loaded)}`;
-                }
-
-                // 更新进度条
-                if (progressCircle !== null && total > 0 && pct !== null) {
-                  progressCircle.classList.add('determinate');
-                  const dashOffset = circumference - (circumference * pct / 100);
-                  progressCircle.style.strokeDashoffset = dashOffset.toString();
-                }
-                result = await reader.read();
-              }
-
-              const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' });
-              const blobUrl = URL.createObjectURL(blob);
-              setTimeout(() => {
-                URL.revokeObjectURL(blobUrl);
-              }, 60_000);
-
-              if (viewerEl !== null) {
-                viewerEl.src = blobUrl;
-                viewerEl.style.visibility = 'visible';
-              } else {
-                newTab.location.replace(blobUrl);
-              }
-              if (loaderEl !== null) {
-                loaderEl.style.display = 'none';
-              }
-              // 隐藏取消按钮，因为加载已完成
-              const cancelBtn = newTab.document.getElementById('cancel-btn');
-              if (cancelBtn !== null) {
-                cancelBtn.style.display = 'none';
-              }
-              newTab.document.title = item.name !== '' ? item.name : 'PDF';
-            } catch (error: unknown) {
-              const errorObj = error instanceof Error ? error : new Error('未知错误');
-              // 检查是否是用户主动取消
-              if (errorObj.name === 'AbortError') {
-                // 用户取消，不显示错误信息
-                return;
-              }
-              const loaderEl = newTab.document.getElementById('loader');
-              if (loaderEl !== null) {
-                const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-                loaderEl.innerHTML = generatePDFErrorHTML(item.name, errorObj.message, proxyUrl, themeColors);
-              } else {
-                const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-                newTab.location.replace(proxyUrl);
-              }
-            }
-          }
+          
           logger.info(`已在新标签页打开 PDF: ${item.path}`);
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -490,7 +245,7 @@ export const useFilePreview = (
         }
         return;
       }
-      else if (isImageFile(fileNameLower)) {
+      else if (file.isImageFile(fileNameLower)) {
         // 图片预览
         dispatch({ type: 'SET_IMAGE_LOADING', loading: true });
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });
@@ -509,20 +264,20 @@ export const useFilePreview = (
         } finally {
           dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
         }
-    } else if (isWordFile(fileNameLower)) {
+    } else if (file.isWordFile(fileNameLower)) {
       // 使用统一的Office预览组件
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.WORD);
-    } else if (isExcelFile(fileNameLower)) {
+    } else if (file.isExcelFile(fileNameLower)) {
       // 使用统一的Office预览组件
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.EXCEL);
-    } else if (isPPTFile(fileNameLower)) {
+    } else if (file.isPPTFile(fileNameLower)) {
       // 使用统一的Office预览组件
       updateUrlWithHistory(dirPath, item.path);
       loadOfficePreview(item, OfficeFileType.PPT);
     } else {
-      onError('不支持的文件类型');
+      onError('不支持预览该文件类型');
     }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';

@@ -1,6 +1,13 @@
 /**
  * 全局错误边界组件
- * 捕获React组件树中的JavaScript错误并提供优雅的降级UI
+ * 
+ * 捕获React组件树中的JavaScript错误并提供优雅的降级UI。
+ * 支持三个层级的错误边界：页面级、功能级和组件级。
+ * 
+ * @module ErrorBoundary
+ * @see {@link ErrorManager} 错误管理器
+ * @see {@link PageErrorBoundary} 页面级错误边界快捷组件
+ * @see {@link FeatureErrorBoundary} 功能级错误边界快捷组件
  */
 
 import React from 'react';
@@ -334,7 +341,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
                   size="small"
                   endIcon={<BugReport />}
                 >
-                  {showDetails ? '隐藏' : '显示'}技术详情
+                  {showDetails ? '隐藏' : '显示'}堆栈详情
                 </Button>
 
                 <Collapse in={showDetails}>

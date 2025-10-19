@@ -2,6 +2,9 @@ import React, { useEffect } from 'react';
 import { useDynamicIcon, useFaviconUpdater } from '@/hooks/useDynamicIcon';
 import { logger } from '@/utils';
 
+/**
+ * 动态图标组件属性接口
+ */
 interface DynamicIconProps {
   className?: string;
   style?: React.CSSProperties;
@@ -9,6 +12,14 @@ interface DynamicIconProps {
   manageFavicon?: boolean;
 }
 
+/**
+ * 动态图标组件
+ * 
+ * 根据当前主题自动切换图标，支持favicon管理。
+ * 
+ * @param props - 组件属性
+ * @returns React组件
+ */
 export const DynamicIcon: React.FC<DynamicIconProps> = ({
   className,
   style,
@@ -21,7 +32,7 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({
 
   useEffect(() => {
     if (manageFavicon) {
-      logger.info('🎨 动态favicon系统初始化完成');
+      logger.info('[DynamicIcon] 动态favicon系统初始化完成');
     }
   }, [manageFavicon]);
 
@@ -47,7 +58,7 @@ export const FaviconManager: React.FC = () => {
 
   // 添加调试信息
   React.useEffect(() => {
-    logger.info('🔧 FaviconManager初始化完成');
+    logger.info('[FaviconManager] 初始化完成');
   }, []);
 
   return null;

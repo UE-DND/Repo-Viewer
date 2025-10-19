@@ -18,8 +18,14 @@ import {
   ErrorOutline as ErrorIcon,
 } from "@mui/icons-material";
 
+/**
+ * 空状态类型
+ */
 export type EmptyStateType = "empty-directory" | "network-error" | "search-empty" | "general-error";
 
+/**
+ * 空状态组件属性接口
+ */
 interface EmptyStateProps {
   /** 空状态类型 */
   type: EmptyStateType;
