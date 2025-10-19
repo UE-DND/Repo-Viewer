@@ -104,16 +104,15 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
 
 ### Dev 预览
 
-想要查看项目的最新开发进度？通过 [Repo-Viewer/dev](https://repoviewer-dev.uednd.top) 可以预览 `dev` 分支的最新特性。
+想要查看项目的最新开发进度？通过 [Repo-Viewer/dev](https://repoviewer-dev.uednd.top) 预览 `dev` 分支的最新特性。
 
 ### 许可证
 
 本项目使用 **AGPL-3.0** 许可证。
 
 - ✅ 可以自由使用、修改和分发
-- ✅ 必须开源修改后的代码
-- ✅ 必须保留原作者版权信息
-- ⚠️ **网络部署也需要开源**
+- ⚠️ 必须开源修改后的代码并保留原作者版权信息
+- ⚠️ 网络部署也需要开源
 - ⚠️ 修改后的版本必须使用相同的 AGPL-3.0 许可证
 
 > 完整条款见 [[LICENSE](LICENSE)]
@@ -121,10 +120,6 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
 ### 贡献者
 
 [![贡献者](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
-
-### Vercel 加速支持
-
-[xingpingcn/enhanced-FaaS-in-China](https://github.com/xingpingcn/enhanced-FaaS-in-China)
 
 ### Stars
 

@@ -10,5 +10,4 @@ export interface MarkdownPreviewProps {
   onClose?: () => void;
   previewingItem?: GitHubContent | null;
   lazyLoad?: boolean;
-  onContentHeightChange?: (height: number) => void;
 }

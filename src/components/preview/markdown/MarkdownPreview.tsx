@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -40,14 +40,12 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     previewingItem,
     onClose,
     lazyLoad = true,
-    onContentHeightChange,
   }) => {
     const theme = useTheme();
 
     // 懒加载状态
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
     const markdownRef = useRef<HTMLDivElement>(null);
-    const paperRef = useRef<HTMLDivElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const hasInitializedThemeModeRef = useRef<boolean>(false);
     const isEventDrivenThemeChangeRef = useRef<boolean>(false);
@@ -59,8 +57,6 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     const [isThemeChanging, setIsThemeChanging] = useState<boolean>(false);
     // LaTeX公式数量
     const [latexCount, setLatexCount] = useState<number>(0);
-    const [intrinsicHeight, setIntrinsicHeight] = useState<number | null>(null);
-    const [isShortContent, setIsShortContent] = useState<boolean>(false);
     // 检测LaTeX公式数量的回调
     const handleLatexCheck = useCallback(() => {
       checkLatexCount(markdownRef, setLatexCount);
@@ -196,91 +192,6 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     // 创建LaTeX代码处理器
     const latexCodeHandler = createLatexCodeHandler();
 
-    useEffect(() => {
-      if (!shouldRender || !hasReadmeContent) {
-        return;
-      }
-
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      const paperElement = paperRef.current;
-
-      if (paperElement === null) {
-        return;
-      }
-
-      const MIN_INTRINSIC_HEIGHT = 140;
-      const MAX_INTRINSIC_HEIGHT = 3600;
-      const SHORT_CONTENT_THRESHOLD = 520;
-
-      const updateIntrinsicMetrics = (height: number): void => {
-        const normalizedHeight = Math.round(height);
-        if (!Number.isFinite(normalizedHeight) || normalizedHeight <= 0) {
-          return;
-        }
-
-        const clampedHeight = Math.min(
-          Math.max(normalizedHeight, MIN_INTRINSIC_HEIGHT),
-          MAX_INTRINSIC_HEIGHT,
-        );
-
-        setIntrinsicHeight(clampedHeight);
-        setIsShortContent(clampedHeight <= SHORT_CONTENT_THRESHOLD);
-
-        if (typeof onContentHeightChange === "function") {
-          onContentHeightChange(height);
-        }
-      };
-
-      const measure = (): void => {
-        const rect = paperElement.getBoundingClientRect();
-        updateIntrinsicMetrics(rect.height);
-      };
-
-      const frameId = window.requestAnimationFrame(measure);
-
-      if (typeof ResizeObserver === "undefined") {
-        window.addEventListener("resize", measure);
-        measure();
-
-        return () => {
-          window.cancelAnimationFrame(frameId);
-          window.removeEventListener("resize", measure);
-        };
-      }
-
-      const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          updateIntrinsicMetrics(entry.contentRect.height);
-        }
-      });
-
-      resizeObserver.observe(paperElement);
-
-      return () => {
-        window.cancelAnimationFrame(frameId);
-        resizeObserver.disconnect();
-      };
-    }, [shouldRender, hasReadmeContent, readmeContent, onContentHeightChange]);
-
-    useEffect(() => {
-      if (!hasReadmeContent) {
-        setIntrinsicHeight(null);
-        setIsShortContent(false);
-      }
-    }, [hasReadmeContent]);
-
-    const markdownStyles = useMemo(
-      () =>
-        createMarkdownStyles(theme, latexCount, isSmallScreen, {
-          intrinsicHeight,
-          isShortContent,
-        }),
-      [theme, latexCount, isSmallScreen, intrinsicHeight, isShortContent],
-    );
-
     if (loadingReadme) {
       return (
         <MarkdownPreviewSkeleton
@@ -296,7 +207,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
     return (
       <Box
-        sx={{ position: "relative", width: "100%" }}
+        sx={{ position: "relative", width: "100%", height: "100%" }}
         ref={markdownRef}
         data-oid="-q9nqss"
       >
@@ -342,9 +253,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
           square
           elevation={0}
           className={isThemeChanging ? "theme-transition-katex" : ""}
-          sx={markdownStyles}
-          data-preview-size={isShortContent ? "short" : "regular"}
-          ref={paperRef}
+          sx={createMarkdownStyles(theme, latexCount, isSmallScreen)}
           data-oid=":p7j.31"
         >
           {shouldRender && !isThemeChanging && (
