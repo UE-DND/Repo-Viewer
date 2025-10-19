@@ -1,6 +1,15 @@
 import React from 'react';
 import { CircularProgress, Box } from '@mui/material';
 
+/**
+ * 默认加载回退组件
+ * 
+ * 用于懒加载组件的默认加载状态显示。
+ * 
+ * @param props - 组件属性
+ * @param props.loadingText - 加载提示文本
+ * @returns React组件
+ */
 export const DefaultLoadingFallback: React.FC<{ loadingText?: string }> = ({
   loadingText
 }) => (

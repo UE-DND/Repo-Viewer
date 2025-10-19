@@ -14,10 +14,18 @@ import {
   type NavigationDirection,
 } from "./context";
 
+/**
+ * 应用上下文提供者组件属性接口
+ */
 interface AppContextProviderProps {
   children: ReactNode;
 }
 
+/**
+ * 应用上下文提供者组件
+ * 
+ * 统一管理应用的内容、预览和下载状态，为子组件提供全局上下文。
+ */
 export function AppContextProvider({ children }: AppContextProviderProps): ReactElement {
   const content = useGitHubContent();
   const { enqueueSnackbar } = useSnackbar();
@@ -33,6 +41,13 @@ export function AppContextProvider({ children }: AppContextProviderProps): React
     navigationDirection,
     repoOwner,
     repoName,
+    currentBranch,
+    defaultBranch,
+    branches,
+    branchLoading,
+    branchError,
+    setCurrentBranch,
+    refreshBranches,
     setCurrentPath,
     refreshContents,
   } = content;
@@ -81,6 +96,13 @@ export function AppContextProvider({ children }: AppContextProviderProps): React
       navigationDirection,
       repoOwner,
       repoName,
+      currentBranch,
+      defaultBranch,
+      branches,
+      branchLoading,
+      branchError,
+      setCurrentBranch,
+      refreshBranches,
       setCurrentPath,
       navigateTo,
       refresh,
@@ -98,6 +120,13 @@ export function AppContextProvider({ children }: AppContextProviderProps): React
       navigationDirection,
       repoOwner,
       repoName,
+      currentBranch,
+      defaultBranch,
+      branches,
+      branchLoading,
+      branchError,
+      setCurrentBranch,
+      refreshBranches,
       setCurrentPath,
       navigateTo,
       refresh,

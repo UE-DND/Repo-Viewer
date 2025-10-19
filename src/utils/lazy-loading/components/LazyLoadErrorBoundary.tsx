@@ -4,6 +4,11 @@ import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import type { LazyLoadErrorBoundaryProps, LazyLoadErrorBoundaryState } from '../types';
 import { logger } from '../../logging/logger';
 
+/**
+ * 懒加载错误边界组件
+ * 
+ * 捕获懒加载组件的错误，提供错误显示和重试功能。
+ */
 export class LazyLoadErrorBoundary extends React.Component<
   LazyLoadErrorBoundaryProps,
   LazyLoadErrorBoundaryState

@@ -14,6 +14,19 @@ const runtimeConfig = getRuntimeConfig();
 // 保持向后兼容
 const failedProxyServices = new Set<string>();
 
+/**
+ * 获取代理URL（异步版本）
+ * 
+ * 根据配置和健康状态选择最佳代理服务，将原始URL转换为代理URL。
+ * 支持优先级控制和自动重试。
+ * 
+ * @param url - 原始URL
+ * @param options - 代理选项
+ * @param options.priority - 请求优先级，默认为'medium'
+ * @param options.timeout - 超时时间
+ * @param options.retryCount - 重试次数
+ * @returns Promise，解析为代理URL
+ */
 async function getProxiedUrl(
   url: string,
   options: {
@@ -62,6 +75,14 @@ async function getProxiedUrl(
   return proxiedUrl;
 }
 
+/**
+ * 获取代理URL（同步版本）
+ * 
+ * 同步版本的代理URL获取，不进行健康检查。
+ * 
+ * @param url - 原始URL
+ * @returns 代理URL
+ */
 function getProxiedUrlSync(url: string): string {
   if (url === '') {
     return '';
@@ -83,6 +104,16 @@ function getProxiedUrlSync(url: string): string {
   return ProxyUrlTransformer.applyProxyToUrl(url, bestProxy);
 }
 
+/**
+ * 验证代理服务可用性
+ * 
+ * 发送HEAD请求测试代理服务是否正常工作。
+ * 
+ * @param proxyUrl - 代理服务URL
+ * @param timeout - 超时时间（毫秒）
+ * @returns Promise，验证成功时解析
+ * @throws 当代理服务不可用或超时时抛出错误
+ */
 async function validateProxy(proxyUrl: string, timeout: number): Promise<void> {
   const testUrl = `${proxyUrl}/ping`;
   const controller = new AbortController();
@@ -111,6 +142,14 @@ async function validateProxy(proxyUrl: string, timeout: number): Promise<void> {
   }
 }
 
+/**
+ * 标记代理服务失败
+ * 
+ * 记录代理服务失败状态，触发健康管理器更新。
+ * 
+ * @param proxyUrl - 失败的代理服务URL
+ * @returns void
+ */
 function markProxyServiceFailed(proxyUrl: string): void {
   if (proxyUrl !== '') {
     proxyHealthManager.recordFailure(proxyUrl);
@@ -122,11 +161,21 @@ function markProxyServiceFailed(proxyUrl: string): void {
   }
 }
 
+/**
+ * 获取当前代理服务
+ * 
+ * @returns 当前最佳代理服务URL
+ */
 function getCurrentProxyService(): string {
   const bestProxy = proxyHealthManager.getBestProxy();
   return bestProxy !== '' ? bestProxy : (PROXY_SERVICES[0] ?? '');
 }
 
+/**
+ * 获取代理健康统计信息
+ * 
+ * @returns 所有代理服务的健康状态数组
+ */
 function getProxyHealthStats(): {
   url: string;
   isHealthy: boolean;
@@ -137,6 +186,13 @@ function getProxyHealthStats(): {
   return proxyHealthManager.getHealthStats();
 }
 
+/**
+ * 重置失败的代理服务记录
+ * 
+ * 清除所有失败标记和健康状态，重新开始。
+ * 
+ * @returns void
+ */
 function resetFailedProxyServices(): void {
   failedProxyServices.clear();
 
@@ -145,6 +201,16 @@ function resetFailedProxyServices(): void {
   logger.info('已重置所有失败的代理服务记录，代理健康状态已完全重置');
 }
 
+/**
+ * 转换图片URL
+ * 
+ * 将Markdown中的图片URL转换为可访问的代理URL。
+ * 
+ * @param src - 图片源URL
+ * @param markdownFilePath - Markdown文件路径
+ * @param useTokenMode - 是否使用Token模式
+ * @returns 转换后的图片URL
+ */
 function transformImageUrl(
   src: string | undefined,
   markdownFilePath: string,
@@ -153,6 +219,11 @@ function transformImageUrl(
   return ProxyUrlTransformer.transformImageUrl(src, markdownFilePath, useTokenMode, getProxiedUrlSync);
 }
 
+/**
+ * 代理服务对象
+ * 
+ * 提供统一的代理URL获取和图片URL转换功能。
+ */
 export const ProxyService = {
   getProxiedUrl,
   getProxiedUrlSync,

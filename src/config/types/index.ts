@@ -1,3 +1,6 @@
+/**
+ * 应用配置接口
+ */
 export interface Config {
   site: {
     title: string;
@@ -47,7 +50,14 @@ export interface Config {
   };
 }
 
+/**
+ * 配置变更监听器类型
+ */
 export type ConfigChangeListener = (newConfig: Config, oldConfig: Config) => void;
+
+/**
+ * 配置调试信息接口
+ */
 export interface ConfigDebugInfo {
   loadedAt: string;
   environment: 'development' | 'production';

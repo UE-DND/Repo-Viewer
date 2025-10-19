@@ -1,6 +1,10 @@
 import { keyframes } from '@mui/system';
 
-// 旋转动画效果 - 用于刷新按钮
+/**
+ * 旋转动画
+ * 
+ * 用于刷新按钮的旋转效果。
+ */
 export const rotateAnimation = keyframes`
   from {
     transform: rotate(0deg);
@@ -10,7 +14,11 @@ export const rotateAnimation = keyframes`
   }
 `;
 
-// 脉冲动画效果 - 用于主题切换按钮
+/**
+ * 脉冲动画
+ * 
+ * 用于主题切换按钮的缩放脉冲效果。
+ */
 export const pulseAnimation = keyframes`
   0% {
     transform: scale(1);
@@ -23,7 +31,11 @@ export const pulseAnimation = keyframes`
   }
 `;
 
-// 刷新按钮组合动画 - 结合旋转和轻微缩放
+/**
+ * 刷新动画
+ * 
+ * 组合旋转和缩放效果，用于刷新按钮。
+ */
 export const refreshAnimation = keyframes`
   0% {
     transform: rotate(0deg) scale(1);
@@ -36,7 +48,11 @@ export const refreshAnimation = keyframes`
   }
 `;
 
-// 渐变动画效果 - 可用于过渡效果
+/**
+ * 淡入动画
+ * 
+ * 元素渐变显示效果。
+ */
 export const fadeAnimation = keyframes`
   from {
     opacity: 0;
@@ -46,7 +62,11 @@ export const fadeAnimation = keyframes`
   }
 `;
 
-// 淡出动画效果 - 用于元素退出时
+/**
+ * 淡出动画
+ * 
+ * 元素渐变消失效果。
+ */
 export const fadeOutAnimation = keyframes`
   from {
     opacity: 1;
@@ -56,7 +76,11 @@ export const fadeOutAnimation = keyframes`
   }
 `;
 
-// 弹跳动画效果 - 可用于提示用户注意
+/**
+ * 弹跳动画
+ * 
+ * 垂直弹跳效果，用于吸引用户注意。
+ */
 export const bounceAnimation = keyframes`
   0%, 100% {
     transform: translateY(0);
@@ -66,7 +90,11 @@ export const bounceAnimation = keyframes`
   }
 `;
 
-// 浮动动画效果 - 用于FAB按钮
+/**
+ * 浮动动画
+ * 
+ * 轻微浮动效果，用于FAB按钮。
+ */
 export const floatAnimation = keyframes`
   0%, 100% {
     transform: translateY(0px);
@@ -76,7 +104,11 @@ export const floatAnimation = keyframes`
   }
 `;
 
-// 缩放进入动画 - 用于空状态组件
+/**
+ * 缩放进入动画
+ * 
+ * 元素放大淡入效果，用于空状态组件。
+ */
 export const scaleInAnimation = keyframes`
   from {
     opacity: 0;

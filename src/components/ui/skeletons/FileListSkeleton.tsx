@@ -3,6 +3,9 @@ import { Box, Skeleton, useTheme, List, ListItem, ListItemIcon } from "@mui/mate
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
 
+/**
+ * 文件列表骨架屏组件属性接口
+ */
 interface FileListSkeletonProps {
   itemCount?: number;
   isSmallScreen?: boolean;
@@ -10,7 +13,11 @@ interface FileListSkeletonProps {
   onExited?: () => void;
 }
 
-// 文件列表骨架屏
+/**
+ * 文件列表骨架屏组件
+ * 
+ * 在文件列表加载时显示的占位骨架屏。
+ */
 export const FileListSkeleton: React.FC<FileListSkeletonProps> = ({
   itemCount = 10,
   isSmallScreen = false,

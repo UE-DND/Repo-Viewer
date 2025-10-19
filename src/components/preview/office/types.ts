@@ -2,6 +2,9 @@
 import { OfficeFileType } from '@/types';
 export { OfficeFileType };
 
+/**
+ * Office预览组件属性接口
+ */
 export interface OfficePreviewProps {
   /**
    * 文档URL地址

@@ -4,7 +4,14 @@ import type { Theme } from "@mui/material";
 import type { SystemStyleObject } from "@mui/system";
 import { fadeAnimation, fadeOutAnimation } from "@/theme/animations";
 
-// 获取骨架屏样式，使用当前主题颜色
+/**
+ * 获取骨架屏样式
+ * 
+ * 生成骨架屏的动画和颜色样式，使用当前主题颜色。
+ * 
+ * @param theme - Material-UI主题对象
+ * @returns 骨架屏样式对象
+ */
 export const getSkeletonStyles = (theme: Theme): SystemStyleObject<Theme> => ({
   backgroundColor: alpha(theme.palette.primary.main, 0.08),
   "&::after": {
@@ -24,7 +31,14 @@ export const getSkeletonStyles = (theme: Theme): SystemStyleObject<Theme> => ({
   },
 });
 
-// 创建获取容器过渡动画样式的函数，根据是否正在退出应用不同动画
+/**
+ * 获取容器过渡动画样式
+ * 
+ * 根据是否正在退出应用不同的动画效果。
+ * 
+ * @param isExiting - 是否正在退出
+ * @returns 过渡动画样式对象
+ */
 export const getContainerTransitionStyles = (isExiting: boolean): SystemStyleObject<Theme> => ({
   animation: isExiting
     ? `${fadeOutAnimation} 0.3s ease-in-out forwards`
@@ -34,6 +48,15 @@ export const getContainerTransitionStyles = (isExiting: boolean): SystemStyleObj
   transitionDelay: isExiting ? "0s" : "0.1s",
 });
 
+/**
+ * 骨架屏可见性Hook
+ * 
+ * 管理骨架屏的显示/隐藏状态和退出动画。
+ * 
+ * @param visible - 是否可见
+ * @param onExited - 退出完成后的回调函数
+ * @returns 是否正在退出
+ */
 export const useSkeletonVisibility = (visible: boolean, onExited?: () => void): boolean => {
   const [isExiting, setIsExiting] = useState(!visible);
 

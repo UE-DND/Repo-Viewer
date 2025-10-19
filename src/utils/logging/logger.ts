@@ -1,6 +1,13 @@
 import { getDeveloperConfig } from '@/config';
 
-// 开发者日志
+/**
+ * 判断是否应该输出日志
+ * 
+ * 根据开发者配置决定是否输出不同级别的日志。
+ * 
+ * @param level - 日志级别
+ * @returns 是否应该输出该级别的日志
+ */
 const shouldLog = (level: 'log' | 'info' | 'debug' | 'warn' | 'error' | 'group' | 'groupEnd'): boolean => {
   const { mode, consoleLogging } = getDeveloperConfig();
 
@@ -19,6 +26,12 @@ const shouldLog = (level: 'log' | 'info' | 'debug' | 'warn' | 'error' | 'group' 
   }
 };
 
+/**
+ * 日志记录器
+ * 
+ * 提供统一的日志输出接口，根据配置控制日志输出级别。
+ * 所有日志都带有'[App]'前缀以便区分。
+ */
 export const logger = {
   log: (...args: unknown[]) => {
     if (shouldLog('log')) {

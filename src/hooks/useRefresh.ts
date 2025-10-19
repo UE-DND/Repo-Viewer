@@ -5,6 +5,13 @@ import { logger } from '@/utils';
 
 const MIN_ANIMATION_DURATION = 600;
 
+/**
+ * 页面刷新Hook
+ * 
+ * 提供带动画效果的页面刷新功能，自动处理LaTeX元素的移除和恢复。
+ * 
+ * @returns 刷新函数
+ */
 export const useRefresh = (): (() => void) => {
   const { refresh, loading, currentPath } = useContentContext();
   const refreshTimerRef = useRef<number | null>(null);
@@ -12,10 +19,30 @@ export const useRefresh = (): (() => void) => {
   const startTimeRef = useRef<number>(0);
   const currentPathRef = useRef(currentPath);
   const refreshTargetPathRef = useRef<string | null>(null);
+  const isThemeChangingRef = useRef<boolean>(false);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
+
+  // 监听主题切换事件
+  useEffect(() => {
+    const handleThemeChanging = (): void => {
+      isThemeChangingRef.current = true;
+    };
+
+    const handleThemeChanged = (): void => {
+      isThemeChangingRef.current = false;
+    };
+
+    window.addEventListener('theme:changing', handleThemeChanging);
+    window.addEventListener('theme:changed', handleThemeChanged);
+
+    return () => {
+      window.removeEventListener('theme:changing', handleThemeChanging);
+      window.removeEventListener('theme:changed', handleThemeChanged);
+    };
+  }, []);
 
   useEffect(() => {
     if (refreshingRef.current && !loading) {
@@ -51,9 +78,9 @@ export const useRefresh = (): (() => void) => {
   }, [loading]);
 
   return useCallback(() => {
-    const isThemeChangeOnly = document.documentElement.getAttribute('data-theme-change-only') === 'true';
-    if (isThemeChangeOnly) {
-      logger.info('检测到主题切换操作，跳过内容刷新');
+    // 主题切换期间跳过刷新
+    if (isThemeChangingRef.current) {
+      logger.info('主题切换中，跳过内容刷新');
       return;
     }
 

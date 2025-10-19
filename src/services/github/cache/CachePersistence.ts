@@ -1,13 +1,29 @@
 import { logger } from '@/utils';
 import type { CacheConfig, CacheItemMeta } from './CacheTypes';
 
+/**
+ * 持久化存储句柄接口
+ */
 export interface PersistenceHandles {
   dbName: string;
   db: IDBDatabase | null;
 }
 
+/**
+ * 构建数据库名称
+ * 
+ * @param storageKey - 存储键名
+ * @returns 数据库名称
+ */
 export const buildDbName = (storageKey: string): string => `RepoViewerCache_${storageKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
+/**
+ * 确保对象存储已创建
+ * 
+ * @param db - IndexedDB数据库实例
+ * @param storageKey - 存储键名
+ * @returns void
+ */
 const ensureObjectStore = (db: IDBDatabase, storageKey: string): void => {
   if (db.objectStoreNames.contains(storageKey)) {
     return;
@@ -140,6 +156,14 @@ export async function deleteDatabase(dbName: string): Promise<void> {
   });
 }
 
+/**
+ * 从IndexedDB加载缓存项
+ * 
+ * @param db - IndexedDB数据库实例
+ * @param config - 缓存配置
+ * @param key - 缓存键
+ * @returns Promise，解析为缓存项元数据或undefined
+ */
 export function loadItemFromIndexedDB(db: IDBDatabase | null, config: CacheConfig, key: string): Promise<CacheItemMeta | undefined> {
   return withObjectStore<CacheItemMeta | undefined>(db, config, 'readonly', undefined, (store, resolve) => {
     const request = store.get(key);
@@ -153,6 +177,15 @@ export function loadItemFromIndexedDB(db: IDBDatabase | null, config: CacheConfi
   });
 }
 
+/**
+ * 保存缓存项到IndexedDB
+ * 
+ * @param db - IndexedDB数据库实例
+ * @param config - 缓存配置
+ * @param key - 缓存键
+ * @param item - 缓存项元数据
+ * @returns Promise，保存完成后解析
+ */
 export function saveItemToIndexedDB(db: IDBDatabase | null, config: CacheConfig, key: string, item: CacheItemMeta): Promise<void> {
   return withObjectStore(db, config, 'readwrite', undefined, (store, resolve) => {
     const request = store.put({ key, data: item, timestamp: item.timestamp, lastAccess: item.lastAccess });
@@ -165,6 +198,14 @@ export function saveItemToIndexedDB(db: IDBDatabase | null, config: CacheConfig,
   });
 }
 
+/**
+ * 从IndexedDB删除缓存项
+ * 
+ * @param db - IndexedDB数据库实例
+ * @param config - 缓存配置
+ * @param key - 缓存键
+ * @returns Promise，删除完成后解析
+ */
 export function deleteItemFromIndexedDB(db: IDBDatabase | null, config: CacheConfig, key: string): Promise<void> {
   return withObjectStore(db, config, 'readwrite', undefined, (store, resolve) => {
     const request = store.delete(key);
@@ -177,6 +218,13 @@ export function deleteItemFromIndexedDB(db: IDBDatabase | null, config: CacheCon
   });
 }
 
+/**
+ * 清空IndexedDB中的所有缓存
+ * 
+ * @param db - IndexedDB数据库实例
+ * @param config - 缓存配置
+ * @returns Promise，清空完成后解析
+ */
 export function clearIndexedDB(db: IDBDatabase | null, config: CacheConfig): Promise<void> {
   return withObjectStore(db, config, 'readwrite', undefined, (store, resolve) => {
     const request = store.clear();
@@ -189,6 +237,13 @@ export function clearIndexedDB(db: IDBDatabase | null, config: CacheConfig): Pro
   });
 }
 
+/**
+ * 从IndexedDB加载所有缓存项
+ * 
+ * @param db - IndexedDB数据库实例
+ * @param config - 缓存配置
+ * @returns Promise，解析为所有缓存项的数组
+ */
 export function loadAllFromIndexedDB(db: IDBDatabase | null, config: CacheConfig): Promise<{ key: string; data: CacheItemMeta; timestamp: number }[]> {
   return withObjectStore(db, config, 'readonly', [] as { key: string; data: CacheItemMeta; timestamp: number }[], (store, resolve) => {
     const request = store.getAll();
@@ -202,6 +257,13 @@ export function loadAllFromIndexedDB(db: IDBDatabase | null, config: CacheConfig
   });
 }
 
+/**
+ * 从LocalStorage加载缓存项
+ * 
+ * @param config - 缓存配置
+ * @param key - 缓存键
+ * @returns Promise，解析为缓存项元数据或undefined
+ */
 export function loadItemFromLocalStorage(config: CacheConfig, key: string): Promise<CacheItemMeta | undefined> {
   return new Promise((resolve) => {
     try {
@@ -218,6 +280,14 @@ export function loadItemFromLocalStorage(config: CacheConfig, key: string): Prom
   });
 }
 
+/**
+ * 保存缓存项到LocalStorage
+ * 
+ * @param config - 缓存配置
+ * @param key - 缓存键
+ * @param item - 缓存项元数据
+ * @returns Promise，保存完成后解析
+ */
 export function saveItemToLocalStorage(config: CacheConfig, key: string, item: CacheItemMeta): Promise<void> {
   return new Promise((resolve) => {
     try {
@@ -230,6 +300,13 @@ export function saveItemToLocalStorage(config: CacheConfig, key: string, item: C
   });
 }
 
+/**
+ * 从LocalStorage删除缓存项
+ * 
+ * @param config - 缓存配置
+ * @param key - 缓存键
+ * @returns Promise，删除完成后解析
+ */
 export function deleteItemFromLocalStorage(config: CacheConfig, key: string): Promise<void> {
   return new Promise((resolve) => {
     try {
@@ -242,6 +319,12 @@ export function deleteItemFromLocalStorage(config: CacheConfig, key: string): Pr
   });
 }
 
+/**
+ * 清空LocalStorage中的所有缓存
+ * 
+ * @param config - 缓存配置
+ * @returns Promise，清空完成后解析
+ */
 export function clearLocalStorage(config: CacheConfig): Promise<void> {
   return new Promise((resolve) => {
     try {

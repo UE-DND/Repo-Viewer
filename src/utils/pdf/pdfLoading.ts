@@ -1,5 +1,8 @@
 import type { Theme } from '@mui/material';
 
+/**
+ * PDF加载页面主题颜色接口
+ */
 export interface PDFLoadingThemeColors {
   primary: string;
   onPrimary: string;
@@ -14,6 +17,12 @@ export interface PDFLoadingThemeColors {
   isDark: boolean;
 }
 
+/**
+ * 从MUI主题提取PDF页面颜色
+ * 
+ * @param muiTheme - Material-UI主题对象
+ * @returns PDF主题颜色配置
+ */
 export const extractPDFThemeColors = (muiTheme: Theme): PDFLoadingThemeColors => {
   const palette = muiTheme.palette;
   return {
@@ -33,8 +42,9 @@ export const extractPDFThemeColors = (muiTheme: Theme): PDFLoadingThemeColors =>
 
 /**
  * 生成PDF加载页面的完整HTML内容
- * @param fileName PDF文件名
- * @param themeColors 主题色配置
+ * 
+ * @param fileName - PDF文件名
+ * @param themeColors - 主题色配置
  * @returns 完整的HTML字符串
  */
 export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoadingThemeColors): string => {
@@ -328,11 +338,12 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
 
 /**
  * 生成错误页面HTML
- * @param fileName PDF文件名
- * @param errorMessage 错误信息
- * @param downloadUrl 原始下载链接
- * @param themeColors 主题色配置
- * @returns 错误页面HTML
+ * 
+ * @param fileName - PDF文件名
+ * @param errorMessage - 错误信息
+ * @param downloadUrl - 原始下载链接
+ * @param themeColors - 主题色配置
+ * @returns 错误页面HTML字符串
  */
 export const generatePDFErrorHTML = (
   fileName: string,

@@ -1,6 +1,9 @@
 import React from "react";
 import { useTheme } from "@mui/material";
 
+/**
+ * Markdown链接组件属性接口
+ */
 interface MarkdownLinkProps
   extends Omit<
     React.AnchorHTMLAttributes<HTMLAnchorElement>,
@@ -11,6 +14,11 @@ interface MarkdownLinkProps
   children?: React.ReactNode;
 }
 
+/**
+ * Markdown链接组件
+ * 
+ * 自定义Markdown中的链接样式，自动添加外链属性。
+ */
 export const MarkdownLink: React.FC<MarkdownLinkProps> = ({
   href,
   children,

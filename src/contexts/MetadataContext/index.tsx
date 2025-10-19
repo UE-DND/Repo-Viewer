@@ -5,12 +5,18 @@ import {
   DEFAULT_METADATA,
 } from "./context";
 
-// SEO提供者组件属性类型
+/**
+ * 元数据提供者组件属性接口
+ */
 interface MetadataProviderProps {
   children: ReactNode;
 }
 
-// SEO提供者组件
+/**
+ * 元数据提供者组件
+ * 
+ * 管理页面元数据（标题、描述、关键词等），为SEO组件提供数据。
+ */
 export const MetadataProvider: React.FC<MetadataProviderProps> = ({
   children,
 }) => {

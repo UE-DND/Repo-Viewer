@@ -1,6 +1,9 @@
 import type { FC, ReactNode } from "react";
 import { Box, useTheme } from "@mui/material";
 
+/**
+ * 全屏预览组件属性接口
+ */
 interface FullScreenPreviewProps {
   children: ReactNode;
   onClose: () => void;
@@ -8,6 +11,11 @@ interface FullScreenPreviewProps {
   disablePadding?: boolean;
 }
 
+/**
+ * 全屏预览组件
+ * 
+ * 提供全屏模式的预览容器，支持点击背景关闭。
+ */
 const FullScreenPreview: FC<FullScreenPreviewProps> = ({
   children,
   onClose,

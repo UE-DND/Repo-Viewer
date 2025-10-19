@@ -1,7 +1,9 @@
 import React from "react";
 import NativeSEO from "./NativeSEO"; // 导入NativeSEO
 
-// 基础SEO组件属性类型
+/**
+ * SEO组件属性接口
+ */
 interface SEOProps {
   title?: string;
   description?: string;

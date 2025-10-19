@@ -6,11 +6,18 @@ import { createMaterialYouTheme } from "@/theme";
 import { ColorModeContext } from "@/contexts/colorModeContext";
 import { useThemeMode } from "@/hooks/useThemeMode";
 
+/**
+ * 主题提供者组件属性接口
+ */
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
-// 使用memo优化ThemeProvider组件，避免不必要的重新渲染
+/**
+ * 主题提供者组件
+ * 
+ * 为应用提供Material-UI主题和颜色模式管理功能。
+ */
 const ThemeProvider: React.FC<ThemeProviderProps> = React.memo(
   ({ children }) => {
     // 使用自定义hook获取主题模式

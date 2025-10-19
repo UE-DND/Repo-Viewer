@@ -178,6 +178,41 @@ const getRepoEnvConfig = (): RepoEnvConfig => {
   };
 };
 
+const getSingleQueryParam = (value: string | string[] | undefined): string | undefined => {
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value[0] : undefined;
+  }
+  return typeof value === 'string' ? value : undefined;
+};
+
+const parseBranchOverride = (value: string | string[] | undefined): string | undefined => {
+  const param = getSingleQueryParam(value);
+  if (param === undefined) {
+    return undefined;
+  }
+
+  const trimmed = param.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const parsePositiveInt = (value: string | string[] | undefined, fallback: number, maxValue?: number): number => {
+  const param = getSingleQueryParam(value);
+  if (param === undefined) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(param, 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  if (maxValue !== undefined) {
+    return Math.min(parsed, maxValue);
+  }
+
+  return parsed;
+};
+
 // 构建认证头
 function getAuthHeaders(): Record<string, string> {
   const token = tokenManager.getCurrentToken();
@@ -234,10 +269,19 @@ async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T
   }
 }
 
-// API处理函数
+/**
+ * GitHub API请求处理函数
+ * 
+ * 统一处理所有GitHub相关的API请求，包括获取内容、搜索、分支列表等。
+ * 支持token管理和自动轮换。
+ * 
+ * @param req - Vercel请求对象
+ * @param res - Vercel响应对象
+ * @returns Promise，处理完成后解析
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   try {
-    const { action, path, url } = req.query;
+    const { action, path, url, branch, page, per_page } = req.query;
 
     const actionParam = Array.isArray(action) ? action[0] : action;
 
@@ -269,13 +313,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return;
     }
 
-    // 获取仓库内容
-    if (actionParam === 'getContents') {
-      if (typeof path !== 'string') {
-        res.status(400).json({ error: '缺少path参数' });
-        return;
-      }
-
+    if (actionParam === 'getBranches') {
       const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
 
       if (repoOwner.length === 0 || repoName.length === 0) {
@@ -286,11 +324,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
-      const branch = repoBranch.length > 0 ? repoBranch : 'main';
+      const perPageValue = parsePositiveInt(per_page, 100, 100);
+      const pageValue = parsePositiveInt(page, 1);
+
+      const query = new URLSearchParams();
+      query.set('per_page', perPageValue.toString());
+      query.set('page', pageValue.toString());
+
+      const apiPath = `/repos/${repoOwner}/${repoName}/branches?${query.toString()}`;
+
+      try {
+        const response = await handleRequestWithRetry(() =>
+          axios.get<unknown>(`${GITHUB_API_BASE}${apiPath}`, {
+            headers: getAuthHeaders()
+          })
+        );
+
+        res.status(200).json({
+          status: 'success',
+          data: {
+            defaultBranch: repoBranch.length > 0 ? repoBranch : 'main',
+            branches: response.data
+          }
+        });
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        apiLogger.error('获取分支列表失败:', axiosError.message ?? '未知错误');
+
+        res.status(axiosError.response?.status ?? 500).json({
+          error: '获取分支列表失败',
+          message: axiosError.message ?? '未知错误'
+        });
+        return;
+      }
+    }
+
+    // 获取仓库内容
+    if (actionParam === 'getContents') {
+      if (typeof path !== 'string') {
+        res.status(400).json({ error: '缺少path参数' });
+        return;
+      }
+
+      const { repoOwner, repoName, repoBranch } = getRepoEnvConfig();
+      const branchOverride = parseBranchOverride(branch);
+
+      if (repoOwner.length === 0 || repoName.length === 0) {
+        res.status(500).json({
+          error: '仓库配置缺失',
+          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+        });
+        return;
+      }
+
+      const branchToUse = branchOverride ?? (repoBranch.length > 0 ? repoBranch : 'main');
+      const encodedBranch = encodeURIComponent(branchToUse);
 
       // 处理空路径
       const pathSegment = path === '' ? '' : `/${path}`;
-      const apiPath = `/repos/${repoOwner}/${repoName}/contents${pathSegment}?ref=${branch}`;
+      const apiPath = `/repos/${repoOwner}/${repoName}/contents${pathSegment}?ref=${encodedBranch}`;
 
       try {
         const response = await handleRequestWithRetry(() =>

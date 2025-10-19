@@ -8,6 +8,12 @@ import type { ImagePreviewProps, ImageToolbarProps } from './types';
 
 const NOOP: () => void = () => undefined;
 
+/**
+ * 图片预览组件
+ * 
+ * 提供图片预览功能，支持缩略图模式、全屏模式、懒加载等。
+ * 包含缩放、旋转、拖拽等交互功能。
+ */
 const ImagePreview: React.FC<ImagePreviewProps> = ({
   imageUrl,
   fileName,
