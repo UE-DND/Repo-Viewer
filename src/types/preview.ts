@@ -7,18 +7,6 @@
 import type { GitHubContent } from './index';
 
 /**
- * Office文件类型枚举
- */
-export enum OfficeFileType {
-  /** Word文档 */
-  WORD = "word",
-  /** Excel表格 */
-  EXCEL = "excel",
-  /** PowerPoint演示文稿 */
-  PPT = "ppt",
-}
-
-/**
  * 文件预览状态接口
  */
 export interface PreviewState {
@@ -34,14 +22,6 @@ export interface PreviewState {
   isImageFullscreen: boolean;
   loadingImagePreview: boolean;
   imageError: string | null;
-
-  // 统一的Office预览
-  officePreviewUrl: string | null;
-  previewingOfficeItem: GitHubContent | null;
-  loadingOfficePreview: boolean;
-  isOfficeFullscreen: boolean;
-  officeError: string | null;
-  officeFileType: OfficeFileType | null;
 }
 
 /**
@@ -58,11 +38,5 @@ export type PreviewAction =
   | { type: 'SET_IMAGE_PREVIEW', url: string | null, item: GitHubContent | null }
   | { type: 'SET_IMAGE_LOADING', loading: boolean }
   | { type: 'SET_IMAGE_ERROR', error: string | null }
-  | { type: 'SET_IMAGE_FULLSCREEN', fullscreen: boolean }
-
-  // Office预览操作
-  | { type: 'SET_OFFICE_PREVIEW', url: string | null, item: GitHubContent | null, fileType: OfficeFileType | null }
-  | { type: 'SET_OFFICE_LOADING', loading: boolean }
-  | { type: 'SET_OFFICE_ERROR', error: string | null }
-  | { type: 'SET_OFFICE_FULLSCREEN', fullscreen: boolean };
+  | { type: 'SET_IMAGE_FULLSCREEN', fullscreen: boolean };
 
