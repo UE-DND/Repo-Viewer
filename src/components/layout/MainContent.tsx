@@ -90,6 +90,29 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     });
   }, [contents]);
 
+  // 获取当前目录中的所有图片文件
+  const imageFiles = useMemo(() => {
+    return contents.filter((item) => {
+      if (item.type !== 'file') {
+        return false;
+      }
+      const fileName = item.name.toLowerCase();
+      return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].some(ext => 
+        fileName.endsWith(`.${ext}`)
+      );
+    });
+  }, [contents]);
+
+  // 获取当前预览图片的索引
+  const currentImageIndex = useMemo(() => {
+    if (previewState.previewingImageItem === null) {
+      return -1;
+    }
+    return imageFiles.findIndex(
+      (item) => item.path === previewState.previewingImageItem?.path
+    );
+  }, [imageFiles, previewState.previewingImageItem]);
+
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
     const segments: BreadcrumbSegment[] = [{ name: "Home", path: "" }];
@@ -157,6 +180,26 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     e.stopPropagation();
     cancelDownload();
   }, [cancelDownload]);
+
+  // 处理切换到上一张图片
+  const handlePreviousImage = useCallback(() => {
+    if (currentImageIndex > 0) {
+      const previousImage = imageFiles[currentImageIndex - 1];
+      if (previousImage !== undefined) {
+        void selectFile(previousImage);
+      }
+    }
+  }, [currentImageIndex, imageFiles, selectFile]);
+
+  // 处理切换到下一张图片
+  const handleNextImage = useCallback(() => {
+    if (currentImageIndex >= 0 && currentImageIndex < imageFiles.length - 1) {
+      const nextImage = imageFiles[currentImageIndex + 1];
+      if (nextImage !== undefined) {
+        void selectFile(nextImage);
+      }
+    }
+  }, [currentImageIndex, imageFiles, selectFile]);
 
   useEffect(() => {
     const segmentCount = breadcrumbSegments.length;
@@ -563,6 +606,10 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
               isFullScreen={true}
               onClose={closePreview}
               lazyLoad={false}
+              hasPrevious={currentImageIndex > 0}
+              hasNext={currentImageIndex >= 0 && currentImageIndex < imageFiles.length - 1}
+              onPrevious={handlePreviousImage}
+              onNext={handleNextImage}
               data-oid="yfv5ld-"
             />
           )}

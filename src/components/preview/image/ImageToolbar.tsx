@@ -44,8 +44,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 2,
-        p: 1.5,
+        gap: isSmallScreen ? 1 : 2,
+        p: isSmallScreen ? 1 : 1.5,
         bgcolor:
           theme.palette.mode === 'dark'
             ? alpha(theme.palette.background.paper, 0.7)
@@ -58,20 +58,23 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         left: 0,
         right: 0,
         zIndex: 100,
-        height: '72px',
-        paddingTop: '12px',
-        paddingBottom: '12px',
+        minHeight: isSmallScreen ? '64px' : '72px',
+        height: 'auto',
+        paddingTop: isSmallScreen ? '8px' : '12px',
+        paddingBottom: isSmallScreen ? '8px' : '12px',
         boxShadow:
           theme.palette.mode === 'dark'
             ? '0 -4px 12px rgba(0,0,0,0.2)'
             : '0 -4px 12px rgba(0,0,0,0.1)',
+        flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
         ...(fullScreenMode && {
-          paddingRight: '120px',
-          width: 'calc(100% - 48px)',
-          right: '24px',
-          left: '24px',
+          paddingRight: isSmallScreen ? '8px' : '120px',
+          paddingLeft: isSmallScreen ? '8px' : undefined,
+          width: isSmallScreen ? 'calc(100% - 16px)' : 'calc(100% - 48px)',
+          right: isSmallScreen ? '8px' : '24px',
+          left: isSmallScreen ? '8px' : '24px',
           borderRadius: g3BorderRadius(G3_PRESETS.card),
-          bottom: '16px',
+          bottom: isSmallScreen ? '8px' : '16px',
           border: '1px solid',
           borderColor: alpha(theme.palette.divider, 0.1),
         }),
@@ -83,9 +86,11 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: 2,
+          gap: isSmallScreen ? 0.75 : 2,
           width: '100%',
-          paddingLeft: '80px', // 为右侧关闭按钮平衡空间
+          paddingLeft: isSmallScreen ? 0 : '80px', // 为右侧关闭按钮平衡空间
+          flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
+          paddingRight: isSmallScreen ? '88px' : 0, // 为小屏幕的关闭按钮留出空间
         }}
         data-oid="wlz6pbm"
       >
@@ -252,9 +257,11 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         onClick={handleClosePreview}
         sx={{
           position: 'absolute',
-          right: theme.spacing(2),
+          right: isSmallScreen ? theme.spacing(1) : theme.spacing(2),
           borderRadius: closeButtonBorderRadius,
-          minWidth: '80px',
+          minWidth: isSmallScreen ? '64px' : '80px',
+          height: isSmallScreen ? '40px' : '48px',
+          fontSize: isSmallScreen ? '0.875rem' : '1rem',
           fontWeight: 'bold',
           backgroundColor:
             theme.palette.mode === 'dark'
@@ -268,6 +275,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
                 : alpha(theme.palette.primary.main, 0.9),
           },
           zIndex: theme.zIndex.modal + 50,
+          padding: isSmallScreen ? '8px 12px' : '8px 16px',
         }}
         data-oid="rqnqmvq"
       >

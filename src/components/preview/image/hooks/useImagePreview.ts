@@ -122,6 +122,23 @@ export const useImagePreview = ({
     setScale(newScale);
   }, []);
 
+  // 重置加载状态（用于图片切换）
+  const resetLoadingState = useCallback(() => {
+    // 总是先设置为加载中，具体的缓存检测由调用方处理
+    setLoading(true);
+    setError(false);
+    setRotation(0);
+    setScale(1);
+  }, []);
+
+  // 重置状态但不触发加载（用于缓存图片）
+  const resetStateForCachedImage = useCallback(() => {
+    setLoading(false);
+    setError(false);
+    setRotation(0);
+    setScale(1);
+  }, []);
+
   return {
     loading,
     error,
@@ -141,5 +158,7 @@ export const useImagePreview = ({
     handleImageError,
     handleTransformed,
     setError,
+    resetLoadingState,
+    resetStateForCachedImage,
   };
 };
