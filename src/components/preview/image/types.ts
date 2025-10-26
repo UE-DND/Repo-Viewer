@@ -54,6 +54,26 @@ export interface ImagePreviewProps {
    * 自定义样式
    */
   style?: React.CSSProperties | undefined;
+
+  /**
+   * 是否有上一张图片
+   */
+  hasPrevious?: boolean;
+
+  /**
+   * 是否有下一张图片
+   */
+  hasNext?: boolean;
+
+  /**
+   * 切换到上一张图片的回调
+   */
+  onPrevious?: (() => void) | undefined;
+
+  /**
+   * 切换到下一张图片的回调
+   */
+  onNext?: (() => void) | undefined;
 }
 
 /**
@@ -142,6 +162,14 @@ export interface ImagePreviewContentProps {
   onError: () => void;
   /** 缩放状态变化回调 */
   onTransformed: (scale: number) => void;
+  /** 是否有上一张图片 */
+  hasPrevious?: boolean;
+  /** 是否有下一张图片 */
+  hasNext?: boolean;
+  /** 切换到上一张图片的回调 */
+  onPrevious?: (() => void) | undefined;
+  /** 切换到下一张图片的回调 */
+  onNext?: (() => void) | undefined;
 }
 
 /**
@@ -184,4 +212,8 @@ export interface UseImagePreviewReturn {
   handleTransformed: (scale: number) => void;
   /** 设置错误状态 */
   setError: React.Dispatch<React.SetStateAction<boolean>>;
+  /** 重置加载状态（用于图片切换） */
+  resetLoadingState: () => void;
+  /** 重置状态但不触发加载（用于缓存图片） */
+  resetStateForCachedImage: () => void;
 }

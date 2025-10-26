@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
 import FullScreenPreview from '@/components/file/FullScreenPreview';
 import ImageThumbnail from './ImageThumbnail';
@@ -24,11 +24,16 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   lazyLoad = true,
   className,
   style,
+  hasPrevious = false,
+  hasNext = false,
+  onPrevious,
+  onNext,
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
   const displayFileName = normalizedFileName ?? '未知文件';
+  const prevImageUrlRef = useRef<string>(imageUrl);
 
   const {
     loading,
@@ -48,12 +53,34 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     handleImageError,
     handleTransformed,
     setError,
+    resetLoadingState,
+    resetStateForCachedImage,
   } = useImagePreview({
     isFullScreen,
     thumbnailMode,
     lazyLoad,
     onClose,
   });
+
+  // 监听图片URL变化，切换图片时重置加载状态
+  useEffect(() => {
+    if (prevImageUrlRef.current !== imageUrl) {
+      // 创建临时 Image 对象检测缓存
+      const testImg = new Image();
+      testImg.src = imageUrl;
+      
+      // 同步检查图片是否已缓存
+      if (testImg.complete && testImg.naturalHeight !== 0) {
+        // 图片已缓存，不显示骨架屏，直接重置为已加载状态
+        resetStateForCachedImage();
+      } else {
+        // 图片未缓存，显示骨架屏并开始加载
+        resetLoadingState();
+      }
+      
+      prevImageUrlRef.current = imageUrl;
+    }
+  }, [imageUrl, resetLoadingState, resetStateForCachedImage]);
 
   // 计算关闭按钮边框半径
   const closeButtonBorderRadius = useMemo(() => {
@@ -102,6 +129,10 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     onLoad: handleImageLoad,
     onError: handleImageError,
     onTransformed: handleTransformed,
+    hasPrevious,
+    hasNext,
+    onPrevious,
+    onNext,
   };
 
   // 缩略图模式
