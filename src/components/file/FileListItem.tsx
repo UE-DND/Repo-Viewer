@@ -40,6 +40,7 @@ interface FileListItemProps {
   handleCancelDownload: (e: React.MouseEvent) => void;
   currentPath: string;
   contents?: GitHubContent[];
+  isHighlighted?: boolean;
 }
 
 /**
@@ -76,12 +77,16 @@ function arePropsEqual(
   const contentsLengthUnchanged = 
     (prevProps.contents?.length ?? 0) === (nextProps.contents?.length ?? 0);
   
+  // 检查高亮状态
+  const highlightUnchanged = prevProps.isHighlighted === nextProps.isHighlighted;
+  
   // 所有关键 props 都未变化时返回 true（不重新渲染）
   return itemUnchanged && 
          downloadStateUnchanged && 
          pathUnchanged && 
          callbacksUnchanged &&
-         contentsLengthUnchanged;
+         contentsLengthUnchanged &&
+         highlightUnchanged;
 }
 
 /**
@@ -104,6 +109,7 @@ const FileListItem = memo<FileListItemProps>(
     handleCancelDownload,
     currentPath,
     contents = [], // 提供默认空数组值
+    isHighlighted = false,
   }) => {
     const theme = useTheme();
     const [isHoveringDownload, setIsHoveringDownload] = React.useState(false);
@@ -365,6 +371,12 @@ const FileListItem = memo<FileListItemProps>(
             borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.fileListItem),
             transition:
               "transform 0.1s ease-in-out, background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out",
+            // 高亮状态样式（应用悬停效果）
+            ...(isHighlighted && {
+              transform: "translateX(3px)",
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              boxShadow: `-1px 2px 3px ${alpha(theme.palette.common.black, 0.1)}`,
+            }),
             "&:hover": {
               transform: "translateX(3px)",
               backgroundColor: alpha(theme.palette.primary.main, 0.04),
