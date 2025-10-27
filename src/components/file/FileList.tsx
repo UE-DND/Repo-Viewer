@@ -389,7 +389,7 @@ const FileList = React.memo<FileListProps>(
   }) => {
     const { isScrolling, scrollSpeed, handleScroll: handleScrollEvent } = useOptimizedScroll({
       maxSamples: 5,
-      scrollEndDelay: 200,
+      scrollEndDelay: 1000, // 停止滚动后等待1秒
       fastScrollThreshold: 0.3
     });
     
