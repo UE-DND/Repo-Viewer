@@ -582,13 +582,21 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
         const pathPrefixRaw = mergedFilters.pathPrefix.trim();
         const pathPrefix = pathPrefixRaw === '' ? undefined : pathPrefixRaw;
 
-        const results = await GitHub.SearchIndex.search({
+        const searchIndexOptions: Parameters<typeof GitHub.SearchIndex.search>[0] = {
           keyword,
           branches: indexedBranches,
-          pathPrefix,
-          extensions: sanitizedExtensions.length > 0 ? sanitizedExtensions : undefined,
           limit: SEARCH_INDEX_DEFAULT_LIMIT
-        });
+        };
+
+        if (pathPrefix !== undefined) {
+          searchIndexOptions.pathPrefix = pathPrefix;
+        }
+
+        if (sanitizedExtensions.length > 0) {
+          searchIndexOptions.extensions = sanitizedExtensions;
+        }
+
+        const results = await GitHub.SearchIndex.search(searchIndexOptions);
 
         const took = performance.now() - startedAt;
         const items: RepoSearchItem[] = results.map(item => ({

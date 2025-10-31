@@ -21,7 +21,8 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  Typography
+  Typography,
+  type TextFieldProps
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -226,17 +227,22 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
     return `${items.length.toString()} 项结果 • ${(took).toFixed(1)} ms • ${mode === "search-index" ? "索引" : "GitHub API"}`;
   }, [search.searchResult]);
 
-  const handleOpenGithub = useCallback((item: RepoSearchItem) => {
-    const candidateUrl = typeof (item as { htmlUrl?: unknown }).htmlUrl === "string"
-      ? (item as { htmlUrl?: string }).htmlUrl
-      : ("html_url" in item && typeof (item as { html_url?: unknown }).html_url === "string"
-        ? (item as { html_url?: string }).html_url
-        : undefined);
+  const resolveItemHtmlUrl = useCallback((item: RepoSearchItem): string | undefined => {
+    if (typeof (item as { htmlUrl?: unknown }).htmlUrl === "string") {
+      return (item as { htmlUrl: string }).htmlUrl;
+    }
+    if ("html_url" in item && typeof item.html_url === "string") {
+      return item.html_url;
+    }
+    return undefined;
+  }, []);
 
+  const handleOpenGithub = useCallback((item: RepoSearchItem) => {
+    const candidateUrl = resolveItemHtmlUrl(item);
     if (typeof candidateUrl === "string" && candidateUrl.length > 0) {
       window.open(candidateUrl, "_blank", "noopener,noreferrer");
     }
-  }, []);
+  }, [resolveItemHtmlUrl]);
 
   const disableSearchButton = search.keyword.trim() === "";
 
@@ -319,13 +325,17 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
               onChange={(_event, value) => {
                 search.setBranchFilter(value);
               }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="限定分支"
-                  placeholder="默认使用当前分支"
-                />
-              )}
+              renderInput={(params) => {
+                const textFieldParams = params as unknown as TextFieldProps;
+                return (
+                  <TextField
+                    {...textFieldParams}
+                    size="small"
+                    label="限定分支"
+                    placeholder="默认使用当前分支"
+                  />
+                );
+              }}
               fullWidth
             />
           </Stack>
@@ -407,8 +417,11 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
           </Stack>
 
           <List sx={{ maxHeight: 400, overflowY: "auto" }}>
-            {search.searchResult?.items.map(item => (
-              <ListItem key={`${item.branch}:${item.path}`} disablePadding alignItems="flex-start">
+            {search.searchResult?.items.map(item => {
+              const githubUrl = resolveItemHtmlUrl(item);
+
+              return (
+                <ListItem key={`${item.branch}:${item.path}`} disablePadding alignItems="flex-start">
                 <ListItemButton
                   onClick={() => {
                     void handleResultClick(item);
@@ -432,7 +445,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                     }}
                   />
                 </ListItemButton>
-                {item.htmlUrl !== undefined && (
+                {githubUrl !== undefined && (
                   <Tooltip title="在 GitHub 中打开">
                     <IconButton
                       edge="end"
@@ -444,8 +457,9 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                     </IconButton>
                   </Tooltip>
                 )}
-              </ListItem>
-            ))}
+                </ListItem>
+              );
+            })}
             {search.searchResult !== null && search.searchResult.items.length === 0 && (
               <ListItem>
                 <ListItemText primary="暂无结果" secondary="尝试更换关键字或调整筛选条件" />
