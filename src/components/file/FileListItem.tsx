@@ -230,6 +230,14 @@ const FileListItem = memo<FileListItemProps>(
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "center",
+          "&:hover .file-download-action": {
+            opacity: 1,
+            pointerEvents: "auto",
+          },
+          "& .MuiListItemButton-root.Mui-focusVisible ~ .MuiListItemSecondaryAction-root .file-download-action": {
+            opacity: 1,
+            pointerEvents: "auto",
+          },
         }}
         secondaryAction={
           !shouldHideDownloadButton ? (
@@ -262,15 +270,26 @@ const FileListItem = memo<FileListItemProps>(
               }}
               data-oid="53unr1g"
             >
-              <span
-                style={{
-                  display: "inline-block",
+              <Box
+                component="span"
+                className="file-download-action"
+                sx={{
+                  display: "inline-flex",
                   cursor: "pointer",
                   position: "absolute",
                   right: "16px",
                   top: "50%",
                   transform: "translateY(-50%)",
                   zIndex: 2,
+                  opacity: {
+                    xs: 1,  // 移动端默认显示
+                    sm: isItemDownloading ? 1 : 0,  // 桌面端悬停显示
+                  },
+                  pointerEvents: {
+                    xs: "auto",  // 移动端始终可点击
+                    sm: isItemDownloading ? "auto" : "none",  // 桌面端悬停可点击
+                  },
+                  transition: "opacity 0.2s ease-in-out",
                 }}
                 onMouseEnter={handleDownloadMouseEnter}
                 onMouseLeave={handleDownloadMouseLeave}
@@ -356,7 +375,7 @@ const FileListItem = memo<FileListItemProps>(
                     <DownloadIcon fontSize="small" data-oid="9-.24f5" />
                   )}
                 </IconButton>
-              </span>
+              </Box>
             </Tooltip>
           ) : null
         }

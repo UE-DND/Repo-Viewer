@@ -2,7 +2,7 @@
 
 ***基于 Material Design 3设计风格的 GitHub仓库浏览应用***
 
-[**🖥️ 在线演示**](repoviewer.uednd.top)
+[**🖥️ 在线演示**](https://repoviewer.uednd.top)
 [**⚙️ Dev 预览**](https://repoviewer-dev.uednd.top)
 
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=white)
