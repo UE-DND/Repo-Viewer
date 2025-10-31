@@ -208,6 +208,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallSc
   "& .markdown-body pre": {
     marginTop: theme.spacing(0),
     marginBottom: theme.spacing(0),
+    padding: theme.spacing(0.5, 2),
     overflowX: "hidden",
     overflowY: "hidden",
     borderRadius: g3BorderRadius(G3_PRESETS.card),
@@ -227,6 +228,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallSc
     borderRadius: "inherit",
     border: `1px solid ${codeBorderColor}`,
     padding: theme.spacing(1.5, 1.75),
+    paddingRight: theme.spacing(2.75),
     color: textColor,
     boxSizing: "border-box",
     whiteSpace: "pre",

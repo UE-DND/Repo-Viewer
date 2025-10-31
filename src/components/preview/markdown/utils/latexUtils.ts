@@ -1,5 +1,6 @@
 import React from "react";
 import type { PropsWithChildren, ReactElement, HTMLAttributes, ClassAttributes } from "react";
+import { MarkdownCodeBlock } from "../components";
 import { countLatexElements } from "@/utils/rendering/latexOptimizer";
 import { logger } from "@/utils";
 
@@ -76,23 +77,13 @@ export const createLatexCodeHandler = (): (props: PropsWithChildren<LatexCodePro
     }
 
     if (shouldRenderAsBlock) {
-      return React.createElement(
-        "pre",
-        {
-          className: codeClassName,
-          tabIndex: 0,
-          "data-language": language ?? undefined,
-          "data-oid": "b48y9g3",
-        },
-        React.createElement(
-          "code",
-          {
-            className: codeClassName,
-            ...rest,
-          },
-          normalizedContent,
-        ),
-      );
+      return React.createElement(MarkdownCodeBlock, {
+        className: codeClassName,
+        language,
+        content: normalizedContent,
+        codeProps: rest,
+        dataOid: "b48y9g3",
+      });
     }
 
     return React.createElement(
