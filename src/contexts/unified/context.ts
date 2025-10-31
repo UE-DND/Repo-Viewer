@@ -1,5 +1,6 @@
 import { createContext, useContext, type Context, type RefObject } from "react";
 import type { GitHubContent, PreviewState, DownloadState } from "@/types";
+import type { RepoSearchState } from "@/hooks/github/useRepoSearch";
 
 /**
  * 导航方向类型
@@ -32,6 +33,7 @@ export interface ContentContextValue {
   refresh: () => void;
   handleRetry: () => void;
   findFileItemByPath: (pathOrFileName: string) => GitHubContent | undefined;
+  search: RepoSearchState;
 }
 
 /**

@@ -7,6 +7,8 @@ import { useBranchManagement } from './github/useBranchManagement';
 import { useContentLoading } from './github/useContentLoading';
 import { useReadmeContent } from './github/useReadmeContent';
 import { GitHub } from '@/services/github';
+import { useRepoSearch } from './github/useRepoSearch';
+import type { RepoSearchState } from './github/useRepoSearch';
 
 // 获取仓库信息
 const githubConfig = getGithubConfig();
@@ -42,6 +44,7 @@ export const useGitHubContent = (): {
   branchError: string | null;
   setCurrentBranch: (branch: string) => void;
   refreshBranches: () => Promise<void>;
+  search: RepoSearchState;
 } => {
   // 使用分支管理 Hook
   const branchState = useBranchManagement();
@@ -54,6 +57,12 @@ export const useGitHubContent = (): {
   
   // 使用 README 内容 Hook
   const readmeState = useReadmeContent(contentState.contents, pathState.currentPath, branchState.currentBranch);
+
+  const searchState = useRepoSearch({
+    currentBranch: branchState.currentBranch,
+    defaultBranch: DEFAULT_BRANCH,
+    branches: branchState.branches
+  });
 
   // 处理分支切换时的副作用
   const handleBranchChange = useCallback((branch: string) => {
@@ -100,6 +109,7 @@ export const useGitHubContent = (): {
     branchError: branchState.branchError,
     setCurrentBranch: handleBranchChange,
     refreshBranches: branchState.refreshBranches,
+    search: searchState,
     
     // 仓库信息
     repoOwner: GITHUB_REPO_OWNER,

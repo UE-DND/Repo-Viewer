@@ -19,6 +19,7 @@ export {
   getSiteConfig,
   getGithubConfig,
   getFeaturesConfig,
+  getSearchIndexConfig,
   getProxyConfig,
   getAccessConfig,
   getDeveloperConfig,
@@ -26,6 +27,7 @@ export {
   getTokensConfig,
   isDeveloperMode,
   isTokenMode,
+  isSearchIndexEnabled,
   isDevEnvironment,
   getGithubPATs
 } from './utils/config-accessors';

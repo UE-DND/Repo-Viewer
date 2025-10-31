@@ -30,6 +30,13 @@ export const getGithubConfig = (): Config['github'] => getConfig().github;
 export const getFeaturesConfig = (): Config['features'] => getConfig().features;
 
 /**
+ * 获取搜索索引配置
+ *
+ * @returns 搜索索引功能配置
+ */
+export const getSearchIndexConfig = (): Config['features']['searchIndex'] => getConfig().features.searchIndex;
+
+/**
  * 获取代理配置
  * 
  * @returns 代理相关配置
@@ -77,6 +84,13 @@ export const isDeveloperMode = (): boolean => getConfig().developer.mode;
  * @returns 如果启用Token模式返回true
  */
 export const isTokenMode = (): boolean => getConfig().access.useTokenMode;
+
+/**
+ * 检查是否启用搜索索引模式
+ *
+ * @returns 如果启用搜索索引返回true
+ */
+export const isSearchIndexEnabled = (): boolean => getSearchIndexConfig().enabled;
 
 /**
  * 检查是否为开发环境

@@ -3,6 +3,7 @@ export * from './apiSchemas';
 
 // 数据转换器
 export * from './dataTransformers';
+export * from './searchIndexSchemas';
 
 export {
   // 验证函数
@@ -31,3 +32,18 @@ export {
   validateGitHubContentsArray,
   validateGitHubContentItem
 } from './dataTransformers';
+
+export {
+  SearchIndexManifestSchema,
+  SearchIndexBranchEntrySchema,
+  SearchIndexFileDescriptorSchema,
+  SearchIndexDocumentSchema,
+  SearchIndexFileEntrySchema,
+  safeValidateSearchIndexManifest,
+  safeValidateSearchIndexDocument,
+  type SearchIndexManifest,
+  type SearchIndexBranchEntry,
+  type SearchIndexFileDescriptor,
+  type SearchIndexDocument,
+  type SearchIndexFileEntry
+} from './searchIndexSchemas';

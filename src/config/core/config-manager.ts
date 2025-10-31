@@ -208,6 +208,25 @@ export class ConfigManager {
     if (config.site.title.trim() === '') {
       throw new Error('站点配置不完整：缺少 title');
     }
+
+    const { searchIndex } = config.features;
+    if (searchIndex.enabled) {
+      if (searchIndex.indexBranch.trim() === '') {
+        throw new Error('搜索索引配置不完整：缺少 indexBranch');
+      }
+
+      if (searchIndex.defaultBranch.trim() === '') {
+        throw new Error('搜索索引配置不完整：缺少 defaultBranch');
+      }
+
+      if (searchIndex.manifestPath.trim() === '') {
+        throw new Error('搜索索引配置不完整：缺少 manifestPath');
+      }
+
+      if (searchIndex.refreshIntervalMs < CONFIG_DEFAULTS.SEARCH_INDEX_MIN_REFRESH_INTERVAL_MS) {
+        throw new Error(`搜索索引配置不合法：refreshIntervalMs 不得小于 ${CONFIG_DEFAULTS.SEARCH_INDEX_MIN_REFRESH_INTERVAL_MS.toString()}ms`);
+      }
+    }
   }
 
   // 从环境变量加载配置
@@ -221,6 +240,38 @@ export class ConfigManager {
       resolveEnvWithMapping(stringEnv, 'CONSOLE_LOGGING', 'false')
     );
 
+    const repoOwner = resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_OWNER', CONFIG_DEFAULTS.GITHUB_REPO_OWNER);
+    const repoName = resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_NAME', CONFIG_DEFAULTS.GITHUB_REPO_NAME);
+    const repoBranch = resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_BRANCH', CONFIG_DEFAULTS.GITHUB_REPO_BRANCH);
+
+    const searchIndexEnabled = EnvParser.parseBoolean(
+      resolveEnvWithMapping(stringEnv, 'REPO_VIEWER_SEARCH_INDEX_ENABLED', 'false')
+    );
+    const searchIndexIndexBranch = resolveEnvWithMapping(
+      stringEnv,
+      'REPO_VIEWER_SEARCH_INDEX_BRANCH',
+      CONFIG_DEFAULTS.SEARCH_INDEX_BRANCH
+    );
+    const searchIndexDefaultBranch = resolveEnvWithMapping(
+      stringEnv,
+      'REPO_VIEWER_SEARCH_DEFAULT_BRANCH',
+      repoBranch
+    );
+    const searchIndexManifestPath = resolveEnvWithMapping(
+      stringEnv,
+      'REPO_VIEWER_SEARCH_MANIFEST_PATH',
+      CONFIG_DEFAULTS.SEARCH_INDEX_MANIFEST_PATH
+    );
+    const searchIndexRefreshIntervalMs = EnvParser.parseInteger(
+      resolveEnvWithMapping(
+        stringEnv,
+        'REPO_VIEWER_SEARCH_REFRESH_INTERVAL_MS',
+        CONFIG_DEFAULTS.SEARCH_INDEX_REFRESH_INTERVAL_MS.toString()
+      ),
+      CONFIG_DEFAULTS.SEARCH_INDEX_REFRESH_INTERVAL_MS,
+      { min: CONFIG_DEFAULTS.SEARCH_INDEX_MIN_REFRESH_INTERVAL_MS }
+    );
+
     const config: Config = {
       site: {
         title: resolveEnvWithMapping(stringEnv, 'SITE_TITLE', CONFIG_DEFAULTS.SITE_TITLE),
@@ -229,9 +280,9 @@ export class ConfigManager {
         ogImage: resolveEnvWithMapping(stringEnv, 'SITE_OG_IMAGE', CONFIG_DEFAULTS.SITE_OG_IMAGE)
       },
       github: {
-        repoOwner: resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_OWNER', CONFIG_DEFAULTS.GITHUB_REPO_OWNER),
-        repoName: resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_NAME', CONFIG_DEFAULTS.GITHUB_REPO_NAME),
-        repoBranch: resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_BRANCH', CONFIG_DEFAULTS.GITHUB_REPO_BRANCH)
+        repoOwner,
+        repoName,
+        repoBranch
       },
       features: {
         homepageFilter: {
@@ -242,6 +293,13 @@ export class ConfigManager {
         hideDownload: {
           enabled: EnvParser.parseBoolean(resolveEnvWithMapping(stringEnv, 'HIDE_MAIN_FOLDER_DOWNLOAD', 'false')),
           hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(stringEnv, 'HIDE_DOWNLOAD_FOLDERS', ''))
+        },
+        searchIndex: {
+          enabled: searchIndexEnabled,
+          indexBranch: searchIndexIndexBranch,
+          defaultBranch: searchIndexDefaultBranch,
+          manifestPath: searchIndexManifestPath,
+          refreshIntervalMs: searchIndexRefreshIntervalMs
         }
       },
       proxy: {
