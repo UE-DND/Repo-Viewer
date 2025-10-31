@@ -62,6 +62,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     navigateTo,
     repoOwner,
     repoName,
+    currentBranch,
   } = useContentContext();
 
   const {
@@ -522,6 +523,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   loadingReadme={false}
                   isSmallScreen={isSmallScreen}
                   lazyLoad={false}
+                  currentBranch={currentBranch}
                   data-oid="6nohd:r"
                 />
               ) : readmeLoaded ? (
@@ -580,6 +582,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   previewingItem={previewState.previewingItem}
                   onClose={closePreview}
                   lazyLoad={false}
+                  currentBranch={currentBranch}
                   data-oid="md-file-preview"
                 />
               </Box>

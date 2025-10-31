@@ -209,14 +209,16 @@ function resetFailedProxyServices(): void {
  * @param src - 图片源URL
  * @param markdownFilePath - Markdown文件路径
  * @param useTokenMode - 是否使用Token模式
+ * @param branch - 分支名称（可选）
  * @returns 转换后的图片URL
  */
 function transformImageUrl(
   src: string | undefined,
   markdownFilePath: string,
-  useTokenMode: boolean
+  useTokenMode: boolean,
+  branch?: string
 ): string | undefined {
-  return ProxyUrlTransformer.transformImageUrl(src, markdownFilePath, useTokenMode, getProxiedUrlSync);
+  return ProxyUrlTransformer.transformImageUrl(src, markdownFilePath, useTokenMode, getProxiedUrlSync, branch);
 }
 
 /**

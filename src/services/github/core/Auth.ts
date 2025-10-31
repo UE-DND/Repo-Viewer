@@ -175,10 +175,11 @@ export function resetFailedProxyServices(): void {
  * @param src - 原始图片URL（可能是相对路径）
  * @param markdownFilePath - Markdown文件的路径
  * @param useTokenMode - 是否使用Token模式
+ * @param branch - 分支名称（可选）
  * @returns 转换后的绝对URL，如果输入为undefined则返回undefined
  */
-export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean): string | undefined {
-  return ProxyService.transformImageUrl(src, markdownFilePath, useTokenMode);
+export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean, branch?: string): string | undefined {
+  return ProxyService.transformImageUrl(src, markdownFilePath, useTokenMode, branch);
 }
 
 /**

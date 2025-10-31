@@ -22,6 +22,7 @@ interface MarkdownImageProps
   style?: React.CSSProperties | undefined;
   previewingItem: GitHubContent | null;
   imageState: ImageLoadingState;
+  currentBranch?: string | undefined;
 }
 
 /**
@@ -35,6 +36,7 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
   style,
   previewingItem,
   imageState,
+  currentBranch,
   ...rest
 }) => {
   const normalizedSrc = typeof src === "string" ? src.trim() : "";
@@ -43,7 +45,7 @@ export const MarkdownImage: React.FC<MarkdownImageProps> = ({
     normalizedSrc.length > 0 && imageState.failedImages.has(normalizedSrc)
   );
 
-  const { imgSrc, originalSrc } = transformImageSrc(src, previewingItem);
+  const { imgSrc, originalSrc } = transformImageSrc(src, previewingItem, currentBranch);
   const sanitizedImgSrc = imgSrc.trim();
   const sanitizedOriginalSrc = originalSrc.trim();
   const stateKey =

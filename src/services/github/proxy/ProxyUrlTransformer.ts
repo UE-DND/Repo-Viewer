@@ -95,55 +95,56 @@ function applyProxyToUrl(url: string, proxyUrl: string): string {
  * @param markdownFilePath - Markdown文件路径
  * @param useTokenMode - 是否使用Token模式
  * @param getProxiedUrlSync - 同步获取代理URL的函数
+ * @param branch - 分支名称（可选），未提供时使用当前分支
  * @returns 转换后的图片URL
  */
 function transformImageUrl(
   src: string | undefined,
   markdownFilePath: string,
   useTokenMode: boolean,
-  getProxiedUrlSync: (url: string) => string
+  getProxiedUrlSync: (url: string) => string,
+  branch?: string
 ): string | undefined {
   if (src === undefined || src === '') {
     return undefined;
   }
 
   try {
-    logger.debug('转换前图片URL:', src);
-    logger.debug('Markdown文件路径:', markdownFilePath);
+    const normalizedSrc = src.replace(/\\/g, '/');
 
-    if (getForceServerProxy() && src.startsWith('http')) {
+    if (getForceServerProxy() && normalizedSrc.startsWith('http')) {
       try {
-        const host = new URL(src).hostname;
+        const host = new URL(normalizedSrc).hostname;
         if (!isGithubHost(host)) {
-          logger.debug('强制模式下的非GitHub域名，直接返回原URL:', src);
-          return src;
+          logger.debug('强制模式下的非GitHub域名，直接返回原URL:', normalizedSrc);
+          return normalizedSrc;
         }
       } catch (_error) {
         logger.warn('强制模式解析URL失败，按GitHub域名处理');
       }
 
-      const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(src)}`;
+      const proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(normalizedSrc)}`;
       logger.debug('使用服务端API代理:', proxyUrl);
       return proxyUrl;
     }
 
-    if (src.startsWith('http')) {
+    if (normalizedSrc.startsWith('http')) {
       try {
-        const host = new URL(src).hostname;
+        const host = new URL(normalizedSrc).hostname;
         if (!isGithubHost(host)) {
-          return src;
+          return normalizedSrc;
         }
       } catch (_error) {
         logger.warn('解析图片URL主机失败，按原逻辑处理');
       }
 
       if (useTokenMode || !runtimeConfig.isDev) {
-        const proxyUrl = getProxiedUrlSync(src);
+        const proxyUrl = getProxiedUrlSync(normalizedSrc);
         logger.debug('绝对URL使用代理:', proxyUrl);
         return proxyUrl;
       }
-      logger.debug('直接使用绝对URL:', src);
-      return src;
+      logger.debug('直接使用绝对URL:', normalizedSrc);
+      return normalizedSrc;
     }
 
     const dirPath = getDirectoryPath(markdownFilePath);
@@ -151,13 +152,13 @@ function transformImageUrl(
 
     let fullPath: string;
 
-    if (src.startsWith('./')) {
-      fullPath = `${dirPath}/${src.substring(2)}`;
+    if (normalizedSrc.startsWith('./')) {
+      fullPath = `${dirPath}/${normalizedSrc.substring(2)}`;
       logger.debug('当前目录相对路径 (./):', fullPath);
-    } else if (src.startsWith('../')) {
+    } else if (normalizedSrc.startsWith('../')) {
       const pathSegments = dirPath === '' ? [] : dirPath.split('/');
       let parentDirCount = 0;
-      let remainingSrc = src;
+      let remainingSrc = normalizedSrc;
 
       while (remainingSrc.startsWith('../')) {
         parentDirCount += 1;
@@ -168,11 +169,11 @@ function transformImageUrl(
       const newBasePath = pathSegments.slice(0, newPathLength).join('/');
       fullPath = newBasePath === '' ? remainingSrc : `${newBasePath}/${remainingSrc}`;
       logger.debug('上级目录相对路径 (../):', fullPath);
-    } else if (src.startsWith('/')) {
-      fullPath = src.substring(1);
+    } else if (normalizedSrc.startsWith('/')) {
+      fullPath = normalizedSrc.substring(1);
       logger.debug('根目录绝对路径 (/):', fullPath);
     } else {
-      fullPath = dirPath === '' ? src : `${dirPath}/${src}`;
+      fullPath = dirPath === '' ? normalizedSrc : `${dirPath}/${normalizedSrc}`;
       logger.debug('当前目录相对路径(无前缀):', fullPath);
     }
 
@@ -198,8 +199,10 @@ function transformImageUrl(
       }
     }
 
-    const branch = getCurrentBranch();
-    const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${fullPath}`;
+    // 使用传入的分支，如果没有则使用当前分支
+    const activeBranch = branch ?? getCurrentBranch();
+    const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${activeBranch}/${fullPath}`;
+    logger.debug('使用的分支:', activeBranch);
     logger.debug('构建的原始URL:', rawUrl);
 
     if (useTokenMode || !runtimeConfig.isDev) {
@@ -212,7 +215,8 @@ function transformImageUrl(
     return rawUrl;
   } catch (error) {
     logger.error('转换图片URL失败:', error);
-    return src;
+    // 即使转换失败也返回规范化后的路径
+    return src.replace(/\\/g, '/');
   }
 }
 
