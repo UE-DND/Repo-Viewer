@@ -79,16 +79,20 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     cancelDownload,
   } = useDownloadContext();
 
-  // 检测当前目录中是否有README.md文件
-  const hasReadmeFile = useMemo(() => {
-    return contents.some((item) => {
+  // 获取当前目录中的 README 文件，用于统一 Markdown 渲染逻辑
+  const readmeFileItem = useMemo<GitHubContent | null>(() => {
+    const target = contents.find((item) => {
       if (item.type !== 'file') {
         return false;
       }
       const fileName = item.name.toLowerCase();
       return ['readme.md', 'readme.markdown', 'readme.mdown'].includes(fileName);
     });
+
+    return target ?? null;
   }, [contents]);
+
+  const hasReadmeFile = readmeFileItem !== null;
 
   // 获取当前目录中的所有图片文件
   const imageFiles = useMemo(() => {
@@ -524,6 +528,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   isSmallScreen={isSmallScreen}
                   lazyLoad={false}
                   currentBranch={currentBranch}
+                  previewingItem={readmeFileItem}
                   data-oid="6nohd:r"
                 />
               ) : readmeLoaded ? (
