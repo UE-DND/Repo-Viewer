@@ -1,0 +1,64 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    reviewers:
+      - "UE-DND"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "production"
+      - dependency-type: "development"
+    versioning-strategy: increase
+    target-branch: "dev"
+
+    groups:
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      mui:
+        patterns:
+          - "@mui/*"
+          - "@emotion/*"
+      build-tools:
+        patterns:
+          - "vite*"
+          - "rolldown*"
+          - "typescript"
+          - "eslint*"
+          - "@vitejs/*"
+      markdown:
+        patterns:
+          - "react-markdown"
+          - "remark-*"
+          - "rehype-*"
+          - "katex*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "automated"
+    target-branch: "dev"
+

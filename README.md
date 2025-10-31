@@ -1,6 +1,28 @@
 # Repo-Viewer
 
-***基于MD3设计风格的GitHub仓库浏览应用***
+***基于 Material Design 3设计风格的 GitHub仓库浏览应用***
+
+[**🖥️ 在线演示**](repoviewer.uednd.top)
+[**⚙️ Dev 预览**](https://repoviewer-dev.uednd.top)
+
+![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7.1.19-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.17-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Material-UI](https://img.shields.io/badge/Material--UI-7.0.2-007FFF?style=for-the-badge&logo=mui&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.14.0-0055FF?style=for-the-badge&logo=framer&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-1.9.0-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-4.1.9-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+
+![Preview Dark](docs/image/dark.png)
+
+<table>
+  <tr>
+    <td><img alt="" src="docs/image/phone_1.png"></td>
+    <td><img alt="" src="docs/image/phone_2.png"></td>
+    <td><img alt="" src="docs/image/phone_3.png"></td>
+  <tr>
+</table>
 
 ### 主要功能
 
@@ -119,7 +141,7 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
 
 ### 贡献者
 
-[![贡献者](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
 
 ### Stars
 
