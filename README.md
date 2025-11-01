@@ -91,6 +91,9 @@ HOMEPAGE_ALLOWED_FILETYPES = md, pdf, txt             # 允许在首页显示的
 HIDE_MAIN_FOLDER_DOWNLOAD = true||false               # 隐藏首页的主文件夹下载按钮
 HIDE_DOWNLOAD_FOLDERS = folder1, folder2              # 首页上需要隐藏下载按钮的文件夹，可用逗号分隔
 
+# 页脚显示控制
+FOOTER_LEFT_TEXT = [text](link)                       # 页脚左侧自定义信息，支持 Markdown 链接格式，默认为空
+
 # 文件下载代理设置（仅用于下载功能，不影响内容浏览）
 DOWNLOAD_PROXY_URL =                                  # 下载主代理URL
 DOWNLOAD_PROXY_URL_BACKUP1 =                          # 下载备用代理URL1
