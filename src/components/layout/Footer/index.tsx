@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Typography,
@@ -7,17 +7,50 @@ import {
   useTheme,
 } from "@mui/material";
 import { BranchSwitcher } from "@/components/ui";
+import { getFeaturesConfig } from "@/config";
 
 declare const __APP_VERSION__: string;
 
 /**
+ * 解析页脚左侧文本配置
+ * 支持格式：
+ * - "[文本](链接)" - 显示可点击的链接
+ * - "纯文本" - 显示纯文本
+ * - "" - 不显示
+ */
+const parseFooterLeftText = (text: string): { type: 'link'; content: string; href: string } | { type: 'text'; content: string } | { type: 'empty' } => {
+  if (text.trim() === '') {
+    return { type: 'empty' };
+  }
+
+  // 匹配 Markdown 链接格式: [文本](链接)
+  const linkRegex = /^\[(.+?)\]\((.+?)\)$/;
+  const linkMatch = linkRegex.exec(text);
+  if (linkMatch?.[1] !== undefined && linkMatch[1] !== '' && linkMatch[2] !== undefined && linkMatch[2] !== '') {
+    return {
+      type: 'link',
+      content: linkMatch[1],
+      href: linkMatch[2]
+    };
+  }
+
+  return { type: 'text', content: text };
+};
+
+/**
  * 页脚组件
  * 
- * 显示应用底部信息，包括分支切换器、版权信息和ICP备案。
+ * 显示应用底部信息，包括分支切换器、版权信息和自定义左侧信息。
  */
 const Footer: React.FC = () => {
   const version = __APP_VERSION__;
   const theme = useTheme();
+  const featuresConfig = getFeaturesConfig();
+  const footerLeftConfig = useMemo(
+    () => parseFooterLeftText(featuresConfig.footer.leftText),
+    [featuresConfig.footer.leftText]
+  );
+  const showFooterLeftElement = footerLeftConfig.type !== 'empty';
 
   return (
     <Box
@@ -59,7 +92,7 @@ const Footer: React.FC = () => {
             <BranchSwitcher showLabel={true} />
           </Box>
 
-          {/* 移动端：萌ICP备和RepoViewer信息在一行 / 桌面端：萌ICP备 */}
+          {/* 移动端：自定义左侧信息和RepoViewer信息在一行 / 桌面端：自定义左侧信息 */}
           <Box
             sx={{
               display: { xs: "flex", sm: "flex" },
@@ -67,40 +100,57 @@ const Footer: React.FC = () => {
               justifyContent: { xs: "center", sm: "flex-start" },
               order: { xs: 1, sm: 1 },
               flexWrap: "wrap",
-              gap: { xs: 0.75, sm: 0 },
+              gap: { xs: showFooterLeftElement ? 0.75 : 0, sm: 0 },
+              visibility: { xs: "visible", sm: showFooterLeftElement ? "visible" : "hidden" },
             }}
             data-oid="3z6-ik7"
           >
-            {/* 萌ICP备 */}
-            <Link
-              href="https://icp.gov.moe/?keyword=20251940"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                textDecoration: "none",
-                fontSize: { xs: "0.6875rem", sm: "0.75rem" },
-                color: "text.secondary",
-                transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": {
-                  color: theme.palette.primary.main,
-                },
-              }}
-            >
-              萌ICP备 20251940号
-            </Link>
+            {/* 自定义左侧信息 */}
+            {showFooterLeftElement && footerLeftConfig.type === 'link' ? (
+              <Link
+                href={footerLeftConfig.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  textDecoration: "none",
+                  fontSize: { xs: "0.6875rem", sm: "0.75rem" },
+                  color: "text.secondary",
+                  transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                  },
+                }}
+              >
+                {footerLeftConfig.content}
+              </Link>
+            ) : null}
+
+            {showFooterLeftElement && footerLeftConfig.type === 'text' ? (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  fontSize: { xs: "0.6875rem", sm: "0.75rem" },
+                }}
+              >
+                {footerLeftConfig.content}
+              </Typography>
+            ) : null}
 
             {/* 分隔符 - 仅移动端显示 */}
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                display: { xs: "inline", sm: "none" },
-                fontSize: { xs: "0.6875rem", sm: "0.75rem" },
-                mx: { xs: 0.375, sm: 0.5 },
-              }}
-            >
-              •
-            </Typography>
+            {showFooterLeftElement ? (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: { xs: "inline", sm: "none" },
+                  fontSize: { xs: "0.6875rem", sm: "0.75rem" },
+                  mx: { xs: 0.375, sm: 0.5 },
+                }}
+              >
+                •
+              </Typography>
+            ) : null}
 
             {/* RepoViewer 信息 - 移动端显示 */}
             <Typography

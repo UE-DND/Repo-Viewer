@@ -81,9 +81,17 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallSc
     fontWeight: 600,
   },
 
+  "& .markdown-body a strong": {
+    color: "inherit",
+  },
+
   "& .markdown-body em": {
     color: textColor,
     fontStyle: "italic",
+  },
+
+  "& .markdown-body a em": {
+    color: "inherit",
   },
 
   "& .markdown-body del": {

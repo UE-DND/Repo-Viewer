@@ -30,6 +30,9 @@ export interface Config {
       manifestPath: string;
       refreshIntervalMs: number;
     };
+    footer: {
+      leftText: string;
+    };
   };
   proxy: {
     imageProxyUrl: string;

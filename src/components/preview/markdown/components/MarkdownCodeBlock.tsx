@@ -42,21 +42,18 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
 
   const handleCopy = useCallback(async () => {
     try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText !== undefined) {
-        await navigator.clipboard.writeText(content);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = content;
-        textArea.setAttribute("readonly", "");
-        textArea.style.position = "fixed";
-        textArea.style.top = "0";
-        textArea.style.left = "0";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
+      if (typeof navigator === "undefined") {
+        throw new Error("navigator 未定义");
       }
+
+      const clipboard = navigator.clipboard as Clipboard | undefined;
+
+      if (clipboard === undefined || typeof clipboard.writeText !== "function") {
+        logger.warn("当前环境不支持 Clipboard API 自动复制");
+        return;
+      }
+
+      await clipboard.writeText(content);
 
       setCopied(true);
       if (timerRef.current !== null) {
@@ -96,10 +93,10 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
     <Box
       sx={{ position: "relative", width: "100%" }}
       data-oid={dataOid !== undefined ? `${dataOid}-container` : undefined}
-      onMouseEnter={isDesktop ? () => setIsHovered(true) : undefined}
-      onMouseLeave={isDesktop ? () => setIsHovered(false) : undefined}
-      onFocusCapture={isDesktop ? () => setIsHovered(true) : undefined}
-      onBlurCapture={isDesktop ? () => setIsHovered(false) : undefined}
+      onMouseEnter={isDesktop ? () => { setIsHovered(true); } : undefined}
+      onMouseLeave={isDesktop ? () => { setIsHovered(false); } : undefined}
+      onFocusCapture={isDesktop ? () => { setIsHovered(true); } : undefined}
+      onBlurCapture={isDesktop ? () => { setIsHovered(false); } : undefined}
     >
       <pre
         className={className}
@@ -128,7 +125,7 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
         <IconButton
           size="small"
           aria-label="复制代码"
-          onClick={handleCopy}
+          onClick={() => { void handleCopy(); }}
           sx={{
             position: "absolute",
             top: theme.spacing(0),

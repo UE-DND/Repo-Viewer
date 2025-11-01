@@ -28,7 +28,7 @@ export class ConfigManager {
 
   /**
    * 获取ConfigManager单例实例
-   * 
+   *
    * @returns ConfigManager实例
    */
   static getInstance(): ConfigManager {
@@ -38,9 +38,9 @@ export class ConfigManager {
 
   /**
    * 重置单例实例（用于测试）
-   * 
+   *
    * 在测试环境中重置单例实例，确保每个测试的独立性。
-   * 
+   *
    * @warning 仅在测试环境中使用，生产环境不应调用此方法
    */
   static resetInstance(): void {
@@ -49,7 +49,7 @@ export class ConfigManager {
 
   /**
    * 检查是否已创建实例
-   * 
+   *
    * @returns 如果实例已创建返回 true
    */
   static hasInstance(): boolean {
@@ -58,9 +58,9 @@ export class ConfigManager {
 
   /**
    * 获取配置
-   * 
+   *
    * 获取当前加载的配置对象，如果未加载则自动加载。
-   * 
+   *
    * @returns 完整的配置对象
    */
   getConfig(): Config {
@@ -70,9 +70,9 @@ export class ConfigManager {
 
   /**
    * 重新加载配置
-   * 
+   *
    * 从环境变量重新加载配置，并通知所有监听器。
-   * 
+   *
    * @returns 重新加载后的配置对象
    */
   reloadConfig(): Config {
@@ -88,9 +88,9 @@ export class ConfigManager {
 
   /**
    * 监听配置变更
-   * 
+   *
    * 注册配置变更监听器，当配置更新时会被调用。
-   * 
+   *
    * @param listener - 配置变更监听器函数
    * @returns 取消监听的函数
    */
@@ -101,12 +101,12 @@ export class ConfigManager {
 
   /**
    * 启用配置热更新
-   * 
+   *
    * 在开发环境中启用配置热更新功能。
    * 监听自定义 'config:reload' 事件来触发配置重载。
-   * 
+   *
    * @returns void
-   * 
+   *
    * @example
    * // 手动触发配置重载：
    * window.dispatchEvent(new CustomEvent('config:reload'));
@@ -142,9 +142,9 @@ export class ConfigManager {
 
   /**
    * 禁用配置热更新
-   * 
+   *
    * 移除配置热更新监听器。
-   * 
+   *
    * @returns void
    */
   disableHotReload(): void {
@@ -168,7 +168,7 @@ export class ConfigManager {
 
   /**
    * 检查是否启用了热更新
-   * 
+   *
    * @returns 如果热更新已启用返回 true
    */
   isHotReloadEnabled(): boolean {
@@ -300,6 +300,9 @@ export class ConfigManager {
           defaultBranch: searchIndexDefaultBranch,
           manifestPath: searchIndexManifestPath,
           refreshIntervalMs: searchIndexRefreshIntervalMs
+        },
+        footer: {
+          leftText: resolveEnvWithMapping(stringEnv, 'FOOTER_LEFT_TEXT', '')
         }
       },
       proxy: {
@@ -335,7 +338,7 @@ export class ConfigManager {
   // 加载Token配置
   private loadTokens(env: EnvSource): Config['tokens'] {
     const tokens = new Set<string>();
-    
+
     // 提取辅助函数：添加有效的 token
     const addTokenIfValid = (key: string): void => {
       const token = this.getEnvString(env, key);
@@ -343,18 +346,18 @@ export class ConfigManager {
         tokens.add(token.trim());
       }
     };
-    
+
     // 遍历所有前缀，检查不带数字和带数字的版本
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
       // 检查不带数字的版本
       addTokenIfValid(prefix);
-      
+
       // 检查带数字的版本（1到MAX_PAT_NUMBER）
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
         addTokenIfValid(prefix + String(i));
       }
     });
-    
+
     const uniqueTokens = Array.from(tokens);
     return {
       githubPATs: uniqueTokens,
@@ -364,9 +367,9 @@ export class ConfigManager {
 
   /**
    * 获取用于Vite define的PAT对象
-   * 
+   *
    * 构建用于Vite构建时注入的环境变量对象。
-   * 
+   *
    * @param env - 可选的环境变量源
    * @returns PAT环境变量对象
    */
@@ -387,7 +390,7 @@ export class ConfigManager {
     CONFIG_DEFAULTS.PAT_PREFIXES.forEach(prefix => {
       // 检查不带数字的版本
       addPATIfValid(prefix);
-      
+
       // 检查带数字的版本（1到MAX_PAT_NUMBER）
       for (let i = 1; i <= CONFIG_DEFAULTS.MAX_PAT_NUMBER; i++) {
         addPATIfValid(prefix + String(i));
@@ -399,9 +402,9 @@ export class ConfigManager {
 
   /**
    * 获取配置调试信息
-   * 
+   *
    * 返回详细的配置加载信息，用于调试和排查配置问题。
-   * 
+   *
    * @returns 配置调试信息对象
    */
   getDebugInfo(): ConfigDebugInfo {
@@ -516,7 +519,7 @@ export class ConfigManager {
 
 /**
  * 配置管理器单例实例
- * 
+ *
  * 全局配置管理器，用于访问和管理应用配置。
  * 在开发环境中自动启用配置热更新功能。
  */

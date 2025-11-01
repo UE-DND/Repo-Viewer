@@ -2,7 +2,7 @@
 
 ***基于 Material Design 3设计风格的 GitHub仓库浏览应用***
 
-[**🖥️ 在线演示**](repoviewer.uednd.top)
+[**🖥️ 在线演示**](https://repoviewer.uednd.top)
 [**⚙️ Dev 预览**](https://repoviewer-dev.uednd.top)
 
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=white)
@@ -91,12 +91,8 @@ HOMEPAGE_ALLOWED_FILETYPES = md, pdf, txt             # 允许在首页显示的
 HIDE_MAIN_FOLDER_DOWNLOAD = true||false               # 隐藏首页的主文件夹下载按钮
 HIDE_DOWNLOAD_FOLDERS = folder1, folder2              # 首页上需要隐藏下载按钮的文件夹，可用逗号分隔
 
-# 搜索索引功能（需要配合 Repo-Viewer-Search 索引）
-REPO_VIEWER_SEARCH_INDEX_ENABLED = true||false        # 启用索引搜索模式，默认关闭
-REPO_VIEWER_SEARCH_INDEX_BRANCH = RV-Index           # 索引所在分支，默认 RV-Index
-REPO_VIEWER_SEARCH_DEFAULT_BRANCH = main             # manifest 缺省时的回退仓库分支，留空继承 GITHUB_REPO_BRANCH
-REPO_VIEWER_SEARCH_MANIFEST_PATH = manifest.json     # manifest 文件路径，默认 manifest.json
-REPO_VIEWER_SEARCH_REFRESH_INTERVAL_MS = 300000      # manifest 刷新间隔（毫秒），默认 300000 (5 分钟)
+# 页脚显示控制
+FOOTER_LEFT_TEXT = [text](link)                       # 页脚左侧自定义信息
 
 # 文件下载代理设置（仅用于下载功能，不影响内容浏览）
 DOWNLOAD_PROXY_URL =                                  # 下载主代理URL
