@@ -64,7 +64,7 @@ const parseExtensionInput = (value: string): string[] => {
 export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  
+
   const {
     currentBranch,
     defaultBranch,
@@ -88,7 +88,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
   const [extensionInput, setExtensionInput] = useState(() => formatExtensionInput(extensionFilter));
 
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-  
+
   const previousOpenRef = useRef(false);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
   // 每次打开搜索抽屉时重置筛选条件并自动填充当前路径
   useEffect(() => {
     const wasOpen = previousOpenRef.current;
-    
+
     if (open && !wasOpen) {
       // 只在从关闭到打开时执行一次重置
       search.setKeyword('');
@@ -107,7 +107,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
       setExtensionInput('');
       search.clearResults();
       setFiltersExpanded(false);
-      
+
       // 自动填充当前路径（如果有）
       const trimmedCurrentPath = currentPath.trim();
       if (trimmedCurrentPath.length > 0) {
@@ -115,14 +115,14 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
       } else {
         setPathPrefix('');
       }
-      
+
       // 聚焦主搜索框
       setTimeout(() => {
         const input = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
         input?.focus();
       }, 100);
     }
-    
+
     previousOpenRef.current = open;
   }, [open, currentPath, setPathPrefix, search]);
 
@@ -159,16 +159,16 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 
     if (branchFilter.length > 0) {
       const orderedBranches = availableBranches.filter(branch => branchFilter.includes(branch));
-      
+
       if (isSmallScreen && orderedBranches.length > 1) {
         return `在 ${orderedBranches.length.toString()} 个分支中搜索`;
       }
-      
+
       if (!isSmallScreen && orderedBranches.length > 3) {
         const displayBranches = orderedBranches.slice(0, 3).join("、");
         return `在 ${displayBranches} 等 ${orderedBranches.length.toString()} 个分支${pathSuffix} 中搜索`;
       }
-      
+
       const displayBranches = orderedBranches.join("、");
       return `在 ${displayBranches}${pathSuffix} 中搜索`;
     }
@@ -319,12 +319,11 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
   }, [currentBranch, defaultBranch, findFileItemByPath, navigateTo, onClose, search.branchFilter, selectFile, setCurrentBranch]);
 
   // 高亮文本中的关键字
-  const highlightKeyword = useCallback((text: string, keyword: string): Array<{ text: string; highlight: boolean }> => {
+  const highlightKeyword = useCallback((text: string, keyword: string): { text: string; highlight: boolean }[] => {
     if (keyword.trim().length === 0) {
       return [{ text, highlight: false }];
     }
-
-    const parts: Array<{ text: string; highlight: boolean }> = [];
+    const parts: { text: string; highlight: boolean }[] = [];
     const lowerText = text.toLowerCase();
     const lowerKeyword = keyword.toLowerCase();
     let lastIndex = 0;
@@ -335,10 +334,10 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
       if (index > lastIndex) {
         parts.push({ text: text.slice(lastIndex, index), highlight: false });
       }
-      
+
       // 添加关键字（高亮）
       parts.push({ text: text.slice(index, index + lowerKeyword.length), highlight: true });
-      
+
       lastIndex = index + lowerKeyword.length;
       index = lowerText.indexOf(lowerKeyword, lastIndex);
     }
@@ -354,7 +353,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
   const renderResultSecondary = useCallback((item: RepoSearchItem) => {
     const keyword = search.keyword.trim();
     const pathParts = highlightKeyword(item.path, keyword);
-    
+
     const snippet = ("snippet" in item && typeof (item as { snippet?: unknown }).snippet === "string")
       ? (item as { snippet?: string }).snippet
       : undefined;
@@ -422,10 +421,10 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
     search.searchResult.items.length === 0;
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      fullWidth 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
       maxWidth={isSmallScreen ? "sm" : "md"}
       slotProps={{
         paper: {
@@ -436,9 +435,9 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
         }
       }}
     >
-      <DialogTitle sx={{ 
-        display: "flex", 
-        alignItems: "center", 
+      <DialogTitle sx={{
+        display: "flex",
+        alignItems: "center",
         justifyContent: "space-between",
         px: isSmallScreen ? 2 : 3,
         py: isSmallScreen ? 1.5 : 2
@@ -448,10 +447,10 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <DialogContent 
-        dividers 
-        sx={{ 
-          px: isSmallScreen ? 2 : 3, 
+      <DialogContent
+        dividers
+        sx={{
+          px: isSmallScreen ? 2 : 3,
           py: isSmallScreen ? 2 : 3,
           // 隐藏滚动条但保留滚动功能
           scrollbarWidth: 'none', // Firefox
@@ -490,10 +489,10 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
               slotProps={{
                 input: {
                   endAdornment: (
-                    <InputAdornment 
-                      position="end" 
-                      sx={{ 
-                        mr: -1, 
+                    <InputAdornment
+                      position="end"
+                      sx={{
+                        mr: -1,
                         gap: 0.5,
                         display: 'flex',
                         alignItems: 'center',
@@ -506,7 +505,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                           onClick={() => {
                             search.setKeyword('');
                           }}
-                          sx={{ 
+                          sx={{
                             mr: 0.5,
                             borderRadius: g3BorderRadius(G3_PRESETS.button)
                           }}
@@ -522,7 +521,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                         onClick={() => {
                           void handleSearch();
                         }}
-                        sx={{ 
+                        sx={{
                           mr: 0,
                           borderRadius: g3BorderRadius(G3_PRESETS.button),
                           minWidth: isSmallScreen ? 'auto' : undefined,
@@ -575,8 +574,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                   ) : (
                     availableBranches.map(branch => {
                       const isCurrentBranch = branch === currentBranch || (currentBranch === "" && branch === defaultBranch);
-                      const selected = branchFilter.length === 0 
-                        ? isCurrentBranch 
+                      const selected = branchFilter.length === 0
+                        ? isCurrentBranch
                         : branchFilter.includes(branch);
                       return (
                         <Chip
@@ -697,9 +696,9 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 
           <Divider />
 
-          <Stack 
-            direction={isSmallScreen ? "column" : "row"} 
-            justifyContent="space-between" 
+          <Stack
+            direction={isSmallScreen ? "column" : "row"}
+            justifyContent="space-between"
             alignItems={isSmallScreen ? "stretch" : "center"}
             spacing={isSmallScreen ? 1 : 0}
           >
@@ -740,7 +739,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                   variant="outlined"
                   onClick={handleApiSearch}
                   disabled={disableSearchButton}
-                  sx={{ 
+                  sx={{
                     borderRadius: g3BorderRadius(G3_PRESETS.button),
                     whiteSpace: 'nowrap'
                   }}
@@ -789,11 +788,11 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                       <ListItemText
                         primary={
                           <Stack direction="row" spacing={isSmallScreen ? 0.5 : 1} alignItems="center">
-                            <Chip 
-                              size="small" 
-                              label={item.branch} 
+                            <Chip
+                              size="small"
+                              label={item.branch}
                               color={item.source === "search-index" ? "primary" : "default"}
-                              sx={{ 
+                              sx={{
                                 borderRadius: g3BorderRadius({ radius: 12, smoothness: 0.8 }),
                                 fontSize: isSmallScreen ? '0.7rem' : undefined
                               }}
@@ -837,8 +836,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
             })}
             {search.searchResult !== null && search.searchResult.items.length === 0 && (
               <ListItem>
-                <ListItemText 
-                  primary="暂无结果" 
+                <ListItemText
+                  primary="暂无结果"
                   secondary="尝试更换关键字或调整筛选条件"
                   slotProps={{
                     primary: {

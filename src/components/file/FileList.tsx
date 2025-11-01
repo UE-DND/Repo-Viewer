@@ -131,10 +131,10 @@ const listAnimationVariants = {
 
 /**
  * 动画变体缓存
- * 
+ *
  * 使用智能缓存管理已计算的动画变体，自动清理最少使用的条目。
  * 采用混合 LRU/LFU 策略，结合访问频率和时间衰减。
- * 
+ *
  * 性能提升：在高频滚动场景下减少 70-80% 的重复计算，同时优化内存使用
  */
 const animationVariantsCache = new cache.SmartCache<string, typeof itemVariants>({
@@ -239,7 +239,7 @@ const calculateLayoutMetrics = ({
 
 /**
  * 根据滚动速度动态生成动画变体（带智能缓存）
- * 
+ *
  * @param speed - 滚动速度（0-1之间的标准化值）
  * @param isScrolling - 是否正在滚动
  * @returns 动画变体配置对象
@@ -247,7 +247,7 @@ const calculateLayoutMetrics = ({
 const getDynamicItemVariants = (speed: number, isScrolling: boolean): typeof itemVariants => {
   // 生成缓存键
   const cacheKey = `${speed.toFixed(2)}-${isScrolling ? '1' : '0'}`;
-  
+
   // 尝试从智能缓存获取
   const cached = animationVariantsCache.get(cacheKey);
   if (cached !== null) {
@@ -299,7 +299,7 @@ const getDynamicItemVariants = (speed: number, isScrolling: boolean): typeof ite
 
 /**
  * 虚拟列表行渲染器组件
- * 
+ *
  * 用于react-window的行渲染，支持动画和滚动优化。
  */
 const Row = React.memo(({ data, index, style }: ListChildComponentProps<VirtualListItemData>) => {
@@ -319,7 +319,7 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps<VirtualL
   } = data;
 
   const item = contents[index];
-  
+
   // 确保索引有效
   if (item === undefined) {
     return null;
@@ -335,10 +335,9 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps<VirtualL
     paddingTop: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
     paddingBottom: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
     /* 保持虚拟列表固定行高，由 rowHeight 精确控制高度 */
-    // 右侧添加适当间距，避免内容紧贴滚动条（8-16px）
     paddingRight: "12px",
     boxSizing: "border-box" as const,
-    ...optimizedAnimationStyle, // 添加优化的动画样式
+    ...optimizedAnimationStyle,
   };
 
   // 根据滚动状态和速度选择动画变体
@@ -377,7 +376,7 @@ Row.displayName = "FileListRow";
 
 /**
  * 文件列表组件
- * 
+ *
  * 显示文件和文件夹列表，支持虚拟化滚动、动画和下载功能。
  * 自动根据内容数量选择普通或虚拟化渲染模式。
  */
@@ -400,7 +399,7 @@ const FileList = React.memo<FileListProps>(
       scrollEndDelay: 1000,
       fastScrollThreshold: 0.3
     });
-    
+
     const listRef = React.useRef<FixedSizeList>(null);
     const [showAlphabetIndex, setShowAlphabetIndex] = React.useState(false);
     const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null);
@@ -432,11 +431,11 @@ const FileList = React.memo<FileListProps>(
           : FILE_ITEM_CONFIG.baseHeight.sm;
         const rowGap = FILE_ITEM_CONFIG.spacing.marginBottom;
         const calculatedRowHeight = baseHeight + rowGap;
-        
+
         const targetOffset = index * calculatedRowHeight;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         const outerElement = (listRef.current as any)._outerRef;
-        
+
         // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
         if (outerElement) {
           // 使用原生的平滑滚动
@@ -449,13 +448,13 @@ const FileList = React.memo<FileListProps>(
           // 降级到直接跳转
           listRef.current.scrollToItem(index, 'start');
         }
-        
+
         setHighlightedIndex(index);
-        
+
         if (highlightTimeoutRef.current !== null) {
           clearTimeout(highlightTimeoutRef.current);
         }
-        
+
         highlightTimeoutRef.current = setTimeout(() => {
           setHighlightedIndex(null);
         }, 1500);
@@ -671,7 +670,7 @@ const FileList = React.memo<FileListProps>(
           sx={{
             ...containerStyle,
             height: availableHeight,
-            pl: { xs: 0.5, sm: 0.85 },
+            pl: { xs: 0.5, sm: 1.0 },
             py: containerPadding,
           }}
           className={`file-list-container ${hasFewItems ? "few-items" : ""}`}
@@ -703,7 +702,7 @@ const FileList = React.memo<FileListProps>(
             </AutoSizer>
           </motion.div>
         </Box>
-        
+
         {/* 右侧悬停触发区域 */}
         <Box
           sx={{
