@@ -178,6 +178,20 @@ const getRepoEnvConfig = (): RepoEnvConfig => {
   };
 };
 
+const getSearchIndexRepoEnvConfig = (): RepoEnvConfig => {
+  const baseRepo = getRepoEnvConfig();
+  const branch = resolveEnvValue(
+    ['REPO_VIEWER_SEARCH_DEFAULT_BRANCH', 'VITE_REPO_VIEWER_SEARCH_DEFAULT_BRANCH'],
+    baseRepo.repoBranch
+  );
+
+  return {
+    repoOwner: baseRepo.repoOwner,
+    repoName: baseRepo.repoName,
+    repoBranch: branch.length > 0 ? branch : baseRepo.repoBranch
+  };
+};
+
 const encodePathSegments = (input: string): string =>
   input.split('/').map(segment => encodeURIComponent(segment)).join('/');
 
@@ -370,7 +384,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
-      const { repoOwner, repoName } = getRepoEnvConfig();
+      const repoScopeParam = getSingleQueryParam(req.query['repoScope']);
+      const useSearchIndexRepo = repoScopeParam !== undefined && repoScopeParam.toLowerCase() === 'search-index';
+      const { repoOwner, repoName } = useSearchIndexRepo ? getSearchIndexRepoEnvConfig() : getRepoEnvConfig();
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
           error: '仓库配置缺失',
@@ -415,7 +431,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
-      const { repoOwner, repoName } = getRepoEnvConfig();
+      const { repoOwner, repoName } = getSearchIndexRepoEnvConfig();
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
           error: '仓库配置缺失',

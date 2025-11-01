@@ -129,15 +129,29 @@ async function fetchFromServerApi<T>(
   return response.json() as Promise<T>;
 }
 
+function hasAuthorizationHeader(headers: HeadersInit): boolean {
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    return headers.has('Authorization') || headers.has('authorization');
+  }
+
+  if (Array.isArray(headers)) {
+    return headers.some(([key]) => key.toLowerCase() === 'authorization');
+  }
+
+  return Object.keys(headers as Record<string, string>).some((key) => key.toLowerCase() === 'authorization');
+}
+
 async function fetchDirect<T>(
   asset: SearchIndexAssetParams,
   errorCode: SearchIndexErrorCode,
   options: FetchOptions = {}
 ): Promise<T> {
-  const headers = getAuthHeaders();
+  const authHeaders = getAuthHeaders();
+  if (hasAuthorizationHeader(authHeaders)) {
+    return fetchFromServerApi<T>(asset, errorCode, options);
+  }
   const response = await fetch(buildRawContentUrl(asset.indexBranch, asset.path), {
     method: 'GET',
-    headers,
     signal: options.signal ?? null
   });
 
@@ -222,7 +236,7 @@ async function checkIndexBranchExists(signal?: AbortSignal): Promise<boolean> {
 
   try {
     if (shouldUseServerAPI()) {
-      const query = new URLSearchParams({ action: 'getGitRef', ref: refPath });
+      const query = new URLSearchParams({ action: 'getGitRef', ref: refPath, repoScope: 'search-index' });
       const response = await fetch(`/api/github?${query.toString()}`, { method: 'GET', signal: signal ?? null });
       if (response.status === 404) {
         branchExistenceCache.set(cacheKey, { exists: false, fetchedAt: Date.now() });
