@@ -1,7 +1,6 @@
 import { createLazyPreviewComponent } from '../core/createLazyPreviewComponent';
 import type { MarkdownPreviewProps } from '../../../components/preview/markdown/types';
 import type { ImagePreviewProps } from '../../../components/preview/image/types';
-import type { OfficePreviewProps } from '../../../components/preview/office/types';
 import { MarkdownPreviewSkeleton } from '../../../components/ui/skeletons';
 
 /**
@@ -21,11 +20,4 @@ export const LazyMarkdownPreview = createLazyPreviewComponent<MarkdownPreviewPro
  */
 export const LazyImagePreview = createLazyPreviewComponent<ImagePreviewProps>(
   () => import('../../../components/preview/image')
-);
-
-/**
- * 懒加载Office预览组件
- */
-export const LazyOfficePreview = createLazyPreviewComponent<OfficePreviewProps>(
-  () => import('../../../components/preview/office').then(module => ({ default: module.OfficePreview }))
 );

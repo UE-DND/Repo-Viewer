@@ -82,6 +82,10 @@ export const crypto = hashUtils;
 import * as contentFilters from './content';
 export const content = contentFilters;
 
+// 排序工具
+import * as sortingUtils from './sorting/contentSorting';
+export const sorting = sortingUtils;
+
 // 主题相关工具
 import * as g3Curves from '@/theme/g3Curves';
 export const theme = g3Curves;

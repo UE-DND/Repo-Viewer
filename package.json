@@ -1,7 +1,7 @@
 {
   "name": "repo-viewer",
   "private": true,
-  "version": "1.3.1",
+  "version": "1.3.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,7 +29,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.20.0",
-    "vite": "npm:rolldown-vite@^7.1.14"
+    "vite": "npm:rolldown-vite@latest"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -45,6 +45,7 @@
     "jszip": "^3.10.1",
     "katex": "^0.16.22",
     "notistack": "^3.0.2",
+    "pinyin-pro": "^3.27.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-helmet-async": "^2.0.5",
@@ -57,6 +58,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
+    "rolldown-vite": "^7.1.19",
     "zod": "^4.1.9"
   },
   "overrides": {

@@ -1,11 +1,33 @@
 # Repo-Viewer
 
-***基于MD3设计风格的GitHub仓库浏览应用***
+***基于 Material Design 3设计风格的 GitHub仓库浏览应用***
+
+[**🖥️ 在线演示**](https://repoviewer.uednd.top)
+[**⚙️ Dev 预览**](https://repoviewer-dev.uednd.top)
+
+![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7.1.19-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.17-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Material-UI](https://img.shields.io/badge/Material--UI-7.0.2-007FFF?style=for-the-badge&logo=mui&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.14.0-0055FF?style=for-the-badge&logo=framer&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-1.9.0-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-4.1.9-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+
+![Preview Dark](docs/image/dark.png)
+
+<table>
+  <tr>
+    <td><img alt="" src="docs/image/phone_1.png"></td>
+    <td><img alt="" src="docs/image/phone_2.png"></td>
+    <td><img alt="" src="docs/image/phone_3.png"></td>
+  <tr>
+</table>
 
 ### 主要功能
 
 - 🔍 **仓库浏览**：直观的文件结构导航，同时提供首页文件和文件夹过滤
-- 📄 **文件预览**：支持多种文件格式预览，目前包括 `Markdown`、 `PDF`、`图片` 和 `Office文档`
+- 📄 **文件预览**：支持多种文件格式预览，目前包括 `Markdown`、 `PDF` 和 `图片`
 - ⬇️ **文件下载**：可下载单个文件或整个文件夹
 - 🌐 **SEO优化**：提高搜索引擎可见性
 
@@ -69,6 +91,9 @@ HOMEPAGE_ALLOWED_FILETYPES = md, pdf, txt             # 允许在首页显示的
 HIDE_MAIN_FOLDER_DOWNLOAD = true||false               # 隐藏首页的主文件夹下载按钮
 HIDE_DOWNLOAD_FOLDERS = folder1, folder2              # 首页上需要隐藏下载按钮的文件夹，可用逗号分隔
 
+# 页脚显示控制
+FOOTER_LEFT_TEXT = [text](link)                       # 页脚左侧自定义信息
+
 # 文件下载代理设置（仅用于下载功能，不影响内容浏览）
 DOWNLOAD_PROXY_URL =                                  # 下载主代理URL
 DOWNLOAD_PROXY_URL_BACKUP1 =                          # 下载备用代理URL1
@@ -119,7 +144,7 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
 
 ### 贡献者
 
-[![贡献者](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
 
 ### Stars
 

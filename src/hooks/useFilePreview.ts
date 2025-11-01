@@ -1,7 +1,6 @@
 import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 import type { PreviewState, PreviewAction, GitHubContent } from '@/types';
-import { OfficeFileType } from '@/types';
 import { GitHub } from '@/services/github';
 import { file, logger, pdf } from '@/utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
@@ -15,13 +14,7 @@ const initialPreviewState: PreviewState = {
   previewingImageItem: null,
   isImageFullscreen: false,
   loadingImagePreview: false,
-  imageError: null,
-  officePreviewUrl: null,
-  previewingOfficeItem: null,
-  loadingOfficePreview: false,
-  isOfficeFullscreen: false,
-  officeError: null,
-  officeFileType: null
+  imageError: null
 };
 function previewReducer(state: PreviewState, action: PreviewAction): PreviewState {
   switch (action.type) {
@@ -67,32 +60,6 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
         isImageFullscreen: action.fullscreen
       };
 
-    case 'SET_OFFICE_PREVIEW':
-      return {
-        ...state,
-        officePreviewUrl: action.url,
-        previewingOfficeItem: action.item,
-        officeFileType: action.fileType
-      };
-
-    case 'SET_OFFICE_LOADING':
-      return {
-        ...state,
-        loadingOfficePreview: action.loading
-      };
-
-    case 'SET_OFFICE_ERROR':
-      return {
-        ...state,
-        officeError: action.error
-      };
-
-    case 'SET_OFFICE_FULLSCREEN':
-      return {
-        ...state,
-        isOfficeFullscreen: action.fullscreen
-      };
-
     default:
       return state;
   }
@@ -101,7 +68,7 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
 /**
  * 文件预览Hook
  * 
- * 提供文件预览功能，支持Markdown、图片、PDF和Office文档的预览。
+ * 提供文件预览功能，支持Markdown、图片和PDF文档的预览。
  * 自动处理URL参数和浏览器历史导航。
  * 
  * @param onError - 错误回调函数
@@ -118,9 +85,7 @@ export const useFilePreview = (
   selectFile: (item: GitHubContent) => Promise<void>;
   closePreview: () => void;
   toggleImageFullscreen: () => void;
-  toggleOfficeFullscreen: () => void;
   handleImageError: (error: string) => void;
-  handleOfficeError: (error: string) => void;
   currentPreviewItemRef: React.RefObject<GitHubContent | null>;
 } => {
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
@@ -133,14 +98,12 @@ export const useFilePreview = (
   useEffect(() => {
     const hasActivePreview =
       previewState.previewingItem !== null ||
-      previewState.previewingImageItem !== null ||
-      previewState.previewingOfficeItem !== null;
+      previewState.previewingImageItem !== null;
     hasActivePreviewRef.current = hasActivePreview;
     logger.debug(`预览状态更新: ${hasActivePreview ? '活跃' : '非活跃'}`);
   }, [
     previewState.previewingItem,
-    previewState.previewingImageItem,
-    previewState.previewingOfficeItem
+    previewState.previewingImageItem
   ]);
 
   useEffect(() => {
@@ -161,34 +124,6 @@ export const useFilePreview = (
       };
     }
   }, []);
-
-  // Office预览加载函数
-  const loadOfficePreview = useCallback((item: GitHubContent, fileType: OfficeFileType) => {
-    if (item.download_url === null || item.download_url === '') {
-      return;
-    }
-
-    dispatch({ type: 'SET_OFFICE_LOADING', loading: true });
-    dispatch({ type: 'SET_OFFICE_ERROR', error: null });
-
-    try {
-      // 直接使用GitHub原始文件URL
-      const originalUrl = item.download_url;
-
-      dispatch({
-        type: 'SET_OFFICE_PREVIEW',
-        url: originalUrl,
-        item,
-        fileType
-      });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-      dispatch({ type: 'SET_OFFICE_ERROR', error: errorMessage });
-      onError(`加载${fileType}文件失败: ${errorMessage}`);
-    } finally {
-      dispatch({ type: 'SET_OFFICE_LOADING', loading: false });
-    }
-  }, [onError]);
 
   const selectFile = useCallback(async (item: GitHubContent) => {
     if (item.download_url === null || item.download_url === '') {
@@ -264,18 +199,6 @@ export const useFilePreview = (
         } finally {
           dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
         }
-    } else if (file.isWordFile(fileNameLower)) {
-      // 使用统一的Office预览组件
-      updateUrlWithHistory(dirPath, item.path);
-      loadOfficePreview(item, OfficeFileType.WORD);
-    } else if (file.isExcelFile(fileNameLower)) {
-      // 使用统一的Office预览组件
-      updateUrlWithHistory(dirPath, item.path);
-      loadOfficePreview(item, OfficeFileType.EXCEL);
-    } else if (file.isPPTFile(fileNameLower)) {
-      // 使用统一的Office预览组件
-      updateUrlWithHistory(dirPath, item.path);
-      loadOfficePreview(item, OfficeFileType.PPT);
     } else {
       onError('不支持预览该文件类型');
     }
@@ -283,7 +206,7 @@ export const useFilePreview = (
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       onError(`预览文件失败: ${errorMessage}`);
     }
-  }, [onError, useTokenMode, muiTheme, loadOfficePreview]);
+  }, [onError, useTokenMode, muiTheme]);
 
   // 关闭预览
   const closePreview = useCallback(() => {
@@ -318,24 +241,11 @@ export const useFilePreview = (
     dispatch({ type: 'SET_IMAGE_FULLSCREEN', fullscreen: !previewState.isImageFullscreen });
   }, [previewState.isImageFullscreen]);
 
-  // Office全屏切换
-  const toggleOfficeFullscreen = useCallback(() => {
-    dispatch({ type: 'SET_OFFICE_FULLSCREEN', fullscreen: !previewState.isOfficeFullscreen });
-  }, [previewState.isOfficeFullscreen]);
-
-
   // 图像错误处理
   const handleImageError = useCallback((error: string) => {
     dispatch({ type: 'SET_IMAGE_ERROR', error });
     dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
     onError(`图像加载失败: ${error}`);
-  }, [onError]);
-
-  // Office错误处理
-  const handleOfficeError = useCallback((error: string) => {
-    dispatch({ type: 'SET_OFFICE_ERROR', error });
-    dispatch({ type: 'SET_OFFICE_LOADING', loading: false });
-    onError(`Office文档加载失败: ${error}`);
   }, [onError]);
 
   // 监听浏览器历史导航事件，处理预览的后退操作
@@ -431,9 +341,7 @@ export const useFilePreview = (
     selectFile,
     closePreview,
     toggleImageFullscreen,
-    toggleOfficeFullscreen,
     handleImageError,
-    handleOfficeError,
     currentPreviewItemRef
   };
 };

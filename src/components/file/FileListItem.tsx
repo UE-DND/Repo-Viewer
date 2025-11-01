@@ -40,6 +40,7 @@ interface FileListItemProps {
   handleCancelDownload: (e: React.MouseEvent) => void;
   currentPath: string;
   contents?: GitHubContent[];
+  isHighlighted?: boolean;
 }
 
 /**
@@ -76,12 +77,16 @@ function arePropsEqual(
   const contentsLengthUnchanged = 
     (prevProps.contents?.length ?? 0) === (nextProps.contents?.length ?? 0);
   
+  // 检查高亮状态
+  const highlightUnchanged = prevProps.isHighlighted === nextProps.isHighlighted;
+  
   // 所有关键 props 都未变化时返回 true（不重新渲染）
   return itemUnchanged && 
          downloadStateUnchanged && 
          pathUnchanged && 
          callbacksUnchanged &&
-         contentsLengthUnchanged;
+         contentsLengthUnchanged &&
+         highlightUnchanged;
 }
 
 /**
@@ -104,6 +109,7 @@ const FileListItem = memo<FileListItemProps>(
     handleCancelDownload,
     currentPath,
     contents = [], // 提供默认空数组值
+    isHighlighted = false,
   }) => {
     const theme = useTheme();
     const [isHoveringDownload, setIsHoveringDownload] = React.useState(false);
@@ -224,6 +230,14 @@ const FileListItem = memo<FileListItemProps>(
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "center",
+          "&:hover .file-download-action": {
+            opacity: 1,
+            pointerEvents: "auto",
+          },
+          "& .MuiListItemButton-root.Mui-focusVisible ~ .MuiListItemSecondaryAction-root .file-download-action": {
+            opacity: 1,
+            pointerEvents: "auto",
+          },
         }}
         secondaryAction={
           !shouldHideDownloadButton ? (
@@ -256,15 +270,26 @@ const FileListItem = memo<FileListItemProps>(
               }}
               data-oid="53unr1g"
             >
-              <span
-                style={{
-                  display: "inline-block",
+              <Box
+                component="span"
+                className="file-download-action"
+                sx={{
+                  display: "inline-flex",
                   cursor: "pointer",
                   position: "absolute",
                   right: "16px",
                   top: "50%",
                   transform: "translateY(-50%)",
                   zIndex: 2,
+                  opacity: {
+                    xs: 1,  // 移动端默认显示
+                    sm: isItemDownloading ? 1 : 0,  // 桌面端悬停显示
+                  },
+                  pointerEvents: {
+                    xs: "auto",  // 移动端始终可点击
+                    sm: isItemDownloading ? "auto" : "none",  // 桌面端悬停可点击
+                  },
+                  transition: "opacity 0.2s ease-in-out",
                 }}
                 onMouseEnter={handleDownloadMouseEnter}
                 onMouseLeave={handleDownloadMouseLeave}
@@ -350,7 +375,7 @@ const FileListItem = memo<FileListItemProps>(
                     <DownloadIcon fontSize="small" data-oid="9-.24f5" />
                   )}
                 </IconButton>
-              </span>
+              </Box>
             </Tooltip>
           ) : null
         }
@@ -365,6 +390,12 @@ const FileListItem = memo<FileListItemProps>(
             borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.fileListItem),
             transition:
               "transform 0.1s ease-in-out, background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out",
+            // 高亮状态样式（应用悬停效果）
+            ...(isHighlighted && {
+              transform: "translateX(3px)",
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              boxShadow: `-1px 2px 3px ${alpha(theme.palette.common.black, 0.1)}`,
+            }),
             "&:hover": {
               transform: "translateX(3px)",
               backgroundColor: alpha(theme.palette.primary.main, 0.04),

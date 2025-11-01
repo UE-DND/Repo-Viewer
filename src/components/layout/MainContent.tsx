@@ -9,9 +9,8 @@ import {
 } from "@mui/material";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
 import FileList from "@/components/file/FileList";
-import { LazyMarkdownPreview, LazyImagePreview, LazyOfficePreview, preloadPreviewComponents } from "@/utils/lazy-loading";
+import { LazyMarkdownPreview, LazyImagePreview, preloadPreviewComponents } from "@/utils/lazy-loading";
 import ErrorDisplay from "@/components/ui/ErrorDisplay";
-import FullScreenPreview from "@/components/file/FullScreenPreview";
 import {
   useContentContext,
   usePreviewContext,
@@ -63,6 +62,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     navigateTo,
     repoOwner,
     repoName,
+    currentBranch,
   } = useContentContext();
 
   const {
@@ -79,16 +79,20 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     cancelDownload,
   } = useDownloadContext();
 
-  // 检测当前目录中是否有README.md文件
-  const hasReadmeFile = useMemo(() => {
-    return contents.some((item) => {
+  // 获取当前目录中的 README 文件，用于统一 Markdown 渲染逻辑
+  const readmeFileItem = useMemo<GitHubContent | null>(() => {
+    const target = contents.find((item) => {
       if (item.type !== 'file') {
         return false;
       }
       const fileName = item.name.toLowerCase();
       return ['readme.md', 'readme.markdown', 'readme.mdown'].includes(fileName);
     });
+
+    return target ?? null;
   }, [contents]);
+
+  const hasReadmeFile = readmeFileItem !== null;
 
   // 获取当前目录中的所有图片文件
   const imageFiles = useMemo(() => {
@@ -289,9 +293,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
 
       const hasActivePreview =
         (previewState.previewingItem !== null && previewState.previewingItem.path === fileItem.path) ||
-        (previewState.previewingPdfItem !== null && previewState.previewingPdfItem.path === fileItem.path) ||
-        (previewState.previewingImageItem !== null && previewState.previewingImageItem.path === fileItem.path) ||
-        (previewState.previewingOfficeItem !== null && previewState.previewingOfficeItem.path === fileItem.path);
+        (previewState.previewingImageItem !== null && previewState.previewingImageItem.path === fileItem.path);
 
       if (!hasActivePreview) {
         logger.debug(`预览文件未打开，正在加载: ${fileItem.path}`);
@@ -346,13 +348,6 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
         isDirectory: false,
         fileType: "Image",
       };
-    } else if (previewState.previewingOfficeItem !== null) {
-      return {
-        title: previewState.previewingOfficeItem.name,
-        filePath: previewState.previewingOfficeItem.path,
-        isDirectory: false,
-        fileType: previewState.officeFileType ?? "文档",
-      };
     }
 
     // 否则使用当前目录信息
@@ -368,8 +363,6 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     currentPath,
     previewState.previewingItem,
     previewState.previewingImageItem,
-    previewState.previewingOfficeItem,
-    previewState.officeFileType,
   ]);
 
   // 获取顶部栏面包屑容器
@@ -534,6 +527,8 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   loadingReadme={false}
                   isSmallScreen={isSmallScreen}
                   lazyLoad={false}
+                  currentBranch={currentBranch}
+                  previewingItem={readmeFileItem}
                   data-oid="6nohd:r"
                 />
               ) : readmeLoaded ? (
@@ -592,6 +587,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                   previewingItem={previewState.previewingItem}
                   onClose={closePreview}
                   lazyLoad={false}
+                  currentBranch={currentBranch}
                   data-oid="md-file-preview"
                 />
               </Box>
@@ -613,22 +609,6 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
               data-oid="yfv5ld-"
             />
           )}
-
-          {/* Office文档预览 */}
-          {previewState.previewingOfficeItem !== null &&
-            previewState.officePreviewUrl !== null &&
-            previewState.officeFileType !== null && (
-              <FullScreenPreview onClose={closePreview} data-oid="oa2lre0">
-                <LazyOfficePreview
-                  fileUrl={previewState.officePreviewUrl}
-                  fileType={previewState.officeFileType}
-                  fileName={previewState.previewingOfficeItem.name}
-                  isFullScreen={previewState.isOfficeFullscreen}
-                  onClose={closePreview}
-                  data-oid="-vdkwr8"
-                />
-              </FullScreenPreview>
-            )}
         </>
       )}
 

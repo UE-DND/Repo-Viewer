@@ -10,6 +10,5 @@ export { loadKatexStyles, loadStylesheet } from './utils/styleLoaders';
 export { preloadPreviewComponents, preloadComponents } from './utils/preloadUtils';
 export {
   LazyMarkdownPreview,
-  LazyImagePreview,
-  LazyOfficePreview
+  LazyImagePreview
 } from './presets/previewComponents';

@@ -23,6 +23,9 @@ export interface Config {
       enabled: boolean;
       hiddenFolders: string[];
     };
+    footer: {
+      leftText: string;
+    };
   };
   proxy: {
     imageProxyUrl: string;
