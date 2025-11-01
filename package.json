@@ -43,7 +43,7 @@
     "framer-motion": "^12.14.0",
     "github-markdown-css": "^5.8.1",
     "jszip": "^3.10.1",
-    "katex": "^0.16.22",
+    "katex": "^0.16.25",
     "notistack": "^3.0.2",
     "pinyin-pro": "^3.27.0",
     "react": "^19.1.0",
