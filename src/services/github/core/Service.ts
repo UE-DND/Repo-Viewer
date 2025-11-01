@@ -154,6 +154,25 @@ export async function searchWithGitHubApi(
 }
 
 /**
+ * 使用 Trees API 进行多分支搜索
+ * 
+ * @param searchTerm - 搜索关键词
+ * @param branches - 要搜索的分支列表
+ * @param pathPrefix - 路径前缀
+ * @param fileTypeFilter - 文件扩展名过滤器
+ * @returns Promise，解析为所有分支的匹配结果
+ */
+export async function searchMultipleBranchesWithTreesApi(
+  searchTerm: string,
+  branches: string[],
+  pathPrefix = '',
+  fileTypeFilter?: string
+): Promise<Array<{ branch: string; results: GitHubContent[] }>> {
+  const { searchMultipleBranchesWithTreesApi: impl } = await import('./SearchService');
+  return impl(searchTerm, branches, pathPrefix, fileTypeFilter);
+}
+
+/**
  * 搜索文件
  * 
  * @param searchTerm - 搜索关键词

@@ -1,11 +1,11 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
+import { useCallback, useMemo, useEffect, useState, useRef } from "react";
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Chip,
   CircularProgress,
+  Collapse,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -18,18 +18,17 @@ import {
   ListItemText,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
-  type TextFieldProps
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import {
   Close as CloseIcon,
+  Clear as ClearIcon,
   GitHub as GitHubIcon,
   Refresh as RefreshIcon,
-  Search as SearchIcon,
-  TravelExplore as ExploreIcon
+  FilterList as FilterListIcon
 } from "@mui/icons-material";
 import { GitHub } from "@/services/github";
 import { logger } from "@/utils";
@@ -37,7 +36,8 @@ import {
   useContentContext,
   usePreviewContext
 } from "@/contexts/unified";
-import type { RepoSearchItem, RepoSearchMode } from "@/hooks/github/useRepoSearch";
+import type { RepoSearchItem } from "@/hooks/github/useRepoSearch";
+import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 interface SearchDrawerProps {
   open: boolean;
@@ -46,24 +46,29 @@ interface SearchDrawerProps {
 
 const SEARCH_INPUT_ID = "repo-search-keyword";
 
-function formatExtensions(extensions: string[]): string {
-  return extensions.join(", ");
-}
+const formatExtensionInput = (extensions: string[]): string => extensions.join(", ");
 
-function parseExtensions(raw: string): string[] {
-  if (raw.trim() === "") {
+const parseExtensionInput = (value: string): string[] => {
+  if (value.trim().length === 0) {
     return [];
   }
-  return raw
+
+  const segments = value
     .split(/[\s,]+/)
-    .map(value => value.trim().replace(/^\./, "").toLowerCase())
-    .filter((value, index, array) => value.length > 0 && array.indexOf(value) === index);
-}
+    .map((item) => item.trim().replace(/^\./, "").toLowerCase())
+    .filter((item) => item.length > 0);
+
+  return Array.from(new Set(segments));
+};
 
 export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => {
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const {
     currentBranch,
     defaultBranch,
+    currentPath,
     navigateTo,
     setCurrentBranch,
     findFileItemByPath,
@@ -71,39 +76,132 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
   } = useContentContext();
   const { selectFile } = usePreviewContext();
 
-  const [extensionInput, setExtensionInput] = useState<string>(() => formatExtensions(search.extensionFilter));
+  const branchFilter = search.branchFilter;
+  const availableBranches = search.availableBranches;
+  const extensionFilter = search.extensionFilter;
+  const indexStatus = search.indexStatus;
+  const pathPrefixValue = search.pathPrefix;
+  const { enabled, loading, error, ready, indexedBranches, lastUpdatedAt } = indexStatus;
+  const refreshIndexStatus = search.refreshIndexStatus;
+  const setPathPrefix = search.setPathPrefix;
+
+  const [extensionInput, setExtensionInput] = useState(() => formatExtensionInput(extensionFilter));
+
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  
+  const previousOpenRef = useRef(false);
 
   useEffect(() => {
-    setExtensionInput(formatExtensions(search.extensionFilter));
-  }, [search.extensionFilter]);
+    setExtensionInput(formatExtensionInput(extensionFilter));
+  }, [extensionFilter]);
 
+  // 每次打开搜索抽屉时重置筛选条件并自动填充当前路径
   useEffect(() => {
-    if (!open) {
-      return;
+    const wasOpen = previousOpenRef.current;
+    
+    if (open && !wasOpen) {
+      // 只在从关闭到打开时执行一次重置
+      search.setKeyword('');
+      search.setBranchFilter([]);
+      search.setExtensionFilter([]);
+      setExtensionInput('');
+      search.clearResults();
+      setFiltersExpanded(false);
+      
+      // 自动填充当前路径（如果有）
+      const trimmedCurrentPath = currentPath.trim();
+      if (trimmedCurrentPath.length > 0) {
+        setPathPrefix(trimmedCurrentPath);
+      } else {
+        setPathPrefix('');
+      }
+      
+      // 聚焦主搜索框
+      setTimeout(() => {
+        const input = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
+        input?.focus();
+      }, 100);
     }
-    const input = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
-    input?.focus();
-  }, [open]);
+    
+    previousOpenRef.current = open;
+  }, [open, currentPath, setPathPrefix, search]);
 
-  const handleModeChange = useCallback((_event: React.MouseEvent<HTMLElement>, value: RepoSearchMode | null) => {
-    if (value !== null) {
-      search.setPreferredMode(value);
-    }
+  // 处理搜索输入变化
+  const handleSearchInputChange = useCallback((value: string) => {
+    search.setKeyword(value);
   }, [search]);
 
-  const handleExtensionBlur = useCallback(() => {
-    search.setExtensionFilter(parseExtensions(extensionInput));
+  const applyExtensionFilter = useCallback(() => {
+    const parsed = parseExtensionInput(extensionInput);
+    search.setExtensionFilter(parsed);
   }, [extensionInput, search]);
 
-  const handleExtensionKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      search.setExtensionFilter(parseExtensions(extensionInput));
+  const handleBranchToggle = (branch: string): void => {
+    const normalized = branch.trim();
+    if (normalized.length === 0) {
+      return;
     }
-  }, [extensionInput, search]);
+
+    if (branchFilter.includes(normalized)) {
+      search.setBranchFilter(branchFilter.filter(item => item !== normalized));
+    } else {
+      search.setBranchFilter([...branchFilter, normalized]);
+    }
+  };
+
+  const clearBranchFilter = (): void => {
+    search.setBranchFilter([]);
+  };
+
+  const searchFieldLabel = useMemo(() => {
+    const pathPrefix = pathPrefixValue.trim();
+    const pathSuffix = (!isSmallScreen && pathPrefix.length > 0) ? `: ${pathPrefix}` : "";
+
+    if (branchFilter.length > 0) {
+      const orderedBranches = availableBranches.filter(branch => branchFilter.includes(branch));
+      
+      if (isSmallScreen && orderedBranches.length > 1) {
+        return `在 ${orderedBranches.length.toString()} 个分支中搜索`;
+      }
+      
+      if (!isSmallScreen && orderedBranches.length > 3) {
+        const displayBranches = orderedBranches.slice(0, 3).join("、");
+        return `在 ${displayBranches} 等 ${orderedBranches.length.toString()} 个分支${pathSuffix} 中搜索`;
+      }
+      
+      const displayBranches = orderedBranches.join("、");
+      return `在 ${displayBranches}${pathSuffix} 中搜索`;
+    }
+
+    const fallbackBranch = currentBranch !== "" ? currentBranch : defaultBranch;
+    return fallbackBranch === "" ? "在仓库中搜索" : `在 ${fallbackBranch}${pathSuffix} 中搜索`;
+  }, [branchFilter, availableBranches, currentBranch, defaultBranch, pathPrefixValue, isSmallScreen]);
+
+  const toggleFilters = useCallback(() => {
+    setFiltersExpanded(prev => !prev);
+  }, []);
+
+  // 重置筛选时也清空搜索输入
+  const handleResetFilters = useCallback(() => {
+    search.resetFilters();
+    setFiltersExpanded(false);
+    search.setBranchFilter([]);
+    search.setExtensionFilter([]);
+    setExtensionInput("");
+  }, [search]);
+
+  const handleApiSearch = useCallback(() => {
+    if (search.keyword.trim() === '') {
+      return;
+    }
+    search.setPreferredMode('github-api');
+    void search.search({ mode: 'github-api' }).catch((error: unknown) => {
+      logger.warn('使用 API 模式搜索失败', error);
+    });
+  }, [search]);
 
   const renderIndexStatus = useMemo(() => {
-    if (!search.indexStatus.enabled) {
+    if (!enabled) {
       return (
         <Alert severity="info" variant="outlined">
           已禁用索引搜索。可以在 `.env` 中启用 `REPO_VIEWER_SEARCH_INDEX_ENABLED` 以使用预生成索引。
@@ -111,7 +209,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
       );
     }
 
-    if (search.indexStatus.loading) {
+    if (loading) {
       return (
         <Alert severity="info" icon={<CircularProgress size={16} />}>
           正在检测 `RV-Index` 分支和索引文件…
@@ -119,21 +217,55 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
       );
     }
 
-    if (search.indexStatus.error !== null) {
+    if (error !== null) {
       return (
-        <Alert severity="warning">
-          无法加载索引：{search.indexStatus.error.message}
-          <Box mt={1}>
-            请确认仓库存在 `RV-Index` 分支并已通过 GitHub Actions 生成 `manifest.json` 与索引文件。
+        <Alert
+          severity="warning"
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: isSmallScreen ? 0.75 : 1,
+            pl: isSmallScreen ? 2 : 3,
+            px: isSmallScreen ? 1.5 : 2
+          }}
+        >
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="flex-start"
+            gap={1.5}
+          >
+            <Typography variant={isSmallScreen ? "caption" : "body2"} fontWeight={600} sx={{ flex: 1 }}>
+              无法加载索引，将使用 API 模式搜索
+            </Typography>
+            <Tooltip title="刷新索引状态" placement="left">
+              <span>
+                <IconButton
+                onClick={() => {
+                  refreshIndexStatus();
+                }}
+                disabled={loading}
+                  size={isSmallScreen ? "small" : "medium"}
+                  sx={{
+                    borderRadius: g3BorderRadius(G3_PRESETS.button)
+                  }}
+                >
+                  <RefreshIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
           </Box>
-          <Box mt={1}>
-            建议参考 `Repo-Viewer-Search/docs/search-index-workflow.md` 创建 Workflow，再次点击“刷新索引状态”。
-          </Box>
+          <Typography variant={isSmallScreen ? "caption" : "body2"}>
+            请确认仓库存在索引文件
+          </Typography>
+          <Typography variant={isSmallScreen ? "caption" : "body2"}>
+            建议参考 Repo-Viewer 文档以重新创建索引，或尝试刷新索引状态
+          </Typography>
         </Alert>
       );
     }
 
-    if (!search.indexStatus.ready) {
+    if (!ready) {
       return (
         <Alert severity="info">
           未检测到可用索引。请在目标仓库配置 `Repo-Viewer-Search` Actions，生成 `RV-Index` 分支下的索引文件。
@@ -143,30 +275,11 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 
     return (
       <Alert severity="success">
-        索引最新更新时间：{new Date(search.indexStatus.lastUpdatedAt ?? Date.now()).toLocaleString()}。
-        支持的分支数：{search.indexStatus.indexedBranches.length.toString()}。
+        索引最新更新时间：{new Date(lastUpdatedAt ?? Date.now()).toLocaleString()}。
+        支持的分支数：{indexedBranches.length.toString()}。
       </Alert>
     );
-  }, [search.indexStatus]);
-
-  const fallbackNotice = useMemo(() => {
-    if (search.fallbackReason === null) {
-      return null;
-    }
-
-    switch (search.fallbackReason) {
-      case "index-disabled":
-        return "已禁用索引功能，自动使用 GitHub API 搜索。";
-      case "index-not-ready":
-        return "索引尚未准备就绪，自动使用 GitHub API 搜索。";
-      case "index-error":
-        return "索引加载失败，已自动回退至 GitHub API 搜索。";
-      case "branch-not-indexed":
-        return "所选分支未生成索引，自动使用 GitHub API 搜索。";
-      default:
-        return null;
-    }
-  }, [search.fallbackReason]);
+  }, [enabled, loading, error, ready, indexedBranches.length, lastUpdatedAt, isSmallScreen, refreshIndexStatus]);
 
   const handleSearch = useCallback(async () => {
     try {
@@ -205,19 +318,75 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
     onClose();
   }, [currentBranch, defaultBranch, findFileItemByPath, navigateTo, onClose, search.branchFilter, selectFile, setCurrentBranch]);
 
-  const renderResultSecondary = useCallback((item: RepoSearchItem): string => {
-    const segments: string[] = [item.path];
+  // 高亮文本中的关键字
+  const highlightKeyword = useCallback((text: string, keyword: string): Array<{ text: string; highlight: boolean }> => {
+    if (keyword.trim().length === 0) {
+      return [{ text, highlight: false }];
+    }
+
+    const parts: Array<{ text: string; highlight: boolean }> = [];
+    const lowerText = text.toLowerCase();
+    const lowerKeyword = keyword.toLowerCase();
+    let lastIndex = 0;
+    let index = lowerText.indexOf(lowerKeyword);
+
+    while (index !== -1) {
+      // 添加关键字前的文本
+      if (index > lastIndex) {
+        parts.push({ text: text.slice(lastIndex, index), highlight: false });
+      }
+      
+      // 添加关键字（高亮）
+      parts.push({ text: text.slice(index, index + lowerKeyword.length), highlight: true });
+      
+      lastIndex = index + lowerKeyword.length;
+      index = lowerText.indexOf(lowerKeyword, lastIndex);
+    }
+
+    // 添加剩余文本
+    if (lastIndex < text.length) {
+      parts.push({ text: text.slice(lastIndex), highlight: false });
+    }
+
+    return parts;
+  }, []);
+
+  const renderResultSecondary = useCallback((item: RepoSearchItem) => {
+    const keyword = search.keyword.trim();
+    const pathParts = highlightKeyword(item.path, keyword);
+    
     const snippet = ("snippet" in item && typeof (item as { snippet?: unknown }).snippet === "string")
       ? (item as { snippet?: string }).snippet
       : undefined;
-    if (typeof snippet === "string") {
-      const trimmed = snippet.trim();
-      if (trimmed.length > 0) {
-        segments.push(trimmed);
-      }
-    }
-    return segments.join("\n");
-  }, []);
+
+    return (
+      <Box component="span">
+        <Box component="span">
+          {pathParts.map((part: { text: string; highlight: boolean }, idx: number) => (
+            part.highlight ? (
+              <Box
+                component="span"
+                key={idx}
+                sx={{
+                  color: (theme) => theme.palette.primary.main,
+                  fontWeight: 600
+                }}
+              >
+                {part.text}
+              </Box>
+            ) : (
+              <Box component="span" key={idx}>{part.text}</Box>
+            )
+          ))}
+        </Box>
+        {typeof snippet === "string" && snippet.trim().length > 0 && (
+          <Box component="span" display="block" mt={0.5}>
+            {snippet.trim()}
+          </Box>
+        )}
+      </Box>
+    );
+  }, [highlightKeyword, search.keyword]);
 
   const searchSummaries = useMemo(() => {
     if (search.searchResult === null) {
@@ -245,26 +414,64 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
   }, [resolveItemHtmlUrl]);
 
   const disableSearchButton = search.keyword.trim() === "";
+  const showEmptyIndexResult =
+    !search.searchLoading &&
+    search.keyword.trim() !== "" &&
+    search.searchResult !== null &&
+    search.searchResult.mode === "search-index" &&
+    search.searchResult.items.length === 0;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Typography component="span" variant="h6">仓库搜索</Typography>
-        <IconButton onClick={onClose} aria-label="关闭搜索面板">
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      fullWidth 
+      maxWidth={isSmallScreen ? "sm" : "md"}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: isSmallScreen ? g3BorderRadius({ radius: 20, smoothness: 0.8 }) : g3BorderRadius(G3_PRESETS.dialog),
+            m: isSmallScreen ? 2 : 3,
+          }
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "space-between",
+        px: isSmallScreen ? 2 : 3,
+        py: isSmallScreen ? 1.5 : 2
+      }}>
+        <Typography component="span" variant={isSmallScreen ? "subtitle1" : "h6"}>文件搜索</Typography>
+        <IconButton onClick={onClose} aria-label="关闭搜索面板" size={isSmallScreen ? "small" : "medium"}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2}>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "stretch", sm: "flex-end" }}>
+      <DialogContent 
+        dividers 
+        sx={{ 
+          px: isSmallScreen ? 2 : 3, 
+          py: isSmallScreen ? 2 : 3,
+          // 隐藏滚动条但保留滚动功能
+          scrollbarWidth: 'none', // Firefox
+          msOverflowStyle: 'none', // IE/Edge
+          '&::-webkit-scrollbar': {
+            display: 'none' // Chrome/Safari
+          }
+        }}
+      >
+        <Stack spacing={isSmallScreen ? 1.5 : 2}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <TextField
               id={SEARCH_INPUT_ID}
-              label="关键词"
+              label={searchFieldLabel}
+              placeholder="键入搜索内容"
               variant="outlined"
               fullWidth
               value={search.keyword}
               onChange={(event) => {
-                search.setKeyword(event.target.value);
+                handleSearchInputChange(event.target.value);
               }}
               onKeyDown={event => {
                 if (event.key === "Enter" && !event.shiftKey) {
@@ -272,119 +479,215 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                   void handleSearch();
                 }
               }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: g3BorderRadius(G3_PRESETS.button),
+                },
+                '& .MuiOutlinedInput-input': {
+                  paddingLeft: isSmallScreen ? '16px' : '25px',
+                }
+              }}
               slotProps={{
                 input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
+                  endAdornment: (
+                    <InputAdornment 
+                      position="end" 
+                      sx={{ 
+                        mr: -1, 
+                        gap: 0.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        height: '100%'
+                      }}
+                    >
+                      {search.keyword.trim().length > 0 && (
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            search.setKeyword('');
+                          }}
+                          sx={{ 
+                            mr: 0.5,
+                            borderRadius: g3BorderRadius(G3_PRESETS.button)
+                          }}
+                        >
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      <Button
+                        variant="contained"
+                        size={isSmallScreen ? "small" : "medium"}
+                        startIcon={search.searchLoading ? <CircularProgress size={16} /> : undefined}
+                        disabled={disableSearchButton || search.searchLoading}
+                        onClick={() => {
+                          void handleSearch();
+                        }}
+                        sx={{ 
+                          mr: 0,
+                          borderRadius: g3BorderRadius(G3_PRESETS.button),
+                          minWidth: isSmallScreen ? 'auto' : undefined,
+                          px: isSmallScreen ? 2 : 3
+                        }}
+                      >
+                        搜索
+                      </Button>
                     </InputAdornment>
                   )
                 }
               }}
             />
-            <Box display="flex" gap={1} flexShrink={0}>
-              <Button
-                variant="contained"
-                startIcon={search.searchLoading ? <CircularProgress size={16} /> : <SearchIcon />}
-                disabled={disableSearchButton || search.searchLoading}
-                onClick={() => {
-                  void handleSearch();
+            <Tooltip title={filtersExpanded ? "收起筛选" : "筛选条件"}>
+              <IconButton
+                onClick={toggleFilters}
+                sx={{
+                  height: isSmallScreen ? 40 : 48,
+                  width: isSmallScreen ? 40 : 48,
+                  borderRadius: g3BorderRadius(G3_PRESETS.button)
                 }}
+                size={isSmallScreen ? "small" : "medium"}
+                color={filtersExpanded ? "primary" : "default"}
+                aria-pressed={filtersExpanded}
               >
-                搜索
-              </Button>
-              <Tooltip title="刷新索引状态">
-                <span>
-                  <IconButton
-                    onClick={() => {
-                      search.refreshIndexStatus();
-                    }}
-                    disabled={search.indexStatus.loading}
-                  >
-                    <RefreshIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
+                <FilterListIcon fontSize={isSmallScreen ? "small" : "medium"} />
+              </IconButton>
+            </Tooltip>
           </Stack>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "stretch", sm: "center" }}>
-            <ToggleButtonGroup
-              exclusive
-              value={search.preferredMode}
-              onChange={handleModeChange}
-              size="small"
+          <Collapse in={filtersExpanded} unmountOnExit>
+            <Box
+              sx={{
+                mt: 1,
+                p: isSmallScreen ? 1.5 : 2,
+                borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
+                border: theme => `1px solid ${theme.palette.divider}`,
+                backgroundColor: theme => theme.palette.action.hover
+              }}
             >
-              <ToggleButton value="search-index">索引模式</ToggleButton>
-              <ToggleButton value="github-api">GitHub API 模式</ToggleButton>
-            </ToggleButtonGroup>
-            <Autocomplete
-              multiple
-              options={search.availableBranches}
-              value={search.branchFilter}
-              onChange={(_event, value) => {
-                search.setBranchFilter(value);
-              }}
-              renderInput={(params) => {
-                const textFieldParams = params as unknown as TextFieldProps;
-                return (
-                  <TextField
-                    {...textFieldParams}
-                    size="small"
-                    label="限定分支"
-                    placeholder="默认使用当前分支"
-                  />
-                );
-              }}
-              fullWidth
-            />
-          </Stack>
-
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ xs: "stretch", sm: "center" }}>
-            <TextField
-              label="路径前缀"
-              value={search.pathPrefix}
-              onChange={(event) => {
-                search.setPathPrefix(event.target.value);
-              }}
-              placeholder="例如 src/components"
-              fullWidth
-            />
-            <TextField
-              label="文件扩展名"
-              value={extensionInput}
-              onChange={(event) => {
-                setExtensionInput(event.target.value);
-              }}
-              onBlur={handleExtensionBlur}
-              onKeyDown={handleExtensionKeyDown}
-              placeholder="例如 ts,tsx,md"
-              helperText="使用逗号或空格分隔，自动忽略点号"
-              fullWidth
-            />
-          </Stack>
+              <Stack spacing={isSmallScreen ? 1 : 1.5}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  筛选选项
+                </Typography>
+                <Stack direction="row" spacing={isSmallScreen ? 0.75 : 1} flexWrap="wrap" useFlexGap>
+                  {availableBranches.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      暂无可选分支
+                    </Typography>
+                  ) : (
+                    availableBranches.map(branch => {
+                      const isCurrentBranch = branch === currentBranch || (currentBranch === "" && branch === defaultBranch);
+                      const selected = branchFilter.length === 0 
+                        ? isCurrentBranch 
+                        : branchFilter.includes(branch);
+                      return (
+                        <Chip
+                          key={branch}
+                          label={branch}
+                          color={selected ? "primary" : "default"}
+                          variant={selected ? "filled" : "outlined"}
+                          size={isSmallScreen ? "small" : "medium"}
+                          onClick={() => {
+                            handleBranchToggle(branch);
+                          }}
+                          sx={{ borderRadius: g3BorderRadius({ radius: 14, smoothness: 0.8 }) }}
+                        />
+                      );
+                    })
+                  )}
+                  {branchFilter.length > 0 && (
+                    <Chip
+                      label="清除"
+                      onClick={clearBranchFilter}
+                      onDelete={clearBranchFilter}
+                      color="secondary"
+                      variant="outlined"
+                      size={isSmallScreen ? "small" : "medium"}
+                      sx={{ borderRadius: g3BorderRadius({ radius: 14, smoothness: 0.8 }) }}
+                    />
+                  )}
+                </Stack>
+              <TextField
+                label="限定文件扩展名"
+                value={extensionInput}
+                onChange={(event) => {
+                  setExtensionInput(event.target.value);
+                }}
+                onBlur={applyExtensionFilter}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    applyExtensionFilter();
+                  }
+                }}
+                placeholder="例如 pdf,docx,xlsx"
+                size={isSmallScreen ? "small" : "medium"}
+                fullWidth
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: g3BorderRadius(G3_PRESETS.button),
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    paddingLeft: isSmallScreen ? '16px' : '25px',
+                  }
+                }}
+                slotProps={{
+                  input: {
+                    endAdornment: extensionInput.trim().length > 0 ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setExtensionInput('');
+                            search.setExtensionFilter([]);
+                          }}
+                          sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
+                        >
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : undefined
+                  }
+                }}
+              />
+                <TextField
+                  label="限定搜索路径"
+                  value={search.pathPrefix}
+                  onChange={(event) => {
+                    search.setPathPrefix(event.target.value);
+                  }}
+                  placeholder="例如 src/components"
+                  size={isSmallScreen ? "small" : "medium"}
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: g3BorderRadius(G3_PRESETS.button),
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      paddingLeft: isSmallScreen ? '16px' : '25px',
+                    }
+                  }}
+                  slotProps={{
+                    input: {
+                      endAdornment: search.pathPrefix.trim().length > 0 ? (
+                        <InputAdornment position="end">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              search.setPathPrefix('');
+                            }}
+                            sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
+                          >
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : undefined
+                    }
+                  }}
+                />
+              </Stack>
+            </Box>
+          </Collapse>
 
           {renderIndexStatus}
-
-            {fallbackNotice !== null && (
-              <Alert
-                severity="info"
-                action={
-                  <Button
-                    color="inherit"
-                    size="small"
-                    startIcon={<ExploreIcon />}
-                    onClick={() => {
-                      search.setPreferredMode("github-api");
-                    }}
-                  >
-                    使用 GitHub API
-                  </Button>
-                }
-              >
-              {fallbackNotice}
-            </Alert>
-          )}
 
           {search.searchError !== null && (
             <Alert severity="error">
@@ -394,14 +697,18 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 
           <Divider />
 
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Stack 
+            direction={isSmallScreen ? "column" : "row"} 
+            justifyContent="space-between" 
+            alignItems={isSmallScreen ? "stretch" : "center"}
+            spacing={isSmallScreen ? 1 : 0}
+          >
             <Typography variant="subtitle2" color="text.secondary">{searchSummaries}</Typography>
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} justifyContent={isSmallScreen ? "flex-end" : "flex-start"}>
               <Button
                 size="small"
-                onClick={() => {
-                  search.resetFilters();
-                }}
+                onClick={handleResetFilters}
+                sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
               >
                 重置筛选
               </Button>
@@ -410,59 +717,138 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                 onClick={() => {
                   search.clearResults();
                 }}
+                sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
               >
                 清除结果
               </Button>
             </Stack>
           </Stack>
 
-          <List sx={{ maxHeight: 400, overflowY: "auto" }}>
+          {showEmptyIndexResult && (
+            <Alert
+              severity="info"
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 1,
+                px: isSmallScreen ? 1.5 : 2
+              }}
+              action={
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleApiSearch}
+                  disabled={disableSearchButton}
+                  sx={{ 
+                    borderRadius: g3BorderRadius(G3_PRESETS.button),
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {isSmallScreen ? "API搜索" : "使用 API 模式搜索"}
+                </Button>
+              }
+            >
+              <Typography variant={isSmallScreen ? "caption" : "body2"}>
+                未检索到索引结果，可尝试使用 API 模式搜索。
+              </Typography>
+            </Alert>
+          )}
+
+          <List
+            sx={{
+              maxHeight: isSmallScreen ? 300 : 400,
+              overflowY: "auto",
+              overflowX: "hidden",
+              width: "100%"
+            }}
+          >
             {search.searchResult?.items.map(item => {
               const githubUrl = resolveItemHtmlUrl(item);
 
               return (
                 <ListItem key={`${item.branch}:${item.path}`} disablePadding alignItems="flex-start">
-                <ListItemButton
-                  onClick={() => {
-                    void handleResultClick(item);
-                  }}
-                >
-                  <ListItemText
-                    primary={
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip size="small" label={item.branch} color={item.source === "search-index" ? "primary" : "default"} />
-                        <Typography variant="body2" color="text.secondary">
-                          {item.source === "search-index" ? "索引" : "API"}
-                        </Typography>
-                      </Stack>
-                    }
-                    secondary={renderResultSecondary(item)}
-                    slotProps={{
-                      secondary: {
-                        component: "pre",
-                        sx: { whiteSpace: "pre-wrap" }
-                      }
+                  <Box
+                    sx={{
+                      display: "flex",
+                      width: "100%",
+                      gap: 1,
+                      alignItems: "flex-start"
                     }}
-                  />
-                </ListItemButton>
-                {githubUrl !== undefined && (
-                  <Tooltip title="在 GitHub 中打开">
-                    <IconButton
-                      edge="end"
+                  >
+                    <ListItemButton
                       onClick={() => {
-                        handleOpenGithub(item);
+                        void handleResultClick(item);
+                      }}
+                      sx={{
+                        flex: 1,
+                        alignItems: "flex-start",
+                        borderRadius: g3BorderRadius(G3_PRESETS.fileListItem)
                       }}
                     >
-                      <GitHubIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
+                      <ListItemText
+                        primary={
+                          <Stack direction="row" spacing={isSmallScreen ? 0.5 : 1} alignItems="center">
+                            <Chip 
+                              size="small" 
+                              label={item.branch} 
+                              color={item.source === "search-index" ? "primary" : "default"}
+                              sx={{ 
+                                borderRadius: g3BorderRadius({ radius: 12, smoothness: 0.8 }),
+                                fontSize: isSmallScreen ? '0.7rem' : undefined
+                              }}
+                            />
+                            <Typography variant={isSmallScreen ? "caption" : "body2"} color="text.secondary">
+                              {item.source === "search-index" ? "索引" : "API"}
+                            </Typography>
+                          </Stack>
+                        }
+                        secondary={renderResultSecondary(item)}
+                        slotProps={{
+                          secondary: {
+                            component: "div",
+                            sx: {
+                              whiteSpace: "pre-wrap",
+                              wordBreak: "break-word",
+                              overflowWrap: "anywhere"
+                            }
+                          }
+                        }}
+                      />
+                    </ListItemButton>
+                    {githubUrl !== undefined && (
+                      <Tooltip title="在 GitHub 中打开">
+                        <IconButton
+                          onClick={() => {
+                            handleOpenGithub(item);
+                          }}
+                          sx={{
+                            mt: 1,
+                            borderRadius: g3BorderRadius(G3_PRESETS.button)
+                          }}
+                        >
+                          <GitHubIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
                 </ListItem>
               );
             })}
             {search.searchResult !== null && search.searchResult.items.length === 0 && (
               <ListItem>
-                <ListItemText primary="暂无结果" secondary="尝试更换关键字或调整筛选条件" />
+                <ListItemText 
+                  primary="暂无结果" 
+                  secondary="尝试更换关键字或调整筛选条件"
+                  slotProps={{
+                    primary: {
+                      variant: isSmallScreen ? "body2" : "body1"
+                    },
+                    secondary: {
+                      variant: isSmallScreen ? "caption" : "body2"
+                    }
+                  }}
+                />
               </ListItem>
             )}
           </List>

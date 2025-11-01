@@ -43,6 +43,7 @@ export const GitHub = {
   Search: {
     searchWithGitHubApi: SearchServiceModule.searchWithGitHubApi,
     searchFiles: SearchServiceModule.searchFiles,
+    searchMultipleBranchesWithTreesApi: SearchServiceModule.searchMultipleBranchesWithTreesApi,
   },
 
   /** 索引搜索服务 - 使用生成的索引进行检索 */
@@ -107,6 +108,9 @@ export const GitHub = {
     RequestBatcher: RequestBatcherClass,
   },
 } as const;
+
+// 扁平导出常用函数
+export { searchMultipleBranchesWithTreesApi } from './github/core/SearchService';
 
 // 导出类型定义
 export type { ConfigInfo } from './github/core/Config';

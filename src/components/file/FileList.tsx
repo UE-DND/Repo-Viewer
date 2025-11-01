@@ -335,7 +335,8 @@ const Row = React.memo(({ data, index, style }: ListChildComponentProps<VirtualL
     paddingTop: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
     paddingBottom: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
     /* 保持虚拟列表固定行高，由 rowHeight 精确控制高度 */
-    paddingRight: "3px",
+    // 右侧添加适当间距，避免内容紧贴滚动条（8-16px）
+    paddingRight: "12px",
     boxSizing: "border-box" as const,
     ...optimizedAnimationStyle, // 添加优化的动画样式
   };
@@ -670,7 +671,8 @@ const FileList = React.memo<FileListProps>(
           sx={{
             ...containerStyle,
             height: availableHeight,
-            p: containerPadding,
+            pl: { xs: 0.5, sm: 0.85 },
+            py: containerPadding,
           }}
           className={`file-list-container ${hasFewItems ? "few-items" : ""}`}
         >

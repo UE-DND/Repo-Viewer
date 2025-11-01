@@ -98,7 +98,11 @@ interface UseRepoSearchOptions {
 
 const SEARCH_INDEX_DEFAULT_LIMIT = 200;
 
-function sanitizeBranchList(branches: string[], availableBranches: Set<string>): string[] {
+function sanitizeBranchList(
+  branches: string[],
+  availableBranches: Set<string>,
+  branchOrder: Map<string, number>
+): string[] {
   const normalized: string[] = [];
   const seen = new Set<string>();
 
@@ -117,7 +121,22 @@ function sanitizeBranchList(branches: string[], availableBranches: Set<string>):
     normalized.push(trimmed);
   }
 
-  return normalized;
+  return normalized.sort((a, b) => {
+    const rankA = branchOrder.get(a);
+    const rankB = branchOrder.get(b);
+
+    if (rankA !== undefined && rankB !== undefined) {
+      return rankA - rankB;
+    }
+    if (rankA !== undefined) {
+      return -1;
+    }
+    if (rankB !== undefined) {
+      return 1;
+    }
+
+    return a.localeCompare(b, 'zh-CN');
+  });
 }
 
 function sanitizeExtensions(extensions: string[] | string): string[] {
@@ -186,26 +205,35 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
   const indexBranchName = searchIndexConfig.indexBranch;
   const indexFeatureEnabled = GitHub.SearchIndex.isEnabled();
 
-  const availableBranchSet = useMemo(() => {
-    const result = new Set<string>();
-    for (const branch of branches) {
-      if (branch !== indexBranchName) {
-        result.add(branch);
+  const { availableBranchSet, availableBranches, branchOrder } = useMemo(() => {
+    const set = new Set<string>();
+    const order = new Map<string, number>();
+    const list: string[] = [];
+
+  const appendBranch = (candidate: string): void => {
+      const trimmed = candidate.trim();
+      if (trimmed.length === 0 || trimmed === indexBranchName || set.has(trimmed)) {
+        return;
       }
+
+      set.add(trimmed);
+      order.set(trimmed, list.length);
+      list.push(trimmed);
+    };
+
+    for (const branch of branches) {
+      appendBranch(branch);
     }
 
-    if (defaultBranch !== '' && defaultBranch !== indexBranchName) {
-      result.add(defaultBranch);
-    }
+    appendBranch(defaultBranch);
+    appendBranch(currentBranch);
 
-    if (currentBranch !== '' && currentBranch !== indexBranchName) {
-      result.add(currentBranch);
-    }
-
-    return result;
+    return {
+      availableBranchSet: set,
+      availableBranches: list,
+      branchOrder: order
+    };
   }, [branches, currentBranch, defaultBranch, indexBranchName]);
-
-  const availableBranches = useMemo(() => Array.from(availableBranchSet), [availableBranchSet]);
 
   const [filters, setFilters] = useState<RepoSearchFilters>(() => ({
     keyword: '',
@@ -216,7 +244,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
 
   useEffect(() => {
     setFilters(prev => {
-      const sanitizedBranches = sanitizeBranchList(prev.branches, availableBranchSet);
+      const sanitizedBranches = sanitizeBranchList(prev.branches, availableBranchSet, branchOrder);
       const unchanged =
         sanitizedBranches.length === prev.branches.length &&
         sanitizedBranches.every((branch, index) => branch === prev.branches[index]);
@@ -230,7 +258,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
         branches: sanitizedBranches
       } satisfies RepoSearchFilters;
     });
-  }, [availableBranchSet]);
+  }, [availableBranchSet, branchOrder]);
 
   const previousBranchRef = useRef<string>(currentBranch);
 
@@ -362,7 +390,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
 
   const computeEffectiveBranches = useCallback((): string[] => {
     if (filters.branches.length > 0) {
-      return sanitizeBranchList(filters.branches, availableBranchSet);
+      return sanitizeBranchList(filters.branches, availableBranchSet, branchOrder);
     }
 
     const fallbackCandidates: string[] = [];
@@ -372,8 +400,8 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
       fallbackCandidates.push(defaultBranch);
     }
 
-    return sanitizeBranchList(fallbackCandidates, availableBranchSet);
-  }, [filters.branches, availableBranchSet, currentBranch, defaultBranch, indexBranchName]);
+    return sanitizeBranchList(fallbackCandidates, availableBranchSet, branchOrder);
+  }, [filters.branches, availableBranchSet, branchOrder, currentBranch, defaultBranch, indexBranchName]);
 
   const fallbackReason = useMemo<RepoSearchFallbackReason | null>(() => {
     if (preferredMode !== 'search-index') {
@@ -481,13 +509,14 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
   const setBranchFilter = useCallback((branchesOrBranch: string[] | string) => {
     const normalized = sanitizeBranchList(
       Array.isArray(branchesOrBranch) ? branchesOrBranch : [branchesOrBranch],
-      availableBranchSet
+      availableBranchSet,
+      branchOrder
     );
     setFilters(prev => ({
       ...prev,
       branches: normalized
     }));
-  }, [availableBranchSet]);
+  }, [availableBranchSet, branchOrder]);
 
   const setExtensionFilter = useCallback((extensions: string[] | string) => {
     const normalized = sanitizeExtensions(extensions);
@@ -507,11 +536,13 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
   const resetFilters = useCallback(() => {
     setFilters({
       keyword: '',
-      branches: currentBranch !== '' && currentBranch !== indexBranchName ? [currentBranch] : [],
+      branches: currentBranch !== '' && currentBranch !== indexBranchName
+        ? sanitizeBranchList([currentBranch], availableBranchSet, branchOrder)
+        : [],
       pathPrefix: '',
       extensions: []
     });
-  }, [currentBranch, indexBranchName]);
+  }, [currentBranch, indexBranchName, availableBranchSet, branchOrder]);
 
   const clearResults = useCallback(() => {
     setSearchResult(null);
@@ -526,7 +557,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
       extensions: options?.extensions ?? filters.extensions
     };
 
-    const sanitizedBranches = sanitizeBranchList(mergedFilters.branches, availableBranchSet);
+  const sanitizedBranches = sanitizeBranchList(mergedFilters.branches, availableBranchSet, branchOrder);
     const sanitizedExtensions = sanitizeExtensions(mergedFilters.extensions);
     const keyword = mergedFilters.keyword.trim();
 
@@ -621,39 +652,45 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
         return execution;
       }
 
-      let primaryBranch = sanitizedBranches[0];
-      if (primaryBranch === undefined || primaryBranch === '') {
+      // 确定要搜索的分支列表
+      let targetBranches = sanitizedBranches;
+      if (targetBranches.length === 0) {
         if (currentBranch !== '' && currentBranch !== indexBranchName) {
-          primaryBranch = currentBranch;
+          targetBranches = [currentBranch];
         } else if (defaultBranch !== '' && defaultBranch !== indexBranchName) {
-          primaryBranch = defaultBranch;
+          targetBranches = [defaultBranch];
         } else {
-          primaryBranch = defaultBranch;
+          targetBranches = [defaultBranch];
         }
       }
 
       const pathPrefixRaw = mergedFilters.pathPrefix.trim();
 
-      const apiResults = await GitHub.Search.searchWithGitHubApi(
+      // 使用 Trees API 进行多分支搜索
+      const branchResults = await GitHub.Search.searchMultipleBranchesWithTreesApi(
         keyword,
+        targetBranches,
         pathPrefixRaw,
         sanitizedExtensions[0]
       );
 
+      const allItems: RepoSearchItem[] = branchResults.flatMap(({ branch, results }: { branch: string; results: GitHubContent[] }) =>
+        results.map((item: GitHubContent) => ({
+          ...item,
+          source: 'github-api' as const,
+          branch
+        }))
+      );
+
       const took = performance.now() - startedAt;
-      const items: RepoSearchItem[] = apiResults.map(item => ({
-        ...item,
-        source: 'github-api' as const,
-        branch: primaryBranch
-      }));
 
       const execution: RepoSearchExecutionResult = {
         mode: 'github-api',
-        items,
+        items: allItems,
         took,
         filters: {
           keyword,
-          branches: sanitizedBranches,
+          branches: targetBranches,
           pathPrefix: pathPrefixRaw,
           extensions: sanitizedExtensions
         },
@@ -679,7 +716,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
     } finally {
       setSearchLoading(false);
     }
-  }, [filters, availableBranchSet, effectiveMode, fallbackReason, computeEffectiveBranches, currentBranch, defaultBranch, indexBranchName, isBranchIndexed]);
+  }, [filters, availableBranchSet, branchOrder, effectiveMode, fallbackReason, computeEffectiveBranches, currentBranch, defaultBranch, indexBranchName, isBranchIndexed]);
 
   return {
     keyword: filters.keyword,

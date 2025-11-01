@@ -9,7 +9,7 @@ import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   GitHub as GitHubIcon,
-  Search as SearchIcon,
+  SearchRounded as SearchIcon,
 } from "@mui/icons-material";
 import { ColorModeContext } from "@/contexts/colorModeContext";
 import { useRefresh } from "@/hooks/useRefresh";
@@ -58,7 +58,7 @@ interface RefreshSessionState {
 
 /**
  * 工具栏按钮组件
- * 
+ *
  * 提供主题切换、刷新和跳转到GitHub等功能按钮。
  */
 const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
@@ -410,7 +410,7 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
         }}
         data-oid="7:zr_jb"
       >
-        <Tooltip title="搜索仓库" data-oid="toolbar-search">
+        <Tooltip title="搜索仓库文件" data-oid="toolbar-search">
           <span>
             <IconButton
               color="inherit"
