@@ -6,6 +6,7 @@
 
 import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
+import { sortContentsByPinyin } from '@/utils/sorting/contentSorting';
 
 /**
  * 首页过滤配置接口
@@ -24,20 +25,14 @@ export interface HomepageFilterConfig {
  * 
  * 排序规则：
  * 1. 目录优先于文件
- * 2. 同类型按名称字母顺序（中文排序）
+ * 2. 同类型按拼音字母顺序排序（中文转拼音）
+ * 3. 支持数字的自然排序
  * 
  * @param contents - 待排序的内容数组
  * @returns 排序后的新数组
  */
 export function sortContents(contents: GitHubContent[]): GitHubContent[] {
-  return [...contents].sort((a, b) => {
-    // 目录优先
-    if (a.type !== b.type) {
-      return a.type === 'dir' ? -1 : 1;
-    }
-    // 按名称字母顺序（支持中文排序）
-    return a.name.localeCompare(b.name, 'zh-CN');
-  });
+  return sortContentsByPinyin(contents);
 }
 
 /**

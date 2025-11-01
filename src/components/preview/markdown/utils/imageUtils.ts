@@ -102,11 +102,13 @@ export const tryDirectImageLoad = (imgSrc: string): string | null => {
  * 
  * @param src - 原始图片URL
  * @param previewingItem - 当前预览的Markdown文件项
+ * @param currentBranch - 当前分支名称（可选）
  * @returns 包含转换后URL和原始URL的对象
  */
 export const transformImageSrc = (
   src: string | undefined,
-  previewingItem: GitHubContent | null
+  previewingItem: GitHubContent | null,
+  currentBranch?: string
 ): { imgSrc: string; originalSrc: string } => {
   const originalSrc = src ?? "";
   let imgSrc = originalSrc;
@@ -116,15 +118,12 @@ export const transformImageSrc = (
     typeof src === "string" &&
     src.length > 0
   ) {
-    // 记录转换前的URL
-    logger.debug("Markdown中的原始图片URL:", src);
-    logger.debug("当前Markdown文件路径:", previewingItem.path);
-
     // 使用GitHubService处理图片URL
     const transformedSrc = GitHub.Proxy.transformImageUrl(
       src,
       previewingItem.path,
-      true
+      true,
+      currentBranch
     );
 
     if (typeof transformedSrc === "string" && transformedSrc.length > 0) {

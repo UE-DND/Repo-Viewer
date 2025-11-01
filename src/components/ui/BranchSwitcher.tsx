@@ -41,46 +41,55 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
   const open = Boolean(anchorEl);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // 固定宽度为8个字符
-  const FIXED_CHAR_WIDTH = 8;
+  const CHARS_PER_LINE = 12;
+  const MAX_VISIBLE_LINES = 2;
 
-  // 处理分支名换行的函数
+  // 处理分支名显示为最多两行，并对过长文本进行省略
   const formatBranchName = useCallback((branchName: string): string[] => {
-    if (branchName.length <= FIXED_CHAR_WIDTH) {
-      return [branchName];
+    const normalized = branchName.trim();
+
+    if (normalized.length <= CHARS_PER_LINE) {
+      return [normalized];
     }
 
-    // 查找分隔符位置（/, -, _）
-    const separators = ['/', '-', '_'];
-    let bestSplit = -1;
+    const separators = ["/", "-", "_"];
+    const lines: string[] = [];
+    let remaining = normalized;
 
-    for (let i = 1; i < Math.min(branchName.length, FIXED_CHAR_WIDTH); i++) {
-      const char = branchName[i];
-      if (char !== undefined && separators.includes(char)) {
-        bestSplit = i + 1; // 包含分隔符
+    while (remaining.length > 0 && lines.length < MAX_VISIBLE_LINES) {
+      if (lines.length === MAX_VISIBLE_LINES - 1) {
+        if (remaining.length > CHARS_PER_LINE) {
+          const truncated = remaining.substring(0, Math.max(CHARS_PER_LINE - 3, 0));
+          lines.push(`${truncated}...`);
+        } else {
+          lines.push(remaining);
+        }
+        break;
       }
-    }
 
-    if (bestSplit > 0) {
-      const firstPart = branchName.substring(0, bestSplit);
-      const remaining = branchName.substring(bestSplit);
+      const searchLimit = Math.min(remaining.length, CHARS_PER_LINE);
+      let splitIndex = -1;
 
-      if (remaining.length <= FIXED_CHAR_WIDTH) {
-        return [firstPart, remaining];
-      } else {
-        // 递归处理剩余部分
-        return [firstPart, ...formatBranchName(remaining)];
+      for (let i = searchLimit; i > 0; i--) {
+        const char = remaining[i - 1];
+        if (char !== undefined && separators.includes(char)) {
+          splitIndex = i;
+          break;
+        }
       }
+
+      if (splitIndex === -1) {
+        splitIndex = searchLimit;
+      }
+
+      lines.push(remaining.substring(0, splitIndex));
+      remaining = remaining.substring(splitIndex);
     }
 
-    // 如果没有找到合适的分隔符，直接截断
-    return [
-      branchName.substring(0, FIXED_CHAR_WIDTH),
-      ...formatBranchName(branchName.substring(FIXED_CHAR_WIDTH))
-    ];
-  }, []);
+    return lines;
+  }, [CHARS_PER_LINE, MAX_VISIBLE_LINES]);
 
-  const containerWidth = FIXED_CHAR_WIDTH * 8 + 16;
+  const containerWidth = CHARS_PER_LINE * 8 + 16;
 
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(anchorEl !== null ? null : event.currentTarget);
@@ -415,6 +424,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 borderRadius: open ? "0 0 8px 8px" : "8px",
+                borderTop: open ? `1px dashed ${theme.palette.divider}` : "none",
                 transition: "color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 overflow: "hidden",
                 "&:hover": {

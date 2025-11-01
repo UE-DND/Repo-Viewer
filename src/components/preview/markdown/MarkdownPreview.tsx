@@ -40,6 +40,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     previewingItem,
     onClose,
     lazyLoad = true,
+    currentBranch,
   }) => {
     const theme = useTheme();
 
@@ -295,6 +296,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
                         style={imageStyle}
                         previewingItem={previewingItem ?? null}
                         imageState={imageStateRef.current}
+                        currentBranch={currentBranch}
                         {...props}
                       />
                     );

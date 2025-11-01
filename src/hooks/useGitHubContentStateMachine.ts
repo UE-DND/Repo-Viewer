@@ -2,6 +2,7 @@ import { useReducer, useCallback, useEffect, useRef } from 'react';
 import type { GitHubContent } from '@/types';
 import { GitHub } from '@/services/github';
 import { logger } from '@/utils';
+import { sortContentsByPinyin } from '@/utils/sorting/contentSorting';
 import { 
   getBranchFromUrl, 
   getPathFromUrl, 
@@ -278,14 +279,7 @@ export function useGitHubContentStateMachine(): {
 
     try {
       const data = await GitHub.Content.getContents(path);
-      
-      // 排序
-      const sortedData = [...data].sort((a, b) => {
-        if (a.type !== b.type) {
-          return a.type === 'dir' ? -1 : 1;
-        }
-        return a.name.localeCompare(b.name, 'zh-CN');
-      });
+      const sortedData = sortContentsByPinyin(data);
 
       dispatch({ 
         type: 'LOAD_SUCCESS', 

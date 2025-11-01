@@ -9,8 +9,8 @@ import type { OptionsObject as NotistackOptionsObject } from 'notistack';
 // 导出错误相关类型
 export * from './errors';
 
-// 导出预览相关类型（包含 OfficeFileType 枚举）
-export * from './preview';
+// 导出预览相关类型
+export type * from './preview';
 
 // 导出下载相关类型
 export type * from './download';

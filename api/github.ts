@@ -419,7 +419,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         const urlString = urlParam;
 
         // 判断是否是二进制文件
-        const isBinaryFile = /\.(png|jpg|jpeg|gif|pdf|docx|xlsx|pptx|zip|rar|7z|exe|dll|so|dylib|bin)$/i.test(urlString);
+        const isBinaryFile = /\.(png|jpg|jpeg|gif|pdf|zip|rar|7z|exe|dll|so|dylib|bin)$/i.test(urlString);
 
         // 设置正确的响应类型
         if (isBinaryFile) {
@@ -434,9 +434,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
               'jpg': 'image/jpeg',
               'jpeg': 'image/jpeg',
               'gif': 'image/gif',
-              'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-              'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-              'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
               'zip': 'application/zip',
               'rar': 'application/x-rar-compressed',
               '7z': 'application/x-7z-compressed'

@@ -5,6 +5,7 @@ import type {
   GitHubSearchCodeItem,
   GitHubSearchResponse
 } from './apiSchemas';
+import { sortContentsByPinyin } from '@/utils/sorting/contentSorting';
 
 /**
  * 转换GitHub API内容项
@@ -106,23 +107,13 @@ export function transformGitHubSearchResponse(searchResponse: GitHubSearchRespon
 /**
  * 排序GitHub内容数组
  * 
- * 目录优先排序，同类型按名称排序（支持数字排序）。
+ * 目录优先排序，同类型按拼音字母顺序排序（中文转拼音）。
  * 
  * @param contents - GitHub内容数组
  * @returns 排序后的GitHubContent数组
  */
 export function sortGitHubContents(contents: GitHubContent[]): GitHubContent[] {
-  return [...contents].sort((a, b) => {
-    // 目录优先
-    if (a.type !== b.type) {
-      return a.type === 'dir' ? -1 : 1;
-    }
-    // 同类型按名称排序
-    return a.name.localeCompare(b.name, undefined, {
-      numeric: true,
-      sensitivity: 'base'
-    });
-  });
+  return sortContentsByPinyin(contents);
 }
 
 /**

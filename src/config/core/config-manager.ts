@@ -242,6 +242,9 @@ export class ConfigManager {
         hideDownload: {
           enabled: EnvParser.parseBoolean(resolveEnvWithMapping(stringEnv, 'HIDE_MAIN_FOLDER_DOWNLOAD', 'false')),
           hiddenFolders: EnvParser.parseStringArray(resolveEnvWithMapping(stringEnv, 'HIDE_DOWNLOAD_FOLDERS', ''))
+        },
+        footer: {
+          leftText: resolveEnvWithMapping(stringEnv, 'FOOTER_LEFT_TEXT', '')
         }
       },
       proxy: {

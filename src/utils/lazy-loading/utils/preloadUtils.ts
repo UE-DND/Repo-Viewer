@@ -6,7 +6,7 @@ type RequestIdleCallbackFn = (callback: () => void) => number;
 /**
  * 预加载预览组件
  * 
- * 在浏览器空闲时预加载Markdown、图片和Office预览组件。
+ * 在浏览器空闲时预加载Markdown和图片预览组件。
  * 
  * @returns void
  */
@@ -23,11 +23,6 @@ export const preloadPreviewComponents = (): void => {
 
     import('../../../components/preview/image').catch((_unknown: unknown) => {
       logger.debug('预加载图片预览组件失败');
-    });
-
-    // Office 预览组件较大，根据使用频率决定是否预加载
-    import('../../../components/preview/office').catch((_unknown: unknown) => {
-      logger.debug('预加载 Office 预览组件失败');
     });
   });
 };

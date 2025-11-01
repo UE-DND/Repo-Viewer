@@ -229,10 +229,11 @@ export function resetFailedProxyServices(): void {
  * @param src - 原始图片URL
  * @param markdownFilePath - Markdown文件的路径
  * @param useTokenMode - 是否使用Token模式
+ * @param branch - 分支名称（可选）
  * @returns 转换后的绝对URL
  */
-export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean): string | undefined {
-  return authTransformImageUrl(src, markdownFilePath, useTokenMode);
+export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean, branch?: string): string | undefined {
+  return authTransformImageUrl(src, markdownFilePath, useTokenMode, branch);
 }
 
 /**

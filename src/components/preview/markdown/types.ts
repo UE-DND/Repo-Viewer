@@ -10,4 +10,5 @@ export interface MarkdownPreviewProps {
   onClose?: () => void;
   previewingItem?: GitHubContent | null;
   lazyLoad?: boolean;
+  currentBranch?: string | undefined;
 }

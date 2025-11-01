@@ -94,33 +94,3 @@ export const isPdfFile = (filename: string): boolean => {
 export const isMarkdownFile = (filename: string): boolean => {
   return checkFileExtension(filename, ['md']);
 };
-
-/**
- * 检查是否为Word文档
- * 
- * @param fileName - 文件名
- * @returns 如果是Word文档返回true
- */
-export const isWordFile = (fileName: string): boolean => {
-  return checkFileExtension(fileName, ['doc', 'docx', 'docm']);
-};
-
-/**
- * 检查是否为Excel文档
- * 
- * @param fileName - 文件名
- * @returns 如果是Excel文档返回true
- */
-export const isExcelFile = (fileName: string): boolean => {
-  return checkFileExtension(fileName, ['xls', 'xlsx', 'xlsm', 'xlsb', 'csv']);
-};
-
-/**
- * 检查是否为PowerPoint文档
- * 
- * @param fileName - 文件名
- * @returns 如果是PowerPoint文档返回true
- */
-export const isPPTFile = (fileName: string): boolean => {
-  return checkFileExtension(fileName, ['ppt', 'pptx', 'pptm', 'pps', 'ppsx']);
-};
