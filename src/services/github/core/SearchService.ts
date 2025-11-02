@@ -57,18 +57,15 @@ export async function searchWithGitHubApi(
     let rawSearchResults: unknown;
 
     if (shouldUseServerAPI()) {
-        // 使用服务端API执行搜索
         const response = await axios.get(`/api/github?action=search&q=${encodeURIComponent(query)}`);
         rawSearchResults = response.data;
         logger.debug(`通过服务端API搜索: ${query}`);
       } else {
-        // 原始搜索代码
         const apiUrl = `${GITHUB_API_BASE}/search/code`;
         const urlWithParams = new URL(apiUrl);
         urlWithParams.searchParams.append('q', query);
-        urlWithParams.searchParams.append('per_page', '100'); // 最大结果数
+        urlWithParams.searchParams.append('per_page', '100');
 
-        // 使用增强批处理器处理请求
         const fetchUrl = urlWithParams.toString();
         rawSearchResults = await batcher.enqueue(fetchUrl, async () => {
           logger.debug(`搜索API请求: ${fetchUrl}`);
@@ -84,7 +81,7 @@ export async function searchWithGitHubApi(
 
           return result.json() as Promise<unknown>;
         }, {
-          priority: 'medium', // 搜索请求中等优先级
+          priority: 'medium',
           method: 'GET',
           headers: getAuthHeaders() as Record<string, string>
         });

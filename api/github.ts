@@ -421,6 +421,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       }
     }
 
+    if (actionParam === 'getTree') {
+      const branchParam = getSingleQueryParam(req.query['branch']);
+      if (branchParam === undefined || branchParam.trim().length === 0) {
+        res.status(400).json({ error: '缺少branch参数' });
+        return;
+      }
+
+      const recursiveParam = getSingleQueryParam(req.query['recursive']);
+      const recursive = recursiveParam !== undefined ? parseBooleanFlag(recursiveParam) : false;
+
+      const { repoOwner, repoName } = getRepoEnvConfig();
+      if (repoOwner.length === 0 || repoName.length === 0) {
+        res.status(500).json({
+          error: '仓库配置缺失',
+          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+        });
+        return;
+      }
+
+      const encodedBranch = encodePathSegments(branchParam.trim());
+      const queryString = recursive ? '?recursive=1' : '';
+
+      try {
+        const response = await handleRequestWithRetry(() =>
+          axios.get(`${GITHUB_API_BASE}/repos/${repoOwner}/${repoName}/git/trees/${encodedBranch}${queryString}`, {
+            headers: getAuthHeaders()
+          })
+        );
+
+        res.status(200).json(response.data);
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        const status = axiosError.response?.status ?? 500;
+
+        apiLogger.error('获取 Git 树失败:', axiosError.message ?? '未知错误');
+        res.status(status).json({
+          error: '获取 Git 树失败',
+          message: axiosError.message ?? '未知错误'
+        });
+        return;
+      }
+    }
+
     if (actionParam === 'getSearchIndexAsset') {
       const indexBranchParam = parseBranchOverride(req.query['indexBranch']) ?? 'RV-Index';
       const pathParam = getSingleQueryParam(req.query['path']);
@@ -624,7 +668,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
-      const searchQuery = `repo:${repoOwner}/${repoName} ${qParam}`;
+      const repoQualifier = `repo:${repoOwner}/${repoName}`;
+      const searchQuery = qParam.includes(repoQualifier)
+        ? qParam
+        : `${repoQualifier} ${qParam}`;
 
       try {
         const response = await handleRequestWithRetry(() =>
