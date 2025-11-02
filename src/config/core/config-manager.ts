@@ -245,27 +245,27 @@ export class ConfigManager {
     const repoBranch = resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_BRANCH', CONFIG_DEFAULTS.GITHUB_REPO_BRANCH);
 
     const searchIndexEnabled = EnvParser.parseBoolean(
-      resolveEnvWithMapping(stringEnv, 'REPO_VIEWER_SEARCH_INDEX_ENABLED', 'false')
+      resolveEnvWithMapping(stringEnv, 'ENABLED_SEARCH_INDEX', 'false')
     );
     const searchIndexIndexBranch = resolveEnvWithMapping(
       stringEnv,
-      'REPO_VIEWER_SEARCH_INDEX_BRANCH',
+      'SEARCH_INDEX_BRANCH',
       CONFIG_DEFAULTS.SEARCH_INDEX_BRANCH
     );
     const searchIndexDefaultBranch = resolveEnvWithMapping(
       stringEnv,
-      'REPO_VIEWER_SEARCH_DEFAULT_BRANCH',
+      'SEARCH_DEFAULT_BRANCH',
       repoBranch
     );
     const searchIndexManifestPath = resolveEnvWithMapping(
       stringEnv,
-      'REPO_VIEWER_SEARCH_MANIFEST_PATH',
+      'SEARCH_MANIFEST_PATH',
       CONFIG_DEFAULTS.SEARCH_INDEX_MANIFEST_PATH
     );
     const searchIndexRefreshIntervalMs = EnvParser.parseInteger(
       resolveEnvWithMapping(
         stringEnv,
-        'REPO_VIEWER_SEARCH_REFRESH_INTERVAL_MS',
+        'SEARCH_REFRESH_INTERVAL',
         CONFIG_DEFAULTS.SEARCH_INDEX_REFRESH_INTERVAL_MS.toString()
       ),
       CONFIG_DEFAULTS.SEARCH_INDEX_REFRESH_INTERVAL_MS,

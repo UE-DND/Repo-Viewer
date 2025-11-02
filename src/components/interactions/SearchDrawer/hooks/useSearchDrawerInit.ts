@@ -8,6 +8,7 @@ interface UseSearchDrawerInitProps {
     setBranchFilter: (branches: string[]) => void;
     setExtensionFilter: (extensions: string[]) => void;
     clearResults: () => void;
+    initializeIndex: () => void;
   };
   setPathPrefix: (prefix: string) => void;
   setExtensionInput: (value: string) => void;
@@ -34,6 +35,9 @@ export const useSearchDrawerInit = ({
     const wasOpen = previousOpenRef.current;
 
     if (open && !wasOpen) {
+      // 初始化搜索索引（懒加载）
+      search.initializeIndex();
+
       // 重置所有筛选条件
       search.setKeyword('');
       search.setBranchFilter([]);

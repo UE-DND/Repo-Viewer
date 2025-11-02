@@ -88,6 +88,7 @@ export interface RepoSearchState {
   resetFilters: () => void;
   isBranchIndexed: (branch: string) => boolean;
   refreshIndexStatus: () => void;
+  initializeIndex: () => void;
 }
 
 interface UseRepoSearchOptions {
@@ -305,15 +306,21 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
   const [indexStatus, setIndexStatus] = useState<RepoSearchIndexStatus>(() => ({
     enabled: indexFeatureEnabled,
     ready: false,
-    loading: indexFeatureEnabled,
+    loading: false,
     error: null,
     indexedBranches: []
   }));
 
   const prefetchedBranchesRef = useRef<Set<string>>(new Set());
   const [indexRefreshToken, setIndexRefreshToken] = useState<number>(0);
+  const [indexInitialized, setIndexInitialized] = useState<boolean>(false);
+
+  const initializeIndex = useCallback(() => {
+    setIndexInitialized(true);
+  }, []);
 
   const refreshIndexStatus = useCallback(() => {
+    GitHub.SearchIndex.invalidateCache();
     prefetchedBranchesRef.current.clear();
     setIndexRefreshToken(token => token + 1);
   }, []);
@@ -327,6 +334,11 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
         error: null,
         indexedBranches: []
       });
+      return;
+    }
+
+    // 只有在索引被初始化后才执行检测
+    if (!indexInitialized) {
       return;
     }
 
@@ -381,7 +393,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
     return () => {
       abortController.abort();
     };
-  }, [indexFeatureEnabled, indexRefreshToken]);
+  }, [indexFeatureEnabled, indexRefreshToken, indexInitialized]);
 
   const isBranchIndexed = useCallback(
     (branch: string) => indexStatus.indexedBranches.includes(branch),
@@ -442,7 +454,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
       return;
     }
 
-    if (!indexFeatureEnabled || !indexStatus.ready) {
+    if (!indexFeatureEnabled || !indexStatus.ready || !indexInitialized) {
       return;
     }
 
@@ -486,7 +498,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
     return () => {
       abortController.abort();
     };
-  }, [preferredMode, indexFeatureEnabled, indexStatus.ready, computeEffectiveBranches, isBranchIndexed]);
+  }, [preferredMode, indexFeatureEnabled, indexStatus.ready, indexInitialized, computeEffectiveBranches, isBranchIndexed]);
 
   const [searchResult, setSearchResult] = useState<RepoSearchExecutionResult | null>(null);
   const [searchLoading, setSearchLoading] = useState<boolean>(false);
@@ -741,6 +753,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
     clearResults,
     resetFilters,
     isBranchIndexed,
-    refreshIndexStatus
+    refreshIndexStatus,
+    initializeIndex
   } satisfies RepoSearchState;
 }

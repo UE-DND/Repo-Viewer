@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { useContentContext, usePreviewContext } from "@/contexts/unified";
+import { getSearchIndexConfig } from "@/config";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { resolveItemHtmlUrl } from "./utils";
 import {
@@ -48,6 +49,10 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
     search
   } = useContentContext();
   const { selectFile } = usePreviewContext();
+
+  // 获取搜索索引配置
+  const searchIndexConfig = getSearchIndexConfig();
+  const indexBranchName = searchIndexConfig.indexBranch;
 
   // 解构搜索相关状态
   const { branchFilter, availableBranches, indexStatus, pathPrefix, refreshIndexStatus, setPathPrefix } = search;
@@ -220,6 +225,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
               ready={ready}
               indexedBranches={indexedBranches}
               lastUpdatedAt={lastUpdatedAt}
+              indexBranchName={indexBranchName}
               onRefresh={refreshIndexStatus}
             />
 

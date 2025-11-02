@@ -181,7 +181,7 @@ const getRepoEnvConfig = (): RepoEnvConfig => {
 const getSearchIndexRepoEnvConfig = (): RepoEnvConfig => {
   const baseRepo = getRepoEnvConfig();
   const branch = resolveEnvValue(
-    ['REPO_VIEWER_SEARCH_DEFAULT_BRANCH', 'VITE_REPO_VIEWER_SEARCH_DEFAULT_BRANCH'],
+    ['SEARCH_DEFAULT_BRANCH', 'VITE_SEARCH_DEFAULT_BRANCH'],
     baseRepo.repoBranch
   );
 
@@ -288,10 +288,10 @@ async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T
 
 /**
  * GitHub API请求处理函数
- * 
+ *
  * 统一处理所有GitHub相关的API请求，包括获取内容、搜索、分支列表等。
  * 支持token管理和自动轮换。
- * 
+ *
  * @param req - Vercel请求对象
  * @param res - Vercel响应对象
  * @returns Promise，处理完成后解析

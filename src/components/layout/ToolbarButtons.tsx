@@ -1,4 +1,4 @@
-import { useContext, useState, useCallback, useEffect, useRef } from "react";
+import { useContext, useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import {
   Box,
   IconButton,
@@ -18,7 +18,9 @@ import axios from "axios";
 import { getGithubConfig } from "@/config";
 import { logger } from "@/utils";
 import { useContentContext } from "@/contexts/unified";
-import SearchDrawer from "@/components/interactions/SearchDrawer";
+
+// 懒加载搜索组件
+const SearchDrawer = lazy(async () => import("@/components/interactions/SearchDrawer"));
 
 /**
  * 仓库信息接口
@@ -463,7 +465,11 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
         </IconButton>
       </Tooltip>
       </Box>
-      <SearchDrawer open={searchDrawerOpen} onClose={closeSearchDrawer} />
+      {searchDrawerOpen && (
+        <Suspense fallback={null}>
+          <SearchDrawer open={searchDrawerOpen} onClose={closeSearchDrawer} />
+        </Suspense>
+      )}
     </>
   );
 };
