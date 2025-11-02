@@ -16,7 +16,7 @@ interface UseSearchActionsProps {
   setCurrentBranch: (branch: string) => void;
   navigateTo: (path: string, direction: "forward") => void;
   findFileItemByPath: (path: string) => GitHubContent | undefined;
-  selectFile: (file: GitHubContent) => Promise<void>;
+  selectFile: (file: GitHubContent) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -33,7 +33,11 @@ export const useSearchActions = ({
   findFileItemByPath,
   selectFile,
   onClose
-}: UseSearchActionsProps) => {
+}: UseSearchActionsProps): {
+  handleSearch: () => Promise<void>;
+  handleApiSearch: () => void;
+  handleResultClick: (item: RepoSearchItem) => Promise<void>;
+} => {
   // 执行搜索
   const handleSearch = useCallback(async () => {
     try {
@@ -60,15 +64,15 @@ export const useSearchActions = ({
     const fallbackBranch = currentBranch !== "" ? currentBranch : defaultBranch;
     const preferredBranch = search.branchFilter[0] ?? fallbackBranch;
     const targetBranch = item.branch.length > 0 ? item.branch : preferredBranch;
-    
+
     // 切换分支（如需要）
     if (targetBranch.length > 0 && targetBranch !== currentBranch) {
       setCurrentBranch(targetBranch);
     }
 
     // 导航到文件所在目录
-    const directoryPath = item.path.includes("/") 
-      ? item.path.slice(0, item.path.lastIndexOf("/")) 
+    const directoryPath = item.path.includes("/")
+      ? item.path.slice(0, item.path.lastIndexOf("/"))
       : "";
     navigateTo(directoryPath, "forward");
 
@@ -90,13 +94,13 @@ export const useSearchActions = ({
 
     onClose();
   }, [
-    currentBranch, 
-    defaultBranch, 
-    search.branchFilter, 
-    setCurrentBranch, 
-    navigateTo, 
-    findFileItemByPath, 
-    selectFile, 
+    currentBranch,
+    defaultBranch,
+    search.branchFilter,
+    setCurrentBranch,
+    navigateTo,
+    findFileItemByPath,
+    selectFile,
     onClose
   ]);
 

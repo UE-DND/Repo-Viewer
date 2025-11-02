@@ -15,10 +15,10 @@ import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 interface IndexStatusProps {
   enabled: boolean;
   loading: boolean;
-  error: Error | null;
+  error: { message: string } | null;
   ready: boolean;
   indexedBranches: string[];
-  lastUpdatedAt: number | null;
+  lastUpdatedAt: number | undefined;
   onRefresh: () => void;
 }
 
