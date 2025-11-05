@@ -1,0 +1,8 @@
+name: Repo Viewer CodeQL Configuration
+
+paths-ignore:
+  - dist/**
+  - build/**
+  - coverage/**
+  - docs/report/**
+

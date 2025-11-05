@@ -19,4 +19,4 @@ coverage
 .vercel
 .temp
 .tmp
-.report/
+docs/report

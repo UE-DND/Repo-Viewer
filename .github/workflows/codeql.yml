@@ -13,7 +13,7 @@ jobs:
     name: 代码安全分析
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    
+
     permissions:
       contents: read
       actions: read
@@ -39,6 +39,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: 安装项目依赖
         run: npm install --legacy-peer-deps
