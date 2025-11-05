@@ -39,6 +39,46 @@ export const parseStringArray = (value: string | undefined): string[] => {
     .filter(item => item.length > 0);
 };
 
+interface ParseIntegerOptions {
+  min?: number;
+  max?: number;
+}
+
+/**
+ * 解析整数值
+ *
+ * @param value - 字符串值
+ * @param fallback - 不合法时的回退值
+ * @param options - 附加的最小/最大值约束
+ * @returns 解析后的整数值
+ */
+export const parseInteger = (
+  value: string | undefined,
+  fallback: number,
+  options: ParseIntegerOptions = {}
+): number => {
+  const normalized = normalizeString(value);
+  if (normalized === undefined) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(normalized, 10);
+  if (Number.isNaN(parsed)) {
+    return fallback;
+  }
+
+  const { min, max } = options;
+  if (typeof min === 'number' && parsed < min) {
+    return min;
+  }
+
+  if (typeof max === 'number' && parsed > max) {
+    return max;
+  }
+
+  return parsed;
+};
+
 /**
  * 验证Token是否有效
  * 
@@ -66,5 +106,6 @@ export const validateToken = (token: unknown): token is string => {
 export const EnvParser = {
   parseBoolean,
   parseStringArray,
+  parseInteger,
   validateToken
 } as const;

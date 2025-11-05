@@ -20,9 +20,9 @@ const batcher = new RequestBatcher();
 
 /**
  * 使用GitHub API进行代码搜索
- * 
+ *
  * 通过GitHub Code Search API搜索仓库中的文件，支持路径和文件类型过滤。
- * 
+ *
  * @param searchTerm - 搜索关键词
  * @param currentPath - 限制搜索的路径范围，默认为空（搜索整个仓库）
  * @param fileTypeFilter - 文件扩展名过滤器，例如'ts'、'md'
@@ -35,8 +35,14 @@ export async function searchWithGitHubApi(
   fileTypeFilter?: string
 ): Promise<GitHubContent[]> {
     try {
-      // 构建搜索查询
-      let query = `repo:${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME} ${searchTerm}`;
+      const trimmedTerm = searchTerm.trim();
+      const safeTerm = trimmedTerm.replace(/"/g, '');
+      const keyword = /\s/.test(safeTerm) ? `"${safeTerm}"` : safeTerm;
+
+      // 构建搜索查询，仅匹配文件路径/文件名，避免搜索文件内容
+      let query = `repo:${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME} ${keyword} in:path`;
+
+      // 注意：GitHub Code Search API 会搜索所有分支，分支过滤需在结果中处理
 
       // 如果提供了当前路径，则限制搜索范围
       if (currentPath !== '' && currentPath !== '/') {
@@ -51,18 +57,15 @@ export async function searchWithGitHubApi(
     let rawSearchResults: unknown;
 
     if (shouldUseServerAPI()) {
-        // 使用服务端API执行搜索
         const response = await axios.get(`/api/github?action=search&q=${encodeURIComponent(query)}`);
         rawSearchResults = response.data;
         logger.debug(`通过服务端API搜索: ${query}`);
       } else {
-        // 原始搜索代码
         const apiUrl = `${GITHUB_API_BASE}/search/code`;
         const urlWithParams = new URL(apiUrl);
         urlWithParams.searchParams.append('q', query);
-        urlWithParams.searchParams.append('per_page', '100'); // 最大结果数
+        urlWithParams.searchParams.append('per_page', '100');
 
-        // 使用增强批处理器处理请求
         const fetchUrl = urlWithParams.toString();
         rawSearchResults = await batcher.enqueue(fetchUrl, async () => {
           logger.debug(`搜索API请求: ${fetchUrl}`);
@@ -78,7 +81,7 @@ export async function searchWithGitHubApi(
 
           return result.json() as Promise<unknown>;
         }, {
-          priority: 'medium', // 搜索请求中等优先级
+          priority: 'medium',
           method: 'GET',
           headers: getAuthHeaders() as Record<string, string>
         });
@@ -109,10 +112,10 @@ export async function searchWithGitHubApi(
 
 /**
  * 在本地内容中搜索文件
- * 
+ *
  * 递归搜索指定路径下的文件，支持文件名模糊匹配和文件类型过滤。
  * 使用并行搜索策略提升性能。
- * 
+ *
  * @param searchTerm - 搜索关键词（匹配文件名）
  * @param currentPath - 起始搜索路径，默认为空（从根目录开始）
  * @param recursive - 是否递归搜索子目录，默认为false
@@ -199,13 +202,144 @@ export async function searchFiles(
 }
 
 /**
+ * 使用 Git Trees API 搜索指定分支的文件
+ *
+ * @param searchTerm - 搜索关键词
+ * @param branch - 分支名称
+ * @param pathPrefix - 路径前缀
+ * @param fileTypeFilter - 文件扩展名过滤器
+ * @returns Promise，解析为匹配的GitHub内容数组
+ */
+async function searchBranchWithTreesApi(
+  searchTerm: string,
+  branch: string,
+  pathPrefix = '',
+  fileTypeFilter?: string
+): Promise<GitHubContent[]> {
+  try {
+    const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+
+    let rawData: unknown;
+
+    if (shouldUseServerAPI()) {
+      const query = new URLSearchParams({
+        action: 'getTree',
+        branch,
+        recursive: '1'
+      });
+      const response = await axios.get(`/api/github?${query.toString()}`);
+      rawData = response.data;
+    } else {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
+      }
+
+      rawData = await response.json();
+    }
+
+  const tree = rawData as { tree?: { path?: string; type?: string; size?: number; url?: string; sha?: string }[] };
+
+    if (!Array.isArray(tree.tree)) {
+      return [];
+    }
+
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    const normalizedPrefix = pathPrefix.trim().toLowerCase();
+
+    const matchedFiles: GitHubContent[] = tree.tree
+      .filter(item => {
+        if (item.type !== 'blob') {
+          return false;
+        }
+
+        const itemPath = item.path ?? '';
+        const fileName = itemPath.includes('/') ? itemPath.slice(itemPath.lastIndexOf('/') + 1) : itemPath;
+
+        // 文件名匹配
+        if (!fileName.toLowerCase().includes(normalizedSearchTerm)) {
+          return false;
+        }
+
+        // 路径前缀过滤
+        if (normalizedPrefix.length > 0 && !itemPath.toLowerCase().startsWith(normalizedPrefix)) {
+          return false;
+        }
+
+        // 扩展名过滤
+        if (fileTypeFilter !== undefined && fileTypeFilter !== '') {
+          const ext = fileName.includes('.') ? fileName.slice(fileName.lastIndexOf('.') + 1).toLowerCase() : '';
+          if (ext !== fileTypeFilter.toLowerCase()) {
+            return false;
+          }
+        }
+
+        return true;
+      })
+      .map(item => {
+        const itemPath = item.path ?? '';
+        const fileName = itemPath.includes('/') ? itemPath.slice(itemPath.lastIndexOf('/') + 1) : itemPath;
+
+        const result: GitHubContent = {
+          name: fileName,
+          path: itemPath,
+          type: 'file' as const,
+          sha: (item as { sha?: string }).sha ?? '',
+          url: item.url ?? '',
+          html_url: `https://github.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/blob/${branch}/${itemPath}`,
+          download_url: `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/${branch}/${itemPath}`
+        };
+
+        if (item.size !== undefined) {
+          result.size = item.size;
+        }
+
+        return result;
+      });
+
+    return matchedFiles;
+  } catch (error: unknown) {
+    logger.warn(`使用 Trees API 搜索分支 ${branch} 失败`, error);
+    return [];
+  }
+}
+
+/**
+ * 使用 Trees API 进行多分支搜索
+ *
+ * @param searchTerm - 搜索关键词
+ * @param branches - 要搜索的分支列表
+ * @param pathPrefix - 路径前缀
+ * @param fileTypeFilter - 文件扩展名过滤器
+ * @returns Promise，解析为所有分支的匹配结果
+ */
+export async function searchMultipleBranchesWithTreesApi(
+  searchTerm: string,
+  branches: string[],
+  pathPrefix = '',
+  fileTypeFilter?: string
+): Promise<{ branch: string; results: GitHubContent[] }[]> {
+  const searchPromises = branches.map(async (branch) => ({
+    branch,
+    results: await searchBranchWithTreesApi(searchTerm, branch, pathPrefix, fileTypeFilter)
+  }));
+
+  return Promise.all(searchPromises);
+}
+
+/**
  * GitHub搜索服务对象
- * 
+ *
  * 为了向后兼容性，导出包含所有搜索相关函数的常量对象。
- * 
+ *
  * @deprecated 推荐直接使用独立的导出函数
  */
 export const GitHubSearchService = {
   searchWithGitHubApi,
-  searchFiles
+  searchFiles,
+  searchMultipleBranchesWithTreesApi
 } as const;

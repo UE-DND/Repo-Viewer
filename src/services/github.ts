@@ -7,6 +7,7 @@
 // 导入各个服务模块
 import * as ContentServiceModule from './github/core/ContentService';
 import * as SearchServiceModule from './github/core/SearchService';
+import * as SearchIndexServiceModule from './github/core/SearchIndexService';
 import * as BranchServiceModule from './github/core/BranchService';
 import * as StatsServiceModule from './github/core/StatsService';
 import * as PrefetchServiceModule from './github/core/PrefetchService';
@@ -42,6 +43,19 @@ export const GitHub = {
   Search: {
     searchWithGitHubApi: SearchServiceModule.searchWithGitHubApi,
     searchFiles: SearchServiceModule.searchFiles,
+    searchMultipleBranchesWithTreesApi: SearchServiceModule.searchMultipleBranchesWithTreesApi,
+  },
+
+  /** 索引搜索服务 - 使用生成的索引进行检索 */
+  SearchIndex: {
+    isEnabled: SearchIndexServiceModule.isSearchIndexEnabled,
+    getManifest: SearchIndexServiceModule.getSearchIndexManifest,
+    ensureReady: SearchIndexServiceModule.ensureSearchIndexReady,
+    getIndexedBranches: SearchIndexServiceModule.getIndexedBranches,
+    prefetchBranch: SearchIndexServiceModule.prefetchSearchIndexForBranch,
+    search: SearchIndexServiceModule.searchIndex,
+    invalidateCache: SearchIndexServiceModule.invalidateSearchIndexCache,
+    refresh: SearchIndexServiceModule.refreshSearchIndex
   },
   
   /** 分支服务 - 管理 Git 分支 */
@@ -94,6 +108,9 @@ export const GitHub = {
     RequestBatcher: RequestBatcherClass,
   },
 } as const;
+
+// 扁平导出常用函数
+export { searchMultipleBranchesWithTreesApi } from './github/core/SearchService';
 
 // 导出类型定义
 export type { ConfigInfo } from './github/core/Config';

@@ -50,6 +50,7 @@ export function AppContextProvider({ children }: AppContextProviderProps): React
     refreshBranches,
     setCurrentPath,
     refreshContents,
+    search,
   } = content;
 
   const handleError = useCallback(
@@ -108,6 +109,7 @@ export function AppContextProvider({ children }: AppContextProviderProps): React
       refresh,
       handleRetry: refresh,
       findFileItemByPath,
+      search,
     }),
     [
       currentPath,
@@ -131,6 +133,7 @@ export function AppContextProvider({ children }: AppContextProviderProps): React
       navigateTo,
       refresh,
       findFileItemByPath,
+      search,
     ],
   );
 

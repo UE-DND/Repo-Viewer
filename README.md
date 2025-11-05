@@ -27,6 +27,7 @@
 ### 主要功能
 
 - 🔍 **仓库浏览**：直观的文件结构导航，同时提供首页文件和文件夹过滤
+- 🔎 **文件搜索**：支持基于索引和 API 的快速文件搜索，可按分支、路径前缀和扩展名过滤
 - 📄 **文件预览**：支持多种文件格式预览，目前包括 `Markdown`、 `PDF` 和 `图片`
 - ⬇️ **文件下载**：可下载单个文件或整个文件夹
 - 🌐 **SEO优化**：提高搜索引擎可见性
@@ -84,15 +85,22 @@ GITHUB_PAT2 =                                         # 【可选】备用令牌
 ```env
 # 首页内容过滤- 仅对仓库根目录（首页）生效
 HOMEPAGE_FILTER_ENABLED = true||false                 # 启用首页过滤功能
-HOMEPAGE_ALLOWED_FOLDERS = folder1, folder2           # 允许在首页显示的文件夹，可用逗号分隔
-HOMEPAGE_ALLOWED_FILETYPES = md, pdf, txt             # 允许在首页显示的文件类型，可用逗号分隔
+HOMEPAGE_ALLOWED_FOLDERS = folder1, folder2           # 允许在首页显示的文件夹，使用逗号分隔
+HOMEPAGE_ALLOWED_FILETYPES = md, pdf, txt             # 允许在首页显示的文件类型，使用逗号分隔
 
 # 首页下载按钮控制- 仅对仓库根目录（首页）生效
 HIDE_MAIN_FOLDER_DOWNLOAD = true||false               # 隐藏首页的主文件夹下载按钮
-HIDE_DOWNLOAD_FOLDERS = folder1, folder2              # 首页上需要隐藏下载按钮的文件夹，可用逗号分隔
+HIDE_DOWNLOAD_FOLDERS = folder1, folder2              # 首页上需要隐藏下载按钮的文件夹，使用逗号分隔
 
 # 页脚显示控制
 FOOTER_LEFT_TEXT = [text](link)                       # 页脚左侧自定义信息
+
+# 搜索索引功能
+ENABLED_SEARCH_INDEX = true||false                    # 启用搜索索引功能
+SEARCH_INDEX_BRANCH = RV-Index                        # 索引文件分支名称
+SEARCH_DEFAULT_BRANCH = master                        # 默认搜索分支
+SEARCH_MANIFEST_PATH = manifest.json                  # 索引文件路径
+SEARCH_REFRESH_INTERVAL = 300000                      # 索引刷新间隔（毫秒）
 
 # 文件下载代理设置（仅用于下载功能，不影响内容浏览）
 DOWNLOAD_PROXY_URL =                                  # 下载主代理URL

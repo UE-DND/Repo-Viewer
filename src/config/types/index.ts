@@ -23,6 +23,13 @@ export interface Config {
       enabled: boolean;
       hiddenFolders: string[];
     };
+    searchIndex: {
+      enabled: boolean;
+      indexBranch: string;
+      defaultBranch: string;
+      manifestPath: string;
+      refreshIntervalMs: number;
+    };
     footer: {
       leftText: string;
     };

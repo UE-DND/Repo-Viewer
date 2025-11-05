@@ -178,6 +178,23 @@ const getRepoEnvConfig = (): RepoEnvConfig => {
   };
 };
 
+const getSearchIndexRepoEnvConfig = (): RepoEnvConfig => {
+  const baseRepo = getRepoEnvConfig();
+  const branch = resolveEnvValue(
+    ['SEARCH_DEFAULT_BRANCH', 'VITE_SEARCH_DEFAULT_BRANCH'],
+    baseRepo.repoBranch
+  );
+
+  return {
+    repoOwner: baseRepo.repoOwner,
+    repoName: baseRepo.repoName,
+    repoBranch: branch.length > 0 ? branch : baseRepo.repoBranch
+  };
+};
+
+const encodePathSegments = (input: string): string =>
+  input.split('/').map(segment => encodeURIComponent(segment)).join('/');
+
 const getSingleQueryParam = (value: string | string[] | undefined): string | undefined => {
   if (Array.isArray(value)) {
     return value.length > 0 ? value[0] : undefined;
@@ -271,10 +288,10 @@ async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T
 
 /**
  * GitHub API请求处理函数
- * 
+ *
  * 统一处理所有GitHub相关的API请求，包括获取内容、搜索、分支列表等。
  * 支持token管理和自动轮换。
- * 
+ *
  * @param req - Vercel请求对象
  * @param res - Vercel响应对象
  * @returns Promise，处理完成后解析
@@ -356,6 +373,156 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           error: '获取分支列表失败',
           message: axiosError.message ?? '未知错误'
         });
+        return;
+      }
+    }
+
+    if (actionParam === 'getGitRef') {
+      const refParam = getSingleQueryParam(req.query['ref']);
+      if (refParam === undefined || refParam.trim().length === 0) {
+        res.status(400).json({ error: '缺少ref参数' });
+        return;
+      }
+
+      const repoScopeParam = getSingleQueryParam(req.query['repoScope']);
+      const useSearchIndexRepo = repoScopeParam !== undefined && repoScopeParam.toLowerCase() === 'search-index';
+      const { repoOwner, repoName } = useSearchIndexRepo ? getSearchIndexRepoEnvConfig() : getRepoEnvConfig();
+      if (repoOwner.length === 0 || repoName.length === 0) {
+        res.status(500).json({
+          error: '仓库配置缺失',
+          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+        });
+        return;
+      }
+
+      const encodedRef = encodePathSegments(refParam);
+
+      try {
+        const response = await handleRequestWithRetry(() =>
+          axios.get(`${GITHUB_API_BASE}/repos/${repoOwner}/${repoName}/git/ref/${encodedRef}`, {
+            headers: getAuthHeaders()
+          })
+        );
+
+        res.status(200).json(response.data);
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        const status = axiosError.response?.status ?? 500;
+
+        if (status === 404) {
+          res.status(404).json({ error: 'ref_not_found' });
+          return;
+        }
+
+        apiLogger.error('获取 Git ref 失败:', axiosError.message ?? '未知错误');
+        res.status(status).json({ error: '获取 Git ref 失败', message: axiosError.message ?? '未知错误' });
+        return;
+      }
+    }
+
+    if (actionParam === 'getTree') {
+      const branchParam = getSingleQueryParam(req.query['branch']);
+      if (branchParam === undefined || branchParam.trim().length === 0) {
+        res.status(400).json({ error: '缺少branch参数' });
+        return;
+      }
+
+      const recursiveParam = getSingleQueryParam(req.query['recursive']);
+      const recursive = recursiveParam !== undefined ? parseBooleanFlag(recursiveParam) : false;
+
+      const { repoOwner, repoName } = getRepoEnvConfig();
+      if (repoOwner.length === 0 || repoName.length === 0) {
+        res.status(500).json({
+          error: '仓库配置缺失',
+          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+        });
+        return;
+      }
+
+      const encodedBranch = encodePathSegments(branchParam.trim());
+      const queryString = recursive ? '?recursive=1' : '';
+
+      try {
+        const response = await handleRequestWithRetry(() =>
+          axios.get(`${GITHUB_API_BASE}/repos/${repoOwner}/${repoName}/git/trees/${encodedBranch}${queryString}`, {
+            headers: getAuthHeaders()
+          })
+        );
+
+        res.status(200).json(response.data);
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        const status = axiosError.response?.status ?? 500;
+
+        apiLogger.error('获取 Git 树失败:', axiosError.message ?? '未知错误');
+        res.status(status).json({
+          error: '获取 Git 树失败',
+          message: axiosError.message ?? '未知错误'
+        });
+        return;
+      }
+    }
+
+    if (actionParam === 'getSearchIndexAsset') {
+      const indexBranchParam = parseBranchOverride(req.query['indexBranch']) ?? 'RV-Index';
+      const pathParam = getSingleQueryParam(req.query['path']);
+      const responseTypeParam = (getSingleQueryParam(req.query['responseType']) ?? 'json').toLowerCase();
+
+      if (pathParam === undefined || pathParam.trim().length === 0) {
+        res.status(400).json({ error: '缺少path参数' });
+        return;
+      }
+
+      const { repoOwner, repoName } = getSearchIndexRepoEnvConfig();
+      if (repoOwner.length === 0 || repoName.length === 0) {
+        res.status(500).json({
+          error: '仓库配置缺失',
+          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+        });
+        return;
+      }
+
+      const encodedBranch = encodePathSegments(indexBranchParam);
+      const normalizedPath = pathParam.replace(/^\/+/, '');
+      const encodedPath = encodePathSegments(normalizedPath);
+      const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodedBranch}/${encodedPath}`;
+
+      try {
+        if (responseTypeParam === 'binary') {
+          const response = await handleRequestWithRetry(() =>
+            axios.get<ArrayBuffer>(rawUrl, {
+              headers: getAuthHeaders(),
+              responseType: 'arraybuffer'
+            })
+          );
+
+          res.setHeader('Content-Type', 'application/octet-stream');
+          res.status(200).send(Buffer.from(response.data));
+          return;
+        }
+
+        const response = await handleRequestWithRetry(() =>
+          axios.get<unknown>(rawUrl, {
+            headers: getAuthHeaders(),
+            responseType: 'json'
+          })
+        );
+
+        res.status(200).json(response.data);
+        return;
+      } catch (error) {
+        const axiosError = error as AxiosErrorResponse;
+        const status = axiosError.response?.status ?? 500;
+
+        if (status === 404) {
+          res.status(404).json({ error: '索引文件不存在' });
+          return;
+        }
+
+        apiLogger.error('获取索引资源失败:', axiosError.message ?? '未知错误');
+        res.status(status).json({ error: '获取索引资源失败', message: axiosError.message ?? '未知错误' });
         return;
       }
     }
@@ -501,7 +668,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
-      const searchQuery = `repo:${repoOwner}/${repoName} ${qParam}`;
+      const repoQualifier = `repo:${repoOwner}/${repoName}`;
+      const searchQuery = qParam.includes(repoQualifier)
+        ? qParam
+        : `${repoQualifier} ${qParam}`;
 
       try {
         const response = await handleRequestWithRetry(() =>
