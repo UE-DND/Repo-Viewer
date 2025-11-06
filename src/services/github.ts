@@ -1,6 +1,6 @@
 /**
  * GitHub 服务模块
- * 
+ *
  * 提供分组导出和扁平化导出两种方式，以满足不同的使用场景。
  */
 
@@ -21,11 +21,11 @@ import { RequestBatcher as RequestBatcherClass } from './github/RequestBatcher';
 
 /**
  * 分组导出
- * 
+ *
  * @example
  * ```typescript
  * import { GitHub } from '@/services/github';
- * 
+ *
  * // 使用分组导出
  * const contents = await GitHub.Content.getContents(path);
  * const branches = await GitHub.Branch.getBranches();
@@ -37,8 +37,9 @@ export const GitHub = {
   Content: {
     getContents: ContentServiceModule.getContents,
     getFileContent: ContentServiceModule.getFileContent,
+    hydrate: ContentServiceModule.hydrateInitialContent,
   },
-  
+
   /** 搜索服务 - 搜索文件和内容 */
   Search: {
     searchWithGitHubApi: SearchServiceModule.searchWithGitHubApi,
@@ -57,7 +58,7 @@ export const GitHub = {
     invalidateCache: SearchIndexServiceModule.invalidateSearchIndexCache,
     refresh: SearchIndexServiceModule.refreshSearchIndex
   },
-  
+
   /** 分支服务 - 管理 Git 分支 */
   Branch: {
     getBranches: BranchServiceModule.getBranches,
@@ -65,7 +66,7 @@ export const GitHub = {
     setCurrentBranch: ConfigModule.setCurrentBranch,
     getDefaultBranchName: getDefaultBranchName,
   },
-  
+
   /** 缓存服务 - 管理缓存和统计 */
   Cache: {
     clearCache: StatsServiceModule.clearCache,
@@ -73,14 +74,14 @@ export const GitHub = {
     getNetworkStats: StatsServiceModule.getNetworkStats,
     CacheManager: CacheManagerClass,
   },
-  
+
   /** 预加载服务 - 预加载相关内容 */
   Prefetch: {
     prefetchContents: PrefetchServiceModule.prefetchContents,
     batchPrefetchContents: PrefetchServiceModule.batchPrefetchContents,
     prefetchRelatedContent: PrefetchServiceModule.prefetchRelatedContent,
   },
-  
+
   /** 认证服务 - Token 和授权管理 */
   Auth: {
     getTokenCount: AuthModule.getTokenCount,
@@ -91,7 +92,7 @@ export const GitHub = {
     updateTokenRateLimitFromResponse: AuthModule.updateTokenRateLimitFromResponse,
     getTokenManager: AuthModule.getTokenManager,
   },
-  
+
   /** 代理服务 - 管理代理和图片转换 */
   Proxy: {
     markProxyServiceFailed: AuthModule.markProxyServiceFailed,
@@ -100,7 +101,7 @@ export const GitHub = {
     transformImageUrl: AuthModule.transformImageUrl,
     ProxyService: ProxyServiceClass,
   },
-  
+
   /** 工具服务 */
   Utils: {
     getBatcher: ContentServiceModule.getBatcher,

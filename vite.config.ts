@@ -5,6 +5,7 @@ import * as http from 'http'
 import * as https from 'https'
 import { readFileSync } from 'fs'
 import { configManager, applyEnvMappingForVite } from './src/config'
+import type { GitHubContent, InitialContentHydrationPayload } from './src/types'
 
 type Logger = {
   log: (...args: any[]) => void
@@ -35,6 +36,240 @@ const createLogger = (developerMode: boolean): Logger => ({
     }
   }
 })
+
+const INITIAL_CONTENT_EXCLUDE = new Set(['.gitkeep', 'Thumbs.db', '.DS_Store'])
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
+
+const createGitHubHeaders = (token?: string): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'User-Agent': 'Repo-Viewer/Prefetch',
+    Accept: 'application/vnd.github+json'
+  }
+
+  if (token && token.trim() !== '') {
+    headers.Authorization = `token ${token}`
+  }
+
+  return headers
+}
+
+const mapRawContentItem = (item: unknown): GitHubContent | null => {
+  if (!isRecord(item)) {
+    return null
+  }
+
+  const { name, path: itemPath, type, sha } = item
+
+  if (typeof name !== 'string' || typeof itemPath !== 'string' || typeof type !== 'string' || typeof sha !== 'string') {
+    return null
+  }
+
+  const normalizedType: GitHubContent['type'] = type === 'dir' ? 'dir' : 'file'
+
+  const result: GitHubContent = {
+    name,
+    path: itemPath,
+    type: normalizedType,
+    sha,
+    download_url: typeof item.download_url === 'string' ? item.download_url : null,
+  }
+
+  if (typeof item.size === 'number') {
+    result.size = item.size
+  }
+
+  if (typeof item.url === 'string') {
+    result.url = item.url
+  }
+
+  if (typeof item.html_url === 'string') {
+    result.html_url = item.html_url
+  }
+
+  if (typeof item.git_url === 'string') {
+    result.git_url = item.git_url
+  }
+
+  if (
+    isRecord(item._links) &&
+    typeof item._links.self === 'string' &&
+    typeof item._links.git === 'string' &&
+    typeof item._links.html === 'string'
+  ) {
+    result._links = {
+      self: item._links.self,
+      git: item._links.git,
+      html: item._links.html
+    }
+  }
+
+  return result
+}
+
+const sortInitialContents = (contents: GitHubContent[]): GitHubContent[] => {
+  return [...contents].sort((a, b) => {
+    if (a.type !== b.type) {
+      return a.type === 'dir' ? -1 : 1
+    }
+    return a.name.localeCompare(b.name, 'en', {
+      numeric: true,
+      sensitivity: 'base'
+    })
+  })
+}
+
+const serializeInitialPayload = (payload: InitialContentHydrationPayload): string => {
+  return JSON.stringify(payload)
+    .replace(/</g, '\u003C')
+    .replace(/\u2028/g, '\u2028')
+    .replace(/\u2029/g, '\u2029')
+}
+
+const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.getConfig>, logger: Logger) => {
+  const { repoOwner, repoName, repoBranch } = appConfig.github
+  const token = appConfig.tokens.githubPATs[0]
+
+  if (!repoOwner || !repoName || !repoBranch) {
+    logger.warn('首屏注水插件已跳过：GitHub 仓库配置缺失')
+    return {
+      name: 'repo-viewer-initial-content-disabled',
+      apply: 'build',
+      transformIndexHtml(html: string) {
+        return html
+      }
+    }
+  }
+
+  let serializedPayloadPromise: Promise<string | null> | null = null
+
+  const fetchInitialPayload = async (): Promise<InitialContentHydrationPayload | null> => {
+    try {
+      const headers = createGitHubHeaders(token)
+      const directoryUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents?ref=${encodeURIComponent(repoBranch)}`
+      const directoryResponse = await fetch(directoryUrl, { headers })
+
+      if (!directoryResponse.ok) {
+        logger.warn('首屏注水目录请求失败:', directoryResponse.status, directoryResponse.statusText)
+        return null
+      }
+
+      const directoryJson = await directoryResponse.json()
+      if (!Array.isArray(directoryJson)) {
+        logger.warn('GitHub 目录响应格式异常，跳过首屏注水')
+        return null
+      }
+
+      const mapped = directoryJson
+        .map(mapRawContentItem)
+        .filter((item): item is GitHubContent => Boolean(item))
+
+      const filtered = mapped.filter(item => {
+        if (item.name.startsWith('.')) {
+          return false
+        }
+        return !INITIAL_CONTENT_EXCLUDE.has(item.name)
+      })
+
+      if (filtered.length === 0) {
+        logger.warn('首屏目录为空或全部被过滤，跳过注水')
+        return null
+      }
+
+      const sorted = sortInitialContents(filtered)
+
+      const readmeEntry = sorted.find(item => item.type === 'file' && /^readme(?:\.|$)/i.test(item.name))
+      let readmeContent: string | undefined
+
+      if (readmeEntry?.download_url) {
+        try {
+          const readmeHeaders = {
+            ...headers,
+            Accept: 'application/vnd.github.raw'
+          }
+          const readmeResponse = await fetch(readmeEntry.download_url, { headers: readmeHeaders })
+          if (readmeResponse.ok) {
+            readmeContent = await readmeResponse.text()
+          } else {
+            logger.warn('读取 README 内容失败:', readmeResponse.status, readmeResponse.statusText)
+          }
+        } catch (error) {
+          logger.warn('读取 README 内容时发生异常', error)
+        }
+      }
+
+      const payload: InitialContentHydrationPayload = {
+        version: 1,
+        generatedAt: new Date().toISOString(),
+        branch: repoBranch,
+        repo: {
+          owner: repoOwner,
+          name: repoName
+        },
+        directories: [
+          {
+            path: '',
+            contents: sorted
+          }
+        ],
+        files: readmeEntry && readmeContent
+          ? [
+              {
+                path: readmeEntry.path,
+                downloadUrl: readmeEntry.download_url,
+                sha: readmeEntry.sha,
+                content: readmeContent,
+                encoding: 'utf-8'
+              }
+            ]
+          : []
+      }
+
+      logger.info('首屏注水数据生成完成，将注入构建结果')
+      return payload
+    } catch (error) {
+      logger.warn('获取首屏注水数据失败，将继续正常构建', error)
+      return null
+    }
+  }
+
+  return {
+    name: 'repo-viewer-initial-content',
+    apply: 'build',
+    enforce: 'post',
+    async transformIndexHtml(html: string) {
+      if (serializedPayloadPromise === null) {
+        serializedPayloadPromise = (async () => {
+          const payload = await fetchInitialPayload()
+          if (!payload) {
+            return null
+          }
+          return serializeInitialPayload(payload)
+        })()
+      }
+
+      const serialized = await serializedPayloadPromise
+      if (!serialized) {
+        return html
+      }
+
+      return {
+        html,
+        tags: [
+          {
+            tag: 'script',
+            attrs: {
+              id: 'repo-viewer-initial-content',
+              type: 'text/javascript'
+            },
+            children: `window.__INITIAL_CONTENT__ = ${serialized};`,
+            injectTo: 'head'
+          }
+        ]
+      }
+    }
+  }
+}
 
 class RequestLoggerMiddleware {
   constructor(private readonly logger: Logger) {}
@@ -76,10 +311,12 @@ export default defineConfig(({ mode }) => {
   const DEVELOPER_MODE = (env.VITE_DEVELOPER_MODE || env.DEVELOPER_MODE) === 'true';
   const logger = createLogger(DEVELOPER_MODE);
   const requestLogger = new RequestLoggerMiddleware(logger);
+  const runtimeConfig = configManager.getConfig();
 
   return {
     plugins: [
       react(),
+      createInitialContentPlugin(runtimeConfig, logger),
       {
         name: 'vercel-api-handler',
         configureServer(server) {
