@@ -9,7 +9,8 @@ import {
 } from "@mui/material";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
 import FileList from "@/components/file/FileList";
-import { LazyMarkdownPreview, LazyImagePreview, LazyTextPreview, preloadPreviewComponents } from "@/utils/lazy-loading";
+import FilePreviewPage from "@/components/layout/FilePreviewPage";
+import { LazyMarkdownPreview, preloadPreviewComponents } from "@/utils/lazy-loading";
 import ErrorDisplay from "@/components/ui/ErrorDisplay";
 import {
   useContentContext,
@@ -122,11 +123,11 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     previewState.previewType !== null &&
     previewState.previewContent !== null;
 
-  const isMarkdownPreview =
-    hasTextOrMarkdownPreview && previewState.previewType === "markdown";
+  const hasImagePreview =
+    previewState.previewingImageItem !== null &&
+    previewState.imagePreviewUrl !== null;
 
-  const isTextPreview =
-    hasTextOrMarkdownPreview && previewState.previewType === "text";
+  const showPreviewPage = hasTextOrMarkdownPreview || hasImagePreview;
 
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
@@ -455,18 +456,36 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
         </Portal>
       ) : null}
 
-      <Box
-        sx={{
-          opacity: shouldShowInToolbar ? 0 : 1,
-          transform: shouldShowInToolbar ? 'translateY(-20px)' : 'translateY(0)',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          pointerEvents: shouldShowInToolbar ? 'none' : 'auto',
-        }}
-      >
-        {breadcrumbNavigation}
-      </Box>
+      {!showPreviewPage && (
+        <Box
+          sx={{
+            opacity: shouldShowInToolbar ? 0 : 1,
+            transform: shouldShowInToolbar ? 'translateY(-20px)' : 'translateY(0)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: shouldShowInToolbar ? 'none' : 'auto',
+          }}
+        >
+          {breadcrumbNavigation}
+        </Box>
+      )}
 
-      {loading ? (
+      {showPreviewPage ? (
+        <FilePreviewPage
+          previewState={previewState}
+          onClose={closePreview}
+          isSmallScreen={isSmallScreen}
+          currentBranch={currentBranch}
+          breadcrumbSegments={breadcrumbSegments}
+          breadcrumbsMaxItems={breadcrumbsMaxItems}
+          handleBreadcrumbClick={handleBreadcrumbClick}
+          breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
+          shouldShowInToolbar={shouldShowInToolbar}
+          hasPreviousImage={currentImageIndex > 0}
+          hasNextImage={currentImageIndex >= 0 && currentImageIndex < imageFiles.length - 1}
+          onPreviousImage={handlePreviousImage}
+          onNextImage={handleNextImage}
+        />
+      ) : loading ? (
         <FileListSkeleton
           isSmallScreen={isSmallScreen}
           itemCount={8}
@@ -560,78 +579,6 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                 </Typography>
               ) : null}
             </Box>
-          )}
-
-          {/* 文本/Markdown 文件预览（非 README） */}
-          {hasTextOrMarkdownPreview && (
-            <Box
-              sx={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: theme.zIndex.modal + 100,
-                bgcolor: "background.default",
-                overflow: "auto",
-                p: { xs: 2, sm: 3, md: 4 },
-              }}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  closePreview();
-                }
-              }}
-              data-oid="md-preview-fs"
-            >
-              <Box
-                sx={{
-                  maxWidth: "1200px",
-                  mx: "auto",
-                  width: "100%",
-                }}
-                data-oid="md-preview-container"
-              >
-                {isMarkdownPreview ? (
-                  <LazyMarkdownPreview
-                    readmeContent={previewState.previewContent}
-                    loadingReadme={previewState.loadingPreview}
-                    isSmallScreen={isSmallScreen}
-                    previewingItem={previewState.previewingItem}
-                    onClose={closePreview}
-                    lazyLoad={false}
-                    currentBranch={currentBranch}
-                    data-oid="md-file-preview"
-                  />
-                ) : null}
-
-                {isTextPreview ? (
-                  <LazyTextPreview
-                    content={previewState.previewContent}
-                    loading={previewState.loadingPreview}
-                    isSmallScreen={isSmallScreen}
-                    previewingItem={previewState.previewingItem}
-                    onClose={closePreview}
-                    data-oid="text-file-preview"
-                  />
-                ) : null}
-              </Box>
-            </Box>
-          )}
-
-          {/* 图像预览 */}
-          {previewState.previewingImageItem !== null && previewState.imagePreviewUrl !== null && (
-            <LazyImagePreview
-              imageUrl={previewState.imagePreviewUrl}
-              fileName={previewState.previewingImageItem.name}
-              isFullScreen={true}
-              onClose={closePreview}
-              lazyLoad={false}
-              hasPrevious={currentImageIndex > 0}
-              hasNext={currentImageIndex >= 0 && currentImageIndex < imageFiles.length - 1}
-              onPrevious={handlePreviousImage}
-              onNext={handleNextImage}
-              data-oid="yfv5ld-"
-            />
           )}
         </>
       )}

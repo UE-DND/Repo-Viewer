@@ -35,8 +35,16 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
   toggleFullScreen,
   handleClosePreview,
   closeButtonBorderRadius,
+  variant = 'inline',
 }) => {
   const theme = useTheme();
+  const isFloating = variant === 'floating' && !fullScreenMode;
+  const isInline = variant === 'inline';
+  const isOverlayFullWidth = variant === 'full-width' || (fullScreenMode && !isInline);
+
+  const containerBg = theme.palette.mode === 'dark'
+    ? alpha(theme.palette.background.paper, isFloating ? 0.72 : isInline ? 0.78 : 0.7)
+    : alpha(theme.palette.background.paper, isFloating ? 0.85 : isInline ? 0.9 : 0.8);
 
   return (
     <Box
@@ -44,30 +52,35 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: isSmallScreen ? 1 : 2,
-        p: isSmallScreen ? 1 : 1.5,
-        bgcolor:
-          theme.palette.mode === 'dark'
-            ? alpha(theme.palette.background.paper, 0.7)
-            : alpha(theme.palette.background.paper, 0.8),
-        backdropFilter: 'blur(10px)',
-        borderTop: '1px solid',
-        borderColor: alpha(theme.palette.divider, 0.1),
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        gap: { xs: 1, sm: 1.5, md: 2 },
+        px: { xs: 1.25, sm: 1.75, md: 2 },
+        py: { xs: 1, sm: 1.25, md: 1.5 },
+        bgcolor: containerBg,
+        backdropFilter: 'blur(16px)',
+        border: 'none',
+        position: isFloating || isOverlayFullWidth ? 'absolute' : 'relative',
+        bottom: isFloating || isOverlayFullWidth ? 0 : undefined,
+        left: isFloating || isOverlayFullWidth ? 0 : undefined,
+        right: isFloating || isOverlayFullWidth ? 0 : undefined,
         zIndex: 100,
         minHeight: isSmallScreen ? '64px' : '72px',
         height: 'auto',
-        paddingTop: isSmallScreen ? '8px' : '12px',
-        paddingBottom: isSmallScreen ? '8px' : '12px',
-        boxShadow:
-          theme.palette.mode === 'dark'
-            ? '0 -4px 12px rgba(0,0,0,0.2)'
-            : '0 -4px 12px rgba(0,0,0,0.1)',
+        paddingTop: isSmallScreen ? '10px' : '14px',
+        paddingBottom: isSmallScreen ? '10px' : '14px',
+        boxShadow: isFloating
+          ? theme.shadows[6]
+          : isInline
+            ? theme.shadows[2]
+            : (theme.palette.mode === 'dark'
+                ? '0 -4px 12px rgba(0,0,0,0.2)'
+                : '0 -4px 12px rgba(0,0,0,0.1)'),
         flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
-        ...(fullScreenMode && {
+        borderRadius: isInline ? 1 : (isFloating ? g3BorderRadius(G3_PRESETS.card) : 0),
+        pointerEvents: 'auto',
+        width: isInline ? 'auto' : undefined,
+        maxWidth: '100%',
+        alignSelf: 'center',
+        ...(fullScreenMode && variant === 'full-width' ? {
           paddingRight: isSmallScreen ? '8px' : '120px',
           paddingLeft: isSmallScreen ? '8px' : undefined,
           width: isSmallScreen ? 'calc(100% - 16px)' : 'calc(100% - 48px)',
@@ -75,9 +88,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           left: isSmallScreen ? '8px' : '24px',
           borderRadius: g3BorderRadius(G3_PRESETS.card),
           bottom: isSmallScreen ? '8px' : '16px',
-          border: '1px solid',
-          borderColor: alpha(theme.palette.divider, 0.1),
-        }),
+          border: 'none',
+        } : {}),
       }}
       data-oid="2ux6qrx"
     >
@@ -86,11 +98,13 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: isSmallScreen ? 0.75 : 2,
-          width: '100%',
-          paddingLeft: isSmallScreen ? 0 : '80px', // 为右侧关闭按钮平衡空间
-          flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
-          paddingRight: isSmallScreen ? '88px' : 0, // 为小屏幕的关闭按钮留出空间
+          gap: { xs: 0.75, sm: 1, md: 2 },
+          flex: isInline ? '0 1 auto' : '1 1 auto',
+          minWidth: 0,
+          paddingLeft: isInline ? 0 : (isSmallScreen ? 0 : '56px'),
+          paddingRight: isInline ? 0 : (isSmallScreen ? '72px' : 0),
+          flexWrap: isInline && isSmallScreen ? 'wrap' : 'nowrap',
+          rowGap: isInline && isSmallScreen ? 1 : 0,
         }}
         data-oid="wlz6pbm"
       >
@@ -256,8 +270,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         color="primary"
         onClick={handleClosePreview}
         sx={{
-          position: 'absolute',
-          right: isSmallScreen ? theme.spacing(1) : theme.spacing(2),
+          position: isInline ? 'relative' : 'absolute',
+          right: isInline ? undefined : (isSmallScreen ? theme.spacing(1.5) : theme.spacing(2)),
+          marginLeft: isInline ? theme.spacing(2) : 0,
           borderRadius: closeButtonBorderRadius,
           minWidth: isSmallScreen ? '64px' : '80px',
           height: isSmallScreen ? '40px' : '48px',

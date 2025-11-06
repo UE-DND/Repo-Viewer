@@ -104,6 +104,7 @@ export const useFilePreview = (
   const currentPreviewItemRef = useRef<GitHubContent | null>(null);
   const hasActivePreviewRef = useRef<boolean>(false);
   const isHandlingNavigationRef = useRef<boolean>(false);
+  const loadingPreviewPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     const hasActivePreview =
@@ -141,6 +142,20 @@ export const useFilePreview = (
       return;
     }
 
+    const targetPath = item.path;
+
+    if (loadingPreviewPathRef.current === targetPath) {
+      logger.debug(`文件 ${targetPath} 的预览仍在加载，忽略重复请求`);
+      return;
+    }
+
+    if (hasActivePreviewRef.current && currentPreviewItemRef.current?.path === targetPath) {
+      logger.debug(`文件 ${targetPath} 已在预览中，忽略重复请求`);
+      return;
+    }
+
+    loadingPreviewPathRef.current = targetPath;
+
     logger.debug(`正在选择文件预览: ${item.path}`);
     currentPreviewItemRef.current = item;
     const dirPath = item.path.split('/').slice(0, -1).join('/');
@@ -159,12 +174,18 @@ export const useFilePreview = (
 
       const fileNameLower = item.name.toLowerCase();
 
+      const isCurrentTarget = (): boolean => currentPreviewItemRef.current?.path === targetPath;
+
       if (file.isMarkdownFile(fileNameLower)) {
         updateUrlWithHistory(dirPath, item.path);
         dispatch({ type: 'SET_PREVIEW_LOADING', loading: true });
 
         try {
           const content = await GitHub.Content.getFileContent(item.download_url);
+          if (!isCurrentTarget()) {
+            logger.debug(`加载完成时目标已切换，忽略 Markdown 结果: ${targetPath}`);
+            return;
+          }
           dispatch({ type: 'SET_MD_PREVIEW', content, item });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -179,6 +200,10 @@ export const useFilePreview = (
 
         try {
           const content = await GitHub.Content.getFileContent(item.download_url);
+          if (!isCurrentTarget()) {
+            logger.debug(`加载完成时目标已切换，忽略文本结果: ${targetPath}`);
+            return;
+          }
           dispatch({ type: 'SET_TEXT_PREVIEW', content, item });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -211,6 +236,10 @@ export const useFilePreview = (
 
         try {
           updateUrlWithHistory(dirPath, item.path);
+          if (!isCurrentTarget()) {
+            logger.debug(`图片预览在URL更新前目标已切换，忽略: ${targetPath}`);
+            return;
+          }
           dispatch({
             type: 'SET_IMAGE_PREVIEW',
             url: proxyUrl,
@@ -229,6 +258,10 @@ export const useFilePreview = (
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       onError(`预览文件失败: ${errorMessage}`);
+    } finally {
+      if (loadingPreviewPathRef.current === targetPath) {
+        loadingPreviewPathRef.current = null;
+      }
     }
   }, [onError, useTokenMode, muiTheme]);
 

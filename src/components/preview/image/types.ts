@@ -103,6 +103,8 @@ export interface ImageToolbarProps {
   closeButtonBorderRadius: string | number;
   /** 设置错误状态 */
   setError?: React.Dispatch<React.SetStateAction<boolean>>;
+  /** 工具栏呈现模式 */
+  variant?: 'inline' | 'floating' | 'full-width';
 }
 
 /**

@@ -192,7 +192,7 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
           sx={{
             width: "100%",
             position: "relative",
-            borderRadius: 3,
+            borderRadius: 1,
             overflow: "hidden",
             border: `1px solid ${borderColor}`,
             boxShadow: theme.shadows[1],
