@@ -91,8 +91,12 @@ const FilePreviewPage: React.FC<FilePreviewPageProps> = ({
     window.open(htmlUrl, "_blank", "noopener,noreferrer");
   }, [htmlUrl]);
 
-  const hasImagePreview =
-    previewState.previewingImageItem !== null && previewState.imagePreviewUrl !== null;
+  const imagePreviewUrl =
+    previewState.previewingImageItem !== null && typeof previewState.imagePreviewUrl === "string"
+      ? previewState.imagePreviewUrl
+      : null;
+
+  const hasImagePreview = imagePreviewUrl !== null;
 
   const hasMarkdownPreview =
     previewState.previewType === "markdown" && previewState.previewContent !== null;
@@ -279,7 +283,7 @@ const FilePreviewPage: React.FC<FilePreviewPageProps> = ({
             />
           ) : null}
 
-          {hasImagePreview ? (
+          {imagePreviewUrl !== null ? (
             <Box
               sx={{
                 width: "100%",
@@ -288,7 +292,7 @@ const FilePreviewPage: React.FC<FilePreviewPageProps> = ({
               }}
             >
               <LazyImagePreview
-                imageUrl={previewState.imagePreviewUrl}
+                imageUrl={imagePreviewUrl}
                 fileName={previewState.previewingImageItem?.name ?? "图片预览"}
                 onClose={onClose}
                 isFullScreen={false}

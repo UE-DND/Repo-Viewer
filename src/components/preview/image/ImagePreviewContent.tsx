@@ -12,7 +12,7 @@ import {
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
+import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import { ImagePreviewSkeleton } from '@/components/ui/skeletons';
 import ImageToolbar from './ImageToolbar';
 import type { ImagePreviewContentProps } from './types';
@@ -145,7 +145,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [currentScale, setCurrentScale] = useState(1);
   const internalImgRef = useRef<HTMLImageElement | null>(null);
-  const transformRef = useRef<ReactZoomPanPinchRef | null>(null);
+  const transformRef = useRef<ReactZoomPanPinchContentRef | null>(null);
 
   const [aspectRatio, setAspectRatio] = useState<number>(initialAspectRatio ?? DEFAULT_ASPECT_RATIO);
 
@@ -475,9 +475,9 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
           pinch={{ disabled: error }}
           panning={{ disabled: error || (isSmallScreen && currentScale === 1) }}
           centerOnInit={true}
-          onTransformed={(ref) => {
+          onTransformed={(ref, state) => {
             transformRef.current = ref;
-            onTransformed(ref.state.scale);
+            onTransformed(state.scale);
           }}
           data-oid="image-transform-wrapper"
         >
