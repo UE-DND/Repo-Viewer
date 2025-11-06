@@ -10,6 +10,7 @@ const initialPreviewState: PreviewState = {
   previewContent: null,
   previewingItem: null,
   loadingPreview: false,
+  previewType: null,
   imagePreviewUrl: null,
   previewingImageItem: null,
   isImageFullscreen: false,
@@ -25,10 +26,19 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
       return {
         ...state,
         previewContent: action.content,
-        previewingItem: action.item
+        previewingItem: action.item,
+        previewType: 'markdown'
       };
 
-    case 'SET_MD_LOADING':
+    case 'SET_TEXT_PREVIEW':
+      return {
+        ...state,
+        previewContent: action.content,
+        previewingItem: action.item,
+        previewType: 'text'
+      };
+
+    case 'SET_PREVIEW_LOADING':
       return {
         ...state,
         loadingPreview: action.loading
@@ -147,11 +157,11 @@ export const useFilePreview = (
         proxyUrl = GitHub.Proxy.transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url;
       }
 
-    const fileNameLower = item.name.toLowerCase();
+      const fileNameLower = item.name.toLowerCase();
 
-    if (file.isMarkdownFile(fileNameLower)) {
+      if (file.isMarkdownFile(fileNameLower)) {
         updateUrlWithHistory(dirPath, item.path);
-        dispatch({ type: 'SET_MD_LOADING', loading: true });
+        dispatch({ type: 'SET_PREVIEW_LOADING', loading: true });
 
         try {
           const content = await GitHub.Content.getFileContent(item.download_url);
@@ -160,7 +170,21 @@ export const useFilePreview = (
           const errorMessage = error instanceof Error ? error.message : '未知错误';
           onError(`加载Markdown文件失败: ${errorMessage}`);
         } finally {
-          dispatch({ type: 'SET_MD_LOADING', loading: false });
+          dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
+        }
+      }
+      else if (file.isTextFile(item.name)) {
+        updateUrlWithHistory(dirPath, item.path);
+        dispatch({ type: 'SET_PREVIEW_LOADING', loading: true });
+
+        try {
+          const content = await GitHub.Content.getFileContent(item.download_url);
+          dispatch({ type: 'SET_TEXT_PREVIEW', content, item });
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : '未知错误';
+          onError(`加载文本文件失败: ${errorMessage}`);
+        } finally {
+          dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
         }
       }
       else if (file.isPdfFile(fileNameLower)) {
@@ -199,9 +223,9 @@ export const useFilePreview = (
         } finally {
           dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
         }
-    } else {
-      onError('不支持预览该文件类型');
-    }
+      } else {
+        onError('不支持预览该文件类型');
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       onError(`预览文件失败: ${errorMessage}`);

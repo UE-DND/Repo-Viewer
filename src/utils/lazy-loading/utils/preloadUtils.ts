@@ -24,6 +24,10 @@ export const preloadPreviewComponents = (): void => {
     import('../../../components/preview/image').catch((_unknown: unknown) => {
       logger.debug('预加载图片预览组件失败');
     });
+
+    import('../../../components/preview/text').catch((_unknown: unknown) => {
+      logger.debug('预加载文本预览组件失败');
+    });
   });
 };
 

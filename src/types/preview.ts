@@ -14,6 +14,7 @@ export interface PreviewState {
   previewContent: string | null;
   previewingItem: GitHubContent | null;
   loadingPreview: boolean;
+  previewType: 'markdown' | 'text' | null;
 
 
   // 图像预览
@@ -29,9 +30,10 @@ export interface PreviewState {
  */
 export type PreviewAction =
   | { type: 'RESET_PREVIEW' }
-  // Markdown预览操作 (仅用于README文件)
+  // 文本/Markdown预览操作
   | { type: 'SET_MD_PREVIEW', content: string | null, item: GitHubContent | null }
-  | { type: 'SET_MD_LOADING', loading: boolean }
+  | { type: 'SET_TEXT_PREVIEW', content: string | null, item: GitHubContent | null }
+  | { type: 'SET_PREVIEW_LOADING', loading: boolean }
 
 
   // 图像预览操作
@@ -39,4 +41,3 @@ export type PreviewAction =
   | { type: 'SET_IMAGE_LOADING', loading: boolean }
   | { type: 'SET_IMAGE_ERROR', error: string | null }
   | { type: 'SET_IMAGE_FULLSCREEN', fullscreen: boolean };
-

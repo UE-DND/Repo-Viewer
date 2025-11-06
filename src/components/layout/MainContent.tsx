@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
 import FileList from "@/components/file/FileList";
-import { LazyMarkdownPreview, LazyImagePreview, preloadPreviewComponents } from "@/utils/lazy-loading";
+import { LazyMarkdownPreview, LazyImagePreview, LazyTextPreview, preloadPreviewComponents } from "@/utils/lazy-loading";
 import ErrorDisplay from "@/components/ui/ErrorDisplay";
 import {
   useContentContext,
@@ -116,6 +116,17 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
       (item) => item.path === previewState.previewingImageItem?.path
     );
   }, [imageFiles, previewState.previewingImageItem]);
+
+  const hasTextOrMarkdownPreview =
+    previewState.previewingItem !== null &&
+    previewState.previewType !== null &&
+    previewState.previewContent !== null;
+
+  const isMarkdownPreview =
+    hasTextOrMarkdownPreview && previewState.previewType === "markdown";
+
+  const isTextPreview =
+    hasTextOrMarkdownPreview && previewState.previewType === "text";
 
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
@@ -551,8 +562,8 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
             </Box>
           )}
 
-          {/* Markdown文件预览（非README） */}
-          {previewState.previewingItem !== null && previewState.previewContent !== null && (
+          {/* 文本/Markdown 文件预览（非 README） */}
+          {hasTextOrMarkdownPreview && (
             <Box
               sx={{
                 position: "fixed",
@@ -580,16 +591,29 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
                 }}
                 data-oid="md-preview-container"
               >
-                <LazyMarkdownPreview
-                  readmeContent={previewState.previewContent}
-                  loadingReadme={previewState.loadingPreview}
-                  isSmallScreen={isSmallScreen}
-                  previewingItem={previewState.previewingItem}
-                  onClose={closePreview}
-                  lazyLoad={false}
-                  currentBranch={currentBranch}
-                  data-oid="md-file-preview"
-                />
+                {isMarkdownPreview ? (
+                  <LazyMarkdownPreview
+                    readmeContent={previewState.previewContent}
+                    loadingReadme={previewState.loadingPreview}
+                    isSmallScreen={isSmallScreen}
+                    previewingItem={previewState.previewingItem}
+                    onClose={closePreview}
+                    lazyLoad={false}
+                    currentBranch={currentBranch}
+                    data-oid="md-file-preview"
+                  />
+                ) : null}
+
+                {isTextPreview ? (
+                  <LazyTextPreview
+                    content={previewState.previewContent}
+                    loading={previewState.loadingPreview}
+                    isSmallScreen={isSmallScreen}
+                    previewingItem={previewState.previewingItem}
+                    onClose={closePreview}
+                    data-oid="text-file-preview"
+                  />
+                ) : null}
               </Box>
             </Box>
           )}

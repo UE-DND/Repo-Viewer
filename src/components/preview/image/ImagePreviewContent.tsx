@@ -112,7 +112,8 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
     });
 
     const dominantSamples = ratioSamplesRef.current.filter(sample => getBucketKey(sample) === dominantBucket);
-    const averageDominantRatio = dominantSamples.reduce((sum, sample) => sum + sample, 0) / (dominantSamples.length || 1);
+    const sampleCount = dominantSamples.length > 0 ? dominantSamples.length : 1;
+    const averageDominantRatio = dominantSamples.reduce((sum, sample) => sum + sample, 0) / sampleCount;
 
     if (Number.isFinite(averageDominantRatio) && averageDominantRatio > 0) {
       setDominantAspectRatio(prev => (Math.abs(prev - averageDominantRatio) < 0.0001 ? prev : averageDominantRatio));
@@ -124,7 +125,10 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
       return;
     }
 
-    const src = img.currentSrc || img.src;
+    const primarySrc = img.currentSrc;
+    const fallbackSrc = img.src;
+    const src = typeof primarySrc === 'string' && primarySrc.length > 0 ? primarySrc : fallbackSrc;
+
     if (typeof src !== 'string' || src.length === 0) {
       return;
     }
@@ -311,9 +315,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
 
   // 图片引用回调，用于检测缓存
   const handleImageRef = useCallback((img: HTMLImageElement | null): void => {
-    if (typeof imgRef === 'object' && imgRef !== null && 'current' in imgRef) {
-      (imgRef as React.RefObject<HTMLImageElement | null> & { current: HTMLImageElement | null }).current = img;
-    }
+    imgRef.current = img;
 
     internalImgRef.current = img;
 
@@ -421,10 +423,10 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5',
         '--rv-image-preview-aspect-ratio': dominantAspectRatio.toFixed(3),
         ...(stageWidth !== null
-          ? { '--rv-image-preview-stage-width': `${stageWidth}px` }
+          ? { '--rv-image-preview-stage-width': `${stageWidth.toString()}px` }
           : {}),
         ...(stageHeight !== null
-          ? { '--rv-image-preview-stage-height': `${stageHeight}px` }
+          ? { '--rv-image-preview-stage-height': `${stageHeight.toString()}px` }
           : {}),
       }}
       className={containerClassName.length > 0 ? containerClassName : 'image-preview-container'}
@@ -584,10 +586,10 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                       transform: rotationTransform,
                       transition: 'transform 0.3s ease, width 0.35s ease, height 0.35s ease',
                       transformOrigin: 'center center',
-                      width: stageWidth !== null ? `${stageWidth}px` : 'auto',
-                      height: stageHeight !== null ? `${stageHeight}px` : 'auto',
-                      maxWidth: stageMaxWidth !== null ? `${stageMaxWidth}px` : '100%',
-                      maxHeight: stageMaxHeight !== null ? `${stageMaxHeight}px` : '100%',
+                      width: stageWidth !== null ? `${stageWidth.toString()}px` : 'auto',
+                      height: stageHeight !== null ? `${stageHeight.toString()}px` : 'auto',
+                      maxWidth: stageMaxWidth !== null ? `${stageMaxWidth.toString()}px` : '100%',
+                      maxHeight: stageMaxHeight !== null ? `${stageMaxHeight.toString()}px` : '100%',
                       position: 'relative',
                     }}
                     data-oid="y6kwode"
