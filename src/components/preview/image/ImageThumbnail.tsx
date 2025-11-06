@@ -5,13 +5,14 @@ import type { ImageThumbnailProps } from './types';
 
 /**
  * 图片缩略图组件
- * 
+ *
  * 显示图片的缩略图，点击后打开完整预览。
  */
 const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imageUrl,
   fileName,
   thumbnailSize,
+  aspectRatio,
   shouldLoad,
   onOpenPreview,
   onLoad,
@@ -42,6 +43,12 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: g3BorderRadius(G3_PRESETS.image),
+          ...(typeof aspectRatio === 'number' && aspectRatio > 0
+            ? {
+                aspectRatio,
+                height: 'auto',
+              }
+            : {}),
           '&:hover': {
             boxShadow: theme.shadows[2],
           },
@@ -57,6 +64,7 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
+            transition: 'transform 0.3s ease',
           }}
           onLoad={onLoad}
           onError={onError}

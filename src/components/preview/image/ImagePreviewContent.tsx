@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -7,7 +7,7 @@ import {
   useTheme,
   GlobalStyles,
 } from '@mui/material';
-import { 
+import {
   Replay as ReplayIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -17,9 +17,15 @@ import { ImagePreviewSkeleton } from '@/components/ui/skeletons';
 import ImageToolbar from './ImageToolbar';
 import type { ImagePreviewContentProps } from './types';
 
+const DEFAULT_ASPECT_RATIO = 16 / 9;
+const MAX_RATIO_HISTORY = 6;
+const ROUND_RATIO_PRECISION = 2;
+
+const getBucketKey = (value: number): number => Number(value.toFixed(ROUND_RATIO_PRECISION));
+
 /**
  * 图片预览内容组件
- * 
+ *
  * 显示图片预览主体内容，支持缩放、旋转和拖拽。
  */
 const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
@@ -41,12 +47,143 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   hasNext = false,
   onPrevious,
   onNext,
+  initialAspectRatio,
+  onAspectRatioChange,
 }) => {
   const theme = useTheme();
   // 导航按钮显示状态：'left' | 'right' | null（互斥显示）
   const [activeNavSide, setActiveNavSide] = useState<'left' | 'right' | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  
+  const internalImgRef = React.useRef<HTMLImageElement | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const resolvedInitialAspectRatio = useMemo(() => {
+    if (typeof initialAspectRatio === 'number' && Number.isFinite(initialAspectRatio) && initialAspectRatio > 0) {
+      return initialAspectRatio;
+    }
+    return DEFAULT_ASPECT_RATIO;
+  }, [initialAspectRatio]);
+  const ratioSamplesRef = React.useRef<number[]>([resolvedInitialAspectRatio]);
+  const ratioBucketsRef = React.useRef<Map<number, number>>(
+    new Map([[getBucketKey(resolvedInitialAspectRatio), 1]])
+  );
+  const lastProcessedImageRef = React.useRef<string | null>(null);
+  const previousNotifiedRatioRef = React.useRef<number>(resolvedInitialAspectRatio);
+  const [dominantAspectRatio, setDominantAspectRatio] = useState<number>(resolvedInitialAspectRatio);
+
+  const addAspectRatioSample = useCallback((ratio: number): void => {
+    if (!Number.isFinite(ratio) || ratio <= 0) {
+      return;
+    }
+
+    const normalized = Number(ratio.toFixed(4));
+    const bucketKey = getBucketKey(normalized);
+
+    const samples = [...ratioSamplesRef.current, normalized];
+    if (samples.length > MAX_RATIO_HISTORY) {
+      const removed = samples.shift();
+      if (removed !== undefined) {
+        const removedKey = getBucketKey(removed);
+        const currentCount = ratioBucketsRef.current.get(removedKey);
+        if (currentCount !== undefined) {
+          if (currentCount <= 1) {
+            ratioBucketsRef.current.delete(removedKey);
+          } else {
+            ratioBucketsRef.current.set(removedKey, currentCount - 1);
+          }
+        }
+      }
+    }
+    ratioSamplesRef.current = samples;
+
+    const existingCount = ratioBucketsRef.current.get(bucketKey) ?? 0;
+    ratioBucketsRef.current.set(bucketKey, existingCount + 1);
+
+    let dominantBucket = bucketKey;
+    let dominantCount = ratioBucketsRef.current.get(bucketKey) ?? 1;
+
+    ratioBucketsRef.current.forEach((count, key) => {
+      if (count > dominantCount) {
+        dominantBucket = key;
+        dominantCount = count;
+      } else if (count === dominantCount && Math.abs(key - bucketKey) < Math.abs(dominantBucket - bucketKey)) {
+        dominantBucket = key;
+        dominantCount = count;
+      }
+    });
+
+    const dominantSamples = ratioSamplesRef.current.filter(sample => getBucketKey(sample) === dominantBucket);
+    const averageDominantRatio = dominantSamples.reduce((sum, sample) => sum + sample, 0) / (dominantSamples.length || 1);
+
+    if (Number.isFinite(averageDominantRatio) && averageDominantRatio > 0) {
+      setDominantAspectRatio(prev => (Math.abs(prev - averageDominantRatio) < 0.0001 ? prev : averageDominantRatio));
+    }
+  }, []);
+
+  const processAspectRatioFromImage = useCallback((img: HTMLImageElement | null): void => {
+    if (img === null) {
+      return;
+    }
+
+    const src = img.currentSrc || img.src;
+    if (typeof src !== 'string' || src.length === 0) {
+      return;
+    }
+
+    if (lastProcessedImageRef.current === src && img.dataset['rvAspectProcessed'] === 'true') {
+      return;
+    }
+
+    if (img.naturalWidth <= 0 || img.naturalHeight <= 0) {
+      return;
+    }
+
+    const ratio = img.naturalWidth / img.naturalHeight;
+    addAspectRatioSample(ratio);
+    lastProcessedImageRef.current = src;
+    img.dataset['rvAspectProcessed'] = 'true';
+  }, [addAspectRatioSample]);
+
+  useEffect(() => {
+    lastProcessedImageRef.current = null;
+    const currentImage = internalImgRef.current;
+    if (currentImage !== null) {
+      delete currentImage.dataset['rvAspectProcessed'];
+    }
+  }, [imageUrl]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container === null) {
+      return undefined;
+    }
+
+    const updateSize = (): void => {
+      const rect = container.getBoundingClientRect();
+      setContainerSize({ width: rect.width, height: rect.height });
+    };
+
+    updateSize();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (entry !== undefined) {
+          const { width, height } = entry.contentRect;
+          setContainerSize({ width, height });
+        }
+      });
+      observer.observe(container);
+      return () => {
+        observer.disconnect();
+      };
+    }
+
+    window.addEventListener('resize', updateSize);
+    return () => {
+      window.removeEventListener('resize', updateSize);
+    };
+  }, []);
+
   // 移动端拖动切换状态
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -128,6 +265,45 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .join(' ');
 
+  const stageMetrics = useMemo(() => {
+    if (containerSize.width <= 0 || containerSize.height <= 0) {
+      return null;
+    }
+
+    const widthPadding = isSmallScreen ? 0.94 : 0.9;
+    const heightPadding = isSmallScreen ? 0.85 : 0.8;
+
+    const availableWidth = containerSize.width * widthPadding;
+    const availableHeight = containerSize.height * heightPadding;
+
+    if (availableWidth <= 0 || availableHeight <= 0) {
+      return null;
+    }
+
+    const aspectRatio = dominantAspectRatio > 0 ? dominantAspectRatio : DEFAULT_ASPECT_RATIO;
+    const width = Math.min(availableWidth, availableHeight * aspectRatio);
+    const height = width / aspectRatio;
+
+    return {
+      width,
+      height,
+      availableWidth,
+      availableHeight,
+    };
+  }, [containerSize.height, containerSize.width, dominantAspectRatio, isSmallScreen]);
+
+  const stageWidth = stageMetrics?.width ?? null;
+  const stageHeight = stageMetrics?.height ?? null;
+  const stageMaxWidth = stageMetrics?.availableWidth ?? null;
+  const stageMaxHeight = stageMetrics?.availableHeight ?? null;
+
+  useEffect(() => {
+    if (typeof onAspectRatioChange === 'function' && Math.abs(previousNotifiedRatioRef.current - dominantAspectRatio) >= 0.0001) {
+      previousNotifiedRatioRef.current = dominantAspectRatio;
+      onAspectRatioChange(dominantAspectRatio);
+    }
+  }, [dominantAspectRatio, onAspectRatioChange]);
+
   // 更新当前缩放比例
   useEffect(() => {
     setCurrentScale(toolbarProps.scale);
@@ -135,17 +311,21 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
 
   // 图片引用回调，用于检测缓存
   const handleImageRef = useCallback((img: HTMLImageElement | null): void => {
-    // 更新 ref
-    if (typeof imgRef === 'object' && 'current' in imgRef) {
+    if (typeof imgRef === 'object' && imgRef !== null && 'current' in imgRef) {
       (imgRef as React.RefObject<HTMLImageElement | null> & { current: HTMLImageElement | null }).current = img;
     }
-    
-    // 检查图片是否已从缓存加载
+
+    internalImgRef.current = img;
+
+    if (img !== null) {
+      delete img.dataset['rvAspectProcessed'];
+    }
+
     if (img !== null && img.complete && img.naturalHeight !== 0) {
-      // 图片已缓存，立即触发 onLoad
+      processAspectRatioFromImage(img);
       onLoad();
     }
-  }, [imgRef, onLoad]);
+  }, [imgRef, onLoad, processAspectRatioFromImage]);
 
   // 移动端触摸开始
   const handleTouchStart = (e: React.TouchEvent): void => {
@@ -181,20 +361,20 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
     // 判断是否为水平拖动（横向移动大于纵向移动）
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
       setIsDragging(true);
-      
+
       // 限制拖动范围
       let offset = deltaX;
-      
+
       // 如果没有上一张，限制向右拖动
       if (!hasPrevious && deltaX > 0) {
         offset = deltaX * 0.3;
       }
-      
+
       // 如果没有下一张，限制向左拖动
       if (!hasNext && deltaX < 0) {
         offset = deltaX * 0.3;
       }
-      
+
       setDragOffset(offset);
     }
   };
@@ -239,6 +419,13 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         position: 'relative',
         overflow: 'hidden',
         bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5',
+        '--rv-image-preview-aspect-ratio': dominantAspectRatio.toFixed(3),
+        ...(stageWidth !== null
+          ? { '--rv-image-preview-stage-width': `${stageWidth}px` }
+          : {}),
+        ...(stageHeight !== null
+          ? { '--rv-image-preview-stage-height': `${stageHeight}px` }
+          : {}),
       }}
       className={containerClassName.length > 0 ? containerClassName : 'image-preview-container'}
       style={style}
@@ -297,7 +484,10 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         {loading && (
           <ImagePreviewSkeleton
             isSmallScreen={isSmallScreen}
+            aspectRatio={dominantAspectRatio}
             data-oid="84nup28"
+            {...(stageWidth !== null ? { targetWidth: stageWidth } : {})}
+            {...(stageHeight !== null ? { targetHeight: stageHeight } : {})}
           />
         )}
 
@@ -392,10 +582,12 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                       justifyContent: 'center',
                       alignItems: 'center',
                       transform: rotationTransform,
-                      transition: 'transform 0.3s ease',
+                      transition: 'transform 0.3s ease, width 0.35s ease, height 0.35s ease',
                       transformOrigin: 'center center',
-                      width: '100%',
-                      height: '100%',
+                      width: stageWidth !== null ? `${stageWidth}px` : 'auto',
+                      height: stageHeight !== null ? `${stageHeight}px` : 'auto',
+                      maxWidth: stageMaxWidth !== null ? `${stageMaxWidth}px` : '100%',
+                      maxHeight: stageMaxHeight !== null ? `${stageMaxHeight}px` : '100%',
                       position: 'relative',
                     }}
                     data-oid="y6kwode"
@@ -406,12 +598,16 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                       alt={altText}
                       className="loaded"
                       style={{
-                        maxWidth: '90%',
-                        maxHeight: '80%',
+                        width: '100%',
+                        height: '100%',
                         objectFit: 'contain',
                         opacity: 1,
+                        transition: 'opacity 0.3s ease',
                       }}
-                      onLoad={onLoad}
+                      onLoad={(event) => {
+                        processAspectRatioFromImage(event.currentTarget);
+                        onLoad();
+                      }}
                       onError={onError}
                       data-oid="nyva-.q"
                     />
@@ -425,7 +621,10 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                     style={{
                       display: 'none',
                     }}
-                    onLoad={onLoad}
+                    onLoad={(event) => {
+                      processAspectRatioFromImage(event.currentTarget);
+                      onLoad();
+                    }}
                     onError={onError}
                     data-oid="nyva-loading"
                   />
@@ -470,11 +669,11 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                           boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
                         }}
                       >
-                        <ChevronLeftIcon 
-                          sx={{ 
+                        <ChevronLeftIcon
+                          sx={{
                             fontSize: '2rem',
                             color: '#fff',
-                          }} 
+                          }}
                         />
                       </Box>
                     </Box>
@@ -507,11 +706,11 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                           boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
                         }}
                       >
-                        <ChevronRightIcon 
-                          sx={{ 
+                        <ChevronRightIcon
+                          sx={{
                             fontSize: '2rem',
                             color: '#fff',
-                          }} 
+                          }}
                         />
                       </Box>
                     </Box>
@@ -555,12 +754,12 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                     }}
                     data-oid="prev-nav-btn"
                   >
-                    <ChevronLeftIcon 
-                      sx={{ 
+                    <ChevronLeftIcon
+                      sx={{
                         fontSize: '2rem',
                         color: theme.palette.text.primary,
-                      }} 
-                      data-oid="prev-icon" 
+                      }}
+                      data-oid="prev-icon"
                     />
                   </IconButton>
                 </Box>
@@ -602,12 +801,12 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                     }}
                     data-oid="next-nav-btn"
                   >
-                    <ChevronRightIcon 
-                      sx={{ 
+                    <ChevronRightIcon
+                      sx={{
                         fontSize: '2rem',
                         color: theme.palette.text.primary,
-                      }} 
-                      data-oid="next-icon" 
+                      }}
+                      data-oid="next-icon"
                     />
                   </IconButton>
                 </Box>

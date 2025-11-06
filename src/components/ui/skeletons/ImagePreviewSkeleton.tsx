@@ -7,19 +7,43 @@ import {
 import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
-/**
- * 图片预览骨架屏组件
- * 
- * 在图片加载时显示的占位骨架屏。
- */
-export const ImagePreviewSkeleton: React.FC<{
+interface ImagePreviewSkeletonProps {
   isSmallScreen?: boolean;
   visible?: boolean;
   onExited?: () => void;
-}> = ({ isSmallScreen = false, visible = true, onExited }) => {
+  targetWidth?: number;
+  targetHeight?: number;
+  aspectRatio?: number;
+  'data-oid'?: string;
+}
+
+/**
+ * 图片预览骨架屏组件
+ *
+ * 在图片加载时显示的占位骨架屏。
+ */
+export const ImagePreviewSkeleton: React.FC<ImagePreviewSkeletonProps> = ({
+  isSmallScreen = false,
+  visible = true,
+  onExited,
+  targetWidth,
+  targetHeight,
+  aspectRatio,
+  ...rest
+}) => {
   const theme = useTheme();
   const skeletonStyles = getSkeletonStyles(theme);
   const isExiting = useSkeletonVisibility(visible, onExited);
+
+  const fallbackWidth = isSmallScreen ? "88%" : "60%";
+  const fallbackHeight = isSmallScreen ? "54%" : "60%";
+  const resolvedWidth = typeof targetWidth === "number" && targetWidth > 0
+    ? Math.round(targetWidth)
+    : fallbackWidth;
+  const resolvedHeight = typeof targetHeight === "number" && targetHeight > 0
+    ? Math.round(targetHeight)
+    : fallbackHeight;
+  const normalizedAspectRatio = typeof aspectRatio === "number" && aspectRatio > 0 ? aspectRatio : undefined;
 
   return (
     <Box
@@ -39,6 +63,7 @@ export const ImagePreviewSkeleton: React.FC<{
         ...getContainerTransitionStyles(isExiting),
       }}
       data-oid="8od.96t"
+      {...rest}
     >
       {/* 图片区域 */}
       <Box
@@ -53,10 +78,16 @@ export const ImagePreviewSkeleton: React.FC<{
       >
         <Skeleton
           variant="rectangular"
-          width={isSmallScreen ? "80%" : "60%"}
-          height={isSmallScreen ? "50%" : "60%"}
+          width={resolvedWidth}
+          height={resolvedHeight}
           animation="wave"
-          sx={{ borderRadius: g3BorderRadius(G3_PRESETS.image), ...skeletonStyles }}
+          sx={{
+            borderRadius: g3BorderRadius(G3_PRESETS.image),
+            ...skeletonStyles,
+            maxWidth: "100%",
+            maxHeight: "100%",
+            aspectRatio: normalizedAspectRatio ? `${normalizedAspectRatio}` : undefined,
+          }}
           data-oid="g91oyf4"
         />
       </Box>
