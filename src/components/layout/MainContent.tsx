@@ -96,6 +96,11 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     return previewState.previewingItem.path === readmeFileItem.path;
   }, [previewState.previewingItem, readmeFileItem]);
 
+  // 检查是否有任何预览活动（Markdown 或图片）
+  const isPreviewActive = useMemo(() => {
+    return previewState.previewingItem !== null || previewState.previewingImageItem !== null;
+  }, [previewState.previewingItem, previewState.previewingImageItem]);
+
   // 获取当前目录中的所有图片文件
   const imageFiles = useMemo(() => {
     return contents.filter((item) => {
@@ -376,6 +381,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
             handleCancelDownload={handleCancelDownload}
             currentPath={currentPath}
             hasReadmePreview={hasReadmeFile}
+            isPreviewActive={isPreviewActive}
             data-oid="_qfxtvv"
           />
 

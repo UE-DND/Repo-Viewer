@@ -28,6 +28,7 @@ interface FileListProps {
   handleCancelDownload: (e: React.MouseEvent) => void;
   currentPath: string;
   hasReadmePreview?: boolean;
+  isPreviewActive?: boolean;
 }
 
 /**
@@ -49,6 +50,7 @@ const FileList = React.memo<FileListProps>(
     handleCancelDownload,
     currentPath,
     hasReadmePreview = false,
+    isPreviewActive = false,
   }) => {
     const { isScrolling, scrollSpeed, handleScroll: handleScrollEvent } = useOptimizedScroll({
       maxSamples: 5,
@@ -60,6 +62,13 @@ const FileList = React.memo<FileListProps>(
     const [showAlphabetIndex, setShowAlphabetIndex] = React.useState(false);
     const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null);
     const highlightTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    // 当预览状态变化时，自动关闭字母索引
+    React.useEffect(() => {
+      if (isPreviewActive) {
+        setShowAlphabetIndex(false);
+      }
+    }, [isPreviewActive]);
 
     // 计算每个文件项的高度（包括间距）
     // 这个计算需要与 FileListItem 的实际高度保持一致
@@ -369,6 +378,10 @@ const FileList = React.memo<FileListProps>(
             width: { xs: 60, sm: 64 },
             zIndex: 5,
             cursor: 'default',
+            // 预览时禁用指针事件
+            pointerEvents: isPreviewActive ? 'none' : 'auto',
+            // 预览时完全隐藏（不占用空间）
+            display: isPreviewActive ? 'none' : 'block',
           }}
           onMouseEnter={() => {
             setShowAlphabetIndex(true);

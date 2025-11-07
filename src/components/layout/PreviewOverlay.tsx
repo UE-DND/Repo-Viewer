@@ -87,7 +87,7 @@ const PreviewOverlay: React.FC<PreviewOverlayProps> = ({
                 height: '100%',
                 bgcolor: "background.default",
                 overflow: "auto",
-                p: { xs: 2, sm: 3, md: 4 },
+                p: { xs: 1, sm: 2, md: 3 },
               }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
@@ -96,25 +96,16 @@ const PreviewOverlay: React.FC<PreviewOverlayProps> = ({
               }}
               data-oid="md-preview-fs"
             >
-          <Box
-            sx={{
-              maxWidth: "1200px",
-              mx: "auto",
-              width: "100%",
-            }}
-            data-oid="md-preview-container"
-          >
-            <LazyMarkdownPreview
-              readmeContent={previewContent}
-              loadingReadme={loadingPreview}
-              isSmallScreen={isSmallScreen}
-              previewingItem={previewingItem}
-              onClose={onClose}
-              lazyLoad={false}
-              currentBranch={currentBranch}
-              data-oid="md-file-preview"
-            />
-          </Box>
+              <LazyMarkdownPreview
+                readmeContent={previewContent}
+                loadingReadme={loadingPreview}
+                isSmallScreen={isSmallScreen}
+                previewingItem={previewingItem}
+                onClose={onClose}
+                lazyLoad={false}
+                currentBranch={currentBranch}
+                data-oid="md-file-preview"
+              />
             </Box>
           </motion.div>
         )}
