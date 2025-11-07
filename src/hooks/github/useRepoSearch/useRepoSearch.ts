@@ -1,205 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { GitHub } from '@/services/github';
+
 import { getSearchIndexConfig } from '@/config';
+import { GitHub } from '@/services/github';
+import { SearchIndexError, SearchIndexErrorCode } from '@/services/github/core/searchIndex';
 import { logger } from '@/utils';
 import type { GitHubContent } from '@/types';
+
+import { SEARCH_INDEX_DEFAULT_LIMIT } from './constants';
+import type {
+  RepoSearchError,
+  RepoSearchExecutionResult,
+  RepoSearchFallbackReason,
+  RepoSearchFilters,
+  RepoSearchIndexStatus,
+  RepoSearchItem,
+  RepoSearchMode,
+  RepoSearchState,
+  UseRepoSearchOptions
+} from './types';
 import {
-  SearchIndexError,
-  SearchIndexErrorCode,
-  type SearchIndexResultItem
-} from '@/services/github/core/SearchIndexService';
-
-export type RepoSearchMode = 'search-index' | 'github-api';
-
-export type RepoSearchFallbackReason =
-  | 'index-disabled'
-  | 'index-not-ready'
-  | 'index-error'
-  | 'branch-not-indexed';
-
-export interface RepoSearchFilters {
-  keyword: string;
-  branches: string[];
-  pathPrefix: string;
-  extensions: string[];
-}
-
-export interface RepoSearchIndexItem extends SearchIndexResultItem {
-  source: 'search-index';
-}
-
-export interface RepoSearchApiItem extends GitHubContent {
-  source: 'github-api';
-  branch: string;
-}
-
-export type RepoSearchItem = RepoSearchIndexItem | RepoSearchApiItem;
-
-export interface RepoSearchExecutionResult {
-  mode: RepoSearchMode;
-  items: RepoSearchItem[];
-  took: number;
-  filters: RepoSearchFilters;
-  completedAt: number;
-}
-
-export interface RepoSearchError {
-  source: 'index' | 'search';
-  code?: string;
-  message: string;
-  details?: unknown;
-  raw?: unknown;
-}
-
-export interface RepoSearchIndexStatus {
-  enabled: boolean;
-  ready: boolean;
-  loading: boolean;
-  error: RepoSearchError | null;
-  indexedBranches: string[];
-  lastUpdatedAt?: number;
-}
-
-export interface RepoSearchExecuteOptions extends Partial<RepoSearchFilters> {
-  mode?: RepoSearchMode;
-}
-
-export interface RepoSearchState {
-  keyword: string;
-  setKeyword: (value: string) => void;
-  branchFilter: string[];
-  setBranchFilter: (branches: string[] | string) => void;
-  extensionFilter: string[];
-  setExtensionFilter: (extensions: string[] | string) => void;
-  pathPrefix: string;
-  setPathPrefix: (prefix: string) => void;
-  availableBranches: string[];
-  availableModes: RepoSearchMode[];
-  preferredMode: RepoSearchMode;
-  setPreferredMode: (mode: RepoSearchMode) => void;
-  mode: RepoSearchMode;
-  fallbackReason: RepoSearchFallbackReason | null;
-  indexStatus: RepoSearchIndexStatus;
-  searchResult: RepoSearchExecutionResult | null;
-  searchLoading: boolean;
-  searchError: RepoSearchError | null;
-  search: (options?: RepoSearchExecuteOptions) => Promise<RepoSearchExecutionResult | null>;
-  clearResults: () => void;
-  resetFilters: () => void;
-  isBranchIndexed: (branch: string) => boolean;
-  refreshIndexStatus: () => void;
-  initializeIndex: () => void;
-}
-
-interface UseRepoSearchOptions {
-  currentBranch: string;
-  defaultBranch: string;
-  branches: string[];
-}
-
-const SEARCH_INDEX_DEFAULT_LIMIT = 200;
-
-function sanitizeBranchList(
-  branches: string[],
-  availableBranches: Set<string>,
-  branchOrder: Map<string, number>
-): string[] {
-  const normalized: string[] = [];
-  const seen = new Set<string>();
-
-  for (const rawName of branches) {
-    const trimmed = rawName.trim();
-    if (trimmed.length === 0) {
-      continue;
-    }
-    if (!availableBranches.has(trimmed)) {
-      continue;
-    }
-    if (seen.has(trimmed)) {
-      continue;
-    }
-    seen.add(trimmed);
-    normalized.push(trimmed);
-  }
-
-  return normalized.sort((a, b) => {
-    const rankA = branchOrder.get(a);
-    const rankB = branchOrder.get(b);
-
-    if (rankA !== undefined && rankB !== undefined) {
-      return rankA - rankB;
-    }
-    if (rankA !== undefined) {
-      return -1;
-    }
-    if (rankB !== undefined) {
-      return 1;
-    }
-
-    return a.localeCompare(b, 'zh-CN');
-  });
-}
-
-function sanitizeExtensions(extensions: string[] | string): string[] {
-  const values = Array.isArray(extensions) ? extensions : [extensions];
-  const normalized: string[] = [];
-  const seen = new Set<string>();
-
-  for (const rawValue of values) {
-    const trimmed = rawValue.trim().toLowerCase();
-    if (trimmed.length === 0) {
-      continue;
-    }
-    const extension = trimmed.startsWith('.') ? trimmed.slice(1) : trimmed;
-    if (extension.length === 0 || seen.has(extension)) {
-      continue;
-    }
-    seen.add(extension);
-    normalized.push(extension);
-  }
-
-  return normalized;
-}
-
-function normalizeSearchIndexError(error: unknown): RepoSearchError {
-  if (error instanceof SearchIndexError) {
-    return {
-      source: 'index',
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      raw: error
-    } satisfies RepoSearchError;
-  }
-
-  const message = error instanceof Error ? error.message : 'Unknown search index error';
-  return {
-    source: 'index',
-    code: 'UNKNOWN',
-    message,
-    raw: error
-  } satisfies RepoSearchError;
-}
-
-function normalizeSearchError(error: unknown, mode: RepoSearchMode): RepoSearchError {
-  if (error instanceof SearchIndexError) {
-    return {
-      source: 'search',
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      raw: error
-    } satisfies RepoSearchError;
-  }
-
-  const message = error instanceof Error ? error.message : 'Unknown search error';
-  return {
-    source: 'search',
-    code: mode === 'search-index' ? SearchIndexErrorCode.INDEX_FILE_NOT_FOUND : 'UNKNOWN',
-    message,
-    raw: error
-  } satisfies RepoSearchError;
-}
+  normalizeSearchError,
+  normalizeSearchIndexError,
+  sanitizeBranchList,
+  sanitizeExtensions
+} from './utils';
 
 export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRepoSearchOptions): RepoSearchState {
   const searchIndexConfig = getSearchIndexConfig();
@@ -211,7 +35,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
     const order = new Map<string, number>();
     const list: string[] = [];
 
-  const appendBranch = (candidate: string): void => {
+    const appendBranch = (candidate: string): void => {
       const trimmed = candidate.trim();
       if (trimmed.length === 0 || trimmed === indexBranchName || set.has(trimmed)) {
         return;
@@ -569,7 +393,7 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
       extensions: options?.extensions ?? filters.extensions
     };
 
-  const sanitizedBranches = sanitizeBranchList(mergedFilters.branches, availableBranchSet, branchOrder);
+    const sanitizedBranches = sanitizeBranchList(mergedFilters.branches, availableBranchSet, branchOrder);
     const sanitizedExtensions = sanitizeExtensions(mergedFilters.extensions);
     const keyword = mergedFilters.keyword.trim();
 
@@ -757,3 +581,4 @@ export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRep
     initializeIndex
   } satisfies RepoSearchState;
 }
+

@@ -24,7 +24,7 @@ export async function prefetchFilesWithPriority(
     return;
   }
 
-  const { getFileContent } = await import('../ContentService');
+  const { getFileContent } = await import('../content');
 
   const prefetchPromises = fileUrls.map(url =>
     batcher

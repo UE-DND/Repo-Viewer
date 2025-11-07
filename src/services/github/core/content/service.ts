@@ -7,13 +7,13 @@ import type {
 import { logger } from '@/utils';
 
 import { RequestBatcher } from '../../RequestBatcher';
-import { getForceServerProxy, shouldUseServerAPI } from '../../config/ProxyForceManager';
-import { safeValidateGitHubContentsResponse } from '../../schemas/apiSchemas';
+import { getForceServerProxy, shouldUseServerAPI } from '../../config';
 import {
+  safeValidateGitHubContentsResponse,
   filterAndNormalizeGitHubContents,
   transformGitHubContentsResponse,
   validateGitHubContentsArray
-} from '../../schemas/dataTransformers';
+} from '../../schemas';
 import { getAuthHeaders } from '../Auth';
 import { USE_TOKEN_MODE, getApiUrl, getCurrentBranch } from '../Config';
 import {

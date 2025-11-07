@@ -4,12 +4,12 @@ import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 
 import { RequestBatcher } from '../../RequestBatcher';
-import { shouldUseServerAPI } from '../../config/ProxyForceManager';
-import { safeValidateGitHubSearchResponse } from '../../schemas/apiSchemas';
+import { shouldUseServerAPI } from '../../config';
 import {
+  safeValidateGitHubSearchResponse,
   filterAndNormalizeGitHubContents,
   transformGitHubSearchResponse
-} from '../../schemas/dataTransformers';
+} from '../../schemas';
 import { getAuthHeaders } from '../Auth';
 import {
   GITHUB_API_BASE,

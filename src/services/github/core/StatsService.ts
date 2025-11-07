@@ -1,26 +1,26 @@
-import { CacheManager } from '../cache/CacheManager';
-import { getProxyHealthStats } from '../proxy/ProxyService';
+import { CacheManager } from '../cache';
+import { getProxyHealthStats } from '../proxy';
 import { resetFailedProxyServices } from './Auth';
 
 // GitHub统计服务，使用模块导出而非类
 
 /**
  * 清除所有缓存和重置网络状态
- * 
+ *
  * 清除内容缓存、文件缓存、批处理器缓存和代理失败记录。
- * 
+ *
  * @returns Promise，清除完成后解析
  */
 export async function clearCache(): Promise<void> {
   await CacheManager.clearAllCaches();
-  const { clearBatcherCache } = await import('./ContentService');
+  const { clearBatcherCache } = await import('./content');
   clearBatcherCache();
   resetFailedProxyServices();
 }
 
 /**
  * 获取缓存统计信息
- * 
+ *
  * @returns 缓存统计对象
  */
 export function getCacheStats(): ReturnType<typeof CacheManager.getCacheStats> {
@@ -29,9 +29,9 @@ export function getCacheStats(): ReturnType<typeof CacheManager.getCacheStats> {
 
 /**
  * 获取网络请求统计信息
- * 
+ *
  * 返回批处理器、代理服务和缓存的统计信息。
- * 
+ *
  * @returns Promise，解析为网络统计对象
  */
 export async function getNetworkStats(): Promise<{
@@ -39,7 +39,7 @@ export async function getNetworkStats(): Promise<{
   proxy: ReturnType<typeof getProxyHealthStats>;
   cache: ReturnType<typeof getCacheStats>;
 }> {
-  const { getBatcher } = await import('./ContentService');
+  const { getBatcher } = await import('./content');
   return {
     batcher: getBatcher().getStats(),
     proxy: getProxyHealthStats(),

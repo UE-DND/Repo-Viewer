@@ -6,7 +6,7 @@ import type {
 } from '@/types';
 import { logger } from '@/utils';
 
-import { filterAndNormalizeGitHubContents } from '../../schemas/dataTransformers';
+import { filterAndNormalizeGitHubContents } from '../../schemas';
 import { storeDirectoryContents, storeFileContent } from './cacheState';
 import { normalizeDirectoryPath, normalizeFilePath, escapeRegExp } from './pathUtils';
 

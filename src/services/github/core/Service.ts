@@ -11,7 +11,7 @@ import {
 import {
   searchWithGitHubApi as searchWithApi,
   searchFiles as searchFilesImpl
-} from './SearchService';
+} from './search';
 import {
   prefetchContents as prefetchContentsImpl,
   batchPrefetchContents as batchPrefetchContentsImpl,
@@ -117,7 +117,7 @@ export async function getBranches(): Promise<string[]> {
  * @returns Promise，解析为GitHub内容数组
  */
 export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
-  const { getContents: getContentsImpl } = await import('./ContentService');
+  const { getContents: getContentsImpl } = await import('./content');
   const contents = await getContentsImpl(path, signal);
 
   // 预加载相关内容
@@ -135,7 +135,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
  * @returns Promise，解析为文件的文本内容
  */
 export async function getFileContent(fileUrl: string): Promise<string> {
-  const { getFileContent: getFileContentImpl } = await import('./ContentService');
+  const { getFileContent: getFileContentImpl } = await import('./content');
   return getFileContentImpl(fileUrl);
 }
 
@@ -170,7 +170,7 @@ export async function searchMultipleBranchesWithTreesApi(
   pathPrefix = '',
   fileTypeFilter?: string
 ): Promise<{ branch: string; results: GitHubContent[] }[]> {
-  const { searchMultipleBranchesWithTreesApi: impl } = await import('./SearchService');
+  const { searchMultipleBranchesWithTreesApi: impl } = await import('./search');
   return impl(searchTerm, branches, pathPrefix, fileTypeFilter);
 }
 
@@ -292,7 +292,7 @@ export async function getNetworkStats(): Promise<ReturnType<typeof statsGetNetwo
  * @returns Promise，解析为批处理器实例
  */
 export async function getBatcher(): Promise<unknown> {
-  const { getBatcher: getBatcherImpl } = await import('./ContentService');
+  const { getBatcher: getBatcherImpl } = await import('./content');
   return getBatcherImpl();
 }
 

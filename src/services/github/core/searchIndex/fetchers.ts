@@ -1,7 +1,7 @@
 import { getGithubConfig, getSearchIndexConfig } from '@/config';
 import { logger } from '@/utils';
 
-import { shouldUseServerAPI } from '../../config/ProxyForceManager';
+import { shouldUseServerAPI } from '../../config';
 import { getAuthHeaders } from '../Auth';
 import {
   safeValidateSearchIndexManifest,

@@ -5,7 +5,7 @@ import { GITHUB_REPO_NAME, GITHUB_REPO_OWNER } from '../Config';
 import type { GitTreeItem } from './trees';
 
 async function loadDirectoryContents(path: string): Promise<GitHubContent[]> {
-  const { getContents } = await import('../ContentService');
+  const { getContents } = await import('../content');
   return getContents(path);
 }
 

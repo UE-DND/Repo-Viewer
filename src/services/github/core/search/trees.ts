@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { GITHUB_API_BASE, GITHUB_REPO_NAME, GITHUB_REPO_OWNER } from '../Config';
-import { shouldUseServerAPI } from '../../config/ProxyForceManager';
+import { shouldUseServerAPI } from '../../config';
 import { getAuthHeaders } from '../Auth';
 
 export interface GitTreeItem {

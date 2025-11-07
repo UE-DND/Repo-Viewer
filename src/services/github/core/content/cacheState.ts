@@ -2,7 +2,7 @@ import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { SmartCache } from '@/utils/cache/SmartCache';
 
-import { CacheManager } from '../../cache/CacheManager';
+import { CacheManager } from '../../cache';
 import { generateContentVersion, generateFileVersion } from './cacheKeys';
 
 /**

@@ -1,16 +1,15 @@
 import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
-import { CacheManager } from '../cache/CacheManager';
-import { prefetchFilesWithPriority } from './prefetch/executor';
-import { selectPriorityDirectories, selectPriorityFiles } from './prefetch/strategies';
+import { CacheManager } from '../cache';
+import { prefetchFilesWithPriority, selectPriorityDirectories, selectPriorityFiles } from './prefetch';
 
 // GitHub预取服务
 
 /**
  * 智能预取目录内容
- * 
+ *
  * 根据优先级延迟预加载指定路径的内容，不阻塞用户操作。
- * 
+ *
  * @param path - 要预取的目录路径
  * @param priority - 预取优先级，默认为'low'
  * @returns void
@@ -20,19 +19,21 @@ export function prefetchContents(path: string, priority: 'high' | 'medium' | 'lo
   const delay = priority === 'high' ? 0 : priority === 'medium' ? 100 : 200;
   setTimeout(() => {
     // 动态导入避免循环依赖
-    void import('./ContentService').then(({ getContents }) => {
+    void import('./content').then(({ getContents }) => {
       void getContents(path).catch(() => {
         // 忽略错误
       });
+    }).catch(() => {
+      // 忽略动态导入错误
     });
   }, delay);
 }
 
 /**
  * 批量预加载多个路径
- * 
+ *
  * 并发预加载多个路径的内容，自动控制并发数量。
- * 
+ *
  * @param paths - 路径数组
  * @param maxConcurrency - 最大并发数，默认为3
  * @returns Promise，所有预加载完成后解析
@@ -43,7 +44,7 @@ export async function batchPrefetchContents(paths: string[], maxConcurrency = 3)
   }
 
     // 动态导入避免循环依赖
-  const { getContents } = await import('./ContentService');
+  const { getContents } = await import('./content');
 
   // 限制并发数量防止网络资源过耗
   for (let i = 0; i < paths.length; i += maxConcurrency) {
@@ -63,9 +64,9 @@ export async function batchPrefetchContents(paths: string[], maxConcurrency = 3)
 
 /**
  * 智能预加载相关内容
- * 
+ *
  * 根据内容类型和优先级智能预加载相关的目录和文件。
- * 
+ *
  * @param contents - GitHub内容数组
  * @returns Promise，预加载完成后解析
  */

@@ -1,8 +1,0 @@
-export {
-  searchWithGitHubApi,
-  searchFiles,
-  searchMultipleBranchesWithTreesApi
-} from './search';
-
-export type { SearchTreesResult } from './search';
-

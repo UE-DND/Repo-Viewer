@@ -5,16 +5,16 @@
  */
 
 // 导入各个服务模块
-import * as ContentServiceModule from './github/core/ContentService';
-import * as SearchServiceModule from './github/core/SearchService';
-import * as SearchIndexServiceModule from './github/core/SearchIndexService';
+import * as ContentServiceModule from './github/core/content';
+import * as SearchServiceModule from './github/core/search';
+import * as SearchIndexServiceModule from './github/core/searchIndex';
 import * as BranchServiceModule from './github/core/BranchService';
 import * as StatsServiceModule from './github/core/StatsService';
 import * as PrefetchServiceModule from './github/core/PrefetchService';
 import * as AuthModule from './github/core/Auth';
 import * as ConfigModule from './github/core/Config';
 import { getDefaultBranchName } from './github/core/Service';
-import { CacheManager as CacheManagerClass } from './github/cache/CacheManager';
+import { CacheManager as CacheManagerClass } from './github/cache';
 import { GitHubTokenManager } from './github/TokenManager';
 import {
   getProxiedUrl as proxyGetProxiedUrl,
@@ -24,7 +24,7 @@ import {
   resetFailedProxyServices as proxyResetFailedProxyServices,
   getProxyHealthStats as proxyGetProxyHealthStats,
   transformImageUrl as proxyTransformImageUrl
-} from './github/proxy/ProxyService';
+} from './github/proxy';
 import { RequestBatcher as RequestBatcherClass } from './github/RequestBatcher';
 
 /**
@@ -121,7 +121,7 @@ export const GitHub = {
 } as const;
 
 // 扁平导出常用函数
-export { searchMultipleBranchesWithTreesApi } from './github/core/SearchService';
+export { searchMultipleBranchesWithTreesApi } from './github/core/search';
 
 // 导出类型定义
 export type { ConfigInfo } from './github/core/Config';
