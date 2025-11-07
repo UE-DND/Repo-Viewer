@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
-import { ErrorManager } from '@/utils/error/ErrorManager';
+import { ErrorManager } from '@/utils/error';
 import type { AppError } from '@/types/errors';
 import { ErrorLevel, ErrorCategory, isNetworkError, isGitHubError, isFileOperationError } from '@/types/errors';
 import { getDeveloperConfig } from '@/config';
@@ -45,10 +45,10 @@ const defaultOptions: UseErrorHandlerOptions = {
 
 /**
  * 错误处理Hook
- * 
+ *
  * 提供统一的错误处理功能，包括错误捕获、用户通知和日志记录。
  * 支持自动清理过期错误和异步错误处理。
- * 
+ *
  * @param globalOptions - 错误处理配置选项
  * @returns 错误处理器对象
  */
@@ -223,9 +223,9 @@ export function useErrorHandler(
 
 /**
  * 全局错误处理Hook
- * 
+ *
  * 监听全局错误事件和未处理的Promise拒绝，自动捕获并处理。
- * 
+ *
  * @returns 错误处理器对象
  */
 export function useGlobalErrorHandler(): ErrorHandlerReturn {

@@ -5,7 +5,7 @@ import {
   resetFailedProxyServices as proxyResetFailedServices,
   transformImageUrl as proxyTransformImageUrl
 } from '../proxy';
-import { ErrorManager } from '@/utils/error/ErrorManager';
+import { ErrorManager } from '@/utils/error';
 import type { GitHubError } from '@/types/errors';
 import { shouldUseServerAPI } from '../config';
 

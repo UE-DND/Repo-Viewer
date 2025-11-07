@@ -1,9 +1,9 @@
 /**
  * 全局错误边界组件
- * 
+ *
  * 捕获React组件树中的JavaScript错误并提供优雅的降级UI。
  * 支持三个层级的错误边界：页面级、功能级和组件级。
- * 
+ *
  * @module ErrorBoundary
  * @see {@link ErrorManager} 错误管理器
  * @see {@link PageErrorBoundary} 页面级错误边界快捷组件
@@ -32,7 +32,7 @@ import {
   ExpandLess,
   ExpandMore
 } from '@mui/icons-material';
-import { ErrorManager } from '@/utils/error/ErrorManager';
+import { ErrorManager } from '@/utils/error';
 import { isDeveloperMode } from '@/config';
 
 type ErrorInfo = React.ErrorInfo;

@@ -1,10 +1,10 @@
 /**
  * 全局错误处理器
- * 
+ *
  * 提供统一的错误处理和恢复策略。
  */
 
-import { ErrorManager } from './ErrorManager';
+import { ErrorManager } from './index';
 import { logger } from '../logging/logger';
 import { ErrorCategory, type AppError } from '@/types/errors';
 
@@ -31,7 +31,7 @@ function getUserFriendlyMessage(appError: AppError): string {
   if (appError.category === ErrorCategory.NETWORK) {
     return '网络连接失败，请检查您的网络设置';
   }
-  
+
   if (appError.category === ErrorCategory.API) {
     if ('statusCode' in appError) {
       const statusCode = appError.statusCode;
@@ -50,23 +50,23 @@ function getUserFriendlyMessage(appError: AppError): string {
     }
     return '服务器响应异常，请稍后重试';
   }
-  
+
   if (appError.category === ErrorCategory.FILE_OPERATION) {
     return '文件操作失败，请重试';
   }
-  
+
   if (appError.category === ErrorCategory.AUTH) {
     return '身份验证失败，请检查 Token 配置';
   }
-  
+
   if (appError.category === ErrorCategory.VALIDATION) {
     return '数据验证失败，请检查输入';
   }
-  
+
   if (appError.category === ErrorCategory.COMPONENT) {
     return '组件渲染失败，请刷新页面';
   }
-  
+
   return '操作失败，请稍后重试';
 }
 
@@ -84,7 +84,7 @@ function reportError(error: AppError, context: string): void {
 
 /**
  * 处理错误
- * 
+ *
  * 统一的错误处理流程。
  */
 export function handleError(
@@ -106,12 +106,12 @@ export function handleError(
   // 3. 显示用户消息
   if (!silent && onNotify !== undefined) {
     const message = userMessage ?? getUserFriendlyMessage(appError);
-    
+
     onNotify(message, {
       variant: 'error',
-      action: retry && fallback !== undefined ? { 
+      action: retry && fallback !== undefined ? {
         label: '重试',
-        onClick: fallback 
+        onClick: fallback
       } : undefined
     });
   }

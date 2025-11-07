@@ -31,5 +31,5 @@ export {
   isDevEnvironment,
   getGithubPATs
 } from './utils/config-accessors';
-export { configManager, ConfigManager } from './core/config-manager';
-export { configManager as default } from './core/config-manager';
+export { configManager, ConfigManager } from './core/ConfigManager';
+export { configManager as default } from './core/ConfigManager';

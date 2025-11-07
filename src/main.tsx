@@ -10,6 +10,7 @@ import SEOProvider from "@/contexts/SEOContext";
 import { ResponsiveSnackbarProvider } from "@/components/ui/ResponsiveSnackbarProvider";
 import { getDeveloperConfig } from "@/config";
 import { GitHub } from "@/services/github";
+import { ErrorManager, setupGlobalErrorHandlers } from "@/utils/error";
 import type { InitialContentHydrationPayload } from "@/types";
 
 // 扩展Window接口以支持LaTeX优化清理函数
@@ -60,6 +61,9 @@ if (!allowConsoleOutput) {
   });
 }
 
+
+// 设置全局错误处理器
+setupGlobalErrorHandlers(ErrorManager);
 
 // 应用LaTeX渲染优化
 // 在应用加载后设置LaTeX优化监听器
