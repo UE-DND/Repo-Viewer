@@ -110,6 +110,10 @@ DOWNLOAD_PROXY_URL_BACKUP2 =                          # 下载备用代理URL2
 # 开发者选项
 DEVELOPER_MODE = true||false                          # 启用开发者模式
 CONSOLE_LOGGING = true||false                         # 控制台日志
+
+...
+
+剩余配置见 `.env.example`
 ```
 
 ### 部署指南

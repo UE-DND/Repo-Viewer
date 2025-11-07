@@ -2,7 +2,8 @@ export type {
   Config,
   ConfigChangeListener,
   ConfigDebugInfo,
-  EnvMappingOptions
+  EnvMappingOptions,
+  DeveloperLoggingConfig
 } from './types';
 export {
   ENV_MAPPING,

@@ -1,4 +1,4 @@
-import type { Config } from '../types';
+import type { Config, DeveloperLoggingConfig } from '../types';
 import { CONFIG_DEFAULTS } from '../constants';
 import { EnvParser } from '../utils/env-parser';
 import { resolveEnvWithMapping } from '../utils/env-mapping';
@@ -25,6 +25,7 @@ export class ConfigLoader {
     const consoleLogging = EnvParser.parseBoolean(
       resolveEnvWithMapping(stringEnv, 'CONSOLE_LOGGING', 'false')
     );
+    const loggingConfig = this.resolveDeveloperLoggingConfig(stringEnv, developerMode, consoleLogging);
 
     const repoOwner = resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_OWNER', CONFIG_DEFAULTS.GITHUB_REPO_OWNER);
     const repoName = resolveEnvWithMapping(stringEnv, 'GITHUB_REPO_NAME', CONFIG_DEFAULTS.GITHUB_REPO_NAME);
@@ -105,7 +106,8 @@ export class ConfigLoader {
       },
       developer: {
         mode: developerMode,
-        consoleLogging
+        consoleLogging,
+        logging: loggingConfig
       },
       runtime: {
         isDev: this.getBooleanFlag(env, 'DEV'),
@@ -183,6 +185,47 @@ export class ConfigLoader {
       }
     }
     return false;
+  }
+
+  private resolveDeveloperLoggingConfig(
+    env: EnvStringRecord,
+    developerMode: boolean,
+    consoleLogging: boolean
+  ): DeveloperLoggingConfig {
+    const enableConsole = EnvParser.parseBoolean(
+      resolveEnvWithMapping(
+        env,
+        'LOGGER_ENABLE_CONSOLE',
+        developerMode || consoleLogging ? 'true' : 'false'
+      )
+    );
+
+    const enableErrorReporting = EnvParser.parseBoolean(
+      resolveEnvWithMapping(env, 'LOGGER_ENABLE_ERROR_REPORTING', 'false')
+    );
+
+    const includeWarnInReporting = EnvParser.parseBoolean(
+      resolveEnvWithMapping(env, 'LOGGER_REPORT_WARNINGS', 'false')
+    );
+
+    const enableRecorder = EnvParser.parseBoolean(
+      resolveEnvWithMapping(env, 'LOGGER_ENABLE_RECORDER', developerMode ? 'true' : 'false')
+    );
+
+    const reportUrl = resolveEnvWithMapping(env, 'LOGGER_REPORT_URL', '');
+    const baseLevelValue = resolveEnvWithMapping(env, 'LOGGER_BASE_LEVEL', '').toLowerCase();
+    const baseLevel: DeveloperLoggingConfig['baseLevel'] = ['debug', 'info', 'warn', 'error'].includes(baseLevelValue)
+      ? (baseLevelValue as DeveloperLoggingConfig['baseLevel'])
+      : undefined;
+
+    return {
+      enableConsole,
+      enableErrorReporting,
+      includeWarnInReporting,
+      enableRecorder,
+      reportUrl: reportUrl.length > 0 ? reportUrl : undefined,
+      baseLevel
+    };
   }
 }
 

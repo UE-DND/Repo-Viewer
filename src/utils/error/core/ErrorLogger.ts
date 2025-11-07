@@ -1,6 +1,6 @@
 import type { AppError } from '@/types/errors';
 import { ErrorLevel } from '@/types/errors';
-import { logger } from '../../logging/logger';
+import { createScopedLogger } from '../../logging/logger';
 
 /**
  * 错误日志记录器类
@@ -9,6 +9,7 @@ import { logger } from '../../logging/logger';
  */
 export class ErrorLogger {
   private enableLogging: boolean;
+  private readonly scopedLogger = createScopedLogger('ErrorManager');
 
   constructor(enableLogging = true) {
     this.enableLogging = enableLogging;
@@ -33,19 +34,19 @@ export class ErrorLogger {
 
     switch (error.level) {
       case ErrorLevel.CRITICAL:
-        logger.error(logMessage, error);
+        this.scopedLogger.error(logMessage, error);
         break;
       case ErrorLevel.ERROR:
-        logger.error(logMessage, error);
+        this.scopedLogger.error(logMessage, error);
         break;
       case ErrorLevel.WARNING:
-        logger.warn(logMessage, error);
+        this.scopedLogger.warn(logMessage, error);
         break;
       case ErrorLevel.INFO:
-        logger.info(logMessage, error);
+        this.scopedLogger.info(logMessage, error);
         break;
       default:
-        logger.info(logMessage, error);
+        this.scopedLogger.info(logMessage, error);
         break;
     }
   }

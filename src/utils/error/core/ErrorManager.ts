@@ -9,7 +9,7 @@ import type {
   FileOperationError
 } from '@/types/errors';
 import { ErrorLevel, ErrorCategory } from '@/types/errors';
-import { logger } from '../../logging/logger';
+import { createScopedLogger } from '../../logging/logger';
 import { getDeveloperConfig } from '@/config';
 import { ErrorFactory } from './ErrorFactory';
 import { ErrorLogger } from './ErrorLogger';
@@ -26,6 +26,7 @@ class ErrorManagerClass {
   private factory: ErrorFactory;
   private errorLogger: ErrorLogger;
   private history: ErrorHistory;
+  private readonly managerLogger = createScopedLogger('ErrorManager');
 
   private config: ErrorHandlerConfig = {
     enableConsoleLogging: (() => {
@@ -184,13 +185,13 @@ class ErrorManagerClass {
       // });
 
       if (getDeveloperConfig().mode) {
-        logger.info('错误上报 (开发模式):', error);
+        this.managerLogger.info('错误上报 (开发模式):', error);
       }
 
       // 添加 await 以满足 async 函数要求
       await Promise.resolve();
     } catch (reportingError) {
-      logger.warn('错误上报失败:', reportingError);
+      this.managerLogger.warn('错误上报失败:', reportingError);
     }
   }
 
