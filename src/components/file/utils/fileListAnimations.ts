@@ -51,26 +51,26 @@ export const getDynamicItemVariants = (
 
   if (isScrolling && isFastScrolling) {
     variants = {
-      hidden: { opacity: 0.7, y: 5 },
+      hidden: { opacity: 1, y: 0 },
       visible: () => ({
         opacity: 1,
         y: 0,
         transition: {
           delay: 0,
-          duration: 0.08,
+          duration: 0,
           ease: EASE_OUT,
         },
       }),
     };
   } else if (isScrolling) {
     variants = {
-      hidden: { opacity: 0, y: 8 },
-      visible: (index: number) => ({
+      hidden: { opacity: 1, y: 0 },
+      visible: () => ({
         opacity: 1,
         y: 0,
         transition: {
-          delay: Math.min(index * 0.005, 0.05),
-          duration: 0.1,
+          delay: 0,
+          duration: 0,
           ease: EASE_OUT,
         },
       }),

@@ -86,7 +86,7 @@ export const ImagePreviewSkeleton: React.FC<ImagePreviewSkeletonProps> = ({
             ...skeletonStyles,
             maxWidth: "100%",
             maxHeight: "100%",
-            aspectRatio: typeof normalizedAspectRatio === "number" ? normalizedAspectRatio.toString() : undefined,
+            aspectRatio: normalizedAspectRatio?.toString(),
           }}
           data-oid="g91oyf4"
         />

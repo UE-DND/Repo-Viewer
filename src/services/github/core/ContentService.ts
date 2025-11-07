@@ -1,5 +1,10 @@
 import axios from 'axios';
-import type { GitHubContent } from '@/types';
+import type {
+  GitHubContent,
+  InitialContentHydrationPayload,
+  InitialContentDirectoryEntry,
+  InitialContentFileEntry
+} from '@/types';
 import { logger } from '@/utils';
 import { hashStringSync } from '@/utils/crypto/hashUtils';
 import { CacheManager } from '../cache/CacheManager';
@@ -21,19 +26,19 @@ import { SmartCache } from '@/utils/cache/SmartCache';
 
 /**
  * 构建内容缓存键
- * 
+ *
  * 使用标准哈希函数生成紧凑且可靠的缓存键。
  * 采用改进的 cyrb53 算法，提供良好的分布性和低冲突率。
  * 添加前缀和版本号，避免与其他缓存键冲突。
- * 
+ *
  * @param path - 文件/目录路径
  * @param branch - Git 分支名
  * @returns 优化的缓存键（格式: content:v2:<hash>）
- * 
+ *
  * @example
  * buildContentsCacheKey('src/components', 'main')
  * // => 'content:v2:a3f2d9e8b1c4f7'
- * 
+ *
  * buildContentsCacheKey('', 'main')
  * // => 'content:v2:d4e5f6a7b8c9d0' (根目录使用 '/' 作为规范化路径)
  */
@@ -48,6 +53,29 @@ function buildContentsCacheKey(path: string, branch: string): string {
 
 // GitHub内容服务，使用模块导出而非类
 const batcher = new RequestBatcher();
+
+type DirectoryStoreKey = string;
+type FileStoreKey = string;
+
+interface HydratedFileEntry {
+  path: string;
+  content: string;
+  downloadUrl?: string | null;
+  sha?: string;
+}
+
+const INITIAL_CONTENT_EXCLUDE_FILES = ['.gitkeep', 'Thumbs.db', '.DS_Store'] as const;
+
+const initialDirectoryStore = new Map<DirectoryStoreKey, GitHubContent[]>();
+const initialFileStore = new Map<FileStoreKey, HydratedFileEntry>();
+
+let initialHydrationMeta: {
+  branch: string;
+  repoOwner: string;
+  repoName: string;
+  version: number;
+  generatedAt?: string;
+} | null = null;
 
 // 缓存系统状态管理
 let cacheInitialized = false;
@@ -66,14 +94,257 @@ const fallbackCache = new SmartCache<string, unknown>({
   cleanupRatio: 0.2
 });
 
+function normalizeDirectoryPath(path: string): string {
+  if (path === '' || path === '/') {
+    return '/';
+  }
+  return path.replace(/^\/+/, '').replace(/\/+/g, '/');
+}
+
+function normalizeFilePath(path: string): string {
+  if (path === '') {
+    return '';
+  }
+  return path.replace(/^\/+/, '');
+}
+
+function makeDirectoryStoreKey(branch: string, path: string): DirectoryStoreKey {
+  return `${branch}::dir::${normalizeDirectoryPath(path)}`;
+}
+
+function makeFileStoreKey(branch: string, path: string): FileStoreKey {
+  return `${branch}::file::${normalizeFilePath(path)}`;
+}
+
+function isHydrationActiveForBranch(branch: string): boolean {
+  return initialHydrationMeta !== null && initialHydrationMeta.branch === branch;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function stripSearchAndHash(value: string): string {
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      const parsed = new URL(value);
+      parsed.search = '';
+      parsed.hash = '';
+      return parsed.toString();
+    } catch {
+      return value.split(/[?#]/)[0] ?? value;
+    }
+  }
+  return value.split(/[?#]/)[0] ?? value;
+}
+
+function extractPathFromFileUrl(fileUrl: string): string | null {
+  if (initialHydrationMeta === null) {
+    return null;
+  }
+
+  const sanitized = stripSearchAndHash(fileUrl);
+  const { repoOwner, repoName, branch } = initialHydrationMeta;
+
+  if (repoOwner === '' || repoName === '' || branch === '') {
+    return null;
+  }
+
+  const ownerPattern = escapeRegExp(repoOwner);
+  const repoPattern = escapeRegExp(repoName);
+  const branchPattern = escapeRegExp(branch);
+
+  const rawPattern = new RegExp(`https?:\/\/raw\.githubusercontent\.com\/${ownerPattern}\/${repoPattern}\/${branchPattern}\/(.+)`, 'i');
+  const rawMatch = sanitized.match(rawPattern);
+  if (rawMatch?.[1] !== undefined && rawMatch[1] !== '') {
+    return normalizeFilePath(decodeURIComponent(rawMatch[1]));
+  }
+
+  const relativePattern = new RegExp(`^\/github-raw\/${ownerPattern}\/${repoPattern}\/${branchPattern}\/(.+)`, 'i');
+  const relativeMatch = sanitized.match(relativePattern);
+  if (relativeMatch?.[1] !== undefined && relativeMatch[1] !== '') {
+    return normalizeFilePath(decodeURIComponent(relativeMatch[1]));
+  }
+
+  const proxyIndex = sanitized.indexOf('https://raw.githubusercontent.com/');
+  if (proxyIndex > 0) {
+    const nested = sanitized.slice(proxyIndex);
+    return extractPathFromFileUrl(nested);
+  }
+
+  return null;
+}
+
+function cloneGitHubContents(contents: GitHubContent[]): GitHubContent[] {
+  return contents.map(item => {
+    if (item._links !== undefined) {
+      return {
+        ...item,
+        _links: { ...item._links }
+      };
+    }
+    return { ...item };
+  });
+}
+
+function decodeInitialFileContent(entry: InitialContentFileEntry): string {
+  if (entry.encoding === 'base64') {
+    try {
+      if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+        const binaryString = window.atob(entry.content);
+        const bytes = Uint8Array.from(binaryString, char => char.charCodeAt(0));
+        const decoder = new TextDecoder();
+        return decoder.decode(bytes);
+      }
+    } catch (error) {
+      logger.warn('ContentService: Base64 解码失败，已回退为原始字符串', error);
+    }
+  }
+
+  return entry.content;
+}
+
+function registerHydrationDirectory(branch: string, entry: InitialContentDirectoryEntry): void {
+  const normalizedPath = entry.path;
+  const key = makeDirectoryStoreKey(branch, normalizedPath);
+  const cloned = cloneGitHubContents(entry.contents);
+  const sanitized = filterAndNormalizeGitHubContents(cloned, {
+    excludeHidden: true,
+    excludeFiles: [...INITIAL_CONTENT_EXCLUDE_FILES]
+  });
+  initialDirectoryStore.set(key, sanitized);
+}
+
+function registerHydrationFile(
+  branch: string,
+  owner: string,
+  repo: string,
+  entry: InitialContentFileEntry
+): void {
+  const normalizedPath = normalizeFilePath(entry.path);
+  if (normalizedPath === '') {
+    return;
+  }
+
+  const key = makeFileStoreKey(branch, normalizedPath);
+  const content = decodeInitialFileContent(entry);
+
+  const hydratedEntry: HydratedFileEntry = {
+    path: normalizedPath,
+    content,
+    downloadUrl: entry.downloadUrl ?? null
+  };
+
+  if (typeof entry.sha === 'string') {
+    hydratedEntry.sha = entry.sha;
+  }
+
+  initialFileStore.set(key, hydratedEntry);
+
+  // 记录 canonical download url，方便后续匹配（用于调试）
+  if (initialHydrationMeta !== null) {
+    initialHydrationMeta.repoOwner = owner !== '' ? owner : initialHydrationMeta.repoOwner;
+    initialHydrationMeta.repoName = repo !== '' ? repo : initialHydrationMeta.repoName;
+  }
+}
+
+function cleanupInitialHydrationStateIfEmpty(): void {
+  if (
+    initialHydrationMeta !== null &&
+    initialDirectoryStore.size === 0 &&
+    initialFileStore.size === 0
+  ) {
+    logger.debug('ContentService: 首屏注水数据已全部消费');
+    initialHydrationMeta = null;
+  }
+}
+
+async function storeDirectoryContents(
+  cacheKey: string,
+  path: string,
+  branch: string,
+  contents: GitHubContent[]
+): Promise<void> {
+  if (cacheAvailable) {
+    const version = generateContentVersion(path, branch, contents);
+    const contentCache = CacheManager.getContentCache();
+    await contentCache.set(cacheKey, contents, version);
+  } else {
+    setFallbackCache(cacheKey, contents);
+  }
+}
+
+async function storeFileContent(
+  cacheKey: string,
+  fileUrl: string,
+  content: string
+): Promise<void> {
+  if (cacheAvailable) {
+    const version = generateFileVersion(fileUrl, content);
+    const fileCache = CacheManager.getFileCache();
+    await fileCache.set(cacheKey, content, version);
+  } else {
+    setFallbackCache(cacheKey, content);
+  }
+}
+
+async function consumeHydratedDirectory(
+  path: string,
+  branch: string,
+  cacheKey: string
+): Promise<GitHubContent[] | null> {
+  if (!isHydrationActiveForBranch(branch)) {
+    return null;
+  }
+
+  const key = makeDirectoryStoreKey(branch, path);
+  const contents = initialDirectoryStore.get(key);
+  if (contents === undefined) {
+    return null;
+  }
+
+  initialDirectoryStore.delete(key);
+  await storeDirectoryContents(cacheKey, path, branch, contents);
+  cleanupInitialHydrationStateIfEmpty();
+  logger.debug(`ContentService: 使用首屏注水目录数据 -> ${path === '' ? '/' : path}`);
+  return contents;
+}
+
+async function consumeHydratedFile(
+  fileUrl: string,
+  branch: string,
+  cacheKey: string
+): Promise<string | null> {
+  if (!isHydrationActiveForBranch(branch)) {
+    return null;
+  }
+
+  const path = extractPathFromFileUrl(fileUrl);
+  if (path === null || path === '') {
+    return null;
+  }
+
+  const key = makeFileStoreKey(branch, path);
+  const entry = initialFileStore.get(key);
+  if (entry === undefined) {
+    return null;
+  }
+
+  initialFileStore.delete(key);
+  await storeFileContent(cacheKey, fileUrl, entry.content);
+  cleanupInitialHydrationStateIfEmpty();
+  logger.debug(`ContentService: 使用首屏注水文件数据 -> ${path}`);
+  return entry.content;
+}
+
 /**
  * 确保缓存初始化
- * 
+ *
  * 初始化策略：
  * 1. 尝试初始化主缓存系统（IndexedDB/LocalStorage）
  * 2. 如果失败，使用内存缓存作为降级方案
  * 3. 限制重试次数，避免无限重试
- * 
+ *
  * @returns Promise<void>
  */
 async function ensureCacheInitialized(): Promise<void> {
@@ -100,11 +371,11 @@ async function ensureCacheInitialized(): Promise<void> {
       `ContentService: 缓存系统初始化失败（尝试 ${initializationAttempts.toString()}/${MAX_INIT_ATTEMPTS.toString()}），使用内存降级缓存`,
       error
     );
-    
+
     // 标记为已初始化，但使用降级模式
     cacheInitialized = true;
     cacheAvailable = false;
-    
+
     // 在开发模式下提供更详细的错误信息
     if (import.meta.env.DEV) {
       logger.error('缓存初始化失败详情:', error);
@@ -115,7 +386,7 @@ async function ensureCacheInitialized(): Promise<void> {
 
 /**
  * 从降级缓存获取数据
- * 
+ *
  * @param key - 缓存键
  * @returns 缓存的数据或 null
  */
@@ -125,7 +396,7 @@ function getFallbackCache(key: string): unknown {
 
 /**
  * 设置降级缓存数据
- * 
+ *
  * @param key - 缓存键
  * @param data - 要缓存的数据
  */
@@ -135,10 +406,10 @@ function setFallbackCache(key: string, data: unknown): void {
 
 /**
  * 获取GitHub仓库目录内容
- * 
+ *
  * 从GitHub API获取指定路径的目录内容，支持缓存和降级策略。
  * 优先使用主缓存系统（IndexedDB/LocalStorage），失败时使用内存降级缓存。
- * 
+ *
  * @param path - 目录路径，空字符串表示根目录
  * @param signal - 可选的中断信号，用于取消请求
  * @returns Promise，解析为GitHub内容数组
@@ -149,10 +420,10 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
 
     const branch = getCurrentBranch();
     const cacheKey = buildContentsCacheKey(path, branch);
-    
+
     // 尝试从主缓存或降级缓存获取
     let cachedContents: unknown = null;
-    
+
     if (cacheAvailable) {
       // 使用主缓存系统
       const contentCache = CacheManager.getContentCache();
@@ -165,6 +436,11 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
     if (cachedContents !== null && cachedContents !== undefined) {
       logger.debug(`已从${cacheAvailable ? '主' : '降级'}缓存中获取内容: ${path}`);
       return cachedContents as GitHubContent[];
+    }
+
+    const hydratedContents = await consumeHydratedDirectory(path, branch, cacheKey);
+    if (hydratedContents !== null) {
+      return hydratedContents;
     }
 
     try {
@@ -229,15 +505,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
         // 不阻止执行，但记录警告
       }
 
-      // 使用缓存系统（主缓存或降级缓存）
-      if (cacheAvailable) {
-        const version = generateContentVersion(path, branch, contents);
-        const contentCache = CacheManager.getContentCache();
-        await contentCache.set(cacheKey, contents, version);
-      } else {
-        // 使用降级缓存
-        setFallbackCache(cacheKey, contents);
-      }
+      await storeDirectoryContents(cacheKey, path, branch, contents);
 
       return contents;
     } catch (error: unknown) {
@@ -249,10 +517,10 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
 
 /**
  * 获取文件内容
- * 
+ *
  * 从GitHub获取指定URL的文件内容，支持代理和缓存。
  * 根据环境自动选择使用服务端API或直接请求GitHub。
- * 
+ *
  * @param fileUrl - 文件的URL地址
  * @returns Promise，解析为文件的文本内容
  * @throws 当请求失败或响应状态码不是200时抛出错误
@@ -260,12 +528,12 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
 export async function getFileContent(fileUrl: string): Promise<string> {
   await ensureCacheInitialized();
 
-    // 添加缓存键
+    const branch = getCurrentBranch();
     const cacheKey = `file:${fileUrl}`;
-    
+
     // 尝试从主缓存或降级缓存获取
     let cachedContent: string | null | undefined;
-    
+
     if (cacheAvailable) {
       // 使用主缓存系统
       const fileCache = CacheManager.getFileCache();
@@ -278,6 +546,11 @@ export async function getFileContent(fileUrl: string): Promise<string> {
     if (cachedContent !== undefined && cachedContent !== null) {
       logger.debug(`从${cacheAvailable ? '主' : '降级'}缓存获取文件内容: ${fileUrl}`);
       return cachedContent;
+    }
+
+    const hydratedContent = await consumeHydratedFile(fileUrl, branch, cacheKey);
+    if (hydratedContent !== null) {
+      return hydratedContent;
     }
 
     try {
@@ -311,16 +584,8 @@ export async function getFileContent(fileUrl: string): Promise<string> {
 
       const content = await response.text();
 
-      // 使用缓存系统（主缓存或降级缓存）
-      if (cacheAvailable) {
-        const version = generateFileVersion(fileUrl, content);
-        const fileCache = CacheManager.getFileCache();
-        await fileCache.set(cacheKey, content, version);
-      } else {
-        // 使用降级缓存
-        setFallbackCache(cacheKey, content);
-      }
-      
+      await storeFileContent(cacheKey, fileUrl, content);
+
       return content;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -331,9 +596,9 @@ export async function getFileContent(fileUrl: string): Promise<string> {
 
 /**
  * 生成内容版本标识
- * 
+ *
  * 使用标准哈希算法生成紧凑且可靠的版本标识，用于缓存验证。
- * 
+ *
  * @param path - 文件/目录路径
  * @param branch - Git 分支名
  * @param contents - 内容列表
@@ -344,7 +609,7 @@ function generateContentVersion(path: string, branch: string, contents: GitHubCo
     const identifier = item.sha !== '' ? item.sha : (item.size !== undefined ? item.size.toString() : 'unknown');
     return `${item.name}-${identifier}`;
   }).join('|');
-  
+
   // 使用标准哈希生成紧凑的版本标识
   const versionString = `${branch}:${path}:${contentSignature}:${Date.now().toString()}`;
   const hash = hashStringSync(versionString);
@@ -353,7 +618,7 @@ function generateContentVersion(path: string, branch: string, contents: GitHubCo
 
 /**
  * 生成文件版本标识
- * 
+ *
  * @param fileUrl - 文件URL
  * @param content - 文件内容
  * @returns 版本标识字符串
@@ -361,7 +626,7 @@ function generateContentVersion(path: string, branch: string, contents: GitHubCo
 function generateFileVersion(fileUrl: string, content: string): string {
   const contentLength = content.length;
   const timestamp = Date.now();
-  
+
   // 使用标准哈希生成紧凑的版本标识
   const versionString = `${fileUrl}:${contentLength.toString()}:${timestamp.toString()}`;
   const hash = hashStringSync(versionString);
@@ -370,9 +635,9 @@ function generateFileVersion(fileUrl: string, content: string): string {
 
 /**
  * 获取请求批处理器实例
- * 
+ *
  * 主要用于调试和测试目的。
- * 
+ *
  * @returns 请求批处理器实例
  */
 export function getBatcher(): RequestBatcher {
@@ -381,9 +646,9 @@ export function getBatcher(): RequestBatcher {
 
 /**
  * 清除批处理器缓存
- * 
+ *
  * 清除所有缓存的请求结果，强制下次请求重新获取数据。
- * 
+ *
  * @returns void
  */
 export function clearBatcherCache(): void {
@@ -391,15 +656,68 @@ export function clearBatcherCache(): void {
 }
 
 /**
+ * 注册首屏注水数据
+ *
+ * @param payload - 构建期注入的首屏内容载荷
+ */
+export function hydrateInitialContent(payload: InitialContentHydrationPayload | null | undefined): void {
+  if (payload === undefined || payload === null) {
+    return;
+  }
+
+  try {
+    initialDirectoryStore.clear();
+    initialFileStore.clear();
+
+    const branch = payload.branch;
+    const repoOwner = payload.repo.owner;
+    const repoName = payload.repo.name;
+
+    initialHydrationMeta = {
+      branch,
+      repoOwner,
+      repoName,
+      version: payload.version,
+      generatedAt: payload.generatedAt
+    };
+
+    payload.directories.forEach(directory => {
+      registerHydrationDirectory(branch, directory);
+    });
+
+    payload.files.forEach(file => {
+      registerHydrationFile(branch, repoOwner, repoName, file);
+    });
+
+    if (initialDirectoryStore.size === 0 && initialFileStore.size === 0) {
+      initialHydrationMeta = null;
+      return;
+    }
+
+    logger.debug('ContentService: 首屏注水数据已载入', {
+      branch,
+      directories: initialDirectoryStore.size,
+      files: initialFileStore.size
+    });
+  } catch (error) {
+    logger.warn('ContentService: 首屏注水数据处理失败', error);
+    initialDirectoryStore.clear();
+    initialFileStore.clear();
+    initialHydrationMeta = null;
+  }
+}
+
+/**
  * GitHub内容服务对象
- * 
+ *
  * 为了向后兼容性，导出包含所有内容相关函数的常量对象。
- * 
+ *
  * @deprecated 推荐直接使用独立的导出函数
  */
 export const GitHubContentService = {
   getContents,
   getFileContent,
   getBatcher,
-  clearBatcherCache
+  clearBatcherCache,
+  hydrateInitialContent
 } as const;

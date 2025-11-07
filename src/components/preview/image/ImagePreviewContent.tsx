@@ -133,11 +133,8 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
       }
     });
 
-    observer.observe(container);
-    return () => {
-      observer.disconnect();
-    };
-  }, [previewMaxWidth]);
+    const dominantSamples = ratioSamplesRef.current.filter(sample => getBucketKey(sample) === dominantBucket);
+    const averageDominantRatio = dominantSamples.reduce((sum, sample) => sum + sample, 0) / (dominantSamples.length > 0 ? dominantSamples.length : 1);
 
   const [activeNavSide, setActiveNavSide] = useState<'left' | 'right' | null>(null);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
@@ -149,8 +146,8 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
 
   const [aspectRatio, setAspectRatio] = useState<number>(initialAspectRatio ?? DEFAULT_ASPECT_RATIO);
 
-  const updateAspectRatio = useCallback((ratio: number): void => {
-    if (!Number.isFinite(ratio) || ratio <= 0) {
+    const src = img.currentSrc !== '' ? img.currentSrc : img.src;
+    if (typeof src !== 'string' || src === '') {
       return;
     }
     setAspectRatio(ratio);
@@ -292,7 +289,73 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [loading, error, hasPrevious, hasNext, onPrevious, onNext]);
+  }, [loading, hasError, hasPrevious, hasNext, onPrevious, onNext]);
+  const rotationTransform = `rotate(${String(rotation)}deg)`;
+  const containerClassName = [className, 'image-preview-container']
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join(' ');
+
+  const stageMetrics = useMemo(() => {
+    if (containerSize.width <= 0 || containerSize.height <= 0) {
+      return null;
+    }
+
+    const widthPadding = isSmallScreen ? 0.94 : 0.9;
+    const heightPadding = isSmallScreen ? 0.85 : 0.8;
+
+    const availableWidth = containerSize.width * widthPadding;
+    const availableHeight = containerSize.height * heightPadding;
+
+    if (availableWidth <= 0 || availableHeight <= 0) {
+      return null;
+    }
+
+    const aspectRatio = dominantAspectRatio > 0 ? dominantAspectRatio : DEFAULT_ASPECT_RATIO;
+    const width = Math.min(availableWidth, availableHeight * aspectRatio);
+    const height = width / aspectRatio;
+
+    return {
+      width,
+      height,
+      availableWidth,
+      availableHeight,
+    };
+  }, [containerSize.height, containerSize.width, dominantAspectRatio, isSmallScreen]);
+
+  const stageWidth = stageMetrics?.width ?? null;
+  const stageHeight = stageMetrics?.height ?? null;
+  const stageMaxWidth = stageMetrics?.availableWidth ?? null;
+  const stageMaxHeight = stageMetrics?.availableHeight ?? null;
+
+  useEffect(() => {
+    if (typeof onAspectRatioChange === 'function' && Math.abs(previousNotifiedRatioRef.current - dominantAspectRatio) >= 0.0001) {
+      previousNotifiedRatioRef.current = dominantAspectRatio;
+      onAspectRatioChange(dominantAspectRatio);
+    }
+  }, [dominantAspectRatio, onAspectRatioChange]);
+
+  // 更新当前缩放比例
+  useEffect(() => {
+    setCurrentScale(toolbarProps.scale);
+  }, [toolbarProps.scale]);
+
+  // 图片引用回调，用于检测缓存
+  const handleImageRef = useCallback((img: HTMLImageElement | null): void => {
+    if (typeof imgRef === 'object' && 'current' in imgRef) {
+      (imgRef as React.RefObject<HTMLImageElement | null> & { current: HTMLImageElement | null }).current = img;
+    }
+
+    internalImgRef.current = img;
+
+    if (img !== null) {
+      delete img.dataset['rvAspectProcessed'];
+    }
+
+    if (img !== null && img.complete && img.naturalHeight !== 0) {
+      processAspectRatioFromImage(img);
+      onLoad();
+    }
+  }, [imgRef, onLoad, processAspectRatioFromImage]);
 
   const handleTouchStart = (event: React.TouchEvent): void => {
     if (!isSmallScreen || currentScale !== 1 || error || loading) {
@@ -376,8 +439,16 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        gap: { xs: 1.5, md: 2 },
+        position: 'relative',
+        overflow: 'hidden',
+        bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5',
+        '--rv-image-preview-aspect-ratio': dominantAspectRatio.toFixed(3),
+        ...(stageWidth !== null
+          ? { '--rv-image-preview-stage-width': `${stageWidth.toString()}px` }
+          : {}),
+        ...(stageHeight !== null
+          ? { '--rv-image-preview-stage-height': `${stageHeight.toString()}px` }
+          : {}),
       }}
       data-oid="image-preview-root"
     >
@@ -530,72 +601,23 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                   mx: 'auto',
                 }}
               >
-                <TransformComponent
-                  wrapperProps={{
-                    onTouchStart: handleTouchStart,
-                    onTouchMove: handleTouchMove,
-                    onTouchEnd: handleTouchEnd,
-                    onTouchCancel: handleTouchEnd,
-                  }}
-                  wrapperStyle={{
-                    width: '100%',
-                    height: `${displayHeight.toString()}px`,
-                    maxWidth: `${previewMaxWidth.toString()}px`,
-                    maxHeight: `${previewMaxHeight.toString()}px`,
-                    margin: '0 auto',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    boxSizing: 'border-box',
-                  }}
-                  contentStyle={{
-                    width: `${Math.max(targetWidth, 1).toString()}px`,
-                    height: `${displayHeight.toString()}px`,
-                    maxWidth: '100%',
-                    maxHeight: `${displayHeight.toString()}px`,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    margin: '0 auto',
-                    transform: isSmallScreen && isDragging ? `translateX(${dragOffset.toString()}px)` : undefined,
-                    transition: isDragging ? 'none' : 'transform 0.3s ease',
-                  }}
-                  data-oid="image-transform-component"
-                >
-                  {!error && !loading && (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        transform: rotationTransform,
-                        transition: 'transform 0.3s ease',
-                        transformOrigin: 'center center',
-                        width: '100%',
-                        height: '100%',
-                      }}
-                      data-oid="image-content"
-                    >
-                      <img
-                        ref={handleImageRef}
-                        src={shouldLoad ? imageUrl : ''}
-                        alt={altText}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'contain',
-                        }}
-                        onLoad={(event) => {
-                          handleImageMetrics(event.currentTarget);
-                          onLoad();
-                        }}
-                        onError={onError}
-                        data-oid="image-preview"
-                      />
-                    </Box>
-                  )}
-
-                  {!error && loading && (
+                {!hasError && !loading && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      transform: rotationTransform,
+                      transition: 'transform 0.3s ease, width 0.35s ease, height 0.35s ease',
+                      transformOrigin: 'center center',
+                      width: stageWidth !== null ? `${stageWidth.toString()}px` : 'auto',
+                      height: stageHeight !== null ? `${stageHeight.toString()}px` : 'auto',
+                      maxWidth: stageMaxWidth !== null ? `${stageMaxWidth.toString()}px` : '100%',
+                      maxHeight: stageMaxHeight !== null ? `${stageMaxHeight.toString()}px` : '100%',
+                      position: 'relative',
+                    }}
+                    data-oid="y6kwode"
+                  >
                     <img
                       ref={handleImageRef}
                       src={shouldLoad ? imageUrl : ''}

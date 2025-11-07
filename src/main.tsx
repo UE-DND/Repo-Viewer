@@ -9,11 +9,14 @@ import { setupLatexOptimization } from "@/utils/rendering/latexOptimizer";
 import SEOProvider from "@/contexts/SEOContext";
 import { ResponsiveSnackbarProvider } from "@/components/ui/ResponsiveSnackbarProvider";
 import { getDeveloperConfig } from "@/config";
+import { GitHub } from "@/services/github";
+import type { InitialContentHydrationPayload } from "@/types";
 
 // 扩展Window接口以支持LaTeX优化清理函数
 declare global {
   interface Window {
     __latexOptimizerCleanup?: () => void;
+    __INITIAL_CONTENT__?: InitialContentHydrationPayload;
   }
 }
 
@@ -21,9 +24,20 @@ declare global {
 const developerConfig = getDeveloperConfig();
 const allowConsoleOutput = developerConfig.mode || developerConfig.consoleLogging;
 
+if (typeof window !== "undefined" && window.__INITIAL_CONTENT__ !== undefined) {
+  try {
+    GitHub.Content.hydrate(window.__INITIAL_CONTENT__);
+    logger.debug("首屏内容已通过静态注入恢复");
+  } catch (error) {
+    logger.warn("首屏内容注水恢复失败", error);
+  } finally {
+    delete window.__INITIAL_CONTENT__;
+  }
+}
+
 /**
  * 初始化日志系统
- * 
+ *
  * 在非开发模式下禁用 console 输出以提升性能和减少包大小。
  * 使用 queueMicrotask 异步执行以避免阻塞初始渲染。
  */
