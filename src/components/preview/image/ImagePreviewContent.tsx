@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -16,12 +16,14 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { ImagePreviewSkeleton } from '@/components/ui/skeletons';
 import ImageToolbar from './ImageToolbar';
 import type { ImagePreviewContentProps } from './types';
-
-const DEFAULT_ASPECT_RATIO = 16 / 9;
-const MAX_RATIO_HISTORY = 6;
-const ROUND_RATIO_PRECISION = 2;
-
-const getBucketKey = (value: number): number => Number(value.toFixed(ROUND_RATIO_PRECISION));
+import {
+  useAspectRatioTracker,
+  useContainerSize,
+  useDesktopNavigation,
+  useTouchNavigation,
+  useKeyboardNavigation,
+  useStageMetrics,
+} from './hooks';
 
 /**
  * 图片预览内容组件
@@ -51,143 +53,19 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   onAspectRatioChange,
 }) => {
   const theme = useTheme();
-  // 导航按钮显示状态：'left' | 'right' | null（互斥显示）
-  const [activeNavSide, setActiveNavSide] = useState<'left' | 'right' | null>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const internalImgRef = React.useRef<HTMLImageElement | null>(null);
-  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const resolvedInitialAspectRatio = useMemo(() => {
-    if (typeof initialAspectRatio === 'number' && Number.isFinite(initialAspectRatio) && initialAspectRatio > 0) {
-      return initialAspectRatio;
-    }
-    return DEFAULT_ASPECT_RATIO;
-  }, [initialAspectRatio]);
-  const ratioSamplesRef = React.useRef<number[]>([resolvedInitialAspectRatio]);
-  const ratioBucketsRef = React.useRef<Map<number, number>>(
-    new Map([[getBucketKey(resolvedInitialAspectRatio), 1]])
-  );
-  const lastProcessedImageRef = React.useRef<string | null>(null);
-  const previousNotifiedRatioRef = React.useRef<number>(resolvedInitialAspectRatio);
-  const [dominantAspectRatio, setDominantAspectRatio] = useState<number>(resolvedInitialAspectRatio);
-
-  const addAspectRatioSample = useCallback((ratio: number): void => {
-    if (!Number.isFinite(ratio) || ratio <= 0) {
-      return;
-    }
-
-    const normalized = Number(ratio.toFixed(4));
-    const bucketKey = getBucketKey(normalized);
-
-    const samples = [...ratioSamplesRef.current, normalized];
-    if (samples.length > MAX_RATIO_HISTORY) {
-      const removed = samples.shift();
-      if (removed !== undefined) {
-        const removedKey = getBucketKey(removed);
-        const currentCount = ratioBucketsRef.current.get(removedKey);
-        if (currentCount !== undefined) {
-          if (currentCount <= 1) {
-            ratioBucketsRef.current.delete(removedKey);
-          } else {
-            ratioBucketsRef.current.set(removedKey, currentCount - 1);
-          }
-        }
-      }
-    }
-    ratioSamplesRef.current = samples;
-
-    const existingCount = ratioBucketsRef.current.get(bucketKey) ?? 0;
-    ratioBucketsRef.current.set(bucketKey, existingCount + 1);
-
-    let dominantBucket = bucketKey;
-    let dominantCount = ratioBucketsRef.current.get(bucketKey) ?? 1;
-
-    ratioBucketsRef.current.forEach((count, key) => {
-      if (count > dominantCount) {
-        dominantBucket = key;
-        dominantCount = count;
-      } else if (count === dominantCount && Math.abs(key - bucketKey) < Math.abs(dominantBucket - bucketKey)) {
-        dominantBucket = key;
-        dominantCount = count;
-      }
-    });
-
-    const dominantSamples = ratioSamplesRef.current.filter(sample => getBucketKey(sample) === dominantBucket);
-    const averageDominantRatio = dominantSamples.reduce((sum, sample) => sum + sample, 0) / (dominantSamples.length > 0 ? dominantSamples.length : 1);
-
-    if (Number.isFinite(averageDominantRatio) && averageDominantRatio > 0) {
-      setDominantAspectRatio(prev => (Math.abs(prev - averageDominantRatio) < 0.0001 ? prev : averageDominantRatio));
-    }
-  }, []);
-
-  const processAspectRatioFromImage = useCallback((img: HTMLImageElement | null): void => {
-    if (img === null) {
-      return;
-    }
-
-    const src = img.currentSrc !== '' ? img.currentSrc : img.src;
-    if (typeof src !== 'string' || src === '') {
-      return;
-    }
-
-    if (lastProcessedImageRef.current === src && img.dataset['rvAspectProcessed'] === 'true') {
-      return;
-    }
-
-    if (img.naturalWidth <= 0 || img.naturalHeight <= 0) {
-      return;
-    }
-
-    const ratio = img.naturalWidth / img.naturalHeight;
-    addAspectRatioSample(ratio);
-    lastProcessedImageRef.current = src;
-    img.dataset['rvAspectProcessed'] = 'true';
-  }, [addAspectRatioSample]);
-
-  useEffect(() => {
-    lastProcessedImageRef.current = null;
-    const currentImage = internalImgRef.current;
-    if (currentImage !== null) {
-      delete currentImage.dataset['rvAspectProcessed'];
-    }
-  }, [imageUrl]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container === null) {
-      return undefined;
-    }
-
-    const updateSize = (): void => {
-      const rect = container.getBoundingClientRect();
-      setContainerSize({ width: rect.width, height: rect.height });
-    };
-
-    updateSize();
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver((entries) => {
-        const entry = entries[0];
-        if (entry !== undefined) {
-          const { width, height } = entry.contentRect;
-          setContainerSize({ width, height });
-        }
-      });
-      observer.observe(container);
-      return () => {
-        observer.disconnect();
-      };
-    }
-
-    window.addEventListener('resize', updateSize);
-    return () => {
-      window.removeEventListener('resize', updateSize);
-    };
-  }, []);
-
-  // 移动端拖动切换状态
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const { containerRef, containerSize } = useContainerSize();
+  const { dominantAspectRatio, processAspectRatioFromImage, handleImageRef } = useAspectRatioTracker({
+    imageUrl,
+    imgRef,
+    onLoad,
+    ...(initialAspectRatio !== undefined ? { initialAspectRatio } : {}),
+    ...(onAspectRatioChange !== undefined ? { onAspectRatioChange } : {}),
+  });
+  const stageMetrics = useStageMetrics({ containerSize, dominantAspectRatio, isSmallScreen });
+  const stageWidth = stageMetrics?.width ?? null;
+  const stageHeight = stageMetrics?.height ?? null;
+  const stageMaxWidth = stageMetrics?.availableWidth ?? null;
+  const stageMaxHeight = stageMetrics?.availableHeight ?? null;
   const [currentScale, setCurrentScale] = useState(1);
 
   const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
@@ -195,219 +73,44 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   const altText = normalizedFileName ?? '图片预览';
   const hasError = error;
 
-  // 图片切换时重置移动端拖动状态
-  useEffect(() => {
-    // 只重置移动端相关状态，保留桌面端导航按钮的悬停状态
-    setDragOffset(0);
-    setIsDragging(false);
-  }, [imageUrl]);
+  const { dragOffset, isDragging, handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchNavigation({
+    isSmallScreen,
+    currentScale,
+    hasError,
+    loading,
+    hasPrevious,
+    hasNext,
+    imageUrl,
+    ...(onPrevious !== undefined ? { onPrevious } : {}),
+    ...(onNext !== undefined ? { onNext } : {}),
+  });
 
-  // 桌面端导航按钮的鼠标位置追踪
-  const handleContainerMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
-    if (isSmallScreen || hasError || loading) {
-      setActiveNavSide(null);
-      return;
-    }
+  const { activeNavSide, handleContainerMouseMove, handleContainerMouseLeave } = useDesktopNavigation({
+    containerRef,
+    isSmallScreen,
+    hasError,
+    loading,
+    hasPrevious,
+    hasNext,
+  });
 
-    const container = containerRef.current;
-    if (container === null) {
-      return;
-    }
+  useKeyboardNavigation({
+    loading,
+    hasError,
+    hasPrevious,
+    hasNext,
+    ...(onPrevious !== undefined ? { onPrevious } : {}),
+    ...(onNext !== undefined ? { onNext } : {}),
+  });
 
-    const rect = container.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const width = rect.width;
-    const threshold = 150; // 导航区域宽度
-
-    // 左侧区域（有上一张时）
-    if (hasPrevious && x < threshold) {
-      setActiveNavSide('left');
-    }
-    // 右侧区域（有下一张时）
-    else if (hasNext && x > width - threshold) {
-      setActiveNavSide('right');
-    }
-    // 中间区域
-    else {
-      setActiveNavSide(null);
-    }
-  }, [isSmallScreen, hasError, loading, hasPrevious, hasNext]);
-
-  // 鼠标离开容器
-  const handleContainerMouseLeave = useCallback((): void => {
-    setActiveNavSide(null);
-  }, []);
-
-  // 键盘导航支持
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      // 如果正在加载或有错误，不响应键盘事件
-      if (loading || hasError) {
-        return;
-      }
-
-      if (e.key === 'ArrowLeft' && hasPrevious && onPrevious !== undefined) {
-        e.preventDefault();
-        onPrevious();
-      } else if (e.key === 'ArrowRight' && hasNext && onNext !== undefined) {
-        e.preventDefault();
-        onNext();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [loading, hasError, hasPrevious, hasNext, onPrevious, onNext]);
   const rotationTransform = `rotate(${String(rotation)}deg)`;
   const containerClassName = [className, 'image-preview-container']
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .join(' ');
 
-  const stageMetrics = useMemo(() => {
-    if (containerSize.width <= 0 || containerSize.height <= 0) {
-      return null;
-    }
-
-    const widthPadding = isSmallScreen ? 0.94 : 0.9;
-    const heightPadding = isSmallScreen ? 0.85 : 0.8;
-
-    const availableWidth = containerSize.width * widthPadding;
-    const availableHeight = containerSize.height * heightPadding;
-
-    if (availableWidth <= 0 || availableHeight <= 0) {
-      return null;
-    }
-
-    const aspectRatio = dominantAspectRatio > 0 ? dominantAspectRatio : DEFAULT_ASPECT_RATIO;
-    const width = Math.min(availableWidth, availableHeight * aspectRatio);
-    const height = width / aspectRatio;
-
-    return {
-      width,
-      height,
-      availableWidth,
-      availableHeight,
-    };
-  }, [containerSize.height, containerSize.width, dominantAspectRatio, isSmallScreen]);
-
-  const stageWidth = stageMetrics?.width ?? null;
-  const stageHeight = stageMetrics?.height ?? null;
-  const stageMaxWidth = stageMetrics?.availableWidth ?? null;
-  const stageMaxHeight = stageMetrics?.availableHeight ?? null;
-
-  useEffect(() => {
-    if (typeof onAspectRatioChange === 'function' && Math.abs(previousNotifiedRatioRef.current - dominantAspectRatio) >= 0.0001) {
-      previousNotifiedRatioRef.current = dominantAspectRatio;
-      onAspectRatioChange(dominantAspectRatio);
-    }
-  }, [dominantAspectRatio, onAspectRatioChange]);
-
-  // 更新当前缩放比例
   useEffect(() => {
     setCurrentScale(toolbarProps.scale);
   }, [toolbarProps.scale]);
-
-  // 图片引用回调，用于检测缓存
-  const handleImageRef = useCallback((img: HTMLImageElement | null): void => {
-    if (typeof imgRef === 'object' && 'current' in imgRef) {
-      (imgRef as React.RefObject<HTMLImageElement | null> & { current: HTMLImageElement | null }).current = img;
-    }
-
-    internalImgRef.current = img;
-
-    if (img !== null) {
-      delete img.dataset['rvAspectProcessed'];
-    }
-
-    if (img !== null && img.complete && img.naturalHeight !== 0) {
-      processAspectRatioFromImage(img);
-      onLoad();
-    }
-  }, [imgRef, onLoad, processAspectRatioFromImage]);
-
-  // 移动端触摸开始
-  const handleTouchStart = (e: React.TouchEvent): void => {
-    // 只在移动端、未放大、且未加载错误时启用
-    if (!isSmallScreen || currentScale !== 1 || hasError || loading) {
-      return;
-    }
-
-    const touch = e.touches[0];
-    if (touch !== undefined) {
-      setTouchStart({
-        x: touch.clientX,
-        y: touch.clientY,
-        time: Date.now(),
-      });
-    }
-  };
-
-  // 移动端触摸移动
-  const handleTouchMove = (e: React.TouchEvent): void => {
-    if (touchStart === null || !isSmallScreen || currentScale !== 1 || hasError || loading) {
-      return;
-    }
-
-    const touch = e.touches[0];
-    if (touch === undefined) {
-      return;
-    }
-
-    const deltaX = touch.clientX - touchStart.x;
-    const deltaY = touch.clientY - touchStart.y;
-
-    // 判断是否为水平拖动（横向移动大于纵向移动）
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-      setIsDragging(true);
-
-      // 限制拖动范围
-      let offset = deltaX;
-
-      // 如果没有上一张，限制向右拖动
-      if (!hasPrevious && deltaX > 0) {
-        offset = deltaX * 0.3;
-      }
-
-      // 如果没有下一张，限制向左拖动
-      if (!hasNext && deltaX < 0) {
-        offset = deltaX * 0.3;
-      }
-
-      setDragOffset(offset);
-    }
-  };
-
-  // 移动端触摸结束
-  const handleTouchEnd = (): void => {
-    if (touchStart === null || !isSmallScreen || currentScale !== 1 || hasError || loading) {
-      setTouchStart(null);
-      setDragOffset(0);
-      setIsDragging(false);
-      return;
-    }
-
-    const threshold = 80; // 切换阈值（像素）
-    const duration = Date.now() - touchStart.time;
-    const velocity = Math.abs(dragOffset) / duration; // 速度（像素/毫秒）
-
-    // 快速滑动或者超过阈值
-    if ((Math.abs(dragOffset) > threshold) || (velocity > 0.5 && Math.abs(dragOffset) > 30)) {
-      if (dragOffset > 0 && hasPrevious && onPrevious !== undefined) {
-        // 向右拖动，上一张
-        onPrevious();
-      } else if (dragOffset < 0 && hasNext && onNext !== undefined) {
-        // 向左拖动，下一张
-        onNext();
-      }
-    }
-
-    // 重置状态
-    setTouchStart(null);
-    setDragOffset(0);
-    setIsDragging(false);
-  };
 
   return (
     <Box
