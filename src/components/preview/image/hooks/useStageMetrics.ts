@@ -1,9 +1,16 @@
 import { useMemo } from 'react';
-import { DEFAULT_ASPECT_RATIO } from './useAspectRatioTracker';
+
+const DEFAULT_ASPECT_RATIO = 16 / 9;
 
 interface ContainerSize {
   width: number;
   height: number;
+}
+
+interface UseStageMetricsOptions {
+  containerSize: ContainerSize;
+  dominantAspectRatio: number;
+  isSmallScreen: boolean;
 }
 
 interface StageMetrics {
@@ -13,17 +20,16 @@ interface StageMetrics {
   availableHeight: number;
 }
 
-interface UseStageMetricsParams {
-  containerSize: ContainerSize;
-  dominantAspectRatio: number;
-  isSmallScreen: boolean;
-}
-
-export const useStageMetrics = ({
+/**
+ * 舞台尺寸计算 Hook
+ *
+ * 根据容器尺寸和宽高比计算图片显示区域的最佳尺寸
+ */
+export function useStageMetrics({
   containerSize,
   dominantAspectRatio,
   isSmallScreen,
-}: UseStageMetricsParams): StageMetrics | null => {
+}: UseStageMetricsOptions): StageMetrics | null {
   return useMemo(() => {
     if (containerSize.width <= 0 || containerSize.height <= 0) {
       return null;
@@ -50,5 +56,4 @@ export const useStageMetrics = ({
       availableHeight,
     };
   }, [containerSize.height, containerSize.width, dominantAspectRatio, isSmallScreen]);
-};
-
+}

@@ -58,7 +58,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
     imageUrl,
     imgRef,
     onLoad,
-    ...(initialAspectRatio !== undefined ? { initialAspectRatio } : {}),
+    ...(typeof initialAspectRatio === 'number' ? { initialAspectRatio } : {}),
     ...(onAspectRatioChange !== undefined ? { onAspectRatioChange } : {}),
   });
   const stageMetrics = useStageMetrics({ containerSize, dominantAspectRatio, isSmallScreen });

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
 interface ContainerSize {
@@ -6,12 +6,17 @@ interface ContainerSize {
   height: number;
 }
 
-interface UseContainerSizeResult {
+interface UseContainerSizeReturn {
   containerRef: RefObject<HTMLDivElement | null>;
   containerSize: ContainerSize;
 }
 
-export const useContainerSize = (): UseContainerSizeResult => {
+/**
+ * 容器尺寸追踪 Hook
+ *
+ * 使用 ResizeObserver 追踪容器尺寸变化
+ */
+export function useContainerSize(): UseContainerSizeReturn {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<ContainerSize>({ width: 0, height: 0 });
 
@@ -52,5 +57,4 @@ export const useContainerSize = (): UseContainerSizeResult => {
     containerRef,
     containerSize,
   };
-};
-
+}
