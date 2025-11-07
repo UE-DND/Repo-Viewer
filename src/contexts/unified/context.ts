@@ -1,6 +1,5 @@
 import { createContext, useContext, type Context, type RefObject } from "react";
-import type { GitHubContent, PreviewState, DownloadState, PreviewSelectFileOptions } from "@/types";
-export type { PreviewSelectFileOptions } from "@/types";
+import type { GitHubContent, PreviewState, DownloadState } from "@/types";
 import type { RepoSearchState } from "@/hooks/github/useRepoSearch";
 
 /**
@@ -50,7 +49,7 @@ export type PreviewContextState = PreviewState & {
 export interface PreviewContextValue {
   previewState: PreviewContextState;
   currentPreviewItemRef: RefObject<GitHubContent | null>;
-  selectFile: (item: GitHubContent, options?: PreviewSelectFileOptions) => Promise<void> | void;
+  selectFile: (item: GitHubContent) => Promise<void> | void;
   closePreview: () => void;
   toggleImageFullscreen: () => void;
   handleImageError: (error: string) => void;

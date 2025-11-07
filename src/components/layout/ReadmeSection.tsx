@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LazyMarkdownPreview } from '@/utils/lazy-loading';
 import { MarkdownPreviewSkeleton } from '@/components/ui/skeletons';
 import type { GitHubContent } from '@/types';
@@ -12,6 +13,7 @@ interface ReadmeSectionProps {
   isSmallScreen: boolean;
   currentBranch: string;
   readmeFileItem: GitHubContent | null;
+  isTransitioning?: boolean;
 }
 
 /**
@@ -26,7 +28,8 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
   readmeLoaded,
   isSmallScreen,
   currentBranch,
-  readmeFileItem
+  readmeFileItem,
+  isTransitioning = false
 }) => {
   if (!hasReadmeFile) {
     return null;
@@ -36,17 +39,31 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
   const shouldShowReadmeSkeleton = !hasReadmeContent && (!readmeLoaded || loadingReadme);
 
   return (
-    <Box
-      className="readme-container"
-      sx={{
-        position: "relative",
-        width: "100%",
-        mb: 4,
-        display: "flex",
-        flexDirection: "column",
-      }}
-      data-oid="0zc9q5:"
-    >
+    <AnimatePresence mode="wait">
+      {!isTransitioning && (
+        <motion.div
+          initial={{ opacity: 1, scale: 1 }}
+          exit={{
+            opacity: 0,
+            scale: 0.96,
+            transition: {
+              duration: 0.125,
+              ease: [0.4, 0, 0.2, 1]
+            }
+          }}
+          style={{ width: '100%' }}
+        >
+          <Box
+            className="readme-container"
+            sx={{
+              position: "relative",
+              width: "100%",
+              mb: 4,
+              display: "flex",
+              flexDirection: "column",
+            }}
+            data-oid="0zc9q5:"
+          >
       <Typography
         variant="h5"
         sx={{
@@ -91,7 +108,10 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
           README 内容为空或加载失败。
         </Typography>
       ) : null}
-    </Box>
+          </Box>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

@@ -87,6 +87,15 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
 
   const hasReadmeFile = readmeFileItem !== null;
 
+  // 检查是否正在全屏预览 README
+  const isPreviewingReadme = useMemo(() => {
+    if (previewState.previewingItem === null || readmeFileItem === null) {
+      return false;
+    }
+    // 比较文件路径来判断是否是同一个 README 文件
+    return previewState.previewingItem.path === readmeFileItem.path;
+  }, [previewState.previewingItem, readmeFileItem]);
+
   // 获取当前目录中的所有图片文件
   const imageFiles = useMemo(() => {
     return contents.filter((item) => {
@@ -156,19 +165,8 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
       return;
     }
 
-    const isReadmeFile = readmeFileItem !== null && item.path === readmeFileItem.path;
-
-    if (isReadmeFile) {
-      if (typeof readmeContent === "string") {
-        void selectFile(item, { preloadedContent: readmeContent });
-      } else {
-        void selectFile(item);
-      }
-      return;
-    }
-
     void selectFile(item);
-  }, [navigateTo, selectFile, readmeFileItem, readmeContent]);
+  }, [navigateTo, selectFile]);
 
   // 处理下载点击
   const handleDownloadClick = useCallback((
@@ -381,7 +379,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
             data-oid="_qfxtvv"
           />
 
-          {/* README预览 */}
+          {/* README 自动预览区域（仅在未全屏预览时显示） */}
           <ReadmeSection
             hasReadmeFile={hasReadmeFile}
             readmeContent={readmeContent}
@@ -390,9 +388,10 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
             isSmallScreen={isSmallScreen}
             currentBranch={currentBranch}
             readmeFileItem={readmeFileItem}
+            isTransitioning={isPreviewingReadme}
           />
 
-          {/* Markdown 和图片预览覆盖层 */}
+          {/* Markdown 和图片全屏预览覆盖层 */}
           <PreviewOverlay
             previewingItem={previewState.previewingItem}
             previewContent={previewState.previewContent}

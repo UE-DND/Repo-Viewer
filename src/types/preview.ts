@@ -6,18 +6,11 @@
 
 import type { GitHubContent } from './index';
 
-export interface PreviewSelectFileOptions {
-  /**
-   * 可选的预加载 Markdown 内容，用于避免重复请求（例如 README 已经在目录页加载）
-   */
-  preloadedContent?: string;
-}
-
 /**
  * 文件预览状态接口
  */
 export interface PreviewState {
-  // Markdown预览
+  // Markdown预览（所有 .md 文件）
   previewContent: string | null;
   previewingItem: GitHubContent | null;
   loadingPreview: boolean;
@@ -36,7 +29,7 @@ export interface PreviewState {
  */
 export type PreviewAction =
   | { type: 'RESET_PREVIEW' }
-  // Markdown预览操作
+  // Markdown预览操作（所有 .md 文件）
   | { type: 'SET_MD_PREVIEW', content: string | null, item: GitHubContent | null }
   | { type: 'SET_MD_LOADING', loading: boolean }
 

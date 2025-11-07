@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, useTheme } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LazyMarkdownPreview, LazyImagePreview } from '@/utils/lazy-loading';
 import type { GitHubContent } from '@/types';
 
@@ -48,27 +49,53 @@ const PreviewOverlay: React.FC<PreviewOverlayProps> = ({
 
   return (
     <>
-      {/* Markdown文件预览（非README） */}
-      {previewingItem !== null && previewContent !== null && (
-        <Box
-          sx={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: theme.zIndex.modal + 100,
-            bgcolor: "background.default",
-            overflow: "auto",
-            p: { xs: 2, sm: 3, md: 4 },
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              onClose();
-            }
-          }}
-          data-oid="md-preview-fs"
-        >
+      {/* Markdown文件全屏预览（包括 README） */}
+      <AnimatePresence mode="wait">
+        {previewingItem !== null && previewContent !== null && (
+          <motion.div
+            key="md-preview"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              transition: {
+                duration: 0.125,
+                ease: [0.4, 0, 0.2, 1],
+                delay: 0.02
+              }
+            }}
+            exit={{
+              opacity: 0,
+              y: 50,
+              transition: {
+                duration: 0.125,
+                ease: [0.4, 0, 0.2, 1]
+              }
+            }}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: theme.zIndex.modal + 100,
+            }}
+          >
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                bgcolor: "background.default",
+                overflow: "auto",
+                p: { xs: 2, sm: 3, md: 4 },
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  onClose();
+                }
+              }}
+              data-oid="md-preview-fs"
+            >
           <Box
             sx={{
               maxWidth: "1200px",
@@ -88,8 +115,10 @@ const PreviewOverlay: React.FC<PreviewOverlayProps> = ({
               data-oid="md-file-preview"
             />
           </Box>
-        </Box>
-      )}
+            </Box>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 图像预览 */}
       {previewingImageItem !== null && imagePreviewUrl !== null && (
