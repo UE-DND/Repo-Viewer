@@ -2,7 +2,7 @@ export {
   searchWithGitHubApi,
   searchFiles,
   searchMultipleBranchesWithTreesApi
-} from './search';
+} from './service';
 
-export type { SearchTreesResult } from './search';
+export type { SearchTreesResult } from './service';
 

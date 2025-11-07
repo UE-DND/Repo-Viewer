@@ -11,7 +11,6 @@ import { ProxyUrlTransformer } from './ProxyUrlTransformer';
 const proxyConfig = getProxyConfig();
 const runtimeConfig = getRuntimeConfig();
 
-// 保持向后兼容
 const failedProxyServices = new Set<string>();
 
 /**
@@ -27,7 +26,7 @@ const failedProxyServices = new Set<string>();
  * @param options.retryCount - 重试次数
  * @returns Promise，解析为代理URL
  */
-async function getProxiedUrl(
+export async function getProxiedUrl(
   url: string,
   options: {
     priority?: 'high' | 'medium' | 'low';
@@ -83,7 +82,7 @@ async function getProxiedUrl(
  * @param url - 原始URL
  * @returns 代理URL
  */
-function getProxiedUrlSync(url: string): string {
+export function getProxiedUrlSync(url: string): string {
   if (url === '') {
     return '';
   }
@@ -150,7 +149,7 @@ async function validateProxy(proxyUrl: string, timeout: number): Promise<void> {
  * @param proxyUrl - 失败的代理服务URL
  * @returns void
  */
-function markProxyServiceFailed(proxyUrl: string): void {
+export function markProxyServiceFailed(proxyUrl: string): void {
   if (proxyUrl !== '') {
     proxyHealthManager.recordFailure(proxyUrl);
 
@@ -166,7 +165,7 @@ function markProxyServiceFailed(proxyUrl: string): void {
  * 
  * @returns 当前最佳代理服务URL
  */
-function getCurrentProxyService(): string {
+export function getCurrentProxyService(): string {
   const bestProxy = proxyHealthManager.getBestProxy();
   return bestProxy !== '' ? bestProxy : (PROXY_SERVICES[0] ?? '');
 }
@@ -176,7 +175,7 @@ function getCurrentProxyService(): string {
  * 
  * @returns 所有代理服务的健康状态数组
  */
-function getProxyHealthStats(): {
+export function getProxyHealthStats(): {
   url: string;
   isHealthy: boolean;
   failureCount: number;
@@ -193,7 +192,7 @@ function getProxyHealthStats(): {
  * 
  * @returns void
  */
-function resetFailedProxyServices(): void {
+export function resetFailedProxyServices(): void {
   failedProxyServices.clear();
 
   proxyHealthManager.reset();
@@ -212,7 +211,7 @@ function resetFailedProxyServices(): void {
  * @param branch - 分支名称（可选）
  * @returns 转换后的图片URL
  */
-function transformImageUrl(
+export function transformImageUrl(
   src: string | undefined,
   markdownFilePath: string,
   useTokenMode: boolean,
@@ -220,18 +219,3 @@ function transformImageUrl(
 ): string | undefined {
   return ProxyUrlTransformer.transformImageUrl(src, markdownFilePath, useTokenMode, getProxiedUrlSync, branch);
 }
-
-/**
- * 代理服务对象
- * 
- * 提供统一的代理URL获取和图片URL转换功能。
- */
-export const ProxyService = {
-  getProxiedUrl,
-  getProxiedUrlSync,
-  markProxyServiceFailed,
-  getCurrentProxyService,
-  getProxyHealthStats,
-  resetFailedProxyServices,
-  transformImageUrl
-};

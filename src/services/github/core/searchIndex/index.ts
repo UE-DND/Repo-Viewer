@@ -10,11 +10,11 @@ export {
   SearchIndexError,
   SearchIndexErrorCode,
   createSearchIndexError
-} from './searchIndex';
+} from './service';
 
 export type {
   SearchIndexErrorDetails,
   SearchIndexResultItem,
   SearchIndexSearchOptions
-} from './searchIndex';
+} from './service';
 

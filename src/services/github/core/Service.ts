@@ -12,7 +12,11 @@ import {
   searchWithGitHubApi as searchWithApi,
   searchFiles as searchFilesImpl
 } from './SearchService';
-import { GitHubPrefetchService } from './PrefetchService';
+import {
+  prefetchContents as prefetchContentsImpl,
+  batchPrefetchContents as batchPrefetchContentsImpl,
+  prefetchRelatedContent as prefetchRelatedContentImpl
+} from './PrefetchService';
 import {
   clearCache as statsClearCache,
   getCacheStats as statsGetCacheStats,
@@ -26,8 +30,6 @@ import {
   type ConfigInfo
 } from './Config';
 import { getBranches as fetchBranches } from './BranchService';
-
-// GitHub服务，使用模块导出而非类
 
 /**
  * 获取GitHub PAT总数
@@ -119,7 +121,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
   const contents = await getContentsImpl(path, signal);
 
   // 预加载相关内容
-  void GitHubPrefetchService.prefetchRelatedContent(contents).catch(() => {
+  void prefetchRelatedContentImpl(contents).catch(() => {
     // 忽略预加载错误
   });
 
@@ -198,7 +200,7 @@ export async function searchFiles(
  * @returns void
  */
 export function prefetchContents(path: string, priority: 'high' | 'medium' | 'low' = 'low'): void {
-  GitHubPrefetchService.prefetchContents(path, priority);
+  prefetchContentsImpl(path, priority);
 }
 
 /**
@@ -209,7 +211,7 @@ export function prefetchContents(path: string, priority: 'high' | 'medium' | 'lo
  * @returns Promise，所有预加载完成后解析
  */
 export async function batchPrefetchContents(paths: string[], maxConcurrency = 3): Promise<void> {
-  return GitHubPrefetchService.batchPrefetchContents(paths, maxConcurrency);
+  return batchPrefetchContentsImpl(paths, maxConcurrency);
 }
 
 /**

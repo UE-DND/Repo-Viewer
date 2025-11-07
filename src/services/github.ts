@@ -16,7 +16,15 @@ import * as ConfigModule from './github/core/Config';
 import { getDefaultBranchName } from './github/core/Service';
 import { CacheManager as CacheManagerClass } from './github/cache/CacheManager';
 import { GitHubTokenManager } from './github/TokenManager';
-import { ProxyService as ProxyServiceClass } from './github/proxy/ProxyService';
+import {
+  getProxiedUrl as proxyGetProxiedUrl,
+  getProxiedUrlSync as proxyGetProxiedUrlSync,
+  markProxyServiceFailed as proxyMarkProxyServiceFailed,
+  getCurrentProxyService as proxyGetCurrentProxyService,
+  resetFailedProxyServices as proxyResetFailedProxyServices,
+  getProxyHealthStats as proxyGetProxyHealthStats,
+  transformImageUrl as proxyTransformImageUrl
+} from './github/proxy/ProxyService';
 import { RequestBatcher as RequestBatcherClass } from './github/RequestBatcher';
 
 /**
@@ -95,11 +103,13 @@ export const GitHub = {
 
   /** 代理服务 - 管理代理和图片转换 */
   Proxy: {
-    markProxyServiceFailed: AuthModule.markProxyServiceFailed,
-    getCurrentProxyService: AuthModule.getCurrentProxyService,
-    resetFailedProxyServices: AuthModule.resetFailedProxyServices,
-    transformImageUrl: AuthModule.transformImageUrl,
-    ProxyService: ProxyServiceClass,
+    getProxiedUrl: proxyGetProxiedUrl,
+    getProxiedUrlSync: proxyGetProxiedUrlSync,
+    markProxyServiceFailed: proxyMarkProxyServiceFailed,
+    getCurrentProxyService: proxyGetCurrentProxyService,
+    resetFailedProxyServices: proxyResetFailedProxyServices,
+    getProxyHealthStats: proxyGetProxyHealthStats,
+    transformImageUrl: proxyTransformImageUrl,
   },
 
   /** 工具服务 */

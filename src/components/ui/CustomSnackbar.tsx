@@ -10,7 +10,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useSnackbar } from "notistack";
 import type { CustomContentProps } from "notistack";
-import { eventEmitter, EVENTS } from "@/utils/events/eventEmitter";
+import { eventEmitter } from "@/utils/events/eventEmitter";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
 /**
@@ -32,7 +32,7 @@ const CustomSnackbar = memo(
 
       const handleDismiss = (): void => {
         if (isDownloadRelated()) {
-          eventEmitter.dispatch(EVENTS.CANCEL_DOWNLOAD, { downloadId: String(id) });
+          eventEmitter.dispatch("cancel_download", { downloadId: String(id) });
         }
         closeSnackbar(id);
       };

@@ -1,5 +1,5 @@
 import { CacheManager } from '../cache/CacheManager';
-import { ProxyService } from '../proxy/ProxyService';
+import { getProxyHealthStats } from '../proxy/ProxyService';
 import { resetFailedProxyServices } from './Auth';
 
 // GitHub统计服务，使用模块导出而非类
@@ -36,13 +36,13 @@ export function getCacheStats(): ReturnType<typeof CacheManager.getCacheStats> {
  */
 export async function getNetworkStats(): Promise<{
   batcher: unknown;
-  proxy: ReturnType<typeof ProxyService.getProxyHealthStats>;
+  proxy: ReturnType<typeof getProxyHealthStats>;
   cache: ReturnType<typeof getCacheStats>;
 }> {
   const { getBatcher } = await import('./ContentService');
   return {
     batcher: getBatcher().getStats(),
-    proxy: ProxyService.getProxyHealthStats(),
+    proxy: getProxyHealthStats(),
     cache: getCacheStats()
   };
 }

@@ -1,5 +1,10 @@
 import { GitHubTokenManager } from '../TokenManager';
-import { ProxyService } from '../proxy/ProxyService';
+import {
+  markProxyServiceFailed as proxyMarkServiceFailed,
+  getCurrentProxyService as proxyGetCurrentService,
+  resetFailedProxyServices as proxyResetFailedServices,
+  transformImageUrl as proxyTransformImageUrl
+} from '../proxy/ProxyService';
 import { ErrorManager } from '@/utils/error/ErrorManager';
 import type { GitHubError } from '@/types/errors';
 import { shouldUseServerAPI } from '../config/ProxyForceManager';
@@ -143,7 +148,7 @@ export function handleApiError(error: Response, endpoint: string, method = 'GET'
  * @returns void
  */
 export function markProxyServiceFailed(proxyUrl: string): void {
-  ProxyService.markProxyServiceFailed(proxyUrl);
+  proxyMarkServiceFailed(proxyUrl);
 }
 
 /**
@@ -152,7 +157,7 @@ export function markProxyServiceFailed(proxyUrl: string): void {
  * @returns 当前活跃的代理服务URL
  */
 export function getCurrentProxyService(): string {
-  return ProxyService.getCurrentProxyService();
+  return proxyGetCurrentService();
 }
 
 /**
@@ -163,7 +168,7 @@ export function getCurrentProxyService(): string {
  * @returns void
  */
 export function resetFailedProxyServices(): void {
-  ProxyService.resetFailedProxyServices();
+  proxyResetFailedServices();
 }
 
 /**
@@ -179,7 +184,7 @@ export function resetFailedProxyServices(): void {
  * @returns 转换后的绝对URL，如果输入为undefined则返回undefined
  */
 export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean, branch?: string): string | undefined {
-  return ProxyService.transformImageUrl(src, markdownFilePath, useTokenMode, branch);
+  return proxyTransformImageUrl(src, markdownFilePath, useTokenMode, branch);
 }
 
 /**
