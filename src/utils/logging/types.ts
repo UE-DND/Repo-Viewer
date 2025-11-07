@@ -18,9 +18,9 @@ export interface LoggerFactory {
   loggerFor: (name: string) => Logger;
 }
 
-export type LoggerArguments = {
+export interface LoggerArguments {
   name: string;
   level: LogLevel;
   args: unknown[];
-};
+}
 

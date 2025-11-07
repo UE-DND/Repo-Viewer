@@ -16,14 +16,20 @@ class ErrorReporterLogger implements Logger {
     private readonly options: ErrorReporterLoggerOptions
   ) {}
 
-  debug(): void {}
+  debug(..._args: unknown[]): void {
+    return;
+  }
 
-  info(): void {}
+  info(..._args: unknown[]): void {
+    return;
+  }
 
-  log(): void {}
+  log(..._args: unknown[]): void {
+    return;
+  }
 
   warn(...args: unknown[]): void {
-    if (!this.options.includeWarn) {
+    if (this.options.includeWarn !== true) {
       return;
     }
 

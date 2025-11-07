@@ -11,10 +11,10 @@ const LEVEL_PRIORITY: Record<CoreLogLevel, number> = {
   debug: 4
 };
 
-type Rules = {
+interface Rules {
   named: Record<string, number>;
   defaultLevel: number;
-};
+}
 
 const DEFAULT_RULES: Rules = {
   named: {},
@@ -32,11 +32,11 @@ const parseDirectives = (ruleString: string, fallback: Rules): Rules => {
       return rules;
     }
 
-    const [name, levelName = ''] = directive.split('=');
+    const [name = '', levelName = ''] = directive.split('=');
     const normalizedName = name.trim();
     const normalizedLevel = levelName.trim();
 
-    if (!normalizedName) {
+    if (normalizedName.length === 0) {
       return rules;
     }
 
@@ -88,7 +88,7 @@ const readLocalStorageRules = (): string => {
     }
     const value = window.localStorage.getItem(LOG_FILTER_STORAGE_KEY);
     return value ?? '';
-  } catch (error) {
+  } catch (_error) {
     // localStorage 可能在隐私模式下不可用或被禁用
     return '';
   }
@@ -104,7 +104,7 @@ const resolveBaseLevel = (config: Config['developer']): number => {
   }
 
   const loggingConfig = config.logging;
-  if (loggingConfig?.baseLevel) {
+  if (loggingConfig?.baseLevel !== undefined) {
     return LEVEL_PRIORITY[loggingConfig.baseLevel];
   }
 
@@ -113,7 +113,7 @@ const resolveBaseLevel = (config: Config['developer']): number => {
 
 const ensureRuleDefaults = (rules: Rules, baseLevel: number): Rules => ({
   named: rules.named,
-  defaultLevel: rules.defaultLevel ?? baseLevel
+  defaultLevel: Number.isFinite(rules.defaultLevel) ? rules.defaultLevel : baseLevel
 });
 
 export const shouldLog = (

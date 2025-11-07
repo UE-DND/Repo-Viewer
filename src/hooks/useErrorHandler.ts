@@ -166,11 +166,15 @@ export function useErrorHandler(
       (developerConfig.mode && resolvedOptions.logToConsole);
 
     if (shouldLog) {
-      logger.group(`🚨 错误处理 [${appError.category}]`);
+      if (typeof logger.group === 'function') {
+        logger.group(`🚨 错误处理 [${appError.category}]`);
+      }
       logger.error('错误详情:', appError);
       logger.error('原始错误:', error);
       logger.error('上下文:', context);
-      logger.groupEnd();
+      if (typeof logger.groupEnd === 'function') {
+        logger.groupEnd();
+      }
     }
   }, [
     resolvedOptions,

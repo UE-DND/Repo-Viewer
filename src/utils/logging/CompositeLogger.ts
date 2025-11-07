@@ -24,27 +24,28 @@ class CompositeLogger implements Logger {
   }
 
   group(label: string): void {
-    this.invokeOptional('group', [label]);
+    for (const logger of this.loggers) {
+      const handler = logger.group;
+      if (typeof handler === 'function') {
+        handler.call(logger, label);
+      }
+    }
   }
 
   groupEnd(): void {
-    this.invokeOptional('groupEnd', []);
+    for (const logger of this.loggers) {
+      const handler = logger.groupEnd;
+      if (typeof handler === 'function') {
+        handler.call(logger);
+      }
+    }
   }
 
   private invoke(method: keyof Logger, args: unknown[]): void {
     for (const logger of this.loggers) {
       const handler = logger[method];
       if (typeof handler === 'function') {
-        handler.apply(logger, args);
-      }
-    }
-  }
-
-  private invokeOptional(method: 'group' | 'groupEnd', args: unknown[]): void {
-    for (const logger of this.loggers) {
-      const handler = logger[method];
-      if (typeof handler === 'function') {
-        handler.apply(logger, args);
+        (handler as (...handlerArgs: unknown[]) => void).apply(logger, args);
       }
     }
   }

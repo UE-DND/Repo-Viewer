@@ -15,6 +15,8 @@ const MAP_TO_CONSOLE_METHOD: Record<CoreLogLevel, keyof Console> = {
   error: 'error'
 };
 
+const nativeConsole: Console | undefined = typeof globalThis.console === 'object' ? globalThis.console : undefined;
+
 class ConsoleLogger implements Logger {
   constructor(
     private readonly name: string,
@@ -47,9 +49,21 @@ class ConsoleLogger implements Logger {
       return;
     }
 
-    const method = this.options.useCollapsedGroup ? 'groupCollapsed' : 'group';
-    const groupMethod = console[method] ?? console.group;
-    groupMethod.call(console, `[${this.name}] ${label}`);
+    if (nativeConsole === undefined) {
+      return;
+    }
+
+    const method: keyof Console = this.options.useCollapsedGroup === true ? 'groupCollapsed' : 'group';
+    const groupMethod = nativeConsole[method];
+
+    if (typeof groupMethod === 'function') {
+      groupMethod.call(nativeConsole, `[${this.name}] ${label}`);
+      return;
+    }
+
+    if (typeof nativeConsole.group === 'function') {
+      nativeConsole.group(`[${this.name}] ${label}`);
+    }
   }
 
   groupEnd(): void {
@@ -57,7 +71,9 @@ class ConsoleLogger implements Logger {
     if (!shouldLog(this.name, 'debug', config)) {
       return;
     }
-    console.groupEnd();
+    if (nativeConsole !== undefined && typeof nativeConsole.groupEnd === 'function') {
+      nativeConsole.groupEnd();
+    }
   }
 
   private logInternal(level: CoreLogLevel, args: unknown[]): void {
@@ -66,20 +82,28 @@ class ConsoleLogger implements Logger {
       return;
     }
 
+    if (nativeConsole === undefined) {
+      return;
+    }
+
     const consoleMethod = MAP_TO_CONSOLE_METHOD[level];
-    const log = console[consoleMethod];
+    const logFn = nativeConsole[consoleMethod];
+    if (typeof logFn !== 'function') {
+      return;
+    }
+    const invoke = logFn as (...consoleArgs: unknown[]) => void;
     const prefix = `[${this.name}]`;
 
     if (args.length === 0) {
-      log.call(console, prefix);
+      invoke.call(nativeConsole, prefix);
       return;
     }
 
     const [first, ...rest] = args;
     if (typeof first === 'string') {
-      log.call(console, `${prefix} ${first}`, ...rest);
+      invoke.call(nativeConsole, `${prefix} ${first}`, ...rest);
     } else {
-      log.call(console, prefix, ...args);
+      invoke.call(nativeConsole, prefix, ...args);
     }
   }
 }

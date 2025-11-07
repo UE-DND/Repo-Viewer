@@ -21,22 +21,22 @@ function buildFactory(config: DeveloperConfig): LoggerFactory {
   const logging = config.logging ?? {};
   const factories: LoggerFactory[] = [];
 
-  const shouldEnableConsole = logging.enableConsole ?? config.mode ?? config.consoleLogging;
+  const shouldEnableConsole = logging.enableConsole ?? (config.mode || config.consoleLogging);
   if (shouldEnableConsole) {
     factories.push(new ConsoleLoggerFactory({
       getDeveloperConfig: () => developerConfigSnapshot
     }));
   }
 
-  if (logging.enableRecorder) {
+  if (logging.enableRecorder === true) {
     factories.push(new RecorderLoggerFactory(recorder));
   }
 
   const reporter = resolveErrorReporter(logging);
-  if (reporter !== undefined && logging.enableErrorReporting) {
+  if (reporter !== undefined && logging.enableErrorReporting === true) {
     factories.push(new ErrorReporterLoggerFactory({
       reporter,
-      includeWarn: logging.includeWarnInReporting ?? false
+      includeWarn: logging.includeWarnInReporting === true
     }));
   }
 
@@ -45,7 +45,10 @@ function buildFactory(config: DeveloperConfig): LoggerFactory {
   }
 
   if (factories.length === 1) {
-    return factories[0]!;
+    const singleFactory = factories[0];
+    if (singleFactory !== undefined) {
+      return singleFactory;
+    }
   }
 
   return new CompositeLoggerFactory(factories);
@@ -57,11 +60,11 @@ function resolveErrorReporter(logging: DeveloperConfig['logging'] | undefined): 
   }
 
   const reportUrl = logging?.reportUrl;
-  if (!reportUrl) {
+  if (typeof reportUrl !== 'string' || reportUrl.trim().length === 0) {
     return undefined;
   }
 
-  return new BeaconErrorReporter(reportUrl);
+  return new BeaconErrorReporter(reportUrl.trim());
 }
 
 class BeaconErrorReporter implements ErrorReporter {
@@ -93,7 +96,7 @@ class BeaconErrorReporter implements ErrorReporter {
       try {
         navigator.sendBeacon(this.endpoint, body);
         return;
-      } catch (error) {
+      } catch (_error) {
         // sendBeacon 失败时回退到 fetch
       }
     }
@@ -107,16 +110,19 @@ class BeaconErrorReporter implements ErrorReporter {
         },
         keepalive: true,
         mode: 'cors'
-      }).catch(() => undefined);
+      }).catch(() => {
+        return;
+      });
     }
   }
 }
 
 function getLoggerInstance(name: string): Logger {
   let logger = scopedLoggers.get(name);
-  if (!logger) {
-    logger = currentFactory.loggerFor(name);
-    scopedLoggers.set(name, logger);
+  if (logger === undefined) {
+    const created = currentFactory.loggerFor(name);
+    scopedLoggers.set(name, created);
+    logger = created;
   }
   return logger;
 }
@@ -131,12 +137,20 @@ configManager.onConfigChange((nextConfig) => {
   rebuildFactory(nextConfig.developer);
 });
 
-const createFacade = (name: string) => ({
-  debug: (...args: unknown[]) => getLoggerInstance(name).debug(...args),
-  info: (...args: unknown[]) => getLoggerInstance(name).info(...args),
-  warn: (...args: unknown[]) => getLoggerInstance(name).warn(...args),
-  error: (...args: unknown[]) => getLoggerInstance(name).error(...args),
-  log: (...args: unknown[]) => {
+const createFacade = (name: string): Logger => ({
+  debug: (...args: unknown[]): void => {
+    getLoggerInstance(name).debug(...args);
+  },
+  info: (...args: unknown[]): void => {
+    getLoggerInstance(name).info(...args);
+  },
+  warn: (...args: unknown[]): void => {
+    getLoggerInstance(name).warn(...args);
+  },
+  error: (...args: unknown[]): void => {
+    getLoggerInstance(name).error(...args);
+  },
+  log: (...args: unknown[]): void => {
     const instance = getLoggerInstance(name);
     if (typeof instance.log === 'function') {
       instance.log(...args);
@@ -144,13 +158,13 @@ const createFacade = (name: string) => ({
       instance.info(...args);
     }
   },
-  group: (label: string) => {
+  group: (label: string): void => {
     const instance = getLoggerInstance(name);
     if (typeof instance.group === 'function') {
       instance.group(label);
     }
   },
-  groupEnd: () => {
+  groupEnd: (): void => {
     const instance = getLoggerInstance(name);
     if (typeof instance.groupEnd === 'function') {
       instance.groupEnd();

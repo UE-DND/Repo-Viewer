@@ -125,19 +125,19 @@ export function useAspectRatioTracker({
 
   // 图片引用回调，用于检测缓存
   const handleImageRef = useCallback((img: HTMLImageElement | null): void => {
-    if (imgRef && 'current' in imgRef) {
-      (imgRef as RefObject<HTMLImageElement | null>).current = img;
+    if (imgRef !== null && imgRef !== undefined) {
+      imgRef.current = img;
     }
 
     internalImgRef.current = img;
 
     if (img !== null) {
       delete img.dataset['rvAspectProcessed'];
-    }
 
-    if (img !== null && img.complete && img.naturalHeight !== 0) {
-      processAspectRatioFromImage(img);
-      onLoad();
+      if (img.complete && img.naturalHeight !== 0) {
+        processAspectRatioFromImage(img);
+        onLoad();
+      }
     }
   }, [imgRef, onLoad, processAspectRatioFromImage]);
 

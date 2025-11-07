@@ -218,14 +218,22 @@ export class ConfigLoader {
       ? (baseLevelValue as DeveloperLoggingConfig['baseLevel'])
       : undefined;
 
-    return {
+    const result: DeveloperLoggingConfig = {
       enableConsole,
       enableErrorReporting,
       includeWarnInReporting,
-      enableRecorder,
-      reportUrl: reportUrl.length > 0 ? reportUrl : undefined,
-      baseLevel
+      enableRecorder
     };
+
+    if (reportUrl.length > 0) {
+      result.reportUrl = reportUrl;
+    }
+
+    if (baseLevel !== undefined) {
+      result.baseLevel = baseLevel;
+    }
+
+    return result;
   }
 }
 
