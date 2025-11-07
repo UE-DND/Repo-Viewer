@@ -294,36 +294,4 @@ export async function getBatcher(): Promise<unknown> {
   return getBatcherImpl();
 }
 
-/**
- * GitHub服务对象
- *
- * 为了向后兼容性，导出包含所有GitHub服务功能的常量对象。
- *
- * @deprecated 推荐直接使用独立的导出函数
- */
-export const GitHubService = {
-  getTokenCount,
-  hasToken,
-  setLocalToken,
-  getConfig: getGitHubConfig,
-  getCurrentBranch,
-  setCurrentBranch,
-  getDefaultBranch: getDefaultBranchName,
-  getBranches,
-  getContents,
-  getFileContent,
-  searchWithGitHubApi,
-  searchFiles,
-  prefetchContents,
-  batchPrefetchContents,
-  markProxyServiceFailed,
-  getCurrentProxyService,
-  resetFailedProxyServices,
-  transformImageUrl,
-  clearCache,
-  getCacheStats,
-  getNetworkStats,
-  getBatcher
-} as const;
-
 export type { ConfigInfo } from './Config';

@@ -331,15 +331,3 @@ export async function searchMultipleBranchesWithTreesApi(
   return Promise.all(searchPromises);
 }
 
-/**
- * GitHub搜索服务对象
- *
- * 为了向后兼容性，导出包含所有搜索相关函数的常量对象。
- *
- * @deprecated 推荐直接使用独立的导出函数
- */
-export const GitHubSearchService = {
-  searchWithGitHubApi,
-  searchFiles,
-  searchMultipleBranchesWithTreesApi
-} as const;

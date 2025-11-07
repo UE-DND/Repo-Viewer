@@ -47,15 +47,3 @@ export async function getNetworkStats(): Promise<{
   };
 }
 
-/**
- * GitHub统计服务对象
- * 
- * 为了向后兼容性，导出包含所有统计相关函数的常量对象。
- * 
- * @deprecated 推荐直接使用独立的导出函数
- */
-export const GitHubStatsService = {
-  clearCache,
-  getCacheStats,
-  getNetworkStats
-} as const;

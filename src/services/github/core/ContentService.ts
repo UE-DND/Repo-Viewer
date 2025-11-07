@@ -51,7 +51,6 @@ function buildContentsCacheKey(path: string, branch: string): string {
   return `content:v2:${hash}`;
 }
 
-// GitHub内容服务，使用模块导出而非类
 const batcher = new RequestBatcher();
 
 type DirectoryStoreKey = string;
@@ -707,17 +706,3 @@ export function hydrateInitialContent(payload: InitialContentHydrationPayload | 
   }
 }
 
-/**
- * GitHub内容服务对象
- *
- * 为了向后兼容性，导出包含所有内容相关函数的常量对象。
- *
- * @deprecated 推荐直接使用独立的导出函数
- */
-export const GitHubContentService = {
-  getContents,
-  getFileContent,
-  getBatcher,
-  clearBatcherCache,
-  hydrateInitialContent
-} as const;

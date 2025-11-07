@@ -190,24 +190,3 @@ export function transformImageUrl(src: string | undefined, markdownFilePath: str
 export function getTokenManager(): GitHubTokenManager {
   return tokenManager;
 }
-
-/**
- * GitHub认证服务对象
- * 
- * 为了向后兼容性，导出包含所有认证相关函数的常量对象。
- * 
- * @deprecated 推荐直接使用独立的导出函数
- */
-export const GitHubAuth = {
-  getTokenCount,
-  hasToken,
-  setLocalToken,
-  getAuthHeaders,
-  handleApiError,
-  updateTokenRateLimitFromResponse,
-  getTokenManager,
-  markProxyServiceFailed,
-  getCurrentProxyService,
-  resetFailedProxyServices,
-  transformImageUrl
-} as const;
