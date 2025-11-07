@@ -7,4 +7,4 @@ export {
   PreviewContext,
   DownloadContext,
 } from "./context";
-export type { NavigationDirection } from "./context";
+export type { NavigationDirection, PreviewSelectFileOptions } from "./context";

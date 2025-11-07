@@ -1,5 +1,6 @@
 import { createContext, useContext, type Context, type RefObject } from "react";
-import type { GitHubContent, PreviewState, DownloadState } from "@/types";
+import type { GitHubContent, PreviewState, DownloadState, PreviewSelectFileOptions } from "@/types";
+export type { PreviewSelectFileOptions } from "@/types";
 import type { RepoSearchState } from "@/hooks/github/useRepoSearch";
 
 /**
@@ -49,7 +50,7 @@ export type PreviewContextState = PreviewState & {
 export interface PreviewContextValue {
   previewState: PreviewContextState;
   currentPreviewItemRef: RefObject<GitHubContent | null>;
-  selectFile: (item: GitHubContent) => Promise<void> | void;
+  selectFile: (item: GitHubContent, options?: PreviewSelectFileOptions) => Promise<void> | void;
   closePreview: () => void;
   toggleImageFullscreen: () => void;
   handleImageError: (error: string) => void;
@@ -71,9 +72,9 @@ export const DownloadContext = createContext<DownloadContextValue | null>(null);
 
 /**
  * 使用必需的上下文
- * 
+ *
  * 确保上下文值存在，否则抛出错误。
- * 
+ *
  * @param context - React上下文对象
  * @param name - 上下文名称，用于错误消息
  * @returns 上下文值
@@ -89,7 +90,7 @@ function useRequiredContext<T>(context: Context<T | null>, name: string): T {
 
 /**
  * 使用内容上下文Hook
- * 
+ *
  * @returns 内容上下文值
  * @throws 当在AppContextProvider外部使用时抛出错误
  */
@@ -98,7 +99,7 @@ export const useContentContext = (): ContentContextValue =>
 
 /**
  * 使用预览上下文Hook
- * 
+ *
  * @returns 预览上下文值
  * @throws 当在AppContextProvider外部使用时抛出错误
  */
@@ -107,7 +108,7 @@ export const usePreviewContext = (): PreviewContextValue =>
 
 /**
  * 使用下载上下文Hook
- * 
+ *
  * @returns 下载上下文值
  * @throws 当在AppContextProvider外部使用时抛出错误
  */

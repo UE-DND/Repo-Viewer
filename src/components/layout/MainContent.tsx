@@ -156,8 +156,19 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
       return;
     }
 
+    const isReadmeFile = readmeFileItem !== null && item.path === readmeFileItem.path;
+
+    if (isReadmeFile) {
+      if (typeof readmeContent === "string") {
+        void selectFile(item, { preloadedContent: readmeContent });
+      } else {
+        void selectFile(item);
+      }
+      return;
+    }
+
     void selectFile(item);
-  }, [navigateTo, selectFile]);
+  }, [navigateTo, selectFile, readmeFileItem, readmeContent]);
 
   // 处理下载点击
   const handleDownloadClick = useCallback((

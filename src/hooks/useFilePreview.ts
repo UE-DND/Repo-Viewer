@@ -1,6 +1,6 @@
 import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
 import { useTheme } from '@mui/material';
-import type { PreviewState, PreviewAction, GitHubContent } from '@/types';
+import type { PreviewState, PreviewAction, GitHubContent, PreviewSelectFileOptions } from '@/types';
 import { GitHub } from '@/services/github';
 import { file, logger, pdf } from '@/utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
@@ -67,10 +67,10 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
 
 /**
  * 文件预览Hook
- * 
+ *
  * 提供文件预览功能，支持Markdown、图片和PDF文档的预览。
  * 自动处理URL参数和浏览器历史导航。
- * 
+ *
  * @param onError - 错误回调函数
  * @param findFileItemByPath - 根据路径查找文件的函数
  * @returns 文件预览状态和操作函数
@@ -82,7 +82,7 @@ export const useFilePreview = (
   previewState: PreviewState;
   useTokenMode: boolean;
   setUseTokenMode: (value: boolean) => void;
-  selectFile: (item: GitHubContent) => Promise<void>;
+  selectFile: (item: GitHubContent, options?: PreviewSelectFileOptions) => Promise<void>;
   closePreview: () => void;
   toggleImageFullscreen: () => void;
   handleImageError: (error: string) => void;
@@ -125,11 +125,8 @@ export const useFilePreview = (
     }
   }, []);
 
-  const selectFile = useCallback(async (item: GitHubContent) => {
-    if (item.download_url === null || item.download_url === '') {
-      onError('无法获取文件下载链接');
-      return;
-    }
+  const selectFile = useCallback(async (item: GitHubContent, options?: PreviewSelectFileOptions) => {
+    const preloadedContent = options?.preloadedContent;
 
     logger.debug(`正在选择文件预览: ${item.path}`);
     currentPreviewItemRef.current = item;
@@ -140,27 +137,34 @@ export const useFilePreview = (
     dispatch({ type: 'RESET_PREVIEW' });
 
     try {
-      let proxyUrl = item.download_url;
-      if (getForceServerProxy()) {
-        proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-      } else {
-        proxyUrl = GitHub.Proxy.transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url;
+      const fileNameLower = item.name.toLowerCase();
+      const hasPreloadedMarkdownContent = typeof preloadedContent === 'string';
+
+      if ((item.download_url === null || item.download_url === '') && !(hasPreloadedMarkdownContent && file.isMarkdownFile(fileNameLower))) {
+        onError('无法获取文件下载链接');
+        return;
       }
 
-    const fileNameLower = item.name.toLowerCase();
+      const downloadUrl = item.download_url ?? '';
 
-    if (file.isMarkdownFile(fileNameLower)) {
+      if (file.isMarkdownFile(fileNameLower)) {
         updateUrlWithHistory(dirPath, item.path);
-        dispatch({ type: 'SET_MD_LOADING', loading: true });
+        if (!hasPreloadedMarkdownContent) {
+          dispatch({ type: 'SET_MD_LOADING', loading: true });
+        }
 
         try {
-          const content = await GitHub.Content.getFileContent(item.download_url);
+          const content = hasPreloadedMarkdownContent
+            ? preloadedContent ?? ''
+            : await GitHub.Content.getFileContent(downloadUrl);
           dispatch({ type: 'SET_MD_PREVIEW', content, item });
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '未知错误';
           onError(`加载Markdown文件失败: ${errorMessage}`);
         } finally {
-          dispatch({ type: 'SET_MD_LOADING', loading: false });
+          if (!hasPreloadedMarkdownContent) {
+            dispatch({ type: 'SET_MD_LOADING', loading: false });
+          }
         }
       }
       else if (file.isPdfFile(fileNameLower)) {
@@ -168,11 +172,11 @@ export const useFilePreview = (
         try {
           await pdf.openPDFPreview({
             fileName: item.name,
-            downloadUrl: item.download_url,
+            downloadUrl,
             theme: muiTheme,
             isDev: import.meta.env.DEV
           });
-          
+
           logger.info(`已在新标签页打开 PDF: ${item.path}`);
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -186,6 +190,13 @@ export const useFilePreview = (
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });
 
         try {
+          let proxyUrl = downloadUrl;
+          if (getForceServerProxy()) {
+            proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(downloadUrl)}`;
+          } else {
+            proxyUrl = GitHub.Proxy.transformImageUrl(downloadUrl, item.path, useTokenMode) ?? downloadUrl;
+          }
+
           updateUrlWithHistory(dirPath, item.path);
           dispatch({
             type: 'SET_IMAGE_PREVIEW',
