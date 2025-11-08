@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LazyMarkdownPreview } from '@/utils/lazy-loading';
 import { MarkdownPreviewSkeleton } from '@/components/ui/skeletons';
 import type { GitHubContent } from '@/types';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ReadmeSectionProps {
   hasReadmeFile: boolean;
@@ -31,6 +32,8 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
   readmeFileItem,
   isTransitioning = false
 }) => {
+  const { t } = useI18n();
+
   if (!hasReadmeFile) {
     return null;
   }
@@ -105,7 +108,7 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
           }}
           data-oid="readme-empty"
         >
-          README 内容为空或加载失败。
+          {t('ui.readme.empty')}
         </Typography>
       ) : null}
           </Box>

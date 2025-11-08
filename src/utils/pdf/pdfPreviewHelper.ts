@@ -1,17 +1,22 @@
 /**
  * PDF 预览辅助工具
- * 
+ *
  * 提供 PDF 文件在新标签页中预览的完整功能，包括：
  * - 加载进度显示
  * - 取消下载支持
  * - 错误处理
  * - 主题色彩支持
- * 
+ *
  * @module pdfPreviewHelper
  */
 
 import type { Theme } from '@mui/material';
-import { extractPDFThemeColors, generatePDFLoadingHTML, generatePDFErrorHTML } from './pdfLoading';
+import {
+  extractPDFThemeColors,
+  generatePDFLoadingHTML,
+  generatePDFErrorHTML,
+  type PDFLoadingTranslations
+} from './pdfLoading';
 
 /**
  * PDF 预览配置选项
@@ -23,29 +28,36 @@ export interface PDFPreviewOptions {
   downloadUrl: string;
   /** MUI 主题对象 */
   theme: Theme;
+  /** 翻译文本 */
+  translations: PDFLoadingTranslations;
   /** 是否是开发环境 */
   isDev?: boolean;
 }
 
 /**
  * 初始化 PDF 预览窗口
- * 
+ *
  * @param fileName - PDF 文件名
  * @param theme - MUI 主题对象
+ * @param translations - 翻译文本
  * @returns 新打开的窗口对象或 null
  */
-function initializePDFWindow(fileName: string, theme: Theme): Window | null {
+function initializePDFWindow(
+  fileName: string,
+  theme: Theme,
+  translations: PDFLoadingTranslations
+): Window | null {
   const newTab = window.open('', '_blank');
-  
+
   if (newTab === null) {
     return null;
   }
 
   const themeColors = extractPDFThemeColors(theme);
-  const loadingHTML = generatePDFLoadingHTML(fileName, themeColors);
+  const loadingHTML = generatePDFLoadingHTML(fileName, themeColors, translations);
   const parser = new DOMParser();
   const doc = parser.parseFromString(loadingHTML, 'text/html');
-  
+
   newTab.document.documentElement.innerHTML = doc.documentElement.innerHTML;
   Array.from(doc.head.children).forEach(child => {
     if (child.tagName === 'STYLE' || child.tagName === 'SCRIPT' || child.tagName === 'META') {
@@ -58,34 +70,39 @@ function initializePDFWindow(fileName: string, theme: Theme): Window | null {
 
 /**
  * 绑定取消下载功能
- * 
+ *
  * @param newTab - PDF 预览窗口
  * @param abortController - 用于取消下载的控制器
+ * @param translations - 翻译文本
  */
-function bindCancelHandler(newTab: Window, abortController: AbortController): void {
+function bindCancelHandler(
+  newTab: Window,
+  abortController: AbortController,
+  translations: PDFLoadingTranslations
+): void {
   const cancel = (): void => {
     try {
       abortController.abort();
     } catch {
       // 忽略取消错误
     }
-    
+
     const status = newTab.document.getElementById('status');
     if (status !== null) {
-      status.textContent = '已取消预览';
+      status.textContent = translations.cancelled;
     }
-    
+
     const progress = newTab.document.getElementById('progress');
     if (progress !== null) {
       progress.textContent = '';
     }
-    
+
     const btn = newTab.document.getElementById('cancel-btn') as HTMLButtonElement | null;
     if (btn !== null) {
       btn.disabled = true;
       btn.style.display = 'none';
     }
-    
+
     window.setTimeout(() => {
       try {
         newTab.close();
@@ -98,7 +115,7 @@ function bindCancelHandler(newTab: Window, abortController: AbortController): vo
   // 将取消函数注入到新窗口
   (newTab as Window & { cancelDownload?: () => void }).cancelDownload = cancel;
   (newTab as Window & { abortController?: AbortController }).abortController = abortController;
-  
+
   const btn = newTab.document.getElementById('cancel-btn');
   if (btn !== null) {
     btn.addEventListener('click', cancel, { once: true });
@@ -107,7 +124,7 @@ function bindCancelHandler(newTab: Window, abortController: AbortController): vo
 
 /**
  * 格式化字节数为可读的 MB 格式
- * 
+ *
  * @param bytes - 字节数
  * @returns 格式化后的字符串（如 "2.45 MB"）
  */
@@ -117,24 +134,28 @@ function formatBytes(bytes: number): string {
 
 /**
  * 更新下载进度显示
- * 
+ *
  * @param newTab - PDF 预览窗口
  * @param loaded - 已下载字节数
  * @param total - 总字节数
+ * @param translations - 翻译文本
  */
-function updateProgress(newTab: Window, loaded: number, total: number): void {
+function updateProgress(newTab: Window, loaded: number, total: number, translations: PDFLoadingTranslations): void {
   const progressEl = newTab.document.getElementById('progress');
   const progressCircle = newTab.document.getElementById('progress-circle') as SVGCircleElement | null;
-  
+
   const pct = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : null;
-  
+
   // 更新文本进度
   if (progressEl !== null) {
     progressEl.textContent = total > 0 && pct !== null
-      ? `已下载 ${formatBytes(loaded)} / ${formatBytes(total)} (${pct.toString()}%)`
-      : `已下载 ${formatBytes(loaded)}`;
+      ? translations.downloadedWithProgress
+          .replace('@@loaded@@', formatBytes(loaded))
+          .replace('@@total@@', formatBytes(total))
+          .replace('@@percent@@', pct.toString())
+      : translations.downloaded.replace('@@loaded@@', formatBytes(loaded));
   }
-  
+
   // 更新进度条
   if (progressCircle !== null && total > 0 && pct !== null) {
     progressCircle.classList.add('determinate');
@@ -146,20 +167,22 @@ function updateProgress(newTab: Window, loaded: number, total: number): void {
 
 /**
  * 下载并显示 PDF
- * 
- * @param newTab - PDF 预览窗口
- * @param downloadUrl - PDF 下载 URL
- * @param fileName - PDF 文件名
+ *
+ * @param newTab - 新标签页窗口
+ * @param downloadUrl - PDF 下载链接
+ * @param fileName - 文件名
  * @param themeColors - 主题色彩对象
+ * @param translations - 翻译文本
  */
 async function downloadAndDisplayPDF(
   newTab: Window,
   downloadUrl: string,
   fileName: string,
-  themeColors: ReturnType<typeof extractPDFThemeColors>
+  themeColors: ReturnType<typeof extractPDFThemeColors>,
+  translations: PDFLoadingTranslations
 ): Promise<void> {
   const abortController = new AbortController();
-  bindCancelHandler(newTab, abortController);
+  bindCancelHandler(newTab, abortController, translations);
 
   try {
     const resp = await fetch(downloadUrl, {
@@ -181,13 +204,13 @@ async function downloadAndDisplayPDF(
     while (!result.done) {
       chunks.push(result.value);
       loaded += result.value.byteLength;
-      updateProgress(newTab, loaded, total);
+      updateProgress(newTab, loaded, total, translations);
       result = await reader.read();
     }
 
     const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' });
     const blobUrl = URL.createObjectURL(blob);
-    
+
     // 60秒后清理 blob URL
     setTimeout(() => {
       URL.revokeObjectURL(blobUrl);
@@ -215,7 +238,7 @@ async function downloadAndDisplayPDF(
     newTab.document.title = fileName !== '' ? fileName : 'PDF';
   } catch (error: unknown) {
     const errorObj = error instanceof Error ? error : new Error('未知错误');
-    
+
     // 检查是否是用户主动取消
     if (errorObj.name === 'AbortError') {
       return; // 用户取消，不显示错误信息
@@ -224,7 +247,7 @@ async function downloadAndDisplayPDF(
     // 显示错误页面
     const loaderEl = newTab.document.getElementById('loader');
     if (loaderEl !== null) {
-      loaderEl.innerHTML = generatePDFErrorHTML(fileName, errorObj.message, downloadUrl, themeColors);
+      loaderEl.innerHTML = generatePDFErrorHTML(fileName, errorObj.message, downloadUrl, themeColors, translations);
     } else {
       newTab.location.replace(downloadUrl);
     }
@@ -233,7 +256,7 @@ async function downloadAndDisplayPDF(
 
 /**
  * 创建降级链接并触发点击（当无法打开新窗口时使用）
- * 
+ *
  * @param downloadUrl - PDF 下载 URL
  */
 function createFallbackLink(downloadUrl: string): void {
@@ -249,16 +272,16 @@ function createFallbackLink(downloadUrl: string): void {
 
 /**
  * 在新标签页中预览 PDF 文件
- * 
+ *
  * 主要功能：
  * 1. 打开新标签页并显示加载界面
  * 2. 支持下载进度显示
  * 3. 支持取消下载
  * 4. 错误处理和降级方案
- * 
+ *
  * @param options - PDF 预览配置选项
  * @returns Promise<void>
- * 
+ *
  * @example
  * ```typescript
  * await openPDFPreview({
@@ -270,11 +293,11 @@ function createFallbackLink(downloadUrl: string): void {
  * ```
  */
 export async function openPDFPreview(options: PDFPreviewOptions): Promise<void> {
-  const { fileName, downloadUrl, theme, isDev = false } = options;
+  const { fileName, downloadUrl, theme, translations, isDev = false } = options;
 
   // 初始化预览窗口
-  const newTab = initializePDFWindow(fileName, theme);
-  
+  const newTab = initializePDFWindow(fileName, theme, translations);
+
   if (newTab === null) {
     // 无法打开新窗口，使用降级方案
     createFallbackLink(downloadUrl);
@@ -289,6 +312,6 @@ export async function openPDFPreview(options: PDFPreviewOptions): Promise<void> 
     : `/api/github?action=getFileContent&url=${encodeURIComponent(downloadUrl)}`;
 
   // 下载并显示 PDF
-  await downloadAndDisplayPDF(newTab, finalDownloadUrl, fileName, themeColors);
+  await downloadAndDisplayPDF(newTab, finalDownloadUrl, fileName, themeColors, translations);
 }
 

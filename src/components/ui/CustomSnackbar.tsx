@@ -11,7 +11,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useSnackbar } from "notistack";
 import type { CustomContentProps } from "notistack";
 import { eventEmitter } from "@/utils/events/eventEmitter";
-import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 自定义通知组件属性接口
@@ -22,13 +23,14 @@ interface CustomSnackbarProps extends CustomContentProps {
 
 /**
  * 自定义通知组件
- * 
+ *
  * 提供增强的通知UI，支持进度显示和自定义样式。
  */
 const CustomSnackbar = memo(
   forwardRef<HTMLDivElement, CustomSnackbarProps>(
     ({ id, message, variant, progress }, ref) => {
       const { closeSnackbar } = useSnackbar();
+      const { t } = useI18n();
 
       const handleDismiss = (): void => {
         if (isDownloadRelated()) {
@@ -114,6 +116,7 @@ const CustomSnackbar = memo(
                 size="small"
                 color="inherit"
                 onClick={handleDismiss}
+                aria-label={t('ui.notification.close')}
                 data-oid="b8064jp"
               >
                 <CloseIcon fontSize="small" data-oid="x-n8pii" />

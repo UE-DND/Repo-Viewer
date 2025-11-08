@@ -11,6 +11,8 @@ import {
 } from "@mui/material";
 import { Refresh as RefreshIcon } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { useI18n } from "@/contexts/I18nContext";
+import type { InterpolationOptions } from '@/utils/i18n/types';
 
 interface IndexStatusProps {
   enabled: boolean;
@@ -28,62 +30,62 @@ interface ErrorScenario {
   description: string[];
 }
 
-const getErrorScenario = (error: { message: string; code?: string } | null, ready: boolean, indexBranchName: string): ErrorScenario | null => {
+const getErrorScenario = (error: { message: string; code?: string } | null, ready: boolean, indexBranchName: string, t: (key: string, options?: InterpolationOptions) => string): ErrorScenario | null => {
   if (error?.code !== undefined) {
     switch (error.code) {
       case 'SEARCH_INDEX_BRANCH_MISSING':
         return {
-          title: '索引分支不存在，将使用 API 模式搜索',
+          title: t('search.index.errors.branchMissing.title'),
           description: [
-            `未找到 ${indexBranchName} 分支`,
-            '在目标仓库配置 Actions 以生成索引分支'
+            t('search.index.errors.branchMissing.description1', { branch: indexBranchName }),
+            t('search.index.errors.branchMissing.description2')
           ]
         };
       case 'SEARCH_INDEX_MANIFEST_NOT_FOUND':
         return {
-          title: '索引文件缺失，将使用 API 模式搜索',
+          title: t('search.index.errors.manifestNotFound.title'),
           description: [
-            `${indexBranchName} 中未找到索引文件`,
-            '检查 Actions 是否正确生成索引文件'
+            t('search.index.errors.manifestNotFound.description1', { branch: indexBranchName }),
+            t('search.index.errors.manifestNotFound.description2')
           ]
         };
       case 'SEARCH_INDEX_MANIFEST_INVALID':
         return {
-          title: '索引格式错误，将使用 API 模式搜索',
+          title: t('search.index.errors.manifestInvalid.title'),
           description: [
-            '尝试重新运行 Actions 生成索引文件'
+            t('search.index.errors.manifestInvalid.description1')
           ]
         };
       case 'SEARCH_INDEX_FILE_NOT_FOUND':
         return {
-          title: '索引内容缺失，将使用 API 模式搜索',
+          title: t('search.index.errors.fileNotFound.title'),
           description: [
-            '被索引的文件不存在',
-            '尝试重新运行 Actions 生成索引文件'
+            t('search.index.errors.fileNotFound.description1'),
+            t('search.index.errors.fileNotFound.description2')
           ]
         };
       case 'SEARCH_INDEX_DOCUMENT_INVALID':
         return {
-          title: '索引文件格式错误，将使用 API 模式搜索',
+          title: t('search.index.errors.documentInvalid.title'),
           description: [
-            '索引内容损坏或格式不正确',
-            '尝试重新运行 Actions 生成索引文件'
+            t('search.index.errors.documentInvalid.description1'),
+            t('search.index.errors.documentInvalid.description2')
           ]
         };
       case 'SEARCH_INDEX_UNSUPPORTED_COMPRESSION':
         return {
-          title: '不支持的压缩格式，将使用 API 模式搜索',
+          title: t('search.index.errors.unsupportedCompression.title'),
           description: [
-            '索引文件使用了不支持的压缩格式',
-            '使用标准的 gzip 压缩格式重新生成索引文件'
+            t('search.index.errors.unsupportedCompression.description1'),
+            t('search.index.errors.unsupportedCompression.description2')
           ]
         };
       default:
         return {
-          title: '无法加载索引，将使用 API 模式搜索',
+          title: t('search.index.errors.default.title'),
           description: [
-            error.message,
-            '检查索引文件是否存在且格式正确'
+            t('search.index.errors.default.description1', { message: error.message }),
+            t('search.index.errors.default.description2')
           ]
         };
     }
@@ -91,10 +93,10 @@ const getErrorScenario = (error: { message: string; code?: string } | null, read
 
   if (!ready) {
     return {
-      title: '未检测到可用索引',
+      title: t('search.index.notReady.title'),
       description: [
-        '在目标仓库配置 Repo-Viewer-Search Actions',
-        `生成 ${indexBranchName} 分支下的索引文件`
+        t('search.index.notReady.description1'),
+        t('search.index.notReady.description2', { branch: indexBranchName })
       ]
     };
   }
@@ -114,12 +116,13 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   const statusAlert = useMemo(() => {
     if (!enabled) {
       return (
         <Alert severity="info" variant="outlined">
-          已禁用索引模式，将使用 API 模式搜索。配置 ENABLED_SEARCH_INDEX 以启用索引模式。
+          {t('search.index.disabled')}
         </Alert>
       );
     }
@@ -128,13 +131,13 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
     if (loading) {
       return (
         <Alert severity="info" icon={<CircularProgress size={16} />}>
-          正在检测索引文件…
+          {t('search.index.detecting')}
         </Alert>
       );
     }
 
     // 检查是否有错误场景
-    const scenario = getErrorScenario(error, ready, indexBranchName);
+    const scenario = getErrorScenario(error, ready, indexBranchName, t);
 
     if (scenario !== null) {
       return (
@@ -157,7 +160,7 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
             <Typography variant={isSmallScreen ? "caption" : "body2"} fontWeight={600} sx={{ flex: 1 }}>
               {scenario.title}
             </Typography>
-            <Tooltip title="刷新索引状态" placement="left">
+            <Tooltip title={t('search.index.refresh')} placement="left">
               <span>
                 <IconButton
                   onClick={onRefresh}
@@ -184,11 +187,13 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
     // 索引就绪
     return (
       <Alert severity="success">
-        索引最新更新时间：{new Date(lastUpdatedAt ?? Date.now()).toLocaleString()}。
-        支持的分支数：{indexedBranches.length.toString()}。
+        {t('search.index.ready', {
+          time: new Date(lastUpdatedAt ?? Date.now()).toLocaleString(),
+          count: indexedBranches.length
+        })}
       </Alert>
     );
-  }, [enabled, loading, error, ready, indexedBranches.length, lastUpdatedAt, indexBranchName, isSmallScreen, onRefresh]);
+  }, [enabled, loading, error, ready, indexedBranches.length, lastUpdatedAt, indexBranchName, isSmallScreen, onRefresh, t]);
 
   return statusAlert;
 };

@@ -15,6 +15,7 @@ import { GitHub as GitHubIcon } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { highlightKeyword, resolveItemHtmlUrl } from "./utils";
 import type { RepoSearchItem } from "@/hooks/github/useRepoSearch";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface SearchResultItemProps {
   item: RepoSearchItem;
@@ -31,6 +32,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   const pathParts = highlightKeyword(item.path, keyword);
   const githubUrl = resolveItemHtmlUrl(item);
@@ -70,7 +72,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
                   }}
                 />
                 <Typography variant={isSmallScreen ? "caption" : "body2"} color="text.secondary">
-                  {item.source === "search-index" ? "索引" : "API"}
+                  {item.source === "search-index" ? t('search.results.source.index') : t('search.results.source.api')}
                 </Typography>
               </Stack>
             }
@@ -114,9 +116,10 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
           />
         </ListItemButton>
         {githubUrl !== undefined && (
-          <Tooltip title="在 GitHub 中打开">
+          <Tooltip title={t('search.github.open')}>
             <IconButton
               onClick={() => { onOpenGithub(item); }}
+              aria-label={t('search.github.open')}
               sx={{
                 mt: 1,
                 borderRadius: g3BorderRadius(G3_PRESETS.button)

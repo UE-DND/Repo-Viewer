@@ -19,6 +19,7 @@ import {
 import { file, logger, theme as themeUtils } from "@/utils";
 import type { GitHubContent } from "@/types";
 import { getFeaturesConfig } from "@/config";
+import { useI18n } from "@/contexts/I18nContext";
 
 const featuresConfig = getFeaturesConfig();
 const HOMEPAGE_FILTER_ENABLED = featuresConfig.homepageFilter.enabled;
@@ -118,6 +119,7 @@ const FileListItem = memo<FileListItemProps>(
     isVisible = true, // 默认可见
   }) => {
     const theme = useTheme();
+    const { t } = useI18n();
     const [isHoveringDownload, setIsHoveringDownload] = React.useState(false);
     const [hoverCount, setHoverCount] = React.useState(0);
 
@@ -250,10 +252,10 @@ const FileListItem = memo<FileListItemProps>(
             <Tooltip
               title={
                 isItemDownloading
-                  ? (hoverCount >= 2 ? "取消下载" : "")
+                  ? (hoverCount >= 2 ? t('ui.download.cancel') : "")
                   : item.type === "file"
-                    ? `下载 ${item.name}`
-                    : `下载文件夹 ${item.name}`
+                    ? t('ui.download.file', { name: item.name })
+                    : t('ui.download.folder', { name: item.name })
               }
               disableInteractive
               placement="left"

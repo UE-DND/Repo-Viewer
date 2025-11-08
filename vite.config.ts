@@ -7,6 +7,20 @@ import { readFileSync } from 'fs'
 import { configManager, applyEnvMappingForVite } from './src/config'
 import type { GitHubContent, InitialContentHydrationPayload } from './src/types'
 
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  blue: '\x1b[34m',
+  brightWhite: '\x1b[97m',
+  gray: '\x1b[90m',
+  white: '\x1b[37m'
+}
+
 type Logger = {
   log: (...args: any[]) => void
   warn: (...args: any[]) => void
@@ -14,25 +28,30 @@ type Logger = {
   info: (...args: any[]) => void
 }
 
+const getTimestamp = (): string => {
+  const now = new Date()
+  return now.toLocaleTimeString('zh-CN', { hour12: false })
+}
+
 const createLogger = (developerMode: boolean): Logger => ({
   log: (...args: any[]) => {
     if (developerMode) {
-      console.log('[Vite]', ...args)
+      console.log(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.cyan}[vite]${colors.reset}`, ...args)
     }
   },
   warn: (...args: any[]) => {
     if (developerMode) {
-      console.warn('[Vite]', ...args)
+      console.warn(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.yellow}[vite]${colors.reset}`, ...args)
     }
   },
   error: (...args: any[]) => {
     if (developerMode) {
-      console.error('[Vite]', ...args)
+      console.error(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.red}[vite]${colors.reset}`, ...args)
     }
   },
   info: (...args: any[]) => {
     if (developerMode) {
-      console.info('[Vite]', ...args)
+      console.info(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.blue}[vite]${colors.reset}`, ...args)
     }
   }
 })
@@ -131,7 +150,7 @@ const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.g
   const token = appConfig.tokens.githubPATs[0]
 
   if (!repoOwner || !repoName || !repoBranch) {
-    logger.warn('首屏注水插件已跳过：GitHub 仓库配置缺失')
+    logger.warn('Initial content hydration plugin skipped: GitHub repository config missing')
     return {
       name: 'repo-viewer-initial-content-disabled',
       apply: 'build',
@@ -150,13 +169,13 @@ const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.g
       const directoryResponse = await fetch(directoryUrl, { headers })
 
       if (!directoryResponse.ok) {
-        logger.warn('首屏注水目录请求失败:', directoryResponse.status, directoryResponse.statusText)
+        logger.warn('Initial content directory request failed:', directoryResponse.status, directoryResponse.statusText)
         return null
       }
 
       const directoryJson = await directoryResponse.json()
       if (!Array.isArray(directoryJson)) {
-        logger.warn('GitHub 目录响应格式异常，跳过首屏注水')
+        logger.warn('GitHub directory response format invalid, skipping initial content hydration')
         return null
       }
 
@@ -172,7 +191,7 @@ const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.g
       })
 
       if (filtered.length === 0) {
-        logger.warn('首屏目录为空或全部被过滤，跳过注水')
+        logger.warn('Initial content directory is empty or all files filtered, skipping hydration')
         return null
       }
 
@@ -191,10 +210,10 @@ const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.g
           if (readmeResponse.ok) {
             readmeContent = await readmeResponse.text()
           } else {
-            logger.warn('读取 README 内容失败:', readmeResponse.status, readmeResponse.statusText)
+            logger.warn('Failed to read README content:', readmeResponse.status, readmeResponse.statusText)
           }
         } catch (error) {
-          logger.warn('读取 README 内容时发生异常', error)
+          logger.warn('Exception occurred while reading README content', error)
         }
       }
 
@@ -225,10 +244,10 @@ const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.g
           : []
       }
 
-      logger.info('首屏注水数据生成完成，将注入构建结果')
+      logger.info('Initial content hydration data generated, will inject into build')
       return payload
     } catch (error) {
-      logger.warn('获取首屏注水数据失败，将继续正常构建', error)
+      logger.warn('Failed to fetch initial content hydration data, will continue with normal build', error)
       return null
     }
   }
@@ -275,11 +294,20 @@ class RequestLoggerMiddleware {
   constructor(private readonly logger: Logger) {}
 
   onProxyReq(proxyReq: http.ClientRequest, req: http.IncomingMessage) {
-    this.logger.log('Sending Request to the Target:', req.method, req.url)
+    const method = req.method || 'UNKNOWN'
+    const methodColor = method === 'GET' ? colors.green : method === 'POST' ? colors.blue : colors.cyan
+    this.logger.log(`${methodColor}${method}${colors.reset}`, `${colors.gray}${req.url}${colors.reset}`)
   }
 
   onProxyRes(proxyRes: http.IncomingMessage, req: http.IncomingMessage) {
-    this.logger.log('Received Response from the Target:', proxyRes.statusCode, req.url)
+    const statusCode = proxyRes.statusCode || 0
+    let statusColor = colors.green
+    if (statusCode >= 400) {
+      statusColor = colors.red
+    } else if (statusCode >= 300) {
+      statusColor = colors.yellow
+    }
+    this.logger.log(`${statusColor}${statusCode}${colors.reset}`, `${colors.gray}${req.url}${colors.reset}`)
   }
 
   onError(err: Error) {
@@ -297,7 +325,7 @@ function getPackageVersion() {
     const packageJson = JSON.parse(packageContent);
     return packageJson.version;
   } catch (error) {
-    console.warn('无法读取package.json版本信息:', error);
+    console.warn('Failed to read package.json version:', error);
     return '1.0.0';
   }
 }
@@ -324,7 +352,7 @@ export default defineConfig(({ mode }) => {
 
             if (req.url?.startsWith('/api/github')) {
               try {
-                logger.log('处理 API 请求:', decodeURIComponent(req.url));
+                logger.log(`${colors.brightWhite}Processing API request:${colors.reset}`, `${colors.gray}${decodeURIComponent(req.url)}${colors.reset}`);
 
                 const module = await import('./api/github');
                 const handler = module.default;
@@ -376,9 +404,9 @@ export default defineConfig(({ mode }) => {
                 } as any;
 
                 await handler(vercelReq, vercelRes);
-                logger.log('API 请求处理完成');
+                logger.log(`${colors.green}API request completed${colors.reset}`);
               } catch (error) {
-                logger.error('API handler error:', error);
+                logger.error(`${colors.red}API handler error:${colors.reset}`, error);
                 if (!res.headersSent) {
                   res.statusCode = 500;
                   res.setHeader('Content-Type', 'application/json');

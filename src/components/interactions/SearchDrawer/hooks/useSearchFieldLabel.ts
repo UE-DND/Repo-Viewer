@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface UseSearchFieldLabelProps {
   branchFilter: string[];
@@ -21,37 +22,53 @@ export const useSearchFieldLabel = ({
   pathPrefix,
   isSmallScreen
 }: UseSearchFieldLabelProps): string => {
+  const { t } = useI18n();
+
   return useMemo(() => {
     const trimmedPath = pathPrefix.trim();
-    const pathSuffix = (!isSmallScreen && trimmedPath.length > 0) ? `: ${trimmedPath}` : "";
+    const pathSuffix = (!isSmallScreen && trimmedPath.length > 0) ? trimmedPath : "";
 
     // 有分支筛选时
     if (branchFilter.length > 0) {
-      const orderedBranches = availableBranches.filter(branch => 
+      const orderedBranches = availableBranches.filter(branch =>
         branchFilter.includes(branch)
       );
 
       // 小屏幕且多个分支
       if (isSmallScreen && orderedBranches.length > 1) {
-        return `在 ${orderedBranches.length.toString()} 个分支中搜索`;
+        return t('search.label.inMultipleBranches', { count: orderedBranches.length });
       }
 
       // 大屏幕且超过3个分支
       if (!isSmallScreen && orderedBranches.length > 3) {
         const displayBranches = orderedBranches.slice(0, 3).join("、");
-        return `在 ${displayBranches} 等 ${orderedBranches.length.toString()} 个分支${pathSuffix} 中搜索`;
+        if (pathSuffix !== "") {
+          return t('search.label.inMultipleBranchesWithPath', {
+            branches: displayBranches,
+            count: orderedBranches.length,
+            path: pathSuffix
+          });
+        }
+        return t('search.label.inMultipleBranches', { count: orderedBranches.length });
       }
 
       // 正常显示所有分支
       const displayBranches = orderedBranches.join("、");
-      return `在 ${displayBranches}${pathSuffix} 中搜索`;
+      if (pathSuffix !== "") {
+        return t('search.label.inBranchesWithPath', { branches: displayBranches, path: pathSuffix });
+      }
+      return t('search.label.inBranches', { branches: displayBranches });
     }
 
     // 无分支筛选时，使用当前分支
     const fallbackBranch = currentBranch !== "" ? currentBranch : defaultBranch;
-    return fallbackBranch === "" 
-      ? "在仓库中搜索" 
-      : `在 ${fallbackBranch}${pathSuffix} 中搜索`;
-  }, [branchFilter, availableBranches, currentBranch, defaultBranch, pathPrefix, isSmallScreen]);
+    if (fallbackBranch === "") {
+      return t('search.label.default');
+    }
+    if (pathSuffix !== "") {
+      return t('search.label.inBranchesWithPath', { branches: fallbackBranch, path: pathSuffix });
+    }
+    return t('search.label.inBranch', { branch: fallbackBranch });
+  }, [branchFilter, availableBranches, currentBranch, defaultBranch, pathPrefix, isSmallScreen, t]);
 };
 

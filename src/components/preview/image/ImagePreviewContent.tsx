@@ -24,6 +24,7 @@ import {
   useKeyboardNavigation,
   useStageMetrics,
 } from './hooks';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 图片预览内容组件
@@ -53,6 +54,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   onAspectRatioChange,
 }) => {
   const theme = useTheme();
+  const { t } = useI18n();
   const { containerRef, containerSize } = useContainerSize();
   const { dominantAspectRatio, processAspectRatioFromImage, handleImageRef } = useAspectRatioTracker({
     imageUrl,
@@ -459,6 +461,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                 >
                   <IconButton
                     onClick={onPrevious}
+                    aria-label={t('ui.image.previous')}
                     sx={{
                       bgcolor: alpha(theme.palette.background.paper, activeNavSide === 'left' ? 0.95 : 0),
                       backdropFilter: activeNavSide === 'left' ? 'blur(10px)' : 'none',
@@ -506,6 +509,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                 >
                   <IconButton
                     onClick={onNext}
+                    aria-label={t('ui.image.next')}
                     sx={{
                       bgcolor: alpha(theme.palette.background.paper, activeNavSide === 'right' ? 0.95 : 0),
                       backdropFilter: activeNavSide === 'right' ? 'blur(10px)' : 'none',

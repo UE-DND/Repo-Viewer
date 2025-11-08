@@ -8,6 +8,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { useContentContext } from "@/contexts/unified";
+import { useI18n } from "@/contexts/I18nContext";
 
 /**
  * 分支切换器组件属性接口
@@ -19,13 +20,14 @@ interface BranchSwitcherProps {
 
 /**
  * 分支切换器组件
- * 
+ *
  * 提供Git分支选择和切换功能，支持动画和响应式设计。
  */
 const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
   showLabel = true
 }) => {
   const theme = useTheme();
+  const { t } = useI18n();
   const {
     currentBranch,
     branches,
@@ -155,7 +157,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
             color: "text.secondary",
           }}
         >
-          加载中...
+          {t('ui.branch.loading')}
         </Typography>
       </Box>
     );
@@ -177,7 +179,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
             color: "text.secondary",
           }}
         >
-          当前分支
+          {t('ui.branch.label')}
         </Typography>
       )}
 

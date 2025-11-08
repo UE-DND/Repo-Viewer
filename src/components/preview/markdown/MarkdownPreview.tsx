@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { useI18n } from "@/contexts/I18nContext";
 import type { MarkdownPreviewProps } from "./types";
 import { katexOptions } from "./config/katex";
 import { loadKatexStyles } from "@/utils/lazy-loading";
@@ -28,7 +29,7 @@ import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 
 /**
  * Markdown预览组件
- * 
+ *
  * 渲染Markdown内容，支持GFM语法、LaTeX公式、代码高亮等。
  * 包含图片代理处理、懒加载和主题切换优化。
  */
@@ -42,7 +43,8 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     lazyLoad = true,
     currentBranch,
   }) => {
-    const theme = useTheme();
+  const theme = useTheme();
+  const { t } = useI18n();
 
     // 懒加载状态
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
@@ -217,9 +219,10 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
         {/* 关闭按钮 */}
         {typeof onClose === "function" ? (
-          <Tooltip title="关闭预览" placement="left">
+          <Tooltip title={t('ui.markdown.closePreview')} placement="left">
             <IconButton
               onClick={onClose}
+              aria-label={t('ui.markdown.closePreview')}
               sx={{
                 position: "fixed",
                 top: { xs: 34, sm: 38 },

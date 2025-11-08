@@ -18,6 +18,7 @@ import axios from "axios";
 import { getGithubConfig } from "@/config";
 import { logger } from "@/utils";
 import { useContentContext } from "@/contexts/unified";
+import { useI18n } from "@/contexts/I18nContext";
 
 // 懒加载搜索组件
 const SearchDrawer = lazy(async () => import("@/components/interactions/SearchDrawer"));
@@ -71,6 +72,7 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
   const theme = useTheme();
   const handleRefresh = useRefresh();
   const [searchDrawerOpen, setSearchDrawerOpen] = useState<boolean>(false);
+  const { t } = useI18n();
   const [repoInfo, setRepoInfo] = useState<RepoInfo>(() => {
     const githubConfig = getGithubConfig();
     return {
@@ -412,11 +414,12 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
         }}
         data-oid="7:zr_jb"
       >
-        <Tooltip title="搜索仓库文件" data-oid="toolbar-search">
+        <Tooltip title={t('ui.toolbar.searchFiles')} data-oid="toolbar-search">
           <span>
             <IconButton
               color="inherit"
               onClick={openSearchDrawer}
+              aria-label={t('ui.toolbar.searchFiles')}
               data-oid="toolbar-search-button"
             >
               <SearchIcon />
@@ -424,10 +427,11 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
           </span>
         </Tooltip>
 
-        <Tooltip title="在GitHub中查看" data-oid="f.rvw_c">
+        <Tooltip title={t('ui.toolbar.viewOnGitHub')} data-oid="f.rvw_c">
           <IconButton
             color="inherit"
             onClick={onGitHubClick}
+            aria-label={t('ui.toolbar.viewOnGitHub')}
             sx={{
             "&:hover": {
               color: theme.palette.primary.light,
@@ -441,12 +445,13 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
 
       {/* 主题切换按钮 - 点击时不会触发内容重新加载 */}
       <Tooltip
-        title={theme.palette.mode === "dark" ? "浅色模式" : "深色模式"}
+        title={theme.palette.mode === "dark" ? t('ui.toolbar.lightMode') : t('ui.toolbar.darkMode')}
         data-oid="skn4izp"
       >
         <IconButton
           onClick={onThemeToggleClick}
           color="inherit"
+          aria-label={theme.palette.mode === "dark" ? t('ui.toolbar.lightMode') : t('ui.toolbar.darkMode')}
           sx={{
             "&:hover": {
               color:

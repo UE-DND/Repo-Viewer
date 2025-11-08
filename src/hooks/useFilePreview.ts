@@ -5,6 +5,7 @@ import { GitHub } from '@/services/github';
 import { file, logger, pdf } from '@/utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
+import { useI18n } from '@/contexts/I18nContext';
 
 const initialPreviewState: PreviewState = {
   previewContent: null,
@@ -91,6 +92,7 @@ export const useFilePreview = (
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
   const [useTokenMode, setUseTokenMode] = useState(true);
   const muiTheme = useTheme();
+  const { t } = useI18n();
   const currentPreviewItemRef = useRef<GitHubContent | null>(null);
   const hasActivePreviewRef = useRef<boolean>(false);
   const isHandlingNavigationRef = useRef<boolean>(false);
@@ -170,6 +172,16 @@ export const useFilePreview = (
             fileName: item.name,
             downloadUrl: item.download_url,
             theme: muiTheme,
+            translations: {
+              loading: t('ui.pdf.loading'),
+              cancel: t('ui.pdf.cancel'),
+              cancelled: t('ui.pdf.cancelled'),
+              loadFailed: t('ui.pdf.loadFailed'),
+              openOriginal: t('ui.pdf.openOriginal'),
+              viewerTitle: t('ui.pdf.viewerTitle'),
+              downloaded: t('ui.pdf.downloaded'),
+              downloadedWithProgress: t('ui.pdf.downloadedWithProgress')
+            },
             isDev: import.meta.env.DEV
           });
 
@@ -206,7 +218,7 @@ export const useFilePreview = (
       const errorMessage = error instanceof Error ? error.message : '未知错误';
       onError(`预览文件失败: ${errorMessage}`);
     }
-  }, [onError, useTokenMode, muiTheme]);
+  }, [onError, useTokenMode, muiTheme, t]);
 
   // 关闭预览
   const closePreview = useCallback(() => {

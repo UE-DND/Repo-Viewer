@@ -16,10 +16,11 @@ import {
   FilterList as FilterListIcon
 } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface FilterSectionProps {
   expanded: boolean;
-  
+
   // 分支筛选
   availableBranches: string[];
   branchFilter: string[];
@@ -27,13 +28,13 @@ interface FilterSectionProps {
   defaultBranch: string;
   onBranchToggle: (branch: string) => void;
   onClearBranches: () => void;
-  
+
   // 扩展名筛选
   extensionInput: string;
   onExtensionInputChange: (value: string) => void;
   onExtensionApply: () => void;
   onExtensionClear: () => void;
-  
+
   // 路径筛选
   pathPrefix: string;
   onPathPrefixChange: (value: string) => void;
@@ -47,9 +48,10 @@ export const FilterToggleButton: React.FC<{
 }> = ({ expanded, onToggle }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   return (
-    <Tooltip title={expanded ? "收起筛选" : "筛选条件"}>
+    <Tooltip title={expanded ? t('search.filter.collapse') : t('search.filter.toggle')}>
       <IconButton
         onClick={onToggle}
         sx={{
@@ -86,6 +88,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   return (
     <Collapse in={expanded} unmountOnExit>
@@ -100,14 +103,14 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
         >
           <Stack spacing={isSmallScreen ? 1 : 1.5}>
             <Typography variant="subtitle2" color="text.secondary">
-              筛选选项
+              {t('search.filter.title')}
             </Typography>
-            
+
             {/* 分支选择 */}
             <Stack direction="row" spacing={isSmallScreen ? 0.75 : 1} flexWrap="wrap" useFlexGap>
               {availableBranches.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
-                  暂无可选分支
+                  {t('search.filter.noBranches')}
                 </Typography>
               ) : (
                 availableBranches.map(branch => {
@@ -130,7 +133,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
               )}
               {branchFilter.length > 0 && (
                 <Chip
-                  label="清除"
+                  label={t('search.filter.clear')}
                   onClick={onClearBranches}
                   onDelete={onClearBranches}
                   color="secondary"
@@ -143,7 +146,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
             {/* 扩展名筛选 */}
             <TextField
-              label="限定文件扩展名"
+              label={t('search.filter.extensionLabel')}
               value={extensionInput}
               onChange={(event) => { onExtensionInputChange(event.target.value); }}
               onBlur={onExtensionApply}
@@ -153,7 +156,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
                   onExtensionApply();
                 }
               }}
-              placeholder="例如 pdf,docx,xlsx"
+              placeholder={t('search.filter.extensionPlaceholder')}
               size={isSmallScreen ? "small" : "medium"}
               fullWidth
               sx={{
@@ -183,10 +186,10 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
 
             {/* 路径筛选 */}
             <TextField
-              label="限定搜索路径"
+              label={t('search.filter.pathLabel')}
               value={pathPrefix}
               onChange={(event) => { onPathPrefixChange(event.target.value); }}
-              placeholder="例如 src/components"
+              placeholder={t('search.filter.pathPlaceholder')}
               size={isSmallScreen ? "small" : "medium"}
               fullWidth
               sx={{

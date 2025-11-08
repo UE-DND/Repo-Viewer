@@ -1,14 +1,15 @@
-import { 
-  TextField, 
-  Button, 
-  InputAdornment, 
-  IconButton, 
+import {
+  TextField,
+  Button,
+  InputAdornment,
+  IconButton,
   CircularProgress,
   useMediaQuery,
   useTheme
 } from "@mui/material";
 import { Clear as ClearIcon } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface SearchInputProps {
   value: string;
@@ -31,12 +32,13 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   return (
     <TextField
       id="repo-search-keyword"
       label={label}
-      placeholder="键入搜索内容"
+      placeholder={t('search.input.placeholder')}
       variant="outlined"
       fullWidth
       value={value}
@@ -93,7 +95,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                   px: isSmallScreen ? 2 : 3
                 }}
               >
-                搜索
+                {t('search.actions.search')}
               </Button>
             </InputAdornment>
           )

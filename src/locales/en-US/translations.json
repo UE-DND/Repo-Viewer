@@ -1,0 +1,203 @@
+{
+  "search": {
+    "title": "File Search",
+    "empty": "No search yet",
+    "label": {
+      "default": "Search in repository",
+      "inBranch": "Search in @@branch@@",
+      "inBranches": "Search in @@branches@@",
+      "inBranchesWithPath": "Search in @@branches@@: @@path@@",
+      "inMultipleBranches": "Search in @@count@@ branches",
+      "inMultipleBranchesWithPath": "Search in @@branches@@ and @@count@@ more branches: @@path@@"
+    },
+    "results": {
+      "summary": "@@count@@ results • @@took@@ ms • @@mode@@",
+      "indexMode": "Index Mode",
+      "apiMode": "API Mode",
+      "noResults": "No results",
+      "noResultsHint": "Try different keywords or adjust filters",
+      "emptyIndexResult": "No index results found. Try using API mode search.",
+      "apiSearchButton": "Use API Mode Search",
+      "apiSearchButtonShort": "API Search",
+      "source": {
+        "index": "Index",
+        "api": "API"
+      }
+    },
+    "input": {
+      "placeholder": "Type to search",
+      "label": "Search in repository"
+    },
+    "filter": {
+      "toggle": "Filters",
+      "collapse": "Collapse filters",
+      "title": "Filter Options",
+      "noBranches": "No available branches",
+      "clear": "Clear",
+      "extensionLabel": "File Extension Filter",
+      "extensionPlaceholder": "e.g. pdf,docx,xlsx",
+      "pathLabel": "Path Prefix Filter",
+      "pathPlaceholder": "e.g. src/components"
+    },
+    "actions": {
+      "resetFilters": "Reset Filters",
+      "clearResults": "Clear Results",
+      "close": "Close search panel",
+      "search": "Search"
+    },
+    "error": "Search failed: @@message@@",
+    "index": {
+      "refresh": "Refresh index status",
+      "detecting": "Detecting index files…",
+      "disabled": "Index mode is disabled. API mode search will be used. Configure ENABLED_SEARCH_INDEX to enable index mode.",
+      "ready": "Index last updated: @@time@@. Supported branches: @@count@@.",
+      "notReady": {
+        "title": "No available index detected",
+        "description1": "Configure Repo-Viewer-Search Actions in the target repository",
+        "description2": "Generate index files under the @@branch@@ branch"
+      },
+      "errors": {
+        "branchMissing": {
+          "title": "Index branch does not exist. API mode search will be used",
+          "description1": "Branch @@branch@@ not found",
+          "description2": "Configure Actions in the target repository to generate index branch"
+        },
+        "manifestNotFound": {
+          "title": "Index file missing. API mode search will be used",
+          "description1": "Index file not found in @@branch@@",
+          "description2": "Check if Actions correctly generated index files"
+        },
+        "manifestInvalid": {
+          "title": "Index format error. API mode search will be used",
+          "description1": "Try running Actions again to generate index files"
+        },
+        "fileNotFound": {
+          "title": "Index content missing. API mode search will be used",
+          "description1": "Indexed file does not exist",
+          "description2": "Try running Actions again to generate index files"
+        },
+        "documentInvalid": {
+          "title": "Index file format error. API mode search will be used",
+          "description1": "Index content is corrupted or incorrectly formatted",
+          "description2": "Try running Actions again to generate index files"
+        },
+        "unsupportedCompression": {
+          "title": "Unsupported compression format. API mode search will be used",
+          "description1": "Index file uses unsupported compression format",
+          "description2": "Regenerate index file using standard gzip compression format"
+        },
+        "default": {
+          "title": "Failed to load index. API mode search will be used",
+          "description1": "@@message@@",
+          "description2": "Check if index file exists and is correctly formatted"
+        }
+      }
+    },
+    "github": {
+      "open": "Open in GitHub"
+    }
+  },
+  "error": {
+    "network": {
+      "timeout": "Request timeout, please check your network connection",
+      "connection": "Network connection failed, please try again later"
+    },
+    "api": {
+      "forbidden": "API access restricted, please check access permissions",
+      "notFound": "Requested resource not found",
+      "serverError": "Server error, please try again later",
+      "default": "Request failed"
+    },
+    "file": {
+      "download": "File download failed, please try again",
+      "compress": "File compression failed, file may be too large",
+      "parse": "File parsing failed, format may not be supported",
+      "default": "File operation failed"
+    },
+    "component": "Page component error, please refresh the page",
+    "validation": "Input data is invalid, please check and try again",
+    "default": "Operation failed, please try again later",
+    "unknown": "Unknown error"
+  },
+  "ui": {
+    "download": {
+      "file": "Download @@name@@",
+      "folder": "Download folder @@name@@",
+      "cancel": "Cancel download"
+    },
+    "image": {
+      "loading": "Loading image",
+      "loadFailed": "Image load failed",
+      "loaded": "Image loaded: @@name@@",
+      "loadError": "Image load failed",
+      "previous": "Previous",
+      "next": "Next",
+      "close": "Close",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "rotateLeft": "Rotate Left",
+      "rotateRight": "Rotate Right",
+      "fullscreen": "Fullscreen",
+      "reset": "Reset",
+      "openPreview": "Open preview"
+    },
+    "readme": {
+      "empty": "README content is empty or failed to load."
+    },
+    "branch": {
+      "label": "Current Branch",
+      "loading": "Loading...",
+      "switch": "Switch branch",
+      "listLabel": "Branch list"
+    },
+    "toolbar": {
+      "searchFiles": "Search repository files",
+      "viewOnGitHub": "View on GitHub",
+      "lightMode": "Light mode",
+      "darkMode": "Dark mode"
+    },
+    "footer": {
+      "presentedBy": "Presented by"
+    },
+    "breadcrumb": {
+      "back": {
+        "tooltip": {
+          "canGoUp": "Go up one level",
+          "atRoot": "At repository root"
+        },
+        "aria": "Go up one level"
+      },
+      "toHome": {
+        "aria": "Back to Home"
+      },
+      "toSegment": {
+        "aria": "Back to @@name@@"
+      }
+    },
+    "markdown": {
+      "closePreview": "Close preview",
+      "copy": {
+        "button": "Copy code",
+        "copied": "Copied",
+        "aria": "Copy code"
+      }
+    },
+    "scrollToTop": {
+      "aria": "Scroll to top"
+    },
+    "notification": {
+      "close": "Close notification"
+    },
+    "pdf": {
+      "loading": "Loading PDF…",
+      "cancel": "Cancel",
+      "cancelled": "Loading cancelled",
+      "loadFailed": "Failed to load @@fileName@@",
+      "openOriginal": "Open original file",
+      "viewerTitle": "PDF Viewer",
+      "downloaded": "Downloaded @@loaded@@",
+      "downloadedWithProgress": "Downloaded @@loaded@@ / @@total@@ (@@percent@@%)"
+    }
+  }
+}
+
