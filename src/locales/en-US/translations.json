@@ -110,6 +110,10 @@
     },
     "file": {
       "download": "File download failed, please try again",
+      "downloadFailed": "Failed to download file: @@message@@",
+      "folderDownloadFailed": "Failed to download folder: @@message@@",
+      "downloadInProgress": "A download task is already in progress, please wait for it to complete",
+      "downloadLinkUnavailable": "Unable to get file download link",
       "compress": "File compression failed, file may be too large",
       "parse": "File parsing failed, format may not be supported",
       "default": "File operation failed"
@@ -117,7 +121,27 @@
     "component": "Page component error, please refresh the page",
     "validation": "Input data is invalid, please check and try again",
     "default": "Operation failed, please try again later",
-    "unknown": "Unknown error"
+    "unknown": "Unknown error",
+    "preview": {
+      "unsupportedFileType": "This file type is not supported for preview",
+      "downloadLinkUnavailable": "Unable to get file download link",
+      "markdownLoadFailed": "Failed to load Markdown file: @@message@@",
+      "pdfLoadFailed": "Failed to open PDF: @@message@@",
+      "imageLoadFailed": "Failed to load image file: @@message@@",
+      "filePreviewFailed": "Failed to preview file: @@message@@",
+      "imageError": "Image load failed: @@message@@"
+    },
+    "boundary": {
+      "retryExceeded": "Error persists after multiple retries, please refresh the page or contact support",
+      "unknownError": "An unknown error occurred, please try again later",
+      "details": "Error Details",
+      "retryCount": "Retried @@count@@ times",
+      "title": {
+        "page": "Page Load Error",
+        "feature": "Feature Module Error",
+        "component": "Component Error"
+      }
+    }
   },
   "ui": {
     "download": {
@@ -186,7 +210,11 @@
       "aria": "Scroll to top"
     },
     "notification": {
-      "close": "Close notification"
+      "close": "Close notification",
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Info"
     },
     "pdf": {
       "loading": "Loading PDF…",

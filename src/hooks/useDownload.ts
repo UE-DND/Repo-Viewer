@@ -10,6 +10,7 @@ import { GitHub } from '@/services/github';
 import { logger } from '@/utils';
 import { requestManager } from '@/utils/request/requestManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
+import { useI18n } from '@/contexts/I18nContext';
 
 // 下载状态初始值
 const initialDownloadState: DownloadState = {
@@ -65,10 +66,10 @@ function downloadReducer(state: DownloadState, action: DownloadAction): Download
 
 /**
  * 下载管理Hook
- * 
+ *
  * 提供文件和文件夹下载功能，支持进度追踪和取消操作。
  * 文件夹下载会打包为ZIP格式。
- * 
+ *
  * @param onError - 错误回调函数
  * @returns 包含下载状态和操作函数的对象
  */
@@ -82,6 +83,7 @@ export const useDownload = (onError: (message: string) => void): {
   const [downloadState, dispatch] = useReducer(downloadReducer, initialDownloadState);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isCancelledRef = useRef<boolean>(false);
+  const { t } = useI18n();
 
   // 检查是否有正在进行的下载
   const isDownloading = downloadState.downloadingPath !== null || downloadState.downloadingFolderPath !== null;
@@ -115,12 +117,12 @@ export const useDownload = (onError: (message: string) => void): {
   const downloadFile = useCallback(async (item: GitHubContent) => {
     // 防止同时触发多个下载
     if (downloadState.downloadingPath !== null || downloadState.downloadingFolderPath !== null) {
-      onError('已有下载任务正在进行中，请等待当前下载完成');
+      onError(t('error.file.downloadInProgress'));
       return;
     }
 
     if (item.download_url === null) {
-      onError('无法获取文件下载链接');
+      onError(t('error.file.downloadLinkUnavailable'));
       return;
     }
 
@@ -167,13 +169,13 @@ export const useDownload = (onError: (message: string) => void): {
         logger.info('文件下载已取消');
       } else {
         logger.error('下载文件失败:', error);
-        onError(`下载文件失败: ${error.message}`);
+        onError(t('error.file.downloadFailed', { message: error.message }));
       }
     } finally {
       abortControllerRef.current = null;
       dispatch({ type: 'SET_DOWNLOADING_FILE', path: null });
     }
-  }, [downloadState.downloadingPath, downloadState.downloadingFolderPath, onError, hasBeenCancelled]);
+  }, [downloadState.downloadingPath, downloadState.downloadingFolderPath, onError, hasBeenCancelled, t]);
 
   // 递归收集文件
   const collectFiles = useCallback(async function collectFilesInner(
@@ -235,7 +237,7 @@ export const useDownload = (onError: (message: string) => void): {
   const downloadFolder = useCallback(async (path: string, folderName: string) => {
     // 防止同时触发多个下载
     if (downloadState.downloadingPath !== null || downloadState.downloadingFolderPath !== null) {
-      onError('已有下载任务正在进行中，请等待当前下载完成');
+      onError(t('error.file.downloadInProgress'));
       return;
     }
 
@@ -326,13 +328,13 @@ export const useDownload = (onError: (message: string) => void): {
         logger.info('文件夹下载已取消');
       } else {
         logger.error('下载文件夹失败:', error);
-        onError(`下载文件夹失败: ${error.message}`);
+        onError(t('error.file.folderDownloadFailed', { message: error.message }));
       }
     } finally {
       abortControllerRef.current = null;
       dispatch({ type: 'RESET_DOWNLOAD_STATE' });
     }
-  }, [downloadState.downloadingPath, downloadState.downloadingFolderPath, onError, collectFiles, hasBeenCancelled]);
+  }, [downloadState.downloadingPath, downloadState.downloadingFolderPath, onError, collectFiles, hasBeenCancelled, t]);
 
   return {
     downloadState,

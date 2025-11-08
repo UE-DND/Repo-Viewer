@@ -42,12 +42,12 @@ const CustomSnackbar = memo(
       const severity = variant === "default" ? "info" : variant;
       const title =
         variant === "success"
-          ? "成功"
+          ? t("ui.notification.success")
           : variant === "error"
-            ? "错误"
+            ? t("ui.notification.error")
             : variant === "warning"
-              ? "警告"
-              : "信息";
+              ? t("ui.notification.warning")
+              : t("ui.notification.info");
 
       const isDownloadRelated = (): boolean => {
         if (

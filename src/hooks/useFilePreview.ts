@@ -129,7 +129,7 @@ export const useFilePreview = (
 
   const selectFile = useCallback(async (item: GitHubContent) => {
     if (item.download_url === null || item.download_url === '') {
-      onError('无法获取文件下载链接');
+      onError(t('error.preview.downloadLinkUnavailable'));
       return;
     }
 
@@ -159,8 +159,8 @@ export const useFilePreview = (
           const content = await GitHub.Content.getFileContent(item.download_url);
           dispatch({ type: 'SET_MD_PREVIEW', content, item });
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '未知错误';
-          onError(`加载Markdown文件失败: ${errorMessage}`);
+          const errorMessage = error instanceof Error ? error.message : t('error.unknown');
+          onError(t('error.preview.markdownLoadFailed', { message: errorMessage }));
         } finally {
           dispatch({ type: 'SET_MD_LOADING', loading: false });
         }
@@ -187,8 +187,8 @@ export const useFilePreview = (
 
           logger.info(`已在新标签页打开 PDF: ${item.path}`);
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '未知错误';
-          onError(`打开PDF失败: ${errorMessage}`);
+          const errorMessage = error instanceof Error ? error.message : t('error.unknown');
+          onError(t('error.preview.pdfLoadFailed', { message: errorMessage }));
         }
         return;
       }
@@ -205,18 +205,18 @@ export const useFilePreview = (
             item
           });
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '未知错误';
+          const errorMessage = error instanceof Error ? error.message : t('error.unknown');
           dispatch({ type: 'SET_IMAGE_ERROR', error: errorMessage });
-          onError(`加载图片文件失败: ${errorMessage}`);
+          onError(t('error.preview.imageLoadFailed', { message: errorMessage }));
         } finally {
           dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
         }
     } else {
-      onError('不支持预览该文件类型');
+      onError(t('error.preview.unsupportedFileType'));
     }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-      onError(`预览文件失败: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : t('error.unknown');
+      onError(t('error.preview.filePreviewFailed', { message: errorMessage }));
     }
   }, [onError, useTokenMode, muiTheme, t]);
 
@@ -257,8 +257,8 @@ export const useFilePreview = (
   const handleImageError = useCallback((error: string) => {
     dispatch({ type: 'SET_IMAGE_ERROR', error });
     dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
-    onError(`图像加载失败: ${error}`);
-  }, [onError]);
+    onError(t('error.preview.imageError', { message: error }));
+  }, [onError, t]);
 
   // 监听浏览器历史导航事件，处理预览的后退操作
   useEffect(() => {

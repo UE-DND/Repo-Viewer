@@ -110,6 +110,10 @@
     },
     "file": {
       "download": "ファイルのダウンロードに失敗しました。もう一度お試しください",
+      "downloadFailed": "ファイルのダウンロードに失敗しました：@@message@@",
+      "folderDownloadFailed": "フォルダのダウンロードに失敗しました：@@message@@",
+      "downloadInProgress": "ダウンロードタスクが既に進行中です。完了するまでお待ちください",
+      "downloadLinkUnavailable": "ファイルのダウンロードリンクを取得できません",
       "compress": "ファイルの圧縮に失敗しました。ファイルサイズが大きすぎる可能性があります",
       "parse": "ファイルの解析に失敗しました。形式がサポートされていない可能性があります",
       "default": "ファイル操作に失敗しました"
@@ -117,7 +121,27 @@
     "component": "ページコンポーネントでエラーが発生しました。ページを更新してください",
     "validation": "入力データが無効です。確認して再試行してください",
     "default": "操作に失敗しました。後でもう一度お試しください",
-    "unknown": "不明なエラー"
+    "unknown": "不明なエラー",
+    "preview": {
+      "unsupportedFileType": "このファイルタイプはプレビューに対応していません",
+      "downloadLinkUnavailable": "ファイルのダウンロードリンクを取得できません",
+      "markdownLoadFailed": "Markdownファイルの読み込みに失敗しました：@@message@@",
+      "pdfLoadFailed": "PDFの読み込みに失敗しました：@@message@@",
+      "imageLoadFailed": "画像ファイルの読み込みに失敗しました：@@message@@",
+      "filePreviewFailed": "ファイルのプレビューに失敗しました：@@message@@",
+      "imageError": "画像の読み込みに失敗しました：@@message@@"
+    },
+    "boundary": {
+      "retryExceeded": "複数回の再試行後もエラーが続いています。ページを更新するか、サポートにお問い合わせください",
+      "unknownError": "不明なエラーが発生しました。後でもう一度お試しください",
+      "details": "エラー詳細",
+      "retryCount": "@@count@@ 回再試行しました",
+      "title": {
+        "page": "ページ読み込みエラー",
+        "feature": "機能モジュールエラー",
+        "component": "コンポーネントエラー"
+      }
+    }
   },
   "ui": {
     "download": {
@@ -186,7 +210,11 @@
       "aria": "トップに戻る"
     },
     "notification": {
-      "close": "通知を閉じる"
+      "close": "通知を閉じる",
+      "success": "成功",
+      "error": "エラー",
+      "warning": "警告",
+      "info": "情報"
     },
     "pdf": {
       "loading": "PDF を読み込み中…",
