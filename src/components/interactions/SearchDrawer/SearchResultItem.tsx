@@ -116,7 +116,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
           />
         </ListItemButton>
         {githubUrl !== undefined && (
-          <Tooltip title={t('search.github.open')}>
+          <Tooltip title={t('search.github.open')} placement="left">
             <IconButton
               onClick={() => { onOpenGithub(item); }}
               aria-label={t('search.github.open')}
