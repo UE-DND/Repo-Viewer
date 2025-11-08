@@ -134,6 +134,24 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
       style={style}
       data-oid="j_s1bp2"
     >
+      {/* 屏幕阅读器状态提示区域 */}
+      <Box
+        component="div"
+        aria-live="polite"
+        aria-atomic="true"
+        sx={{
+          position: 'absolute',
+          left: '-10000px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+        }}
+      >
+        {loading && '正在加载图片'}
+        {hasError && '图片加载失败'}
+        {!loading && !hasError && `图片已加载：${displayFileName}`}
+      </Box>
+
       {/* 文件名标题（仅在非小屏幕时显示） */}
       {!isSmallScreen && (
         <Typography

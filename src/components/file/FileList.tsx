@@ -302,6 +302,8 @@ const FileList = React.memo<FileListProps>(
             justifyContent: "center",
           }}
           className={`file-list-container ${hasFewItems ? "few-items" : ""} no-scroll`}
+          role="list"
+          aria-label={`文件列表，共 ${String(contents.length)} 项`}
         >
           <motion.div
             style={{
@@ -339,6 +341,8 @@ const FileList = React.memo<FileListProps>(
             py: containerPadding,
           }}
           className={`file-list-container ${hasFewItems ? "few-items" : ""}`}
+          role="list"
+          aria-label={`文件列表，共 ${String(contents.length)} 项`}
         >
           <motion.div
             style={{ height: "100%", width: "100%" }}

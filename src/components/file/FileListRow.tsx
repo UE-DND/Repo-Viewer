@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import { motion } from "framer-motion";
 import type { MotionStyle } from "framer-motion";
@@ -10,6 +10,8 @@ import { getDynamicItemVariants, optimizedAnimationStyle } from "./utils/fileLis
 import type { VirtualListItemData } from "./utils/types";
 
 const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualListItemData>): ReactElement | null => {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(true);
   const {
     contents,
     downloadingPath,
@@ -26,6 +28,37 @@ const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualLis
   } = data;
 
   const item = contents[index];
+
+  // 使用 IntersectionObserver 检测项是否在视口中
+  useEffect(() => {
+    const element = rowRef.current;
+    if (element === null) {
+      return;
+    }
+
+    // 查找最近的滚动容器（FixedSizeList 的滚动容器）
+    const scrollContainer: HTMLElement | null = element.closest('.virtual-file-list') ?? null;
+
+    // 创建 IntersectionObserver 来检测可见性
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsVisible(entry.isIntersecting);
+        });
+      },
+      {
+        root: scrollContainer,
+        rootMargin: "100px",
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   if (item === undefined) {
     return null;
@@ -46,12 +79,15 @@ const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualLis
 
   return (
     <motion.div
+      ref={rowRef}
       style={adjustedStyle}
       className="file-list-item-container"
       variants={currentVariants}
       custom={index}
       initial="hidden"
       animate="visible"
+      role="listitem"
+      aria-hidden={!isVisible ? "true" : undefined}
       data-oid="_c:db-1"
     >
       <FileListItem
@@ -67,6 +103,7 @@ const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualLis
         currentPath={currentPath}
         contents={contents}
         isHighlighted={isHighlighted}
+        isVisible={isVisible}
         data-oid="k4zj3qr"
       />
     </motion.div>
