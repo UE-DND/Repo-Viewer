@@ -592,71 +592,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     // 获取文件内容
     if (actionParam === 'getFileContent') {
-      // 规范化并校验 url 参数
       const urlParam = Array.isArray(url) ? (url.length > 0 ? url[0] : undefined) : url;
-      if (typeof urlParam !== 'string' || urlParam.trim() === '') {
+      if (typeof urlParam !== 'string' || urlParam.trim().length === 0) {
         res.status(400).json({ error: 'Missing url parameter' });
         return;
       }
 
       try {
         const urlString = urlParam;
+        const headers = {
+          ...getAuthHeaders(),
+          'Accept': 'application/vnd.github.v3.raw'
+        };
 
-        // 判断是否是二进制文件
-        const isBinaryFile = /\.(png|jpg|jpeg|gif|pdf|zip|rar|7z|exe|dll|so|dylib|bin)$/i.test(urlString);
+        const response = await handleRequestWithRetry(() =>
+          axios.get<ArrayBuffer>(urlString, {
+            headers,
+            responseType: 'arraybuffer'
+          })
+        );
 
-        // 设置正确的响应类型
-        if (isBinaryFile) {
-          // 获取文件扩展名
-          const fileExtension = urlString.split('.').pop()?.toLowerCase();
+        const upstreamContentType = response.headers?.['content-type'];
+        const upstreamContentLength = response.headers?.['content-length'];
+        const upstreamDisposition = response.headers?.['content-disposition'];
+        const upstreamCacheControl = response.headers?.['cache-control'];
 
-          // 设置正确的Content-Type
-          if (fileExtension !== undefined && fileExtension.length > 0) {
-            const contentTypeMap: Record<string, string> = {
-              'pdf': 'application/pdf',
-              'png': 'image/png',
-              'jpg': 'image/jpeg',
-              'jpeg': 'image/jpeg',
-              'gif': 'image/gif',
-              'zip': 'application/zip',
-              'rar': 'application/x-rar-compressed',
-              '7z': 'application/x-7z-compressed'
-            };
-
-            const contentType = contentTypeMap[fileExtension] ?? 'application/octet-stream';
-            res.setHeader('Content-Type', contentType);
-          } else {
-            res.setHeader('Content-Type', 'application/octet-stream');
-          }
-
-          // 二进制文件，使用arraybuffer响应类型
-          const response = await handleRequestWithRetry(() =>
-            axios.get(urlString, {
-              headers: getAuthHeaders(),
-              responseType: 'arraybuffer'
-            })
-          );
-
-          res.status(200).send(response.data);
-          return;
-        } else {
-          // 文本文件
-          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-
-          const response = await handleRequestWithRetry(() =>
-            axios.get<unknown>(urlString, {
-              headers: getAuthHeaders()
-            })
-          );
-
-          res.status(200).send(response.data);
-          return;
+        res.setHeader('Content-Type', upstreamContentType ?? 'application/octet-stream');
+        if (upstreamContentLength !== undefined) {
+          res.setHeader('Content-Length', upstreamContentLength);
         }
+        if (upstreamDisposition !== undefined) {
+          res.setHeader('Content-Disposition', upstreamDisposition);
+        }
+        if (upstreamCacheControl !== undefined) {
+          res.setHeader('Cache-Control', upstreamCacheControl);
+        }
+
+        const buffer = Buffer.from(response.data);
+        res.status(200).send(buffer);
+        return;
       } catch (error) {
         const axiosError = error as AxiosErrorResponse;
-        apiLogger.error('Failed to fetch Git tree:', axiosError.message ?? 'Unknown error');
+        apiLogger.error('Failed to fetch file content:', axiosError.message ?? 'Unknown error');
         res.status(axiosError.response?.status ?? 500).json({
-          error: 'Failed to fetch Git tree',
+          error: 'Failed to fetch file content',
           message: axiosError.message ?? 'Unknown error'
         });
         return;
