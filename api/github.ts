@@ -598,8 +598,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       }
 
+      const urlString = urlParam;
       try {
-        const urlString = urlParam;
         const headers = {
           ...getAuthHeaders(),
           'Accept': 'application/vnd.github.v3.raw'
@@ -633,7 +633,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       } catch (error) {
         const axiosError = error as AxiosErrorResponse;
-        apiLogger.error('Failed to fetch file content:', axiosError.message ?? 'Unknown error');
+        const decodedUrl = (() => {
+          try {
+            return decodeURIComponent(urlString);
+          } catch {
+            return urlString;
+          }
+        })();
+        apiLogger.error('Failed to fetch file content:', decodedUrl, axiosError.message ?? 'Unknown error');
         res.status(axiosError.response?.status ?? 500).json({
           error: 'Failed to fetch file content',
           message: axiosError.message ?? 'Unknown error'

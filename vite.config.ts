@@ -293,10 +293,20 @@ const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.g
 class RequestLoggerMiddleware {
   constructor(private readonly logger: Logger) {}
 
+  private decodeUrl(url: string | undefined): string {
+    if (!url) return ''
+    try {
+      return decodeURIComponent(url)
+    } catch {
+      return url
+    }
+  }
+
   onProxyReq(proxyReq: http.ClientRequest, req: http.IncomingMessage) {
     const method = req.method || 'UNKNOWN'
     const methodColor = method === 'GET' ? colors.green : method === 'POST' ? colors.blue : colors.cyan
-    this.logger.log(`${methodColor}${method}${colors.reset}`, `${colors.gray}${req.url}${colors.reset}`)
+    const decodedUrl = this.decodeUrl(req.url)
+    this.logger.log(`${methodColor}${method}${colors.reset}`, `${colors.gray}${decodedUrl}${colors.reset}`)
   }
 
   onProxyRes(proxyRes: http.IncomingMessage, req: http.IncomingMessage) {
@@ -307,7 +317,8 @@ class RequestLoggerMiddleware {
     } else if (statusCode >= 300) {
       statusColor = colors.yellow
     }
-    this.logger.log(`${statusColor}${statusCode}${colors.reset}`, `${colors.gray}${req.url}${colors.reset}`)
+    const decodedUrl = this.decodeUrl(req.url)
+    this.logger.log(`${statusColor}${statusCode}${colors.reset}`, `${colors.gray}${decodedUrl}${colors.reset}`)
   }
 
   onError(err: Error) {
