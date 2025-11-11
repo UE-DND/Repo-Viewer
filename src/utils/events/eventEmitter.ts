@@ -144,13 +144,3 @@ export class TypedEventEmitter<T extends Record<string, any>> {
  * 全局类型安全的事件发射器实例
  */
 export const eventEmitter = new TypedEventEmitter<AppEvents>();
-
-/**
- * 事件常量（向后兼容）
- */
-export const EVENTS = {
-  REFRESH_CONTENT: 'refresh_content' as const,
-  CANCEL_DOWNLOAD: 'cancel_download' as const,
-  NAVIGATE_TO_HOME: 'navigate-to-home' as const,
-  THEME_CHANGE: 'theme-change' as const,
-};

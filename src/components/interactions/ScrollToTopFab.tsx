@@ -6,8 +6,10 @@ import {
   useMediaQuery,
   Zoom,
   alpha,
+  Tooltip,
 } from "@mui/material";
 import { KeyboardArrowUp as ArrowUpIcon } from "@mui/icons-material";
+import { useI18n } from "@/contexts/I18nContext";
 
 /**
  * 返回顶部浮动按钮组件属性接口
@@ -25,7 +27,7 @@ interface ScrollToTopFabProps {
 
 /**
  * 返回顶部浮动按钮组件
- * 
+ *
  * 滚动超过阈值时显示，点击平滑滚动到页面顶部。
  * 支持响应式设计和自定义样式。
  */
@@ -37,6 +39,7 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const { t } = useI18n();
   const [isVisible, setIsVisible] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
@@ -174,23 +177,25 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
         transitionDelay: isVisible ? "0ms" : "100ms",
       }}
     >
-      <Fab
-        size={isSmallScreen ? "medium" : "large"}
-        aria-label="返回顶部"
-        onClick={scrollToTop}
-        disabled={isScrolling}
-        sx={fabStyles}
-      >
-        <ArrowUpIcon
-          fontSize={isSmallScreen ? "medium" : "large"}
-          sx={{
-            transition: theme.transitions.create("transform", {
-              duration: theme.transitions.duration.short,
-            }),
-            transform: isScrolling ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        />
-      </Fab>
+      <Tooltip title={t('ui.scrollToTop.aria')} placement="left" enterDelay={300}>
+        <Fab
+          size={isSmallScreen ? "medium" : "large"}
+          aria-label={t('ui.scrollToTop.aria')}
+          onClick={scrollToTop}
+          disabled={isScrolling}
+          sx={fabStyles}
+        >
+          <ArrowUpIcon
+            fontSize={isSmallScreen ? "medium" : "large"}
+            sx={{
+              transition: theme.transitions.create("transform", {
+                duration: theme.transitions.duration.short,
+              }),
+              transform: isScrolling ? "rotate(180deg)" : "rotate(0deg)",
+            }}
+          />
+        </Fab>
+      </Tooltip>
     </Zoom>
   );
 };

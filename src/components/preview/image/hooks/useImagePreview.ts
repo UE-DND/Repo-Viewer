@@ -51,7 +51,7 @@ export const useImagePreview = ({
       },
       {
         root: null,
-        rootMargin: '100px', // 提前100px开始加载
+        rootMargin: '100px',
         threshold: 0.1,
       },
     );

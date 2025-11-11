@@ -1,9 +1,9 @@
 /**
  * 全局错误边界组件
- * 
+ *
  * 捕获React组件树中的JavaScript错误并提供优雅的降级UI。
  * 支持三个层级的错误边界：页面级、功能级和组件级。
- * 
+ *
  * @module ErrorBoundary
  * @see {@link ErrorManager} 错误管理器
  * @see {@link PageErrorBoundary} 页面级错误边界快捷组件
@@ -32,8 +32,9 @@ import {
   ExpandLess,
   ExpandMore
 } from '@mui/icons-material';
-import { ErrorManager } from '@/utils/error/ErrorManager';
+import { ErrorManager } from '@/utils/error';
 import { isDeveloperMode } from '@/config';
+import { useI18n } from '@/contexts/I18nContext';
 
 type ErrorInfo = React.ErrorInfo;
 
@@ -227,26 +228,27 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
 }) => {
   const isPageLevel = level === 'page';
   const isDev = isDeveloperMode();
+  const { t } = useI18n();
 
   const getErrorTitle = (): string => {
     switch (level) {
       case 'page':
-        return '页面加载出错';
+        return t('error.boundary.title.page');
       case 'feature':
-        return '功能模块出错';
+        return t('error.boundary.title.feature');
       default:
-        return '组件出错';
+        return t('error.boundary.title.component');
     }
   };
 
   const getErrorMessage = (): string => {
     if (retryCount > 3) {
-      return '多次重试后仍然出错，请刷新页面或联系技术支持';
+      return t('error.boundary.retryExceeded');
     }
     if (error.message !== '') {
       return error.message;
     }
-    return '发生了未知错误，请稍后重试';
+    return t('error.boundary.unknownError');
   };
 
   return (
@@ -284,14 +286,14 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps & {
 
             {/* 错误信息 */}
             <Alert severity="error" sx={{ width: '100%' }}>
-              <AlertTitle>错误详情</AlertTitle>
+              <AlertTitle>{t('error.boundary.details')}</AlertTitle>
               {getErrorMessage()}
             </Alert>
 
             {/* 重试次数显示 */}
             {retryCount > 0 && (
               <Chip
-                label={`已重试 ${String(retryCount)} 次`}
+                label={t('error.boundary.retryCount', { count: retryCount })}
                 color="warning"
                 size="small"
               />

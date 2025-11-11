@@ -1,14 +1,14 @@
 import { logger } from '@/utils';
 import { getGithubConfig, getRuntimeConfig } from '@/config';
 import { getCurrentBranch } from '../core/Config';
-import { getForceServerProxy } from '../config/ProxyForceManager';
+import { getForceServerProxy } from '../config';
 
 const githubConfig = getGithubConfig();
 const runtimeConfig = getRuntimeConfig();
 
 /**
  * 检查URL部分是否需要编码
- * 
+ *
  * @param part - URL部分字符串
  * @returns 如果需要编码返回true
  */
@@ -18,7 +18,7 @@ function shouldEncodePart(part: string): boolean {
 
 /**
  * 检查是否为GitHub域名
- * 
+ *
  * @param hostname - 主机名
  * @returns 如果是GitHub相关域名返回true
  */
@@ -28,9 +28,9 @@ function isGithubHost(hostname: string): boolean {
 
 /**
  * 应用代理到URL
- * 
+ *
  * 将原始URL转换为使用指定代理服务的URL。
- * 
+ *
  * @param url - 原始URL
  * @param proxyUrl - 代理服务URL
  * @returns 代理后的URL
@@ -88,9 +88,9 @@ function applyProxyToUrl(url: string, proxyUrl: string): string {
 
 /**
  * 转换Markdown中的图片URL
- * 
+ *
  * 处理相对路径和绝对路径，根据环境和模式选择合适的代理策略。
- * 
+ *
  * @param src - 图片源URL
  * @param markdownFilePath - Markdown文件路径
  * @param useTokenMode - 是否使用Token模式
@@ -222,7 +222,7 @@ function transformImageUrl(
 
 /**
  * 获取文件的目录路径
- * 
+ *
  * @param filePath - 文件路径
  * @returns 目录路径
  */
@@ -236,7 +236,7 @@ function getDirectoryPath(filePath: string): string {
 
 /**
  * 代理URL转换器
- * 
+ *
  * 提供URL代理转换和图片URL处理功能。
  */
 export const ProxyUrlTransformer = {

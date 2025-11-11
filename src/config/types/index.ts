@@ -23,6 +23,13 @@ export interface Config {
       enabled: boolean;
       hiddenFolders: string[];
     };
+    searchIndex: {
+      enabled: boolean;
+      indexBranch: string;
+      defaultBranch: string;
+      manifestPath: string;
+      refreshIntervalMs: number;
+    };
     footer: {
       leftText: string;
     };
@@ -42,6 +49,7 @@ export interface Config {
   developer: {
     mode: boolean;
     consoleLogging: boolean;
+    logging?: DeveloperLoggingConfig;
   };
   runtime: {
     isDev: boolean;
@@ -51,6 +59,15 @@ export interface Config {
     githubPATs: string[];
     totalCount: number;
   };
+}
+
+export interface DeveloperLoggingConfig {
+  enableConsole?: boolean;
+  enableErrorReporting?: boolean;
+  includeWarnInReporting?: boolean;
+  enableRecorder?: boolean;
+  reportUrl?: string;
+  baseLevel?: 'debug' | 'info' | 'warn' | 'error';
 }
 
 /**

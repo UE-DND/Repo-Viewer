@@ -118,6 +118,8 @@ export interface ImageThumbnailProps {
     width: string | number;
     height: string | number;
   };
+  /** 优先采用的宽高比 */
+  aspectRatio?: number | null;
   /** 是否应该加载图片 */
   shouldLoad: boolean;
   /** 点击打开预览的回调 */
@@ -170,6 +172,10 @@ export interface ImagePreviewContentProps {
   onPrevious?: (() => void) | undefined;
   /** 切换到下一张图片的回调 */
   onNext?: (() => void) | undefined;
+  /** 初始宽高比（用于占位与渐进过渡） */
+  initialAspectRatio?: number | null;
+  /** 宽高比变更时回调 */
+  onAspectRatioChange?: (aspectRatio: number) => void;
 }
 
 /**

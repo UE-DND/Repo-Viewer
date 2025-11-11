@@ -5,6 +5,21 @@ import * as http from 'http'
 import * as https from 'https'
 import { readFileSync } from 'fs'
 import { configManager, applyEnvMappingForVite } from './src/config'
+import type { GitHubContent, InitialContentHydrationPayload } from './src/types'
+
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  blue: '\x1b[34m',
+  brightWhite: '\x1b[97m',
+  gray: '\x1b[90m',
+  white: '\x1b[37m'
+}
 
 type Logger = {
   log: (...args: any[]) => void
@@ -13,38 +28,297 @@ type Logger = {
   info: (...args: any[]) => void
 }
 
+const getTimestamp = (): string => {
+  const now = new Date()
+  return now.toLocaleTimeString('zh-CN', { hour12: false })
+}
+
 const createLogger = (developerMode: boolean): Logger => ({
   log: (...args: any[]) => {
     if (developerMode) {
-      console.log('[Vite]', ...args)
+      console.log(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.cyan}[vite]${colors.reset}`, ...args)
     }
   },
   warn: (...args: any[]) => {
     if (developerMode) {
-      console.warn('[Vite]', ...args)
+      console.warn(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.yellow}[vite]${colors.reset}`, ...args)
     }
   },
   error: (...args: any[]) => {
     if (developerMode) {
-      console.error('[Vite]', ...args)
+      console.error(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.red}[vite]${colors.reset}`, ...args)
     }
   },
   info: (...args: any[]) => {
     if (developerMode) {
-      console.info('[Vite]', ...args)
+      console.info(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.blue}[vite]${colors.reset}`, ...args)
     }
   }
 })
 
+const INITIAL_CONTENT_EXCLUDE = new Set(['.gitkeep', 'Thumbs.db', '.DS_Store'])
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
+
+const createGitHubHeaders = (token?: string): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'User-Agent': 'Repo-Viewer/Prefetch',
+    Accept: 'application/vnd.github+json'
+  }
+
+  if (token && token.trim() !== '') {
+    headers.Authorization = `token ${token}`
+  }
+
+  return headers
+}
+
+const mapRawContentItem = (item: unknown): GitHubContent | null => {
+  if (!isRecord(item)) {
+    return null
+  }
+
+  const { name, path: itemPath, type, sha } = item
+
+  if (typeof name !== 'string' || typeof itemPath !== 'string' || typeof type !== 'string' || typeof sha !== 'string') {
+    return null
+  }
+
+  const normalizedType: GitHubContent['type'] = type === 'dir' ? 'dir' : 'file'
+
+  const result: GitHubContent = {
+    name,
+    path: itemPath,
+    type: normalizedType,
+    sha,
+    download_url: typeof item.download_url === 'string' ? item.download_url : null,
+  }
+
+  if (typeof item.size === 'number') {
+    result.size = item.size
+  }
+
+  if (typeof item.url === 'string') {
+    result.url = item.url
+  }
+
+  if (typeof item.html_url === 'string') {
+    result.html_url = item.html_url
+  }
+
+  if (typeof item.git_url === 'string') {
+    result.git_url = item.git_url
+  }
+
+  if (
+    isRecord(item._links) &&
+    typeof item._links.self === 'string' &&
+    typeof item._links.git === 'string' &&
+    typeof item._links.html === 'string'
+  ) {
+    result._links = {
+      self: item._links.self,
+      git: item._links.git,
+      html: item._links.html
+    }
+  }
+
+  return result
+}
+
+const sortInitialContents = (contents: GitHubContent[]): GitHubContent[] => {
+  return [...contents].sort((a, b) => {
+    if (a.type !== b.type) {
+      return a.type === 'dir' ? -1 : 1
+    }
+    return a.name.localeCompare(b.name, 'en', {
+      numeric: true,
+      sensitivity: 'base'
+    })
+  })
+}
+
+const serializeInitialPayload = (payload: InitialContentHydrationPayload): string => {
+  return JSON.stringify(payload)
+    .replace(/</g, '\u003C')
+    .replace(/\u2028/g, '\u2028')
+    .replace(/\u2029/g, '\u2029')
+}
+
+const createInitialContentPlugin = (appConfig: ReturnType<typeof configManager.getConfig>, logger: Logger) => {
+  const { repoOwner, repoName, repoBranch } = appConfig.github
+  const token = appConfig.tokens.githubPATs[0]
+
+  if (!repoOwner || !repoName || !repoBranch) {
+    logger.warn('Initial content hydration plugin skipped: GitHub repository config missing')
+    return {
+      name: 'repo-viewer-initial-content-disabled',
+      apply: 'build',
+      transformIndexHtml(html: string) {
+        return html
+      }
+    }
+  }
+
+  let serializedPayloadPromise: Promise<string | null> | null = null
+
+  const fetchInitialPayload = async (): Promise<InitialContentHydrationPayload | null> => {
+    try {
+      const headers = createGitHubHeaders(token)
+      const directoryUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents?ref=${encodeURIComponent(repoBranch)}`
+      const directoryResponse = await fetch(directoryUrl, { headers })
+
+      if (!directoryResponse.ok) {
+        logger.warn('Initial content directory request failed:', directoryResponse.status, directoryResponse.statusText)
+        return null
+      }
+
+      const directoryJson = await directoryResponse.json()
+      if (!Array.isArray(directoryJson)) {
+        logger.warn('GitHub directory response format invalid, skipping initial content hydration')
+        return null
+      }
+
+      const mapped = directoryJson
+        .map(mapRawContentItem)
+        .filter((item): item is GitHubContent => Boolean(item))
+
+      const filtered = mapped.filter(item => {
+        if (item.name.startsWith('.')) {
+          return false
+        }
+        return !INITIAL_CONTENT_EXCLUDE.has(item.name)
+      })
+
+      if (filtered.length === 0) {
+        logger.warn('Initial content directory is empty or all files filtered, skipping hydration')
+        return null
+      }
+
+      const sorted = sortInitialContents(filtered)
+
+      const readmeEntry = sorted.find(item => item.type === 'file' && /^readme(?:\.|$)/i.test(item.name))
+      let readmeContent: string | undefined
+
+      if (readmeEntry?.download_url) {
+        try {
+          const readmeHeaders = {
+            ...headers,
+            Accept: 'application/vnd.github.raw'
+          }
+          const readmeResponse = await fetch(readmeEntry.download_url, { headers: readmeHeaders })
+          if (readmeResponse.ok) {
+            readmeContent = await readmeResponse.text()
+          } else {
+            logger.warn('Failed to read README content:', readmeResponse.status, readmeResponse.statusText)
+          }
+        } catch (error) {
+          logger.warn('Exception occurred while reading README content', error)
+        }
+      }
+
+      const payload: InitialContentHydrationPayload = {
+        version: 1,
+        generatedAt: new Date().toISOString(),
+        branch: repoBranch,
+        repo: {
+          owner: repoOwner,
+          name: repoName
+        },
+        directories: [
+          {
+            path: '',
+            contents: sorted
+          }
+        ],
+        files: readmeEntry && readmeContent
+          ? [
+              {
+                path: readmeEntry.path,
+                downloadUrl: readmeEntry.download_url,
+                sha: readmeEntry.sha,
+                content: readmeContent,
+                encoding: 'utf-8'
+              }
+            ]
+          : []
+      }
+
+      logger.info('Initial content hydration data generated, will inject into build')
+      return payload
+    } catch (error) {
+      logger.warn('Failed to fetch initial content hydration data, will continue with normal build', error)
+      return null
+    }
+  }
+
+  return {
+    name: 'repo-viewer-initial-content',
+    apply: 'build',
+    enforce: 'post',
+    async transformIndexHtml(html: string) {
+      if (serializedPayloadPromise === null) {
+        serializedPayloadPromise = (async () => {
+          const payload = await fetchInitialPayload()
+          if (!payload) {
+            return null
+          }
+          return serializeInitialPayload(payload)
+        })()
+      }
+
+      const serialized = await serializedPayloadPromise
+      if (!serialized) {
+        return html
+      }
+
+      return {
+        html,
+        tags: [
+          {
+            tag: 'script',
+            attrs: {
+              id: 'repo-viewer-initial-content',
+              type: 'text/javascript'
+            },
+            children: `window.__INITIAL_CONTENT__ = ${serialized};`,
+            injectTo: 'head'
+          }
+        ]
+      }
+    }
+  }
+}
+
 class RequestLoggerMiddleware {
   constructor(private readonly logger: Logger) {}
 
+  private decodeUrl(url: string | undefined): string {
+    if (!url) return ''
+    try {
+      return decodeURIComponent(url)
+    } catch {
+      return url
+    }
+  }
+
   onProxyReq(proxyReq: http.ClientRequest, req: http.IncomingMessage) {
-    this.logger.log('Sending Request to the Target:', req.method, req.url)
+    const method = req.method || 'UNKNOWN'
+    const methodColor = method === 'GET' ? colors.green : method === 'POST' ? colors.blue : colors.cyan
+    const decodedUrl = this.decodeUrl(req.url)
+    this.logger.log(`${methodColor}${method}${colors.reset}`, `${colors.gray}${decodedUrl}${colors.reset}`)
   }
 
   onProxyRes(proxyRes: http.IncomingMessage, req: http.IncomingMessage) {
-    this.logger.log('Received Response from the Target:', proxyRes.statusCode, req.url)
+    const statusCode = proxyRes.statusCode || 0
+    let statusColor = colors.green
+    if (statusCode >= 400) {
+      statusColor = colors.red
+    } else if (statusCode >= 300) {
+      statusColor = colors.yellow
+    }
+    const decodedUrl = this.decodeUrl(req.url)
+    this.logger.log(`${statusColor}${statusCode}${colors.reset}`, `${colors.gray}${decodedUrl}${colors.reset}`)
   }
 
   onError(err: Error) {
@@ -62,7 +336,7 @@ function getPackageVersion() {
     const packageJson = JSON.parse(packageContent);
     return packageJson.version;
   } catch (error) {
-    console.warn('无法读取package.json版本信息:', error);
+    console.warn('Failed to read package.json version:', error);
     return '1.0.0';
   }
 }
@@ -76,10 +350,12 @@ export default defineConfig(({ mode }) => {
   const DEVELOPER_MODE = (env.VITE_DEVELOPER_MODE || env.DEVELOPER_MODE) === 'true';
   const logger = createLogger(DEVELOPER_MODE);
   const requestLogger = new RequestLoggerMiddleware(logger);
+  const runtimeConfig = configManager.getConfig();
 
   return {
     plugins: [
       react(),
+      createInitialContentPlugin(runtimeConfig, logger),
       {
         name: 'vercel-api-handler',
         configureServer(server) {
@@ -87,7 +363,7 @@ export default defineConfig(({ mode }) => {
 
             if (req.url?.startsWith('/api/github')) {
               try {
-                logger.log('处理 API 请求:', decodeURIComponent(req.url));
+                logger.log(`${colors.brightWhite}Processing API request:${colors.reset}`, `${colors.gray}${decodeURIComponent(req.url)}${colors.reset}`);
 
                 const module = await import('./api/github');
                 const handler = module.default;
@@ -139,9 +415,9 @@ export default defineConfig(({ mode }) => {
                 } as any;
 
                 await handler(vercelReq, vercelRes);
-                logger.log('API 请求处理完成');
+                logger.log(`${colors.green}API request completed${colors.reset}`);
               } catch (error) {
-                logger.error('API handler error:', error);
+                logger.error(`${colors.red}API handler error:${colors.reset}`, error);
                 if (!res.headersSent) {
                   res.statusCode = 500;
                   res.setHeader('Content-Type', 'application/json');

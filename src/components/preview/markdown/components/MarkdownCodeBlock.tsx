@@ -5,6 +5,7 @@ import { alpha } from "@mui/material/styles";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { logger } from "@/utils";
+import { useI18n } from "@/contexts/I18nContext";
 
 type CodeElementProps = (HTMLAttributes<HTMLElement> & ClassAttributes<HTMLElement>) | undefined;
 
@@ -26,6 +27,7 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
   dataOid,
 }) => {
   const theme = useTheme();
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<number | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -114,7 +116,7 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
       </pre>
 
       <Tooltip
-        title={copied ? "已复制" : "复制代码"}
+        title={copied ? t('ui.markdown.copy.copied') : t('ui.markdown.copy.button')}
         placement="left"
         enterDelay={200}
         leaveDelay={150}
@@ -124,7 +126,7 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
       >
         <IconButton
           size="small"
-          aria-label="复制代码"
+          aria-label={t('ui.markdown.copy.aria')}
           onClick={() => { void handleCopy(); }}
           sx={{
             position: "absolute",
