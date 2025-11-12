@@ -1,4 +1,4 @@
-import { useContext, useState, useCallback, useEffect, useRef } from "react";
+import { useContext, useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import {
   Box,
   IconButton,
@@ -9,6 +9,7 @@ import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   GitHub as GitHubIcon,
+  SearchRounded as SearchIcon,
 } from "@mui/icons-material";
 import { ColorModeContext } from "@/contexts/colorModeContext";
 import { useRefresh } from "@/hooks/useRefresh";
@@ -17,6 +18,10 @@ import axios from "axios";
 import { getGithubConfig } from "@/config";
 import { logger } from "@/utils";
 import { useContentContext } from "@/contexts/unified";
+import { useI18n } from "@/contexts/I18nContext";
+
+// 懒加载搜索组件
+const SearchDrawer = lazy(async () => import("@/components/interactions/SearchDrawer"));
 
 /**
  * 仓库信息接口
@@ -56,7 +61,7 @@ interface RefreshSessionState {
 
 /**
  * 工具栏按钮组件
- * 
+ *
  * 提供主题切换、刷新和跳转到GitHub等功能按钮。
  */
 const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
@@ -66,6 +71,8 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
   const { toggleColorMode } = useContext(ColorModeContext);
   const theme = useTheme();
   const handleRefresh = useRefresh();
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState<boolean>(false);
+  const { t } = useI18n();
   const [repoInfo, setRepoInfo] = useState<RepoInfo>(() => {
     const githubConfig = getGithubConfig();
     return {
@@ -372,6 +379,14 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
     window.open(githubUrl, "_blank");
   }, [repoInfo, currentBranch, defaultBranch]);
 
+  const openSearchDrawer = useCallback(() => {
+    setSearchDrawerOpen(true);
+  }, []);
+
+  const closeSearchDrawer = useCallback(() => {
+    setSearchDrawerOpen(false);
+  }, []);
+
   // 保留分支逻辑但不显示UI：这些代码确保分支功能的后台逻辑正常工作
   // branchLabelId, handleBranchChange, handleBranchOpen, branchOptions 等
   // 虽然不再渲染UI，但保留这些逻辑以备将来需要或其他组件调用
@@ -380,29 +395,44 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
   const shouldHideButtons = isSmallScreen && showBreadcrumbInToolbar && !isHomePage;
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        gap: 1,
-        alignItems: "center",
-        transform: shouldHideButtons
-          ? { xs: 'translateX(120px)', sm: 'translateX(0)' }
-          : 'translateX(0)',
-        opacity: shouldHideButtons ? 0 : 1,
-        transition: shouldHideButtons
-          ? 'none'
-          : 'all 0.2s ease-out',
-        pointerEvents: shouldHideButtons ? 'none' : 'auto',
-        position: shouldHideButtons ? { xs: 'absolute', sm: 'relative' } : 'relative',
-        right: shouldHideButtons ? { xs: 0, sm: 'auto' } : 'auto',
-      }}
-      data-oid="7:zr_jb"
-    >
-      <Tooltip title="在GitHub中查看" data-oid="f.rvw_c">
-        <IconButton
-          color="inherit"
-          onClick={onGitHubClick}
-          sx={{
+    <>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          alignItems: "center",
+          transform: shouldHideButtons
+            ? { xs: 'translateX(120px)', sm: 'translateX(0)' }
+            : 'translateX(0)',
+          opacity: shouldHideButtons ? 0 : 1,
+          transition: shouldHideButtons
+            ? 'none'
+            : 'all 0.2s ease-out',
+          pointerEvents: shouldHideButtons ? 'none' : 'auto',
+          position: shouldHideButtons ? { xs: 'absolute', sm: 'relative' } : 'relative',
+          right: shouldHideButtons ? { xs: 0, sm: 'auto' } : 'auto',
+        }}
+        data-oid="7:zr_jb"
+      >
+        <Tooltip title={t('ui.toolbar.searchFiles')} data-oid="toolbar-search">
+          <span>
+            <IconButton
+              color="inherit"
+              onClick={openSearchDrawer}
+              aria-label={t('ui.toolbar.searchFiles')}
+              data-oid="toolbar-search-button"
+            >
+              <SearchIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title={t('ui.toolbar.viewOnGitHub')} data-oid="f.rvw_c">
+          <IconButton
+            color="inherit"
+            onClick={onGitHubClick}
+            aria-label={t('ui.toolbar.viewOnGitHub')}
+            sx={{
             "&:hover": {
               color: theme.palette.primary.light,
             },
@@ -415,12 +445,13 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
 
       {/* 主题切换按钮 - 点击时不会触发内容重新加载 */}
       <Tooltip
-        title={theme.palette.mode === "dark" ? "浅色模式" : "深色模式"}
+        title={theme.palette.mode === "dark" ? t('ui.toolbar.lightMode') : t('ui.toolbar.darkMode')}
         data-oid="skn4izp"
       >
         <IconButton
           onClick={onThemeToggleClick}
           color="inherit"
+          aria-label={theme.palette.mode === "dark" ? t('ui.toolbar.lightMode') : t('ui.toolbar.darkMode')}
           sx={{
             "&:hover": {
               color:
@@ -438,7 +469,13 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
           )}
         </IconButton>
       </Tooltip>
-    </Box>
+      </Box>
+      {searchDrawerOpen && (
+        <Suspense fallback={null}>
+          <SearchDrawer open={searchDrawerOpen} onClose={closeSearchDrawer} />
+        </Suspense>
+      )}
+    </>
   );
 };
 

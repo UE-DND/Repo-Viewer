@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
-import { ErrorManager } from '@/utils/error/ErrorManager';
+import { ErrorManager } from '@/utils/error';
 import type { AppError } from '@/types/errors';
 import { ErrorLevel, ErrorCategory, isNetworkError, isGitHubError, isFileOperationError } from '@/types/errors';
 import { getDeveloperConfig } from '@/config';
 import { logger } from '@/utils';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 错误处理器配置选项
@@ -40,15 +41,15 @@ const developerSettings = getDeveloperConfig();
 const defaultOptions: UseErrorHandlerOptions = {
   showNotification: true,
   logToConsole: developerSettings.mode || developerSettings.consoleLogging,
-  fallbackMessage: '操作失败，请稍后重试'
+  fallbackMessage: 'error.default'
 };
 
 /**
  * 错误处理Hook
- * 
+ *
  * 提供统一的错误处理功能，包括错误捕获、用户通知和日志记录。
  * 支持自动清理过期错误和异步错误处理。
- * 
+ *
  * @param globalOptions - 错误处理配置选项
  * @returns 错误处理器对象
  */
@@ -57,11 +58,12 @@ export function useErrorHandler(
 ): ErrorHandlerReturn {
   const { enqueueSnackbar } = useSnackbar();
   const [errors, setErrors] = useState<AppError[]>([]);
+  const { t } = useI18n();
 
   const resolvedOptions: Required<UseErrorHandlerOptions> = useMemo(() => ({
     showNotification: globalOptions.showNotification ?? defaultOptions.showNotification ?? true,
     logToConsole: globalOptions.logToConsole ?? defaultOptions.logToConsole ?? false,
-    fallbackMessage: globalOptions.fallbackMessage ?? defaultOptions.fallbackMessage ?? '未知错误'
+    fallbackMessage: globalOptions.fallbackMessage ?? defaultOptions.fallbackMessage ?? 'error.unknown'
   }), [globalOptions.showNotification, globalOptions.logToConsole, globalOptions.fallbackMessage]);
 
   // 获取用户友好的错误消息
@@ -69,55 +71,59 @@ export function useErrorHandler(
     switch (error.category) {
       case ErrorCategory.NETWORK: {
         if (isNetworkError(error) && error.timeout === true) {
-          return '请求超时，请检查网络连接';
+          return t('error.network.timeout');
         }
-        return '网络连接失败，请稍后重试';
+        return t('error.network.connection');
       }
 
       case ErrorCategory.API: {
         if (isGitHubError(error)) {
           if (error.statusCode === 403) {
-            return 'API访问受限，请检查访问权限';
+            return t('error.api.forbidden');
           }
           if (error.statusCode === 404) {
-            return '请求的资源未找到';
+            return t('error.api.notFound');
           }
           if (error.statusCode >= 500) {
-            return '服务器错误，请稍后重试';
+            return t('error.api.serverError');
           }
         }
         const apiMessage = error.message.trim();
-        return apiMessage !== '' ? apiMessage : '请求失败';
+        return apiMessage !== '' ? apiMessage : t('error.api.default');
       }
 
       case ErrorCategory.FILE_OPERATION: {
         if (isFileOperationError(error)) {
           switch (error.operation) {
             case 'download':
-              return '文件下载失败，请重试';
+              return t('error.file.download');
             case 'compress':
-              return '文件压缩失败，可能文件过大';
+              return t('error.file.compress');
             case 'parse':
-              return '文件解析失败，格式可能不支持';
+              return t('error.file.parse');
             default:
-              return '文件操作失败';
+              return t('error.file.default');
           }
         }
-        return '文件操作失败';
+        return t('error.file.default');
       }
 
       case ErrorCategory.COMPONENT:
-        return '页面组件出错，请刷新页面';
+        return t('error.component');
 
       case ErrorCategory.VALIDATION:
-        return '输入数据有误，请检查后重试';
+        return t('error.validation');
 
       default:
-        const fallbackMessage = resolvedOptions.fallbackMessage;
+        const fallbackKey = resolvedOptions.fallbackMessage;
         const baseMessage = error.message.trim();
-        return baseMessage !== '' ? baseMessage : fallbackMessage;
+        // 如果 fallbackMessage 是一个翻译键，使用翻译；否则直接使用
+        if (fallbackKey.startsWith('error.')) {
+          return baseMessage !== '' ? baseMessage : t(fallbackKey);
+        }
+        return baseMessage !== '' ? baseMessage : fallbackKey;
     }
-  }, [resolvedOptions.fallbackMessage]);
+  }, [resolvedOptions.fallbackMessage, t]);
 
   // 获取通知严重级别
   const getNotificationVariant = useCallback((level: ErrorLevel): 'default' | 'error' | 'success' | 'warning' | 'info' => {
@@ -166,11 +172,15 @@ export function useErrorHandler(
       (developerConfig.mode && resolvedOptions.logToConsole);
 
     if (shouldLog) {
-      logger.group(`🚨 错误处理 [${appError.category}]`);
+      if (typeof logger.group === 'function') {
+        logger.group(`🚨 错误处理 [${appError.category}]`);
+      }
       logger.error('错误详情:', appError);
       logger.error('原始错误:', error);
       logger.error('上下文:', context);
-      logger.groupEnd();
+      if (typeof logger.groupEnd === 'function') {
+        logger.groupEnd();
+      }
     }
   }, [
     resolvedOptions,
@@ -223,9 +233,9 @@ export function useErrorHandler(
 
 /**
  * 全局错误处理Hook
- * 
+ *
  * 监听全局错误事件和未处理的Promise拒绝，自动捕获并处理。
- * 
+ *
  * @returns 错误处理器对象
  */
 export function useGlobalErrorHandler(): ErrorHandlerReturn {

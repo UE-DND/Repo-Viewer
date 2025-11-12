@@ -2,16 +2,18 @@ import React from 'react';
 import { Box, Button, useTheme } from '@mui/material';
 import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import type { ImageThumbnailProps } from './types';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 图片缩略图组件
- * 
+ *
  * 显示图片的缩略图，点击后打开完整预览。
  */
 const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imageUrl,
   fileName,
   thumbnailSize,
+  aspectRatio,
   shouldLoad,
   onOpenPreview,
   onLoad,
@@ -19,6 +21,7 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imgRef,
 }) => {
   const theme = useTheme();
+  const { t } = useI18n();
   const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
   const altText = normalizedFileName ?? '缩略图';
 
@@ -42,6 +45,12 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: g3BorderRadius(G3_PRESETS.image),
+          ...(typeof aspectRatio === 'number' && aspectRatio > 0
+            ? {
+                aspectRatio,
+                height: 'auto',
+              }
+            : {}),
           '&:hover': {
             boxShadow: theme.shadows[2],
           },
@@ -57,6 +66,7 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
+            transition: 'transform 0.3s ease',
           }}
           onLoad={onLoad}
           onError={onError}
@@ -68,9 +78,10 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
       <Button
         variant="contained"
         onClick={onOpenPreview}
+        aria-label={t('ui.image.openPreview')}
         data-oid="otw7voa"
       >
-        查看大图
+        {t('ui.image.openPreview')}
       </Button>
     </Box>
   );

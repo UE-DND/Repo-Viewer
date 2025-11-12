@@ -12,8 +12,8 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-# JavaScript, TypeScript, JSX, TSX files
-[*.{js,jsx,ts,tsx}]
+# JavaScript, TypeScript files
+[*.{js,ts,tsx}]
 indent_style = space
 indent_size = 2
 max_line_length = 100
@@ -28,13 +28,13 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 
-# CSS, SCSS, SASS files
-[*.{css,scss,sass,less}]
+# CSS files
+[*.css]
 indent_style = space
 indent_size = 2
 
 # Markdown files
-[*.{md,mdx}]
+[*.md]
 trim_trailing_whitespace = false
 max_line_length = off
 
@@ -57,18 +57,3 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 insert_final_newline = false
-
-# Shell scripts
-[*.{sh,bash,zsh}]
-indent_style = space
-indent_size = 2
-
-# Makefiles
-[Makefile]
-indent_style = tab
-indent_size = 4
-
-# Docker files
-[Dockerfile*]
-indent_style = space
-indent_size = 2

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -7,7 +7,7 @@ import {
   useTheme,
   GlobalStyles,
 } from '@mui/material';
-import { 
+import {
   Replay as ReplayIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -16,10 +16,19 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { ImagePreviewSkeleton } from '@/components/ui/skeletons';
 import ImageToolbar from './ImageToolbar';
 import type { ImagePreviewContentProps } from './types';
+import {
+  useAspectRatioTracker,
+  useContainerSize,
+  useDesktopNavigation,
+  useTouchNavigation,
+  useKeyboardNavigation,
+  useStageMetrics,
+} from './hooks';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 图片预览内容组件
- * 
+ *
  * 显示图片预览主体内容，支持缩放、旋转和拖拽。
  */
 const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
@@ -41,16 +50,24 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   hasNext = false,
   onPrevious,
   onNext,
+  initialAspectRatio,
+  onAspectRatioChange,
 }) => {
   const theme = useTheme();
-  // 导航按钮显示状态：'left' | 'right' | null（互斥显示）
-  const [activeNavSide, setActiveNavSide] = useState<'left' | 'right' | null>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  
-  // 移动端拖动切换状态
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const { t } = useI18n();
+  const { containerRef, containerSize } = useContainerSize();
+  const { dominantAspectRatio, processAspectRatioFromImage, handleImageRef } = useAspectRatioTracker({
+    imageUrl,
+    imgRef,
+    onLoad,
+    ...(typeof initialAspectRatio === 'number' ? { initialAspectRatio } : {}),
+    ...(onAspectRatioChange !== undefined ? { onAspectRatioChange } : {}),
+  });
+  const stageMetrics = useStageMetrics({ containerSize, dominantAspectRatio, isSmallScreen });
+  const stageWidth = stageMetrics?.width ?? null;
+  const stageHeight = stageMetrics?.height ?? null;
+  const stageMaxWidth = stageMetrics?.availableWidth ?? null;
+  const stageMaxHeight = stageMetrics?.availableHeight ?? null;
   const [currentScale, setCurrentScale] = useState(1);
 
   const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
@@ -58,176 +75,44 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   const altText = normalizedFileName ?? '图片预览';
   const hasError = error;
 
-  // 图片切换时重置移动端拖动状态
-  useEffect(() => {
-    // 只重置移动端相关状态，保留桌面端导航按钮的悬停状态
-    setDragOffset(0);
-    setIsDragging(false);
-  }, [imageUrl]);
+  const { dragOffset, isDragging, handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchNavigation({
+    isSmallScreen,
+    currentScale,
+    hasError,
+    loading,
+    hasPrevious,
+    hasNext,
+    imageUrl,
+    ...(onPrevious !== undefined ? { onPrevious } : {}),
+    ...(onNext !== undefined ? { onNext } : {}),
+  });
 
-  // 桌面端导航按钮的鼠标位置追踪
-  const handleContainerMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
-    if (isSmallScreen || hasError || loading) {
-      setActiveNavSide(null);
-      return;
-    }
+  const { activeNavSide, handleContainerMouseMove, handleContainerMouseLeave } = useDesktopNavigation({
+    containerRef,
+    isSmallScreen,
+    hasError,
+    loading,
+    hasPrevious,
+    hasNext,
+  });
 
-    const container = containerRef.current;
-    if (container === null) {
-      return;
-    }
+  useKeyboardNavigation({
+    loading,
+    hasError,
+    hasPrevious,
+    hasNext,
+    ...(onPrevious !== undefined ? { onPrevious } : {}),
+    ...(onNext !== undefined ? { onNext } : {}),
+  });
 
-    const rect = container.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const width = rect.width;
-    const threshold = 150; // 导航区域宽度
-
-    // 左侧区域（有上一张时）
-    if (hasPrevious && x < threshold) {
-      setActiveNavSide('left');
-    }
-    // 右侧区域（有下一张时）
-    else if (hasNext && x > width - threshold) {
-      setActiveNavSide('right');
-    }
-    // 中间区域
-    else {
-      setActiveNavSide(null);
-    }
-  }, [isSmallScreen, hasError, loading, hasPrevious, hasNext]);
-
-  // 鼠标离开容器
-  const handleContainerMouseLeave = useCallback((): void => {
-    setActiveNavSide(null);
-  }, []);
-
-  // 键盘导航支持
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      // 如果正在加载或有错误，不响应键盘事件
-      if (loading || hasError) {
-        return;
-      }
-
-      if (e.key === 'ArrowLeft' && hasPrevious && onPrevious !== undefined) {
-        e.preventDefault();
-        onPrevious();
-      } else if (e.key === 'ArrowRight' && hasNext && onNext !== undefined) {
-        e.preventDefault();
-        onNext();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [loading, hasError, hasPrevious, hasNext, onPrevious, onNext]);
   const rotationTransform = `rotate(${String(rotation)}deg)`;
   const containerClassName = [className, 'image-preview-container']
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .join(' ');
 
-  // 更新当前缩放比例
   useEffect(() => {
     setCurrentScale(toolbarProps.scale);
   }, [toolbarProps.scale]);
-
-  // 图片引用回调，用于检测缓存
-  const handleImageRef = useCallback((img: HTMLImageElement | null): void => {
-    // 更新 ref
-    if (typeof imgRef === 'object' && 'current' in imgRef) {
-      (imgRef as React.RefObject<HTMLImageElement | null> & { current: HTMLImageElement | null }).current = img;
-    }
-    
-    // 检查图片是否已从缓存加载
-    if (img !== null && img.complete && img.naturalHeight !== 0) {
-      // 图片已缓存，立即触发 onLoad
-      onLoad();
-    }
-  }, [imgRef, onLoad]);
-
-  // 移动端触摸开始
-  const handleTouchStart = (e: React.TouchEvent): void => {
-    // 只在移动端、未放大、且未加载错误时启用
-    if (!isSmallScreen || currentScale !== 1 || hasError || loading) {
-      return;
-    }
-
-    const touch = e.touches[0];
-    if (touch !== undefined) {
-      setTouchStart({
-        x: touch.clientX,
-        y: touch.clientY,
-        time: Date.now(),
-      });
-    }
-  };
-
-  // 移动端触摸移动
-  const handleTouchMove = (e: React.TouchEvent): void => {
-    if (touchStart === null || !isSmallScreen || currentScale !== 1 || hasError || loading) {
-      return;
-    }
-
-    const touch = e.touches[0];
-    if (touch === undefined) {
-      return;
-    }
-
-    const deltaX = touch.clientX - touchStart.x;
-    const deltaY = touch.clientY - touchStart.y;
-
-    // 判断是否为水平拖动（横向移动大于纵向移动）
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-      setIsDragging(true);
-      
-      // 限制拖动范围
-      let offset = deltaX;
-      
-      // 如果没有上一张，限制向右拖动
-      if (!hasPrevious && deltaX > 0) {
-        offset = deltaX * 0.3;
-      }
-      
-      // 如果没有下一张，限制向左拖动
-      if (!hasNext && deltaX < 0) {
-        offset = deltaX * 0.3;
-      }
-      
-      setDragOffset(offset);
-    }
-  };
-
-  // 移动端触摸结束
-  const handleTouchEnd = (): void => {
-    if (touchStart === null || !isSmallScreen || currentScale !== 1 || hasError || loading) {
-      setTouchStart(null);
-      setDragOffset(0);
-      setIsDragging(false);
-      return;
-    }
-
-    const threshold = 80; // 切换阈值（像素）
-    const duration = Date.now() - touchStart.time;
-    const velocity = Math.abs(dragOffset) / duration; // 速度（像素/毫秒）
-
-    // 快速滑动或者超过阈值
-    if ((Math.abs(dragOffset) > threshold) || (velocity > 0.5 && Math.abs(dragOffset) > 30)) {
-      if (dragOffset > 0 && hasPrevious && onPrevious !== undefined) {
-        // 向右拖动，上一张
-        onPrevious();
-      } else if (dragOffset < 0 && hasNext && onNext !== undefined) {
-        // 向左拖动，下一张
-        onNext();
-      }
-    }
-
-    // 重置状态
-    setTouchStart(null);
-    setDragOffset(0);
-    setIsDragging(false);
-  };
 
   return (
     <Box
@@ -239,11 +124,36 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         position: 'relative',
         overflow: 'hidden',
         bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5',
+        '--rv-image-preview-aspect-ratio': dominantAspectRatio.toFixed(3),
+        ...(stageWidth !== null
+          ? { '--rv-image-preview-stage-width': `${stageWidth.toString()}px` }
+          : {}),
+        ...(stageHeight !== null
+          ? { '--rv-image-preview-stage-height': `${stageHeight.toString()}px` }
+          : {}),
       }}
       className={containerClassName.length > 0 ? containerClassName : 'image-preview-container'}
       style={style}
       data-oid="j_s1bp2"
     >
+      {/* 屏幕阅读器状态提示区域 */}
+      <Box
+        component="div"
+        aria-live="polite"
+        aria-atomic="true"
+        sx={{
+          position: 'absolute',
+          left: '-10000px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+        }}
+      >
+        {loading && '正在加载图片'}
+        {hasError && '图片加载失败'}
+        {!loading && !hasError && `图片已加载：${displayFileName}`}
+      </Box>
+
       {/* 文件名标题（仅在非小屏幕时显示） */}
       {!isSmallScreen && (
         <Typography
@@ -297,7 +207,10 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         {loading && (
           <ImagePreviewSkeleton
             isSmallScreen={isSmallScreen}
+            aspectRatio={dominantAspectRatio}
             data-oid="84nup28"
+            {...(stageWidth !== null ? { targetWidth: stageWidth } : {})}
+            {...(stageHeight !== null ? { targetHeight: stageHeight } : {})}
           />
         )}
 
@@ -392,10 +305,12 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                       justifyContent: 'center',
                       alignItems: 'center',
                       transform: rotationTransform,
-                      transition: 'transform 0.3s ease',
+                      transition: 'transform 0.3s ease, width 0.35s ease, height 0.35s ease',
                       transformOrigin: 'center center',
-                      width: '100%',
-                      height: '100%',
+                      width: stageWidth !== null ? `${stageWidth.toString()}px` : 'auto',
+                      height: stageHeight !== null ? `${stageHeight.toString()}px` : 'auto',
+                      maxWidth: stageMaxWidth !== null ? `${stageMaxWidth.toString()}px` : '100%',
+                      maxHeight: stageMaxHeight !== null ? `${stageMaxHeight.toString()}px` : '100%',
                       position: 'relative',
                     }}
                     data-oid="y6kwode"
@@ -406,12 +321,16 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                       alt={altText}
                       className="loaded"
                       style={{
-                        maxWidth: '90%',
-                        maxHeight: '80%',
+                        width: '100%',
+                        height: '100%',
                         objectFit: 'contain',
                         opacity: 1,
+                        transition: 'opacity 0.3s ease',
                       }}
-                      onLoad={onLoad}
+                      onLoad={(event) => {
+                        processAspectRatioFromImage(event.currentTarget);
+                        onLoad();
+                      }}
                       onError={onError}
                       data-oid="nyva-.q"
                     />
@@ -425,7 +344,10 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                     style={{
                       display: 'none',
                     }}
-                    onLoad={onLoad}
+                    onLoad={(event) => {
+                      processAspectRatioFromImage(event.currentTarget);
+                      onLoad();
+                    }}
                     onError={onError}
                     data-oid="nyva-loading"
                   />
@@ -470,11 +392,11 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                           boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
                         }}
                       >
-                        <ChevronLeftIcon 
-                          sx={{ 
+                        <ChevronLeftIcon
+                          sx={{
                             fontSize: '2rem',
                             color: '#fff',
-                          }} 
+                          }}
                         />
                       </Box>
                     </Box>
@@ -507,11 +429,11 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                           boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
                         }}
                       >
-                        <ChevronRightIcon 
-                          sx={{ 
+                        <ChevronRightIcon
+                          sx={{
                             fontSize: '2rem',
                             color: '#fff',
-                          }} 
+                          }}
                         />
                       </Box>
                     </Box>
@@ -539,6 +461,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                 >
                   <IconButton
                     onClick={onPrevious}
+                    aria-label={t('ui.image.previous')}
                     sx={{
                       bgcolor: alpha(theme.palette.background.paper, activeNavSide === 'left' ? 0.95 : 0),
                       backdropFilter: activeNavSide === 'left' ? 'blur(10px)' : 'none',
@@ -555,12 +478,12 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                     }}
                     data-oid="prev-nav-btn"
                   >
-                    <ChevronLeftIcon 
-                      sx={{ 
+                    <ChevronLeftIcon
+                      sx={{
                         fontSize: '2rem',
                         color: theme.palette.text.primary,
-                      }} 
-                      data-oid="prev-icon" 
+                      }}
+                      data-oid="prev-icon"
                     />
                   </IconButton>
                 </Box>
@@ -586,6 +509,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                 >
                   <IconButton
                     onClick={onNext}
+                    aria-label={t('ui.image.next')}
                     sx={{
                       bgcolor: alpha(theme.palette.background.paper, activeNavSide === 'right' ? 0.95 : 0),
                       backdropFilter: activeNavSide === 'right' ? 'blur(10px)' : 'none',
@@ -602,12 +526,12 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                     }}
                     data-oid="next-nav-btn"
                   >
-                    <ChevronRightIcon 
-                      sx={{ 
+                    <ChevronRightIcon
+                      sx={{
                         fontSize: '2rem',
                         color: theme.palette.text.primary,
-                      }} 
-                      data-oid="next-icon" 
+                      }}
+                      data-oid="next-icon"
                     />
                   </IconButton>
                 </Box>

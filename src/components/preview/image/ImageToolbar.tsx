@@ -16,10 +16,11 @@ import {
 } from '@mui/icons-material';
 import type { ImageToolbarProps } from './types';
 import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 图片工具栏组件
- * 
+ *
  * 提供图片预览的控制功能，包括缩放、旋转、全屏和关闭。
  */
 const ImageToolbar: React.FC<ImageToolbarProps> = ({
@@ -37,6 +38,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
   closeButtonBorderRadius,
 }) => {
   const theme = useTheme();
+  const { t } = useI18n();
 
   return (
     <Box
@@ -101,6 +103,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.zoomOut')}
+          title={t('ui.image.zoomOut')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -126,6 +130,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.reset')}
+          title={t('ui.image.reset')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -160,6 +166,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.zoomIn')}
+          title={t('ui.image.zoomIn')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -183,6 +191,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           onClick={handleRotateLeft}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.rotateLeft')}
+          title={t('ui.image.rotateLeft')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -206,6 +216,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           onClick={handleRotateRight}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.rotateRight')}
+          title={t('ui.image.rotateRight')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -230,6 +242,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             onClick={toggleFullScreen}
             disabled={error}
             size={isSmallScreen ? 'medium' : 'large'}
+            aria-label={t('ui.image.fullscreen')}
+            title={t('ui.image.fullscreen')}
             sx={{
               bgcolor: alpha(theme.palette.primary.main, 0.1),
               '&:hover': {
@@ -255,6 +269,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         variant="contained"
         color="primary"
         onClick={handleClosePreview}
+        aria-label={t('ui.image.close')}
         sx={{
           position: 'absolute',
           right: isSmallScreen ? theme.spacing(1) : theme.spacing(2),
@@ -279,7 +294,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         }}
         data-oid="rqnqmvq"
       >
-        关闭
+        {t('ui.image.close')}
       </Button>
     </Box>
   );

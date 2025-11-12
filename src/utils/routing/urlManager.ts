@@ -2,15 +2,6 @@ import { GitHub } from '@/services/github';
 import { logger } from '../index';
 
 /**
- * URL 参数键名 - 仅用于向后兼容
- */
-export const URL_PARAMS = {
-  PATH: 'path',
-  PREVIEW: 'preview',
-  BRANCH: 'branch',
-} as const;
-
-/**
  * 验证路径格式
  * 
  * 检查路径是否包含非法字符。
@@ -27,8 +18,7 @@ function isValidPath(path: string): boolean {
 /**
  * 从URL解析路径参数
  * 
- * 优先从路径段获取，向后兼容查询参数方式。
- * 包含路径格式验证和详细的错误处理。
+ * 仅从路径段解析，并包含路径格式验证和详细的错误处理。
  * 
  * @returns 文件路径字符串，如果解析失败或路径无效则返回空字符串
  */
@@ -64,27 +54,6 @@ export function getPathFromUrl(): string {
       }
     }
 
-    // 向后兼容：如果路径段为空，尝试从查询参数获取
-    const urlParams = new URLSearchParams(window.location.search);
-    const path = urlParams.get(URL_PARAMS.PATH) ?? '';
-    
-    if (path.length > 0) {
-      try {
-        const decodedPath = decodeURIComponent(path);
-        
-        // 验证路径格式
-        if (!isValidPath(decodedPath)) {
-          logger.warn(`查询参数路径包含非法字符，已忽略: ${path}`);
-          return '';
-        }
-        
-        return decodedPath;
-      } catch (decodeError) {
-        logger.error('查询参数路径解码失败:', decodeError);
-        return '';
-      }
-    }
-    
     return '';
   } catch (error) {
     logger.error('解析 URL 路径参数失败:', error);
@@ -95,19 +64,12 @@ export function getPathFromUrl(): string {
 /**
  * 从URL解析分支参数
  * 
- * 从查询参数或history state中获取分支名称。
+ * 从history state中获取分支名称。
  * 
  * @returns 分支名称字符串
  */
 export function getBranchFromUrl(): string {
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const branchParam = urlParams.get(URL_PARAMS.BRANCH);
-
-    if (branchParam !== null && branchParam.trim().length > 0) {
-      return decodeURIComponent(branchParam);
-    }
-
     const state = window.history.state as { branch?: string } | null;
     const stateBranch = state?.branch;
 
@@ -125,20 +87,12 @@ export function getBranchFromUrl(): string {
 /**
  * 从URL解析预览文件参数
  * 
- * 从查询参数或哈希部分获取预览文件名。
+ * 通过哈希部分获取预览文件名。
  * 
  * @returns 预览文件名
  */
 export function getPreviewFromUrl(): string {
   try {
-    // 检查是否使用了查询参数格式的预览
-    const urlParams = new URLSearchParams(window.location.search);
-    const previewParam = urlParams.get(URL_PARAMS.PREVIEW);
-
-    if (previewParam !== null) {
-      return decodeURIComponent(previewParam);
-    }
-
     // 如果没有查询参数，检查是否有 #preview 哈希标记
     const hash = window.location.hash;
     if (hash.length > 0 && hash.startsWith('#preview=')) {
@@ -181,20 +135,8 @@ function buildUrl(path: string, preview?: string, branch?: string): UrlBuildResu
   // 基础 URL 是路径
   let url = `/${encodedPath}`;
 
-  const queryParams = new URLSearchParams();
-
   const branchValue = branch ?? GitHub.Branch.getCurrentBranch();
   const activeBranch = branchValue.trim();
-
-  if (activeBranch.length > 0) {
-    queryParams.set(URL_PARAMS.BRANCH, activeBranch);
-  }
-
-  const queryString = queryParams.toString();
-
-  if (queryString.length > 0) {
-    url += `?${queryString}`;
-  }
 
   // 如果有预览参数，添加为哈希部分，但仅使用文件名
   if (preview !== undefined && preview.length > 0) {
@@ -270,18 +212,12 @@ export function updateUrlWithHistory(path: string, preview?: string, branch?: st
 /**
  * 检查URL中是否有预览参数
  * 
- * 检查查询参数或哈希部分是否包含预览参数。
+ * 检查哈希部分是否包含预览参数。
  * 
  * @returns 如果包含预览参数返回true
  */
 export function hasPreviewParam(): boolean {
   try {
-    // 检查查询参数
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has(URL_PARAMS.PREVIEW)) {
-      return true;
-    }
-
     // 检查哈希部分
     const hash = window.location.hash;
     return hash.startsWith('#preview=');

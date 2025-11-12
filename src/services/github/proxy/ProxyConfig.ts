@@ -1,5 +1,5 @@
 import { getAccessConfig, getProxyConfig } from '@/config';
-import { getForceServerProxy } from '../config/ProxyForceManager';
+import { getForceServerProxy } from '../config';
 
 // 获取配置
 export const accessConfig = getAccessConfig();
@@ -10,7 +10,7 @@ export const USE_TOKEN_MODE = accessConfig.useTokenMode;
 
 /**
  * 检查是否启用强制服务器代理
- * 
+ *
  * @returns 如果启用返回true
  */
 export const isForceServerProxyEnabled = (): boolean => getForceServerProxy();

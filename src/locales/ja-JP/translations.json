@@ -1,0 +1,230 @@
+{
+  "search": {
+    "title": "ファイル検索",
+    "empty": "まだ検索していません",
+    "label": {
+      "default": "リポジトリ内を検索",
+      "inBranch": "@@branch@@ で検索",
+      "inBranches": "@@branches@@ で検索",
+      "inBranchesWithPath": "@@branches@@: @@path@@ で検索",
+      "inMultipleBranches": "@@count@@ 個のブランチで検索",
+      "inMultipleBranchesWithPath": "@@branches@@ など @@count@@ 個のブランチ: @@path@@ で検索"
+    },
+    "results": {
+      "summary": "@@count@@ 件の結果 • @@took@@ ms • @@mode@@",
+      "indexMode": "インデックスモード",
+      "apiMode": "APIモード",
+      "noResults": "結果がありません",
+      "noResultsHint": "キーワードを変更するか、フィルタを調整してください",
+      "emptyIndexResult": "インデックス検索結果が見つかりません。APIモード検索をお試しください。",
+      "apiSearchButton": "APIモード検索を使用",
+      "apiSearchButtonShort": "API検索",
+      "source": {
+        "index": "インデックス",
+        "api": "API"
+      }
+    },
+    "input": {
+      "placeholder": "検索キーワードを入力",
+      "label": "リポジトリ内を検索"
+    },
+    "filter": {
+      "toggle": "フィルタ条件",
+      "collapse": "フィルタを閉じる",
+      "title": "フィルタオプション",
+      "noBranches": "利用可能なブランチがありません",
+      "clear": "クリア",
+      "extensionLabel": "ファイル拡張子で絞り込み",
+      "extensionPlaceholder": "例：pdf,docx,xlsx",
+      "pathLabel": "検索パスで絞り込み",
+      "pathPlaceholder": "例：src/components"
+    },
+    "actions": {
+      "resetFilters": "フィルタをリセット",
+      "clearResults": "結果をクリア",
+      "close": "検索パネルを閉じる",
+      "search": "検索"
+    },
+    "error": "検索に失敗しました：@@message@@",
+    "index": {
+      "refresh": "インデックス状態を更新",
+      "detecting": "インデックスファイルを検出中…",
+      "disabled": "インデックスモードが無効です。APIモード検索を使用します。ENABLED_SEARCH_INDEX を設定してインデックスモードを有効にしてください。",
+      "ready": "インデックス最終更新：@@time@@。サポートされているブランチ数：@@count@@。",
+      "notReady": {
+        "title": "利用可能なインデックスが検出されませんでした",
+        "description1": "対象リポジトリで Repo-Viewer-Search Actions を設定してください",
+        "description2": "@@branch@@ ブランチ配下にインデックスファイルを生成してください"
+      },
+      "errors": {
+        "branchMissing": {
+          "title": "インデックスブランチが存在しません。APIモード検索を使用します",
+          "description1": "@@branch@@ ブランチが見つかりません",
+          "description2": "対象リポジトリで Actions を設定してインデックスブランチを生成してください"
+        },
+        "manifestNotFound": {
+          "title": "インデックスファイルが見つかりません。APIモード検索を使用します",
+          "description1": "@@branch@@ にインデックスファイルが見つかりません",
+          "description2": "Actions が正しくインデックスファイルを生成したか確認してください"
+        },
+        "manifestInvalid": {
+          "title": "インデックス形式エラー。APIモード検索を使用します",
+          "description1": "Actions を再実行してインデックスファイルを生成してください"
+        },
+        "fileNotFound": {
+          "title": "インデックス内容が見つかりません。APIモード検索を使用します",
+          "description1": "インデックスされたファイルが存在しません",
+          "description2": "Actions を再実行してインデックスファイルを生成してください"
+        },
+        "documentInvalid": {
+          "title": "インデックスファイル形式エラー。APIモード検索を使用します",
+          "description1": "インデックス内容が破損しているか、形式が正しくありません",
+          "description2": "Actions を再実行してインデックスファイルを生成してください"
+        },
+        "unsupportedCompression": {
+          "title": "非対応の圧縮形式です。APIモード検索を使用します",
+          "description1": "インデックスファイルが非対応の圧縮形式を使用しています",
+          "description2": "標準の gzip 圧縮形式でインデックスファイルを再生成してください"
+        },
+        "default": {
+          "title": "インデックスの読み込みに失敗しました。APIモード検索を使用します",
+          "description1": "@@message@@",
+          "description2": "インデックスファイルが存在し、正しく形式化されているか確認してください"
+        }
+      }
+    },
+    "github": {
+      "open": "GitHub で開く"
+    }
+  },
+  "error": {
+    "network": {
+      "timeout": "リクエストがタイムアウトしました。ネットワーク接続を確認してください",
+      "connection": "ネットワーク接続に失敗しました。後でもう一度お試しください"
+    },
+    "api": {
+      "forbidden": "APIアクセスが制限されています。アクセス権限を確認してください",
+      "notFound": "要求されたリソースが見つかりません",
+      "serverError": "サーバーエラーが発生しました。後でもう一度お試しください",
+      "default": "リクエストに失敗しました"
+    },
+    "file": {
+      "download": "ファイルのダウンロードに失敗しました。もう一度お試しください",
+      "downloadFailed": "ファイルのダウンロードに失敗しました：@@message@@",
+      "folderDownloadFailed": "フォルダのダウンロードに失敗しました：@@message@@",
+      "downloadInProgress": "ダウンロードタスクが既に進行中です。完了するまでお待ちください",
+      "downloadLinkUnavailable": "ファイルのダウンロードリンクを取得できません",
+      "compress": "ファイルの圧縮に失敗しました。ファイルサイズが大きすぎる可能性があります",
+      "parse": "ファイルの解析に失敗しました。形式がサポートされていない可能性があります",
+      "default": "ファイル操作に失敗しました"
+    },
+    "component": "ページコンポーネントでエラーが発生しました。ページを更新してください",
+    "validation": "入力データが無効です。確認して再試行してください",
+    "default": "操作に失敗しました。後でもう一度お試しください",
+    "unknown": "不明なエラー",
+    "preview": {
+      "unsupportedFileType": "このファイルタイプはプレビューに対応していません",
+      "downloadLinkUnavailable": "ファイルのダウンロードリンクを取得できません",
+      "markdownLoadFailed": "Markdownファイルの読み込みに失敗しました：@@message@@",
+      "pdfLoadFailed": "PDFの読み込みに失敗しました：@@message@@",
+      "imageLoadFailed": "画像ファイルの読み込みに失敗しました：@@message@@",
+      "filePreviewFailed": "ファイルのプレビューに失敗しました：@@message@@",
+      "imageError": "画像の読み込みに失敗しました：@@message@@"
+    },
+    "boundary": {
+      "retryExceeded": "複数回の再試行後もエラーが続いています。ページを更新するか、サポートにお問い合わせください",
+      "unknownError": "不明なエラーが発生しました。後でもう一度お試しください",
+      "details": "エラー詳細",
+      "retryCount": "@@count@@ 回再試行しました",
+      "title": {
+        "page": "ページ読み込みエラー",
+        "feature": "機能モジュールエラー",
+        "component": "コンポーネントエラー"
+      }
+    }
+  },
+  "ui": {
+    "download": {
+      "file": "@@name@@ をダウンロード",
+      "folder": "フォルダ @@name@@ をダウンロード",
+      "cancel": "ダウンロードをキャンセル"
+    },
+    "image": {
+      "loading": "画像を読み込み中",
+      "loadFailed": "画像の読み込みに失敗しました",
+      "loaded": "画像を読み込みました：@@name@@",
+      "loadError": "画像の読み込みに失敗しました",
+      "previous": "前へ",
+      "next": "次へ",
+      "close": "閉じる",
+      "zoomIn": "拡大",
+      "zoomOut": "縮小",
+      "rotateLeft": "左に回転",
+      "rotateRight": "右に回転",
+      "fullscreen": "全画面表示",
+      "reset": "リセット",
+      "openPreview": "プレビューを開く"
+    },
+    "readme": {
+      "empty": "README の内容が空であるか、読み込みに失敗しました。"
+    },
+    "branch": {
+      "label": "現在のブランチ",
+      "loading": "読み込み中...",
+      "switch": "ブランチを切り替え",
+      "listLabel": "ブランチリスト"
+    },
+    "toolbar": {
+      "searchFiles": "リポジトリファイルを検索",
+      "viewOnGitHub": "GitHub で表示",
+      "lightMode": "ライトモード",
+      "darkMode": "ダークモード"
+    },
+    "footer": {
+      "presentedBy": "Presented by"
+    },
+    "breadcrumb": {
+      "back": {
+        "tooltip": {
+          "canGoUp": "上の階層に戻る",
+          "atRoot": "ルートディレクトリにいます"
+        },
+        "aria": "上の階層に戻る"
+      },
+      "toHome": {
+        "aria": "ホームに戻る"
+      },
+      "toSegment": {
+        "aria": "@@name@@ に戻る"
+      }
+    },
+    "markdown": {
+      "closePreview": "プレビューを閉じる",
+      "copy": {
+        "button": "コードをコピー",
+        "copied": "コピーしました",
+        "aria": "コードをコピー"
+      }
+    },
+    "scrollToTop": {
+      "aria": "トップに戻る"
+    },
+    "notification": {
+      "close": "通知を閉じる",
+      "success": "成功",
+      "error": "エラー",
+      "warning": "警告",
+      "info": "情報"
+    },
+    "pdf": {
+      "loading": "PDF を読み込み中…",
+      "cancel": "キャンセル",
+      "cancelled": "読み込みをキャンセルしました",
+      "loadFailed": "@@fileName@@ の読み込みに失敗しました",
+      "openOriginal": "元のファイルを直接開く",
+      "viewerTitle": "PDF ビューア",
+      "downloaded": "@@loaded@@ をダウンロード済み",
+      "downloadedWithProgress": "@@loaded@@ / @@total@@ (@@percent@@%) をダウンロード済み"
+    }
+  }
+}

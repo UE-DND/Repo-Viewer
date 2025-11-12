@@ -19,6 +19,7 @@ import {
 import { file, logger, theme as themeUtils } from "@/utils";
 import type { GitHubContent } from "@/types";
 import { getFeaturesConfig } from "@/config";
+import { useI18n } from "@/contexts/I18nContext";
 
 const featuresConfig = getFeaturesConfig();
 const HOMEPAGE_FILTER_ENABLED = featuresConfig.homepageFilter.enabled;
@@ -41,11 +42,12 @@ interface FileListItemProps {
   currentPath: string;
   contents?: GitHubContent[];
   isHighlighted?: boolean;
+  isVisible?: boolean;
 }
 
 /**
  * 自定义比较函数
- * 
+ *
  * 优化渲染性能：只在必要的 props 变化时才重新渲染。
  */
 function arePropsEqual(
@@ -56,45 +58,49 @@ function arePropsEqual(
   const itemUnchanged = prevProps.item.sha === nextProps.item.sha &&
                         prevProps.item.name === nextProps.item.name &&
                         prevProps.item.type === nextProps.item.type;
-  
+
   // 检查下载状态
-  const downloadStateUnchanged = 
+  const downloadStateUnchanged =
     prevProps.downloadingPath === nextProps.downloadingPath &&
     prevProps.downloadingFolderPath === nextProps.downloadingFolderPath &&
     prevProps.folderDownloadProgress === nextProps.folderDownloadProgress;
-  
+
   // 检查路径
   const pathUnchanged = prevProps.currentPath === nextProps.currentPath;
-  
+
   // 检查回调函数（如果使用 useCallback，这些应该是稳定的）
-  const callbacksUnchanged = 
+  const callbacksUnchanged =
     prevProps.handleItemClick === nextProps.handleItemClick &&
     prevProps.handleDownloadClick === nextProps.handleDownloadClick &&
     prevProps.handleFolderDownloadClick === nextProps.handleFolderDownloadClick &&
     prevProps.handleCancelDownload === nextProps.handleCancelDownload;
-  
+
   // 检查 contents 长度（用于涟漪效果优化）
-  const contentsLengthUnchanged = 
+  const contentsLengthUnchanged =
     (prevProps.contents?.length ?? 0) === (nextProps.contents?.length ?? 0);
-  
+
   // 检查高亮状态
   const highlightUnchanged = prevProps.isHighlighted === nextProps.isHighlighted;
-  
+
+  // 检查可见性状态
+  const visibilityUnchanged = prevProps.isVisible === nextProps.isVisible;
+
   // 所有关键 props 都未变化时返回 true（不重新渲染）
-  return itemUnchanged && 
-         downloadStateUnchanged && 
-         pathUnchanged && 
+  return itemUnchanged &&
+         downloadStateUnchanged &&
+         pathUnchanged &&
          callbacksUnchanged &&
          contentsLengthUnchanged &&
-         highlightUnchanged;
+         highlightUnchanged &&
+         visibilityUnchanged;
 }
 
 /**
  * 文件列表项组件
- * 
+ *
  * 显示单个文件或文件夹，包含图标、名称和下载功能。
  * 支持下载进度显示和取消操作。
- * 
+ *
  * 使用自定义比较函数优化渲染性能，避免不必要的重新渲染。
  */
 const FileListItem = memo<FileListItemProps>(
@@ -110,8 +116,10 @@ const FileListItem = memo<FileListItemProps>(
     currentPath,
     contents = [], // 提供默认空数组值
     isHighlighted = false,
+    isVisible = true, // 默认可见
   }) => {
     const theme = useTheme();
+    const { t } = useI18n();
     const [isHoveringDownload, setIsHoveringDownload] = React.useState(false);
     const [hoverCount, setHoverCount] = React.useState(0);
 
@@ -244,10 +252,10 @@ const FileListItem = memo<FileListItemProps>(
             <Tooltip
               title={
                 isItemDownloading
-                  ? (hoverCount >= 2 ? "取消下载" : "")
+                  ? (hoverCount >= 2 ? t('ui.download.cancel') : "")
                   : item.type === "file"
-                    ? `下载 ${item.name}`
-                    : `下载文件夹 ${item.name}`
+                    ? t('ui.download.file', { name: item.name })
+                    : t('ui.download.folder', { name: item.name })
               }
               disableInteractive
               placement="left"
@@ -314,6 +322,7 @@ const FileListItem = memo<FileListItemProps>(
                         ? handleFileDownloadClick
                         : handleFileFolderDownloadClick
                   }
+                  {...(isVisible ? {} : { tabIndex: -1 })}
                   sx={{
                     position: "relative",
                     padding: { xs: 1, sm: 1.5 },
@@ -351,7 +360,7 @@ const FileListItem = memo<FileListItemProps>(
                           justifyContent: "center",
                           opacity: isHoveringDownload ? 1 : 0,
                           transition: "opacity 0.2s ease-in-out",
-                          backgroundColor: isHoveringDownload 
+                          backgroundColor: isHoveringDownload
                             ? alpha(theme.palette.error.main, 0.1)
                             : "transparent",
                           borderRadius: "50%",
@@ -361,8 +370,8 @@ const FileListItem = memo<FileListItemProps>(
                       >
                         <CancelIcon
                           fontSize="small"
-                          sx={{ 
-                            fontSize: "0.8rem", 
+                          sx={{
+                            fontSize: "0.8rem",
                             color: "error.main",
                             transform: isHoveringDownload ? "scale(1)" : "scale(0.8)",
                             transition: "transform 0.2s ease-in-out",
@@ -386,6 +395,7 @@ const FileListItem = memo<FileListItemProps>(
           disabled={isDownloading || isFolderDownloading}
           disableRipple={disableRipple}
           disableTouchRipple={disableTouchRipple}
+          {...(isVisible ? {} : { tabIndex: -1 })}
           sx={{
             borderRadius: themeUtils.createG3BorderRadius(themeUtils.G3_PRESETS.fileListItem),
             transition:

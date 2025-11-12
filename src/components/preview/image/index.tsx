@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme, useMediaQuery } from '@mui/material';
 import FullScreenPreview from '@/components/file/FullScreenPreview';
 import ImageThumbnail from './ImageThumbnail';
@@ -10,7 +10,7 @@ const NOOP: () => void = () => undefined;
 
 /**
  * 图片预览组件
- * 
+ *
  * 提供图片预览功能，支持缩略图模式、全屏模式、懒加载等。
  * 包含缩放、旋转、拖拽等交互功能。
  */
@@ -34,6 +34,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
   const displayFileName = normalizedFileName ?? '未知文件';
   const prevImageUrlRef = useRef<string>(imageUrl);
+  const [lastKnownAspectRatio, setLastKnownAspectRatio] = useState<number | null>(null);
 
   const {
     loading,
@@ -68,7 +69,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
       // 创建临时 Image 对象检测缓存
       const testImg = new Image();
       testImg.src = imageUrl;
-      
+
       // 同步检查图片是否已缓存
       if (testImg.complete && testImg.naturalHeight !== 0) {
         // 图片已缓存，不显示骨架屏，直接重置为已加载状态
@@ -77,7 +78,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
         // 图片未缓存，显示骨架屏并开始加载
         resetLoadingState();
       }
-      
+
       prevImageUrlRef.current = imageUrl;
     }
   }, [imageUrl, resetLoadingState, resetStateForCachedImage]);
@@ -113,6 +114,12 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     closeButtonBorderRadius,
   };
 
+  const handleAspectRatioChange = useCallback((ratio: number) => {
+    if (Number.isFinite(ratio) && ratio > 0) {
+      setLastKnownAspectRatio(ratio);
+    }
+  }, []);
+
   // 预览内容组件的Props
   const previewContentProps = {
     imageUrl,
@@ -133,6 +140,8 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     hasNext,
     onPrevious,
     onNext,
+    initialAspectRatio: lastKnownAspectRatio ?? null,
+    onAspectRatioChange: handleAspectRatioChange,
   };
 
   // 缩略图模式
@@ -142,6 +151,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
         imageUrl={imageUrl}
         fileName={displayFileName}
         thumbnailSize={thumbnailSize}
+        aspectRatio={lastKnownAspectRatio ?? null}
         shouldLoad={shouldLoad}
         onOpenPreview={handleOpenPreview}
         onLoad={handleImageLoad}

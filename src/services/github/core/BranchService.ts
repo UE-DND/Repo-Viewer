@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { logger } from '@/utils';
-import { shouldUseServerAPI } from '../config/ProxyForceManager';
+import { shouldUseServerAPI } from '../config';
 import { getAuthHeaders } from './Auth';
 import {
   GITHUB_API_BASE,
@@ -33,9 +33,9 @@ const MAX_PER_PAGE = 100;
 
 /**
  * 标准化分支名称数组
- * 
+ *
  * 从API响应中提取并验证分支名称。
- * 
+ *
  * @param items - API响应的分支数据
  * @returns 标准化后的分支名称数组
  */
@@ -59,9 +59,9 @@ function normalizeBranchNames(items: unknown): string[] {
 
 /**
  * 通过服务端API获取分支列表
- * 
+ *
  * 支持分页获取所有分支。
- * 
+ *
  * @returns Promise，解析为分支名称数组
  * @throws 当API响应格式错误时抛出错误
  */
@@ -95,9 +95,9 @@ async function fetchBranchesViaServer(): Promise<string[]> {
 
 /**
  * 直接从GitHub API获取分支列表
- * 
+ *
  * 支持分页和Link头解析，获取所有分支。
- * 
+ *
  * @returns Promise，解析为分支名称数组
  * @throws 当API请求失败时抛出错误
  */
@@ -139,10 +139,10 @@ async function fetchBranchesDirect(): Promise<string[]> {
 
 /**
  * 获取仓库的所有分支
- * 
+ *
  * 根据环境自动选择使用服务端API或直接请求GitHub。
  * 返回的分支列表已去重并排序，默认分支始终在最前面。
- * 
+ *
  * @returns Promise，解析为排序后的分支名称数组
  */
 export async function getBranches(): Promise<string[]> {
