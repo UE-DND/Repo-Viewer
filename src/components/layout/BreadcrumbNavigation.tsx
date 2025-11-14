@@ -14,6 +14,7 @@ import {
   ChevronRight as ChevronRightIcon,
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
+import { useI18n } from "@/contexts/I18nContext";
 import type { FC, ReactNode, RefObject } from "react";
 import type { NavigationDirection } from "@/contexts/unified";
 import { theme as themeUtils } from "@/utils";
@@ -35,7 +36,7 @@ interface BreadcrumbNavigationProps {
 
 /**
  * 面包屑导航组件
- * 
+ *
  * 显示当前路径的层级导航，支持点击跳转和返回上级功能。
  */
 const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
@@ -47,6 +48,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
     compact = false,
   }) => {
     const theme = useTheme();
+    const { t } = useI18n();
 
     // 处理返回上一级
     const handleGoUp = (): void => {
@@ -297,7 +299,7 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
                   whiteSpace: "nowrap",
                   maxWidth: isSmallScreen ? "90px" : "220px",
                 }}
-                aria-label={isHome ? "返回首页" : `返回到${segment.name}`}
+                aria-label={isHome ? t('ui.breadcrumb.toHome.aria') : t('ui.breadcrumb.toSegment.aria', { name: segment.name })}
                 data-oid="xsbii_h"
               >
                 {isHome ? (
@@ -324,14 +326,14 @@ const BreadcrumbNavigationComponent: FC<BreadcrumbNavigationProps> = ({
         {/* 返回上一级按钮 - 紧凑模式下隐藏 */}
         {!compact && (
           <Tooltip
-            title={canGoUp ? "返回上一级" : "已位于根目录"}
+            title={canGoUp ? t('ui.breadcrumb.back.tooltip.canGoUp') : t('ui.breadcrumb.back.tooltip.atRoot')}
             data-oid="ujxfsq2"
           >
             <span data-oid="0rhl8w6">
             <IconButton
               onClick={handleGoUp}
               disabled={!canGoUp}
-              aria-label="返回上一级目录"
+              aria-label={t('ui.breadcrumb.back.aria')}
               size={isSmallScreen ? "small" : "medium"}
               sx={{
                 bgcolor: "background.paper",

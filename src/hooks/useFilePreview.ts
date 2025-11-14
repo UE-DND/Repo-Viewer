@@ -5,6 +5,7 @@ import { GitHub } from '@/services/github';
 import { file, logger, pdf } from '@/utils';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
+import { useI18n } from '@/contexts/I18nContext';
 
 const initialPreviewState: PreviewState = {
   previewContent: null,
@@ -77,10 +78,10 @@ function previewReducer(state: PreviewState, action: PreviewAction): PreviewStat
 
 /**
  * 文件预览Hook
- * 
+ *
  * 提供文件预览功能，支持Markdown、图片和PDF文档的预览。
  * 自动处理URL参数和浏览器历史导航。
- * 
+ *
  * @param onError - 错误回调函数
  * @param findFileItemByPath - 根据路径查找文件的函数
  * @returns 文件预览状态和操作函数
@@ -101,6 +102,7 @@ export const useFilePreview = (
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
   const [useTokenMode, setUseTokenMode] = useState(true);
   const muiTheme = useTheme();
+  const { t } = useI18n();
   const currentPreviewItemRef = useRef<GitHubContent | null>(null);
   const hasActivePreviewRef = useRef<boolean>(false);
   const isHandlingNavigationRef = useRef<boolean>(false);
@@ -138,7 +140,7 @@ export const useFilePreview = (
 
   const selectFile = useCallback(async (item: GitHubContent) => {
     if (item.download_url === null || item.download_url === '') {
-      onError('无法获取文件下载链接');
+      onError(t('error.preview.downloadLinkUnavailable'));
       return;
     }
 
@@ -173,7 +175,6 @@ export const useFilePreview = (
       }
 
       const fileNameLower = item.name.toLowerCase();
-
       const isCurrentTarget = (): boolean => currentPreviewItemRef.current?.path === targetPath;
 
       if (file.isMarkdownFile(fileNameLower)) {
@@ -188,8 +189,8 @@ export const useFilePreview = (
           }
           dispatch({ type: 'SET_MD_PREVIEW', content, item });
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '未知错误';
-          onError(`加载Markdown文件失败: ${errorMessage}`);
+          const errorMessage = error instanceof Error ? error.message : t('error.unknown');
+          onError(t('error.preview.markdownLoadFailed', { message: errorMessage }));
         } finally {
           dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
         }
@@ -206,8 +207,8 @@ export const useFilePreview = (
           }
           dispatch({ type: 'SET_TEXT_PREVIEW', content, item });
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '未知错误';
-          onError(`加载文本文件失败: ${errorMessage}`);
+          const errorMessage = error instanceof Error ? error.message : t('error.unknown');
+          onError(t('error.preview.textLoadFailed', { message: errorMessage }));
         } finally {
           dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
         }
@@ -219,13 +220,23 @@ export const useFilePreview = (
             fileName: item.name,
             downloadUrl: item.download_url,
             theme: muiTheme,
+            translations: {
+              loading: t('ui.pdf.loading'),
+              cancel: t('ui.pdf.cancel'),
+              cancelled: t('ui.pdf.cancelled'),
+              loadFailed: t('ui.pdf.loadFailed'),
+              openOriginal: t('ui.pdf.openOriginal'),
+              viewerTitle: t('ui.pdf.viewerTitle'),
+              downloaded: t('ui.pdf.downloaded'),
+              downloadedWithProgress: t('ui.pdf.downloadedWithProgress')
+            },
             isDev: import.meta.env.DEV
           });
-          
+
           logger.info(`已在新标签页打开 PDF: ${item.path}`);
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '未知错误';
-          onError(`打开PDF失败: ${errorMessage}`);
+          const errorMessage = error instanceof Error ? error.message : t('error.unknown');
+          onError(t('error.preview.pdfLoadFailed', { message: errorMessage }));
         }
         return;
       }
@@ -246,24 +257,24 @@ export const useFilePreview = (
             item
           });
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : '未知错误';
+          const errorMessage = error instanceof Error ? error.message : t('error.unknown');
           dispatch({ type: 'SET_IMAGE_ERROR', error: errorMessage });
-          onError(`加载图片文件失败: ${errorMessage}`);
+          onError(t('error.preview.imageLoadFailed', { message: errorMessage }));
         } finally {
           dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
         }
       } else {
-        onError('不支持预览该文件类型');
+        onError(t('error.preview.unsupportedFileType'));
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-      onError(`预览文件失败: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : t('error.unknown');
+      onError(t('error.preview.filePreviewFailed', { message: errorMessage }));
     } finally {
       if (loadingPreviewPathRef.current === targetPath) {
         loadingPreviewPathRef.current = null;
       }
     }
-  }, [onError, useTokenMode, muiTheme]);
+  }, [onError, useTokenMode, muiTheme, t]);
 
   // 关闭预览
   const closePreview = useCallback(() => {
@@ -302,8 +313,8 @@ export const useFilePreview = (
   const handleImageError = useCallback((error: string) => {
     dispatch({ type: 'SET_IMAGE_ERROR', error });
     dispatch({ type: 'SET_IMAGE_LOADING', loading: false });
-    onError(`图像加载失败: ${error}`);
-  }, [onError]);
+    onError(t('error.preview.imageError', { message: error }));
+  }, [onError, t]);
 
   // 监听浏览器历史导航事件，处理预览的后退操作
   useEffect(() => {

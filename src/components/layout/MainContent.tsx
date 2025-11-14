@@ -1,28 +1,28 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Container,
   useTheme,
   useMediaQuery,
   Box,
-  Typography,
   Portal,
 } from "@mui/material";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
 import FileList from "@/components/file/FileList";
 import FilePreviewPage from "@/components/layout/FilePreviewPage";
-import { LazyMarkdownPreview, preloadPreviewComponents } from "@/utils/lazy-loading";
+import { preloadPreviewComponents } from "@/utils/lazy-loading";
 import ErrorDisplay from "@/components/ui/ErrorDisplay";
 import {
   useContentContext,
   usePreviewContext,
   useDownloadContext,
 } from "@/contexts/unified";
-import { FileListSkeleton, MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
-import { getPreviewFromUrl } from "@/utils/routing/urlManager";
-import { logger } from "@/utils";
+import { FileListSkeleton } from "@/components/ui/skeletons";
 import DynamicSEO from "@/components/seo/DynamicSEO";
 import ScrollToTopFab from "@/components/interactions/ScrollToTopFab";
 import EmptyState from "@/components/ui/EmptyState";
+import ReadmeSection from "@/components/layout/ReadmeSection";
+import PreviewOverlay from "@/components/layout/PreviewOverlay";
+import { useImageNavigation, useBreadcrumbLayout, usePreviewFromUrl } from "@/components/layout/hooks";
 import type { NavigationDirection } from "@/contexts/unified";
 import type { BreadcrumbSegment, GitHubContent } from "@/types";
 
@@ -35,7 +35,7 @@ interface MainContentProps {
 
 /**
  * 主内容区组件
- * 
+ *
  * 应用的主要内容区域，包含面包屑导航、文件列表、预览功能等。
  * 自动处理URL参数和内容加载。
  */
@@ -43,12 +43,6 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
   // 获取主题和响应式布局
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
-
-  // 创建引用
-  const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
-
-  // 计算面包屑最大项目数
-  const [breadcrumbsMaxItems, setBreadcrumbsMaxItems] = useState<number>(0); // 0表示不限制
 
   // 从上下文获取数据和方法
   const {
@@ -70,7 +64,6 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     previewState,
     selectFile,
     closePreview,
-    currentPreviewItemRef,
   } = usePreviewContext();
 
   const {
@@ -95,6 +88,20 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
 
   const hasReadmeFile = readmeFileItem !== null;
 
+  // 检查是否正在全屏预览 README
+  const isPreviewingReadme = useMemo(() => {
+    if (previewState.previewingItem === null || readmeFileItem === null) {
+      return false;
+    }
+    // 比较文件路径来判断是否是同一个 README 文件
+    return previewState.previewingItem.path === readmeFileItem.path;
+  }, [previewState.previewingItem, readmeFileItem]);
+
+  // 检查是否有任何预览活动（Markdown 或图片）
+  const isPreviewActive = useMemo(() => {
+    return previewState.previewingItem !== null || previewState.previewingImageItem !== null;
+  }, [previewState.previewingItem, previewState.previewingImageItem]);
+
   // 获取当前目录中的所有图片文件
   const imageFiles = useMemo(() => {
     return contents.filter((item) => {
@@ -102,55 +109,59 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
         return false;
       }
       const fileName = item.name.toLowerCase();
-      return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].some(ext => 
+      return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].some(ext =>
         fileName.endsWith(`.${ext}`)
       );
     });
   }, [contents]);
 
-  // 获取当前预览图片的索引
-  const currentImageIndex = useMemo(() => {
-    if (previewState.previewingImageItem === null) {
-      return -1;
-    }
-    return imageFiles.findIndex(
-      (item) => item.path === previewState.previewingImageItem?.path
-    );
-  }, [imageFiles, previewState.previewingImageItem]);
+  // 使用图片导航 Hook
+  const {
+    hasPrevious: hasPreviousImage,
+    hasNext: hasNextImage,
+    handlePreviousImage,
+    handleNextImage
+  } = useImageNavigation({
+    imageFiles,
+    currentPreviewingImage: previewState.previewingImageItem,
+    onSelectFile: selectFile
+  });
 
   const hasTextOrMarkdownPreview =
     previewState.previewingItem !== null &&
     previewState.previewType !== null &&
     previewState.previewContent !== null;
 
-  const hasImagePreview =
-    previewState.previewingImageItem !== null &&
-    previewState.imagePreviewUrl !== null;
-
-  const showPreviewPage = hasTextOrMarkdownPreview || hasImagePreview;
+  const showPreviewPage = hasTextOrMarkdownPreview;
 
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
     const segments: BreadcrumbSegment[] = [{ name: "Home", path: "" }];
-    
+
     const normalizedPath = currentPath.trim();
     if (normalizedPath === '') {
       return segments;
     }
-    
+
     const pathParts = normalizedPath.split("/").filter(Boolean);
-    
+
     pathParts.reduce((accPath, part) => {
       const segmentPath = accPath !== '' ? `${accPath}/${part}` : part;
       segments.push({ name: part, path: segmentPath });
       return segmentPath;
     }, '');
-    
+
     return segments;
   }, [currentPath]);
 
   const isHomePage = breadcrumbSegments.length <= 1;
   const shouldShowInToolbar = showBreadcrumbInToolbar && !isHomePage;
+
+  // 使用面包屑布局 Hook
+  const { breadcrumbsMaxItems, breadcrumbsContainerRef } = useBreadcrumbLayout({
+    breadcrumbSegments,
+    isSmallScreen
+  });
 
   // 处理面包屑点击
   const handleBreadcrumbClick = useCallback((
@@ -197,133 +208,15 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     cancelDownload();
   }, [cancelDownload]);
 
-  // 处理切换到上一张图片
-  const handlePreviousImage = useCallback(() => {
-    if (currentImageIndex > 0) {
-      const previousImage = imageFiles[currentImageIndex - 1];
-      if (previousImage !== undefined) {
-        void selectFile(previousImage);
-      }
-    }
-  }, [currentImageIndex, imageFiles, selectFile]);
-
-  // 处理切换到下一张图片
-  const handleNextImage = useCallback(() => {
-    if (currentImageIndex >= 0 && currentImageIndex < imageFiles.length - 1) {
-      const nextImage = imageFiles[currentImageIndex + 1];
-      if (nextImage !== undefined) {
-        void selectFile(nextImage);
-      }
-    }
-  }, [currentImageIndex, imageFiles, selectFile]);
-
-  useEffect(() => {
-    const segmentCount = breadcrumbSegments.length;
-
-    // 在移动端，使用更激进的折叠策略
-    if (isSmallScreen) {
-      if (segmentCount > 3) {
-        setBreadcrumbsMaxItems(3);
-      } else {
-        setBreadcrumbsMaxItems(0);
-      }
-      return;
-    }
-
-    // 桌面端逻辑
-    if (segmentCount <= 3) {
-      setBreadcrumbsMaxItems(0);
-      return;
-    }
-
-    // 监听容器尺寸变化
-    const resizeObserver = new ResizeObserver(() => {
-      const container = breadcrumbsContainerRef.current;
-
-      if (container === null) {
-        return;
-      }
-
-      // 如果路径太长，则设置限制
-      if (breadcrumbSegments.length > 8) {
-        setBreadcrumbsMaxItems(8);
-        return;
-      }
-
-      // 不限制项目数量，使用CSS处理溢出
-      setBreadcrumbsMaxItems(0);
-    });
-
-    if (breadcrumbsContainerRef.current !== null) {
-      resizeObserver.observe(breadcrumbsContainerRef.current);
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [breadcrumbSegments, isSmallScreen]);
-
-  // 处理从 URL 加载预览
-  useEffect(() => {
-    const loadPreviewFromUrl = async (): Promise<void> => {
-      if (loading) {
-        return;
-      }
-
-      if (error !== null) {
-        return;
-      }
-
-      if (contents.length === 0) {
-        return;
-      }
-
-      const previewFileName = getPreviewFromUrl();
-
-      if (typeof previewFileName !== "string" || previewFileName.trim().length === 0) {
-        return;
-      }
-
-      const normalizedPreviewFileName = previewFileName.trim();
-
-      logger.debug(`从URL获取预览文件名: ${normalizedPreviewFileName}`);
-
-      const directMatch = contents.find((item) => item.name === normalizedPreviewFileName);
-      const pathTailMatch = contents.find((item) =>
-        item.path.endsWith(`/${normalizedPreviewFileName}`),
-      );
-      const fileItem = directMatch ?? pathTailMatch;
-
-      if (fileItem === undefined) {
-        logger.warn(`无法找到预览文件: ${normalizedPreviewFileName}`);
-        return;
-      }
-
-      logger.debug(`找到匹配的文件: ${fileItem.path}`);
-
-      currentPreviewItemRef.current = fileItem;
-
-      const hasActivePreview =
-        (previewState.previewingItem !== null && previewState.previewingItem.path === fileItem.path) ||
-        (previewState.previewingImageItem !== null && previewState.previewingImageItem.path === fileItem.path);
-
-      if (!hasActivePreview) {
-        logger.debug(`预览文件未打开，正在加载: ${fileItem.path}`);
-        await selectFile(fileItem);
-      } else {
-        logger.debug(`预览文件已经打开: ${fileItem.path}`);
-      }
-    };
-
-    void loadPreviewFromUrl();
-  }, [
+  // 使用 URL 预览加载 Hook
+  usePreviewFromUrl({
+    contents,
     loading,
     error,
-    contents,
-    currentPreviewItemRef,
-    previewState,
-    selectFile,
-  ]);
+    previewingItem: previewState.previewingItem,
+    previewingImageItem: previewState.previewingImageItem,
+    onSelectFile: selectFile
+  });
 
   // 在内容加载完成后预加载预览组件
   useEffect(() => {
@@ -386,7 +279,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
   }, []);
 
   // 渲染面包屑导航组件
-  const breadcrumbNavigation = (
+  const breadcrumbNavigation = useMemo(() => (
     <BreadcrumbNavigation
       breadcrumbSegments={breadcrumbSegments}
       handleBreadcrumbClick={handleBreadcrumbClick}
@@ -396,10 +289,10 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
       compact={false}
       data-oid="c02a2p5"
     />
-  );
+  ), [breadcrumbSegments, handleBreadcrumbClick, breadcrumbsMaxItems, isSmallScreen, breadcrumbsContainerRef]);
 
   // 紧凑模式的面包屑（用于顶部栏）
-  const compactBreadcrumbNavigation = (
+  const compactBreadcrumbNavigation = useMemo(() => (
     <BreadcrumbNavigation
       breadcrumbSegments={breadcrumbSegments}
       handleBreadcrumbClick={handleBreadcrumbClick}
@@ -409,11 +302,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
       compact={true}
       data-oid="c02a2p5-compact"
     />
-  );
-
-  const shouldShowReadmeSection = hasReadmeFile;
-  const hasReadmeContent = typeof readmeContent === "string" && readmeContent.trim().length > 0;
-  const shouldShowReadmeSkeleton = shouldShowReadmeSection && !hasReadmeContent && (!readmeLoaded || loadingReadme);
+  ), [breadcrumbSegments, handleBreadcrumbClick, breadcrumbsMaxItems, isSmallScreen, breadcrumbsContainerRef]);
 
   return (
     <Container
@@ -436,7 +325,7 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
         data-oid="8ov3blv"
       />
 
-      {/* 面包屑导航 - 根据滚动位置决定渲染位置 */}
+      {/* 面包屑导航 */}
       {shouldShowInToolbar && toolbarBreadcrumbContainer !== null ? (
         <Portal container={toolbarBreadcrumbContainer}>
           <Box
@@ -480,8 +369,8 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
           handleBreadcrumbClick={handleBreadcrumbClick}
           breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
           shouldShowInToolbar={shouldShowInToolbar}
-          hasPreviousImage={currentImageIndex > 0}
-          hasNextImage={currentImageIndex >= 0 && currentImageIndex < imageFiles.length - 1}
+          hasPreviousImage={hasPreviousImage}
+          hasNextImage={hasNextImage}
           onPreviousImage={handlePreviousImage}
           onNextImage={handleNextImage}
         />
@@ -518,68 +407,37 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
             handleCancelDownload={handleCancelDownload}
             currentPath={currentPath}
             hasReadmePreview={hasReadmeFile}
+            isPreviewActive={isPreviewActive}
             data-oid="_qfxtvv"
           />
 
-          {/* README预览 - 底部展示 */}
-          {shouldShowReadmeSection && (
-            <Box
-              className="readme-container"
-              sx={{
-                position: "relative",
-                width: "100%",
-                mb: 4,
-                display: "flex",
-                flexDirection: "column",
-              }}
-              data-oid="0zc9q5:"
-            >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  mb: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  color: "text.primary",
-                }}
-                data-oid="iawc_6m"
-              />
+          {/* README 自动预览区域（仅在未全屏预览时显示） */}
+          <ReadmeSection
+            hasReadmeFile={hasReadmeFile}
+            readmeContent={readmeContent}
+            loadingReadme={loadingReadme}
+            readmeLoaded={readmeLoaded}
+            isSmallScreen={isSmallScreen}
+            currentBranch={currentBranch}
+            readmeFileItem={readmeFileItem}
+            isTransitioning={isPreviewingReadme}
+          />
 
-              {shouldShowReadmeSkeleton ? (
-                <MarkdownPreviewSkeleton
-                  isSmallScreen={isSmallScreen}
-                  data-oid="readme-skeleton"
-                />
-              ) : hasReadmeContent ? (
-                <LazyMarkdownPreview
-                  readmeContent={readmeContent}
-                  loadingReadme={false}
-                  isSmallScreen={isSmallScreen}
-                  lazyLoad={false}
-                  currentBranch={currentBranch}
-                  previewingItem={readmeFileItem}
-                  data-oid="6nohd:r"
-                />
-              ) : readmeLoaded ? (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "text.secondary",
-                    px: { xs: 2, sm: 3, md: 4 },
-                    py: { xs: 2, sm: 3 },
-                    borderRadius: 2,
-                    bgcolor: "background.paper",
-                    border: "1px solid",
-                    borderColor: "divider",
-                  }}
-                  data-oid="readme-empty"
-                >
-                  README 内容为空或加载失败。
-                </Typography>
-              ) : null}
-            </Box>
-          )}
+          {/* Markdown 和图片全屏预览覆盖层 */}
+          <PreviewOverlay
+            previewingItem={previewState.previewingItem}
+            previewContent={previewState.previewContent}
+            loadingPreview={previewState.loadingPreview}
+            previewingImageItem={previewState.previewingImageItem}
+            imagePreviewUrl={previewState.imagePreviewUrl}
+            hasPreviousImage={hasPreviousImage}
+            hasNextImage={hasNextImage}
+            onPreviousImage={handlePreviousImage}
+            onNextImage={handleNextImage}
+            isSmallScreen={isSmallScreen}
+            currentBranch={currentBranch}
+            onClose={closePreview}
+          />
         </>
       )}
 

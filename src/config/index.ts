@@ -2,7 +2,8 @@ export type {
   Config,
   ConfigChangeListener,
   ConfigDebugInfo,
-  EnvMappingOptions
+  EnvMappingOptions,
+  DeveloperLoggingConfig
 } from './types';
 export {
   ENV_MAPPING,
@@ -31,5 +32,5 @@ export {
   isDevEnvironment,
   getGithubPATs
 } from './utils/config-accessors';
-export { configManager, ConfigManager } from './core/config-manager';
-export { configManager as default } from './core/config-manager';
+export { configManager, ConfigManager } from './core/ConfigManager';
+export { configManager as default } from './core/ConfigManager';

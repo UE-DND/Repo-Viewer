@@ -1,0 +1,231 @@
+{
+  "search": {
+    "title": "文件搜索",
+    "empty": "尚未搜索",
+    "label": {
+      "default": "在仓库中搜索",
+      "inBranch": "在 @@branch@@ 中搜索",
+      "inBranches": "在 @@branches@@ 中搜索",
+      "inBranchesWithPath": "在 @@branches@@: @@path@@ 中搜索",
+      "inMultipleBranches": "在 @@count@@ 个分支中搜索",
+      "inMultipleBranchesWithPath": "在 @@branches@@ 等 @@count@@ 个分支: @@path@@ 中搜索"
+    },
+    "results": {
+      "summary": "@@count@@ 项结果 • @@took@@ ms • @@mode@@",
+      "indexMode": "索引模式",
+      "apiMode": "API 模式",
+      "noResults": "暂无结果",
+      "noResultsHint": "尝试更换关键字或调整筛选条件",
+      "emptyIndexResult": "未检索到索引结果，可尝试使用 API 模式搜索。",
+      "apiSearchButton": "使用 API 模式搜索",
+      "apiSearchButtonShort": "API搜索",
+      "source": {
+        "index": "索引",
+        "api": "API"
+      }
+    },
+    "input": {
+      "placeholder": "键入搜索内容",
+      "label": "在仓库中搜索"
+    },
+    "filter": {
+      "toggle": "筛选条件",
+      "collapse": "收起筛选",
+      "title": "筛选选项",
+      "noBranches": "暂无可选分支",
+      "clear": "清除",
+      "extensionLabel": "限定文件扩展名",
+      "extensionPlaceholder": "例如 pdf,docx,xlsx",
+      "pathLabel": "限定搜索路径",
+      "pathPlaceholder": "例如 src/components"
+    },
+    "actions": {
+      "resetFilters": "重置筛选",
+      "clearResults": "清除结果",
+      "close": "关闭搜索面板",
+      "search": "搜索"
+    },
+    "error": "搜索失败：@@message@@",
+    "index": {
+      "refresh": "刷新索引状态",
+      "detecting": "正在检测索引文件…",
+      "disabled": "已禁用索引模式，将使用 API 模式搜索。配置 ENABLED_SEARCH_INDEX 以启用索引模式。",
+      "ready": "索引最新更新时间：@@time@@。支持的分支数：@@count@@。",
+      "notReady": {
+        "title": "未检测到可用索引",
+        "description1": "在目标仓库配置 Repo-Viewer-Search Actions",
+        "description2": "生成 @@branch@@ 分支下的索引文件"
+      },
+      "errors": {
+        "branchMissing": {
+          "title": "索引分支不存在，将使用 API 模式搜索",
+          "description1": "未找到 @@branch@@ 分支",
+          "description2": "在目标仓库配置 Actions 以生成索引分支"
+        },
+        "manifestNotFound": {
+          "title": "索引文件缺失，将使用 API 模式搜索",
+          "description1": "@@branch@@ 中未找到索引文件",
+          "description2": "检查 Actions 是否正确生成索引文件"
+        },
+        "manifestInvalid": {
+          "title": "索引格式错误，将使用 API 模式搜索",
+          "description1": "尝试重新运行 Actions 生成索引文件"
+        },
+        "fileNotFound": {
+          "title": "索引内容缺失，将使用 API 模式搜索",
+          "description1": "被索引的文件不存在",
+          "description2": "尝试重新运行 Actions 生成索引文件"
+        },
+        "documentInvalid": {
+          "title": "索引文件格式错误，将使用 API 模式搜索",
+          "description1": "索引内容损坏或格式不正确",
+          "description2": "尝试重新运行 Actions 生成索引文件"
+        },
+        "unsupportedCompression": {
+          "title": "不支持的压缩格式，将使用 API 模式搜索",
+          "description1": "索引文件使用了不支持的压缩格式",
+          "description2": "使用标准的 gzip 压缩格式重新生成索引文件"
+        },
+        "default": {
+          "title": "无法加载索引，将使用 API 模式搜索",
+          "description1": "@@message@@",
+          "description2": "检查索引文件是否存在且格式正确"
+        }
+      }
+    },
+    "github": {
+      "open": "在 GitHub 中打开"
+    }
+  },
+  "error": {
+    "network": {
+      "timeout": "请求超时，请检查网络连接",
+      "connection": "网络连接失败，请稍后重试"
+    },
+    "api": {
+      "forbidden": "API访问受限，请检查访问权限",
+      "notFound": "请求的资源未找到",
+      "serverError": "服务器错误，请稍后重试",
+      "default": "请求失败"
+    },
+    "file": {
+      "download": "文件下载失败，请重试",
+      "downloadFailed": "下载文件失败: @@message@@",
+      "folderDownloadFailed": "下载文件夹失败: @@message@@",
+      "downloadInProgress": "已有下载任务正在进行中，请等待当前下载完成",
+      "downloadLinkUnavailable": "无法获取文件下载链接",
+      "compress": "文件压缩失败，可能文件过大",
+      "parse": "文件解析失败，格式可能不支持",
+      "default": "文件操作失败"
+    },
+    "component": "页面组件出错，请刷新页面",
+    "validation": "输入数据有误，请检查后重试",
+    "default": "操作失败，请稍后重试",
+    "unknown": "未知错误",
+    "preview": {
+      "unsupportedFileType": "不支持预览该文件类型",
+      "downloadLinkUnavailable": "无法获取文件下载链接",
+      "markdownLoadFailed": "加载Markdown文件失败: @@message@@",
+      "textLoadFailed": "加载文本文件失败: @@message@@",
+      "pdfLoadFailed": "打开PDF失败: @@message@@",
+      "imageLoadFailed": "加载图片文件失败: @@message@@",
+      "filePreviewFailed": "预览文件失败: @@message@@",
+      "imageError": "图像加载失败: @@message@@"
+    },
+    "boundary": {
+      "retryExceeded": "多次重试后仍然出错，请刷新页面或联系技术支持",
+      "unknownError": "发生了未知错误，请稍后重试",
+      "details": "错误详情",
+      "retryCount": "已重试 @@count@@ 次",
+      "title": {
+        "page": "页面加载出错",
+        "feature": "功能模块出错",
+        "component": "组件出错"
+      }
+    }
+  },
+  "ui": {
+    "download": {
+      "file": "下载 @@name@@",
+      "folder": "下载文件夹 @@name@@",
+      "cancel": "取消下载"
+    },
+    "image": {
+      "loading": "正在加载图片",
+      "loadFailed": "图片加载失败",
+      "loaded": "图片已加载：@@name@@",
+      "loadError": "图像加载失败",
+      "previous": "上一张",
+      "next": "下一张",
+      "close": "关闭",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "rotateLeft": "向左旋转",
+      "rotateRight": "向右旋转",
+      "fullscreen": "全屏",
+      "reset": "重置",
+      "openPreview": "打开预览"
+    },
+    "readme": {
+      "empty": "README 内容为空或加载失败。"
+    },
+    "branch": {
+      "label": "当前分支",
+      "loading": "加载中...",
+      "switch": "切换分支",
+      "listLabel": "分支列表"
+    },
+    "toolbar": {
+      "searchFiles": "搜索仓库文件",
+      "viewOnGitHub": "在GitHub中查看",
+      "lightMode": "浅色模式",
+      "darkMode": "深色模式"
+    },
+    "footer": {
+      "presentedBy": "Presented by"
+    },
+    "breadcrumb": {
+      "back": {
+        "tooltip": {
+          "canGoUp": "返回上一级",
+          "atRoot": "已位于根目录"
+        },
+        "aria": "返回上一级目录"
+      },
+      "toHome": {
+        "aria": "返回首页"
+      },
+      "toSegment": {
+        "aria": "返回到@@name@@"
+      }
+    },
+    "markdown": {
+      "closePreview": "关闭预览",
+      "copy": {
+        "button": "复制代码",
+        "copied": "已复制",
+        "aria": "复制代码"
+      }
+    },
+    "scrollToTop": {
+      "aria": "返回顶部"
+    },
+    "notification": {
+      "close": "关闭通知",
+      "success": "成功",
+      "error": "错误",
+      "warning": "警告",
+      "info": "信息"
+    },
+    "pdf": {
+      "loading": "正在加载 PDF…",
+      "cancel": "取消",
+      "cancelled": "已取消加载",
+      "loadFailed": "加载 @@fileName@@ 失败",
+      "openOriginal": "直接打开原始文件",
+      "viewerTitle": "PDF 查看器",
+      "downloaded": "已下载 @@loaded@@",
+      "downloadedWithProgress": "已下载 @@loaded@@ / @@total@@ (@@percent@@%)"
+    }
+  }
+}

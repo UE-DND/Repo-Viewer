@@ -1,5 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
+
+const colors = {
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  cyan: '\x1b[36m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  brightWhite: '\x1b[97m',
+  gray: '\x1b[90m'
+};
 
 // 配置常量
 const GITHUB_API_BASE = 'https://api.github.com';
@@ -31,22 +43,27 @@ const shouldLog = (level: LogLevel): boolean => {
   }
 };
 
+const getTimestamp = (): string => {
+  const now = new Date();
+  return now.toLocaleTimeString('zh-CN', { hour12: false });
+};
+
 const apiLogger = {
   info: (...args: unknown[]): void => {
     if (shouldLog('info')) {
       // 开发者模式下允许使用 console.log
       // eslint-disable-next-line no-console
-      console.log('[API]', ...args);
+      console.log(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.cyan}[api]${colors.reset}`, ...args);
     }
   },
   warn: (...args: unknown[]): void => {
     if (shouldLog('warn')) {
-      console.warn('[API]', ...args);
+      console.warn(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.yellow}[api]${colors.reset}`, ...args);
     }
   },
   error: (...args: unknown[]): void => {
     if (shouldLog('error')) {
-      console.error('[API]', ...args);
+      console.error(`${colors.dim}${getTimestamp()}${colors.reset}`, `${colors.bright}${colors.red}[api]${colors.reset}`, ...args);
     }
   }
 };
@@ -81,9 +98,9 @@ class GitHubTokenManager {
         .map(key => process.env[key])
         .filter((token): token is string => typeof token === 'string' && token.trim().length > 0);
 
-      apiLogger.info('已加载', this.tokens.length, '个GitHub令牌');
+      apiLogger.info(`${colors.green}Loaded${colors.reset} ${colors.brightWhite}${String(this.tokens.length)}${colors.reset} GitHub token(s)`);
     } catch (error) {
-      apiLogger.error('加载GitHub token失败:', error);
+      apiLogger.error(`${colors.red}Failed to load GitHub tokens:${colors.reset}`, error);
     }
   }
 
@@ -266,7 +283,7 @@ async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T
     // 检查是否是认证错误或速率限制错误
     const responseStatus = axiosError.response?.status;
     if (responseStatus !== undefined && (responseStatus === 401 || responseStatus === 403)) {
-      apiLogger.warn('令牌认证失败或达到限制，尝试轮换令牌...');
+      apiLogger.warn('Token authentication failed or rate limit reached, rotating token...');
       const currentToken = tokenManager.getCurrentToken();
       if (currentToken.length > 0) {
         tokenManager.markTokenFailed(currentToken);
@@ -275,7 +292,7 @@ async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T
       // 获取新令牌并重试
       const newToken = tokenManager.getNextToken();
       if (newToken.length > 0 && newToken !== currentToken) {
-        apiLogger.info('已轮换到新令牌');
+        apiLogger.info('Rotated to new token');
         const retryResult = await requestFn(); // 使用新令牌重试
         return retryResult;
       }
@@ -303,7 +320,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const actionParam = Array.isArray(action) ? action[0] : action;
 
     if (actionParam === undefined || typeof actionParam !== 'string' || actionParam.length === 0) {
-      res.status(400).json({ error: '缺少action参数' });
+      res.status(400).json({ error: 'Missing action parameter' });
       return;
     }
 
@@ -335,8 +352,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
-          error: '仓库配置缺失',
-          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+          error: 'Repository configuration missing',
+          message: 'Missing GITHUB_REPO_OWNER or GITHUB_REPO_NAME environment variable'
         });
         return;
       }
@@ -367,11 +384,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       } catch (error) {
         const axiosError = error as AxiosErrorResponse;
-        apiLogger.error('获取分支列表失败:', axiosError.message ?? '未知错误');
+        apiLogger.error('Failed to fetch branch list:', axiosError.message ?? 'Unknown error');
 
         res.status(axiosError.response?.status ?? 500).json({
-          error: '获取分支列表失败',
-          message: axiosError.message ?? '未知错误'
+          error: 'Failed to fetch branch list',
+          message: axiosError.message ?? 'Unknown error'
         });
         return;
       }
@@ -380,7 +397,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (actionParam === 'getGitRef') {
       const refParam = getSingleQueryParam(req.query['ref']);
       if (refParam === undefined || refParam.trim().length === 0) {
-        res.status(400).json({ error: '缺少ref参数' });
+        res.status(400).json({ error: 'Missing ref parameter' });
         return;
       }
 
@@ -389,8 +406,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const { repoOwner, repoName } = useSearchIndexRepo ? getSearchIndexRepoEnvConfig() : getRepoEnvConfig();
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
-          error: '仓库配置缺失',
-          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+          error: 'Repository configuration missing',
+          message: 'Missing GITHUB_REPO_OWNER or GITHUB_REPO_NAME environment variable'
         });
         return;
       }
@@ -415,8 +432,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           return;
         }
 
-        apiLogger.error('获取 Git ref 失败:', axiosError.message ?? '未知错误');
-        res.status(status).json({ error: '获取 Git ref 失败', message: axiosError.message ?? '未知错误' });
+        apiLogger.error('Failed to fetch Git ref:', axiosError.message ?? 'Unknown error');
+        res.status(status).json({ error: 'Failed to fetch Git ref', message: axiosError.message ?? 'Unknown error' });
         return;
       }
     }
@@ -424,7 +441,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (actionParam === 'getTree') {
       const branchParam = getSingleQueryParam(req.query['branch']);
       if (branchParam === undefined || branchParam.trim().length === 0) {
-        res.status(400).json({ error: '缺少branch参数' });
+        res.status(400).json({ error: 'Missing branch parameter' });
         return;
       }
 
@@ -434,8 +451,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const { repoOwner, repoName } = getRepoEnvConfig();
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
-          error: '仓库配置缺失',
-          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+          error: 'Repository configuration missing',
+          message: 'Missing GITHUB_REPO_OWNER or GITHUB_REPO_NAME environment variable'
         });
         return;
       }
@@ -456,10 +473,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         const axiosError = error as AxiosErrorResponse;
         const status = axiosError.response?.status ?? 500;
 
-        apiLogger.error('获取 Git 树失败:', axiosError.message ?? '未知错误');
+        apiLogger.error('Failed to fetch Git tree:', axiosError.message ?? 'Unknown error');
         res.status(status).json({
-          error: '获取 Git 树失败',
-          message: axiosError.message ?? '未知错误'
+          error: 'Failed to fetch Git tree',
+          message: axiosError.message ?? 'Unknown error'
         });
         return;
       }
@@ -471,15 +488,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const responseTypeParam = (getSingleQueryParam(req.query['responseType']) ?? 'json').toLowerCase();
 
       if (pathParam === undefined || pathParam.trim().length === 0) {
-        res.status(400).json({ error: '缺少path参数' });
+        res.status(400).json({ error: 'Missing path parameter' });
         return;
       }
 
       const { repoOwner, repoName } = getSearchIndexRepoEnvConfig();
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
-          error: '仓库配置缺失',
-          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+          error: 'Repository configuration missing',
+          message: 'Missing GITHUB_REPO_OWNER or GITHUB_REPO_NAME environment variable'
         });
         return;
       }
@@ -517,12 +534,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         const status = axiosError.response?.status ?? 500;
 
         if (status === 404) {
-          res.status(404).json({ error: '索引文件不存在' });
+          res.status(404).json({ error: 'Index file not found' });
           return;
         }
 
-        apiLogger.error('获取索引资源失败:', axiosError.message ?? '未知错误');
-        res.status(status).json({ error: '获取索引资源失败', message: axiosError.message ?? '未知错误' });
+        apiLogger.error('Failed to fetch index asset:', axiosError.message ?? 'Unknown error');
+        res.status(status).json({ error: 'Failed to fetch index asset', message: axiosError.message ?? 'Unknown error' });
         return;
       }
     }
@@ -530,7 +547,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // 获取仓库内容
     if (actionParam === 'getContents') {
       if (typeof path !== 'string') {
-        res.status(400).json({ error: '缺少path参数' });
+        res.status(400).json({ error: 'Missing path parameter' });
         return;
       }
 
@@ -539,8 +556,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
-          error: '仓库配置缺失',
-          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+          error: 'Repository configuration missing',
+          message: 'Missing GITHUB_REPO_OWNER or GITHUB_REPO_NAME environment variable'
         });
         return;
       }
@@ -563,11 +580,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       } catch (error) {
         const axiosError = error as AxiosErrorResponse;
-        apiLogger.error('GitHub API请求失败:', axiosError.message ?? '未知错误');
+        apiLogger.error('GitHub API request failed:', axiosError.message ?? 'Unknown error');
 
         res.status(axiosError.response?.status ?? 500).json({
-          error: '获取内容失败',
-          message: axiosError.message ?? '未知错误'
+          error: 'Failed to fetch content',
+          message: axiosError.message ?? 'Unknown error'
         });
         return;
       }
@@ -575,72 +592,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     // 获取文件内容
     if (actionParam === 'getFileContent') {
-      // 规范化并校验 url 参数
       const urlParam = Array.isArray(url) ? (url.length > 0 ? url[0] : undefined) : url;
-      if (typeof urlParam !== 'string' || urlParam.trim() === '') {
-        res.status(400).json({ error: '缺少url参数' });
+      if (typeof urlParam !== 'string' || urlParam.trim().length === 0) {
+        res.status(400).json({ error: 'Missing url parameter' });
         return;
       }
 
+      const urlString = urlParam;
       try {
-        const urlString = urlParam;
+        const headers = {
+          ...getAuthHeaders(),
+          'Accept': 'application/vnd.github.v3.raw'
+        };
 
-        // 判断是否是二进制文件
-        const isBinaryFile = /\.(png|jpg|jpeg|gif|pdf|zip|rar|7z|exe|dll|so|dylib|bin)$/i.test(urlString);
+        const response = await handleRequestWithRetry<AxiosResponse<ArrayBuffer>>(() =>
+          axios.get<ArrayBuffer>(urlString, {
+            headers,
+            responseType: 'arraybuffer'
+          })
+        );
 
-        // 设置正确的响应类型
-        if (isBinaryFile) {
-          // 获取文件扩展名
-          const fileExtension = urlString.split('.').pop()?.toLowerCase();
-
-          // 设置正确的Content-Type
-          if (fileExtension !== undefined && fileExtension.length > 0) {
-            const contentTypeMap: Record<string, string> = {
-              'pdf': 'application/pdf',
-              'png': 'image/png',
-              'jpg': 'image/jpeg',
-              'jpeg': 'image/jpeg',
-              'gif': 'image/gif',
-              'zip': 'application/zip',
-              'rar': 'application/x-rar-compressed',
-              '7z': 'application/x-7z-compressed'
-            };
-
-            const contentType = contentTypeMap[fileExtension] ?? 'application/octet-stream';
-            res.setHeader('Content-Type', contentType);
-          } else {
-            res.setHeader('Content-Type', 'application/octet-stream');
+        const getHeader = (name: string): string | undefined => {
+          if (typeof response.headers.get === 'function') {
+            const value = response.headers.get(name);
+            return typeof value === 'string' ? value : undefined;
           }
+          const rawValue = (response.headers as Record<string, unknown>)[name];
+          return typeof rawValue === 'string' ? rawValue : undefined;
+        };
 
-          // 二进制文件，使用arraybuffer响应类型
-          const response = await handleRequestWithRetry(() =>
-            axios.get(urlString, {
-              headers: getAuthHeaders(),
-              responseType: 'arraybuffer'
-            })
-          );
+        const upstreamContentType = getHeader('content-type');
+        const upstreamContentLength = getHeader('content-length');
+        const upstreamDisposition = getHeader('content-disposition');
+        const upstreamCacheControl = getHeader('cache-control');
 
-          res.status(200).send(response.data);
-          return;
-        } else {
-          // 文本文件
-          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-
-          const response = await handleRequestWithRetry(() =>
-            axios.get<unknown>(urlString, {
-              headers: getAuthHeaders()
-            })
-          );
-
-          res.status(200).send(response.data);
-          return;
+        res.setHeader('Content-Type', upstreamContentType ?? 'application/octet-stream');
+        if (upstreamContentLength !== undefined) {
+          res.setHeader('Content-Length', upstreamContentLength);
         }
+        if (upstreamDisposition !== undefined) {
+          res.setHeader('Content-Disposition', upstreamDisposition);
+        }
+        if (upstreamCacheControl !== undefined) {
+          res.setHeader('Cache-Control', upstreamCacheControl);
+        }
+
+        const buffer = Buffer.from(response.data);
+        res.status(200).send(buffer);
+        return;
       } catch (error) {
         const axiosError = error as AxiosErrorResponse;
-        apiLogger.error('获取文件内容失败:', axiosError.message ?? '未知错误');
+        const decodedUrl = (() => {
+          try {
+            return decodeURIComponent(urlString);
+          } catch {
+            return urlString;
+          }
+        })();
+        apiLogger.error('Failed to fetch file content:', decodedUrl, axiosError.message ?? 'Unknown error');
         res.status(axiosError.response?.status ?? 500).json({
-          error: '获取文件内容失败',
-          message: axiosError.message ?? '未知错误'
+          error: 'Failed to fetch file content',
+          message: axiosError.message ?? 'Unknown error'
         });
         return;
       }
@@ -654,7 +666,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // 规范化查询参数
       const qParam = Array.isArray(q) ? (q.length > 0 ? q[0] : '') : (q ?? '');
       if (typeof qParam !== 'string' || qParam.trim() === '') {
-        res.status(400).json({ error: '缺少搜索参数' });
+        res.status(400).json({ error: 'Missing search parameter' });
         return;
       }
 
@@ -662,8 +674,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({
-          error: '仓库配置缺失',
-          message: '缺少 GITHUB_REPO_OWNER 或 GITHUB_REPO_NAME 环境变量'
+          error: 'Repository configuration missing',
+          message: 'Missing GITHUB_REPO_OWNER or GITHUB_REPO_NAME environment variable'
         });
         return;
       }
@@ -689,27 +701,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         return;
       } catch (error) {
         const axiosError = error as AxiosErrorResponse;
-        apiLogger.error('GitHub搜索API请求失败:', axiosError.message ?? '未知错误');
+        apiLogger.error('GitHub search API request failed:', axiosError.message ?? 'Unknown error');
         res.status(axiosError.response?.status ?? 500).json({
-          error: '搜索失败',
-          message: axiosError.message ?? '未知错误'
+          error: 'Search failed',
+          message: axiosError.message ?? 'Unknown error'
         });
         return;
       }
     }
 
     // 未知操作
-    res.status(400).json({ error: '不支持的操作' });
+    res.status(400).json({ error: 'Unsupported operation' });
   } catch (error) {
     const axiosError = error as AxiosErrorResponse;
-    apiLogger.error('API请求处理错误:', error);
-    let message = '处理请求时发生错误';
+    apiLogger.error('API request processing error:', error);
+    let message = 'An error occurred while processing the request';
 
     const response = axiosError.response;
     if (response !== undefined) {
       const status = response.status;
       const statusStr = String(status);
-      message = `GitHub API错误 (${statusStr}): ${response.data?.message ?? '未知错误'}`;
+      message = `GitHub API error (${statusStr}): ${response.data?.message ?? 'Unknown error'}`;
     } else {
       const errorMsg = axiosError.message;
       if (errorMsg !== undefined && errorMsg.length > 0) {

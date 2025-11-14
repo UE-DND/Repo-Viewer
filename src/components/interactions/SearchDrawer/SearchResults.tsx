@@ -11,6 +11,7 @@ import {
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { SearchResultItem } from "./SearchResultItem";
 import type { RepoSearchItem } from "@/hooks/github/useRepoSearch";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface SearchResultsProps {
   items: RepoSearchItem[];
@@ -38,6 +39,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   const showEmptyIndexResult =
     !loading &&
@@ -59,22 +61,22 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             px: isSmallScreen ? 1.5 : 2
           }}
           action={
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={onFallbackPrompt}
-              disabled={disableSearchButton}
-              sx={{
-                borderRadius: g3BorderRadius(G3_PRESETS.button),
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {isSmallScreen ? "API搜索" : "使用 API 模式搜索"}
-            </Button>
-          }
-        >
-          <Typography variant={isSmallScreen ? "caption" : "body2"}>
-            未检索到索引结果，可尝试使用 API 模式搜索。
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={onFallbackPrompt}
+                disabled={disableSearchButton}
+                sx={{
+                  borderRadius: g3BorderRadius(G3_PRESETS.button),
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {isSmallScreen ? t('search.results.apiSearchButtonShort') : t('search.results.apiSearchButton')}
+              </Button>
+            }
+          >
+              <Typography variant={isSmallScreen ? "caption" : "body2"}>
+            {t('search.results.emptyIndexResult')}
           </Typography>
         </Alert>
       )}
@@ -99,8 +101,8 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
         {searchResult !== null && searchResult.items.length === 0 && (
           <ListItem>
             <ListItemText
-              primary="暂无结果"
-              secondary="尝试更换关键字或调整筛选条件"
+              primary={t('search.results.noResults')}
+              secondary={t('search.results.noResultsHint')}
               slotProps={{
                 primary: {
                   variant: isSmallScreen ? "body2" : "body1"
@@ -116,4 +118,3 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     </>
   );
 };
-

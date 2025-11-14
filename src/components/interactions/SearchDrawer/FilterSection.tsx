@@ -9,53 +9,45 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from "@mui/material";
 import {
   Clear as ClearIcon,
-  FilterList as FilterListIcon
+  FilterList as FilterListIcon,
 } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface FilterSectionProps {
   expanded: boolean;
-  
-  // 分支筛选
   availableBranches: string[];
   branchFilter: string[];
   currentBranch: string;
   defaultBranch: string;
   onBranchToggle: (branch: string) => void;
   onClearBranches: () => void;
-  
-  // 扩展名筛选
   extensionInput: string;
   onExtensionInputChange: (value: string) => void;
   onExtensionApply: () => void;
   onExtensionClear: () => void;
-  
-  // 路径筛选
   pathPrefix: string;
   onPathPrefixChange: (value: string) => void;
   onPathPrefixClear: () => void;
 }
 
-// 筛选按钮组件
-export const FilterToggleButton: React.FC<{
-  expanded: boolean;
-  onToggle: () => void;
-}> = ({ expanded, onToggle }) => {
+export const FilterToggleButton: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ expanded, onToggle }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   return (
-    <Tooltip title={expanded ? "收起筛选" : "筛选条件"}>
+    <Tooltip title={expanded ? t('search.filter.collapse') : t('search.filter.toggle')}>
       <IconButton
         onClick={onToggle}
         sx={{
           height: isSmallScreen ? 40 : 48,
           width: isSmallScreen ? 40 : 48,
-          borderRadius: g3BorderRadius(G3_PRESETS.button)
+          borderRadius: g3BorderRadius(G3_PRESETS.button),
         }}
         size={isSmallScreen ? "small" : "medium"}
         color={expanded ? "primary" : "default"}
@@ -67,7 +59,6 @@ export const FilterToggleButton: React.FC<{
   );
 };
 
-// 筛选内容面板组件
 export const FilterSection: React.FC<FilterSectionProps> = ({
   expanded,
   availableBranches,
@@ -82,140 +73,135 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   onExtensionClear,
   pathPrefix,
   onPathPrefixChange,
-  onPathPrefixClear
+  onPathPrefixClear,
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   return (
     <Collapse in={expanded} unmountOnExit>
-        <Box
-          sx={{
-            mt: 1,
-            p: isSmallScreen ? 1.5 : 2,
-            borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
-            border: theme => `1px solid ${theme.palette.divider}`,
-            backgroundColor: theme => theme.palette.action.hover
-          }}
-        >
-          <Stack spacing={isSmallScreen ? 1 : 1.5}>
-            <Typography variant="subtitle2" color="text.secondary">
-              筛选选项
-            </Typography>
-            
-            {/* 分支选择 */}
-            <Stack direction="row" spacing={isSmallScreen ? 0.75 : 1} flexWrap="wrap" useFlexGap>
-              {availableBranches.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  暂无可选分支
-                </Typography>
-              ) : (
-                availableBranches.map(branch => {
-                  const isCurrentBranch = branch === currentBranch || (currentBranch === "" && branch === defaultBranch);
-                  const selected = branchFilter.length === 0
-                    ? isCurrentBranch
-                    : branchFilter.includes(branch);
-                  return (
-                    <Chip
-                      key={branch}
-                      label={branch}
-                      color={selected ? "primary" : "default"}
-                      variant={selected ? "filled" : "outlined"}
-                      size={isSmallScreen ? "small" : "medium"}
-                      onClick={() => { onBranchToggle(branch); }}
-                      sx={{ borderRadius: g3BorderRadius({ radius: 14, smoothness: 0.8 }) }}
-                    />
-                  );
-                })
-              )}
-              {branchFilter.length > 0 && (
-                <Chip
-                  label="清除"
-                  onClick={onClearBranches}
-                  onDelete={onClearBranches}
-                  color="secondary"
-                  variant="outlined"
-                  size={isSmallScreen ? "small" : "medium"}
-                  sx={{ borderRadius: g3BorderRadius({ radius: 14, smoothness: 0.8 }) }}
-                />
-              )}
-            </Stack>
+      <Box
+        sx={{
+          mt: 1,
+          p: isSmallScreen ? 1.5 : 2,
+          borderRadius: g3BorderRadius(G3_PRESETS.fileListContainer),
+          border: (themeArg) => `1px solid ${themeArg.palette.divider}`,
+          backgroundColor: (themeArg) => themeArg.palette.action.hover,
+        }}
+      >
+        <Stack spacing={isSmallScreen ? 1 : 1.5}>
+          <Typography variant="subtitle2" color="text.secondary">
+            {t('search.filter.title')}
+          </Typography>
 
-            {/* 扩展名筛选 */}
-            <TextField
-              label="限定文件扩展名"
-              value={extensionInput}
-              onChange={(event) => { onExtensionInputChange(event.target.value); }}
-              onBlur={onExtensionApply}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  onExtensionApply();
-                }
-              }}
-              placeholder="例如 pdf,docx,xlsx"
-              size={isSmallScreen ? "small" : "medium"}
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: g3BorderRadius(G3_PRESETS.button),
-                },
-                '& .MuiOutlinedInput-input': {
-                  paddingLeft: isSmallScreen ? '16px' : '25px',
-                }
-              }}
-              slotProps={{
-                input: {
-                  endAdornment: extensionInput.trim().length > 0 ? (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={onExtensionClear}
-                        sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
-                      >
-                        <ClearIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : undefined
-                }
-              }}
-            />
-
-            {/* 路径筛选 */}
-            <TextField
-              label="限定搜索路径"
-              value={pathPrefix}
-              onChange={(event) => { onPathPrefixChange(event.target.value); }}
-              placeholder="例如 src/components"
-              size={isSmallScreen ? "small" : "medium"}
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: g3BorderRadius(G3_PRESETS.button),
-                },
-                '& .MuiOutlinedInput-input': {
-                  paddingLeft: isSmallScreen ? '16px' : '25px',
-                }
-              }}
-              slotProps={{
-                input: {
-                  endAdornment: pathPrefix.trim().length > 0 ? (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        onClick={onPathPrefixClear}
-                        sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
-                      >
-                        <ClearIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : undefined
-                }
-              }}
-            />
+          <Stack direction="row" spacing={isSmallScreen ? 0.75 : 1} flexWrap="wrap" useFlexGap>
+            {availableBranches.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('search.filter.noBranches')}
+              </Typography>
+            ) : (
+              availableBranches.map((branch) => {
+                const isCurrentBranch = branch === currentBranch || (currentBranch === "" && branch === defaultBranch);
+                const selected = branchFilter.length === 0 ? isCurrentBranch : branchFilter.includes(branch);
+                return (
+                  <Chip
+                    key={branch}
+                    label={branch}
+                    color={selected ? "primary" : "default"}
+                    variant={selected ? "filled" : "outlined"}
+                    size={isSmallScreen ? "small" : "medium"}
+                    onClick={() => { onBranchToggle(branch); }}
+                    sx={{ borderRadius: g3BorderRadius({ radius: 14, smoothness: 0.8 }) }}
+                  />
+                );
+              })
+            )}
+            {branchFilter.length > 0 && (
+              <Chip
+                label={t('search.filter.clear')}
+                onClick={onClearBranches}
+                onDelete={onClearBranches}
+                color="secondary"
+                variant="outlined"
+                size={isSmallScreen ? "small" : "medium"}
+                sx={{ borderRadius: g3BorderRadius({ radius: 14, smoothness: 0.8 }) }}
+              />
+            )}
           </Stack>
-        </Box>
-      </Collapse>
+
+          <TextField
+            label={t('search.filter.extensionLabel')}
+            value={extensionInput}
+            onChange={(event) => { onExtensionInputChange(event.target.value); }}
+            onBlur={onExtensionApply}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                onExtensionApply();
+              }
+            }}
+            placeholder={t('search.filter.extensionPlaceholder')}
+            size={isSmallScreen ? "small" : "medium"}
+            fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: g3BorderRadius(G3_PRESETS.button),
+              },
+              '& .MuiOutlinedInput-input': {
+                paddingLeft: isSmallScreen ? '16px' : '25px',
+              }
+            }}
+            slotProps={{
+              input: {
+                endAdornment: extensionInput.trim().length > 0 ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={onExtensionClear}
+                      sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
+          />
+
+          <TextField
+            label={t('search.filter.pathLabel')}
+            value={pathPrefix}
+            onChange={(event) => { onPathPrefixChange(event.target.value); }}
+            placeholder={t('search.filter.pathPlaceholder')}
+            size={isSmallScreen ? "small" : "medium"}
+            fullWidth
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: g3BorderRadius(G3_PRESETS.button),
+              },
+              '& .MuiOutlinedInput-input': {
+                paddingLeft: isSmallScreen ? '16px' : '25px',
+              }
+            }}
+            slotProps={{
+              input: {
+                endAdornment: pathPrefix.trim().length > 0 ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={onPathPrefixClear}
+                      sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
+          />
+        </Stack>
+      </Box>
+    </Collapse>
   );
 };
-

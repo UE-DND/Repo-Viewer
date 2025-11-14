@@ -16,10 +16,11 @@ import {
 } from '@mui/icons-material';
 import type { ImageToolbarProps } from './types';
 import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 图片工具栏组件
- * 
+ *
  * 提供图片预览的控制功能，包括缩放、旋转、全屏和关闭。
  */
 const ImageToolbar: React.FC<ImageToolbarProps> = ({
@@ -35,16 +36,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
   toggleFullScreen,
   handleClosePreview,
   closeButtonBorderRadius,
-  variant = 'inline',
 }) => {
   const theme = useTheme();
-  const isFloating = variant === 'floating' && !fullScreenMode;
-  const isInline = variant === 'inline';
-  const isOverlayFullWidth = variant === 'full-width' || (fullScreenMode && !isInline);
-
-  const containerBg = theme.palette.mode === 'dark'
-    ? alpha(theme.palette.background.paper, isFloating ? 0.72 : isInline ? 0.78 : 0.7)
-    : alpha(theme.palette.background.paper, isFloating ? 0.85 : isInline ? 0.9 : 0.8);
+  const { t } = useI18n();
 
   return (
     <Box
@@ -52,35 +46,30 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: { xs: 1, sm: 1.5, md: 2 },
-        px: { xs: 1.25, sm: 1.75, md: 2 },
-        py: { xs: 1, sm: 1.25, md: 1.5 },
-        bgcolor: containerBg,
-        backdropFilter: 'blur(16px)',
-        border: 'none',
-        position: isFloating || isOverlayFullWidth ? 'absolute' : 'relative',
-        bottom: isFloating || isOverlayFullWidth ? 0 : undefined,
-        left: isFloating || isOverlayFullWidth ? 0 : undefined,
-        right: isFloating || isOverlayFullWidth ? 0 : undefined,
+        gap: isSmallScreen ? 1 : 2,
+        p: isSmallScreen ? 1 : 1.5,
+        bgcolor:
+          theme.palette.mode === 'dark'
+            ? alpha(theme.palette.background.paper, 0.7)
+            : alpha(theme.palette.background.paper, 0.8),
+        backdropFilter: 'blur(10px)',
+        borderTop: '1px solid',
+        borderColor: alpha(theme.palette.divider, 0.1),
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
         minHeight: isSmallScreen ? '64px' : '72px',
         height: 'auto',
-        paddingTop: isSmallScreen ? '10px' : '14px',
-        paddingBottom: isSmallScreen ? '10px' : '14px',
-        boxShadow: isFloating
-          ? theme.shadows[6]
-          : isInline
-            ? theme.shadows[2]
-            : (theme.palette.mode === 'dark'
-                ? '0 -4px 12px rgba(0,0,0,0.2)'
-                : '0 -4px 12px rgba(0,0,0,0.1)'),
+        paddingTop: isSmallScreen ? '8px' : '12px',
+        paddingBottom: isSmallScreen ? '8px' : '12px',
+        boxShadow:
+          theme.palette.mode === 'dark'
+            ? '0 -4px 12px rgba(0,0,0,0.2)'
+            : '0 -4px 12px rgba(0,0,0,0.1)',
         flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
-        borderRadius: isInline ? 1 : (isFloating ? g3BorderRadius(G3_PRESETS.card) : 0),
-        pointerEvents: 'auto',
-        width: isInline ? 'auto' : undefined,
-        maxWidth: '100%',
-        alignSelf: 'center',
-        ...(fullScreenMode && variant === 'full-width' ? {
+        ...(fullScreenMode && {
           paddingRight: isSmallScreen ? '8px' : '120px',
           paddingLeft: isSmallScreen ? '8px' : undefined,
           width: isSmallScreen ? 'calc(100% - 16px)' : 'calc(100% - 48px)',
@@ -88,8 +77,9 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           left: isSmallScreen ? '8px' : '24px',
           borderRadius: g3BorderRadius(G3_PRESETS.card),
           bottom: isSmallScreen ? '8px' : '16px',
-          border: 'none',
-        } : {}),
+          border: '1px solid',
+          borderColor: alpha(theme.palette.divider, 0.1),
+        }),
       }}
       data-oid="2ux6qrx"
     >
@@ -98,13 +88,11 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: { xs: 0.75, sm: 1, md: 2 },
-          flex: isInline ? '0 1 auto' : '1 1 auto',
-          minWidth: 0,
-          paddingLeft: isInline ? 0 : (isSmallScreen ? 0 : '56px'),
-          paddingRight: isInline ? 0 : (isSmallScreen ? '72px' : 0),
-          flexWrap: isInline && isSmallScreen ? 'wrap' : 'nowrap',
-          rowGap: isInline && isSmallScreen ? 1 : 0,
+          gap: isSmallScreen ? 0.75 : 2,
+          width: '100%',
+          paddingLeft: isSmallScreen ? 0 : '80px', // 为右侧关闭按钮平衡空间
+          flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
+          paddingRight: isSmallScreen ? '88px' : 0, // 为小屏幕的关闭按钮留出空间
         }}
         data-oid="wlz6pbm"
       >
@@ -115,6 +103,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.zoomOut')}
+          title={t('ui.image.zoomOut')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -140,6 +130,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.reset')}
+          title={t('ui.image.reset')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -174,6 +166,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           }}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.zoomIn')}
+          title={t('ui.image.zoomIn')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -197,6 +191,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           onClick={handleRotateLeft}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.rotateLeft')}
+          title={t('ui.image.rotateLeft')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -220,6 +216,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
           onClick={handleRotateRight}
           disabled={error}
           size={isSmallScreen ? 'medium' : 'large'}
+          aria-label={t('ui.image.rotateRight')}
+          title={t('ui.image.rotateRight')}
           sx={{
             bgcolor: alpha(theme.palette.primary.main, 0.1),
             '&:hover': {
@@ -244,6 +242,8 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
             onClick={toggleFullScreen}
             disabled={error}
             size={isSmallScreen ? 'medium' : 'large'}
+            aria-label={t('ui.image.fullscreen')}
+            title={t('ui.image.fullscreen')}
             sx={{
               bgcolor: alpha(theme.palette.primary.main, 0.1),
               '&:hover': {
@@ -269,10 +269,10 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         variant="contained"
         color="primary"
         onClick={handleClosePreview}
+        aria-label={t('ui.image.close')}
         sx={{
-          position: isInline ? 'relative' : 'absolute',
-          right: isInline ? undefined : (isSmallScreen ? theme.spacing(1.5) : theme.spacing(2)),
-          marginLeft: isInline ? theme.spacing(2) : 0,
+          position: 'absolute',
+          right: isSmallScreen ? theme.spacing(1) : theme.spacing(2),
           borderRadius: closeButtonBorderRadius,
           minWidth: isSmallScreen ? '64px' : '80px',
           height: isSmallScreen ? '40px' : '48px',
@@ -294,7 +294,7 @@ const ImageToolbar: React.FC<ImageToolbarProps> = ({
         }}
         data-oid="rqnqmvq"
       >
-        关闭
+        {t('ui.image.close')}
       </Button>
     </Box>
   );

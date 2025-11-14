@@ -1,6 +1,6 @@
 /**
  * 预览相关类型定义
- * 
+ *
  * 包含文件预览状态和操作的类型定义。
  */
 
@@ -10,7 +10,7 @@ import type { GitHubContent } from './index';
  * 文件预览状态接口
  */
 export interface PreviewState {
-  // Markdown预览 (仅用于README文件)
+  // Markdown预览（所有 .md 文件）
   previewContent: string | null;
   previewingItem: GitHubContent | null;
   loadingPreview: boolean;

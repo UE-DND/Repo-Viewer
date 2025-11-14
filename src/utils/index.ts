@@ -1,9 +1,9 @@
 /**
  * 工具函数模块 - 按功能域组织
- * 
+ *
  * 使用方式:
  * import { file, network, cache } from '@/utils';
- * 
+ *
  * file.isImageFile('test.jpg');
  * network.getProxiedUrl(url);
  * cache.SmartCache;
@@ -37,7 +37,7 @@ import * as eventEmitter from './events/eventEmitter';
 export const events = eventEmitter;
 
 // 错误管理工具
-import { ErrorManager as ErrorManagerClass } from './error/ErrorManager';
+import { ErrorManager as ErrorManagerClass } from './error';
 import * as errorHandlerModule from './error/errorHandler';
 export const error = {
   ErrorManager: ErrorManagerClass,
@@ -99,9 +99,9 @@ export * as lazyLoading from './lazy-loading';
 export const performance = {
   /**
    * 防抖函数
-   * 
+   *
    * 限制函数执行频率，在指定时间内多次调用只执行最后一次。
-   * 
+   *
    * @param func - 要防抖的函数
    * @param waitFor - 等待时间（毫秒）
    * @returns 防抖后的函数
@@ -124,9 +124,9 @@ export const performance = {
 
   /**
    * 节流函数
-   * 
+   *
    * 限制函数执行频率，在指定时间窗口内最多执行一次。
-   * 
+   *
    * @param func - 要节流的函数
    * @param limit - 时间窗口（毫秒）
    * @returns 节流后的函数
@@ -136,7 +136,7 @@ export const performance = {
     limit: number
   ): ((...args: Parameters<F>) => void) => {
     let inThrottle = false;
-    
+
     return (...args: Parameters<F>): void => {
       if (!inThrottle) {
         func(...args);

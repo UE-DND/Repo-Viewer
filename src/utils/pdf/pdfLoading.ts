@@ -18,8 +18,22 @@ export interface PDFLoadingThemeColors {
 }
 
 /**
+ * PDF加载页面翻译文本接口
+ */
+export interface PDFLoadingTranslations {
+  loading: string;
+  cancel: string;
+  cancelled: string;
+  loadFailed: string;
+  openOriginal: string;
+  viewerTitle: string;
+  downloaded: string;
+  downloadedWithProgress: string;
+}
+
+/**
  * 从MUI主题提取PDF页面颜色
- * 
+ *
  * @param muiTheme - Material-UI主题对象
  * @returns PDF主题颜色配置
  */
@@ -42,12 +56,17 @@ export const extractPDFThemeColors = (muiTheme: Theme): PDFLoadingThemeColors =>
 
 /**
  * 生成PDF加载页面的完整HTML内容
- * 
+ *
  * @param fileName - PDF文件名
  * @param themeColors - 主题色配置
+ * @param translations - 翻译文本配置
  * @returns 完整的HTML字符串
  */
-export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoadingThemeColors): string => {
+export const generatePDFLoadingHTML = (
+  fileName: string,
+  themeColors: PDFLoadingThemeColors,
+  translations: PDFLoadingTranslations
+): string => {
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -310,17 +329,17 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
           <circle class="progress-indicator" id="progress-circle" cx="24" cy="24" r="20"></circle>
         </svg>
       </div>
-      <p class="loading-text" id="status">正在加载 PDF…</p>
+      <p class="loading-text" id="status">${translations.loading}</p>
       <p class="progress-text" id="progress"></p>
-      <button class="cancel-button" id="cancel-btn" onclick="cancelDownload()">取消</button>
+      <button class="cancel-button" id="cancel-btn" onclick="cancelDownload()">${translations.cancel}</button>
     </div>
   </div>
-  <iframe id="viewer" title="PDF Viewer"></iframe>
+  <iframe id="viewer" title="${translations.viewerTitle}"></iframe>
   <script>
     function cancelDownload() {
       if (window.abortController) {
         window.abortController.abort();
-        document.getElementById('status').textContent = '已取消加载';
+        document.getElementById('status').textContent = '${translations.cancelled}';
         document.getElementById('progress').textContent = '';
         const cancelBtn = document.getElementById('cancel-btn');
         if (cancelBtn) {
@@ -338,18 +357,20 @@ export const generatePDFLoadingHTML = (fileName: string, themeColors: PDFLoading
 
 /**
  * 生成错误页面HTML
- * 
+ *
  * @param fileName - PDF文件名
  * @param errorMessage - 错误信息
  * @param downloadUrl - 原始下载链接
  * @param themeColors - 主题色配置
+ * @param translations - 翻译文本配置
  * @returns 错误页面HTML字符串
  */
 export const generatePDFErrorHTML = (
   fileName: string,
   errorMessage: string,
   downloadUrl: string,
-  themeColors: PDFLoadingThemeColors
+  themeColors: PDFLoadingThemeColors,
+  translations: PDFLoadingTranslations
 ): string => {
   const inlineStyles = `
     background-color: ${themeColors.surface};
@@ -361,10 +382,10 @@ export const generatePDFErrorHTML = (
   const actionColor = themeColors.onPrimary;
   return `
     <div class="error-card" style="${inlineStyles}">
-      <h2 class="error-title" style="color: ${titleColor};">加载 ${fileName} 失败</h2>
+      <h2 class="error-title" style="color: ${titleColor};">${translations.loadFailed.replace('@@fileName@@', fileName)}</h2>
       <p class="error-message" style="color: ${messageColor};">${errorMessage}</p>
       <a href="${downloadUrl}" target="_self" rel="noopener" class="error-action" style="background-color: ${actionBg}; color: ${actionColor};">
-        直接打开原始文件
+        ${translations.openOriginal}
       </a>
     </div>
   `;

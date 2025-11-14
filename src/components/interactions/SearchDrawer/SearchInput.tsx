@@ -1,14 +1,15 @@
-import { 
-  TextField, 
-  Button, 
-  InputAdornment, 
-  IconButton, 
+import {
+  TextField,
+  Button,
+  InputAdornment,
+  IconButton,
   CircularProgress,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from "@mui/material";
 import { Clear as ClearIcon } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface SearchInputProps {
   value: string;
@@ -27,21 +28,22 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onSearch,
   onClear,
   disabled,
-  loading
+  loading,
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   return (
     <TextField
       id="repo-search-keyword"
       label={label}
-      placeholder="键入搜索内容"
+      placeholder={t('search.input.placeholder')}
       variant="outlined"
       fullWidth
       value={value}
       onChange={(event) => { onChange(event.target.value); }}
-      onKeyDown={event => {
+      onKeyDown={(event) => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
           onSearch();
@@ -53,7 +55,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         },
         '& .MuiOutlinedInput-input': {
           paddingLeft: isSmallScreen ? '16px' : '25px',
-        }
+        },
       }}
       slotProps={{
         input: {
@@ -65,7 +67,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                 gap: 0.5,
                 display: 'flex',
                 alignItems: 'center',
-                height: '100%'
+                height: '100%',
               }}
             >
               {value.trim().length > 0 && (
@@ -74,7 +76,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                   onClick={onClear}
                   sx={{
                     mr: 0.5,
-                    borderRadius: g3BorderRadius(G3_PRESETS.button)
+                    borderRadius: g3BorderRadius(G3_PRESETS.button),
                   }}
                 >
                   <ClearIcon fontSize="small" />
@@ -90,16 +92,15 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                   mr: 0,
                   borderRadius: g3BorderRadius(G3_PRESETS.button),
                   minWidth: isSmallScreen ? 'auto' : undefined,
-                  px: isSmallScreen ? 2 : 3
+                  px: isSmallScreen ? 2 : 3,
                 }}
               >
-                搜索
+                {t('search.actions.search')}
               </Button>
             </InputAdornment>
-          )
-        }
+          ),
+        },
       }}
     />
   );
 };
-

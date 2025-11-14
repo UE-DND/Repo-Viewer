@@ -11,8 +11,12 @@ import {
 import {
   searchWithGitHubApi as searchWithApi,
   searchFiles as searchFilesImpl
-} from './SearchService';
-import { GitHubPrefetchService } from './PrefetchService';
+} from './search';
+import {
+  prefetchContents as prefetchContentsImpl,
+  batchPrefetchContents as batchPrefetchContentsImpl,
+  prefetchRelatedContent as prefetchRelatedContentImpl
+} from './PrefetchService';
 import {
   clearCache as statsClearCache,
   getCacheStats as statsGetCacheStats,
@@ -26,8 +30,6 @@ import {
   type ConfigInfo
 } from './Config';
 import { getBranches as fetchBranches } from './BranchService';
-
-// GitHub服务，使用模块导出而非类
 
 /**
  * 获取GitHub PAT总数
@@ -115,11 +117,11 @@ export async function getBranches(): Promise<string[]> {
  * @returns Promise，解析为GitHub内容数组
  */
 export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
-  const { getContents: getContentsImpl } = await import('./ContentService');
+  const { getContents: getContentsImpl } = await import('./content');
   const contents = await getContentsImpl(path, signal);
 
   // 预加载相关内容
-  void GitHubPrefetchService.prefetchRelatedContent(contents).catch(() => {
+  void prefetchRelatedContentImpl(contents).catch(() => {
     // 忽略预加载错误
   });
 
@@ -133,7 +135,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
  * @returns Promise，解析为文件的文本内容
  */
 export async function getFileContent(fileUrl: string): Promise<string> {
-  const { getFileContent: getFileContentImpl } = await import('./ContentService');
+  const { getFileContent: getFileContentImpl } = await import('./content');
   return getFileContentImpl(fileUrl);
 }
 
@@ -168,7 +170,7 @@ export async function searchMultipleBranchesWithTreesApi(
   pathPrefix = '',
   fileTypeFilter?: string
 ): Promise<{ branch: string; results: GitHubContent[] }[]> {
-  const { searchMultipleBranchesWithTreesApi: impl } = await import('./SearchService');
+  const { searchMultipleBranchesWithTreesApi: impl } = await import('./search');
   return impl(searchTerm, branches, pathPrefix, fileTypeFilter);
 }
 
@@ -198,7 +200,7 @@ export async function searchFiles(
  * @returns void
  */
 export function prefetchContents(path: string, priority: 'high' | 'medium' | 'low' = 'low'): void {
-  GitHubPrefetchService.prefetchContents(path, priority);
+  prefetchContentsImpl(path, priority);
 }
 
 /**
@@ -209,7 +211,7 @@ export function prefetchContents(path: string, priority: 'high' | 'medium' | 'lo
  * @returns Promise，所有预加载完成后解析
  */
 export async function batchPrefetchContents(paths: string[], maxConcurrency = 3): Promise<void> {
-  return GitHubPrefetchService.batchPrefetchContents(paths, maxConcurrency);
+  return batchPrefetchContentsImpl(paths, maxConcurrency);
 }
 
 /**
@@ -290,40 +292,8 @@ export async function getNetworkStats(): Promise<ReturnType<typeof statsGetNetwo
  * @returns Promise，解析为批处理器实例
  */
 export async function getBatcher(): Promise<unknown> {
-  const { getBatcher: getBatcherImpl } = await import('./ContentService');
+  const { getBatcher: getBatcherImpl } = await import('./content');
   return getBatcherImpl();
 }
-
-/**
- * GitHub服务对象
- *
- * 为了向后兼容性，导出包含所有GitHub服务功能的常量对象。
- *
- * @deprecated 推荐直接使用独立的导出函数
- */
-export const GitHubService = {
-  getTokenCount,
-  hasToken,
-  setLocalToken,
-  getConfig: getGitHubConfig,
-  getCurrentBranch,
-  setCurrentBranch,
-  getDefaultBranch: getDefaultBranchName,
-  getBranches,
-  getContents,
-  getFileContent,
-  searchWithGitHubApi,
-  searchFiles,
-  prefetchContents,
-  batchPrefetchContents,
-  markProxyServiceFailed,
-  getCurrentProxyService,
-  resetFailedProxyServices,
-  transformImageUrl,
-  clearCache,
-  getCacheStats,
-  getNetworkStats,
-  getBatcher
-} as const;
 
 export type { ConfigInfo } from './Config';

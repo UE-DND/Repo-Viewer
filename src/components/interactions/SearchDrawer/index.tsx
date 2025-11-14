@@ -17,6 +17,7 @@ import { useContentContext, usePreviewContext } from "@/contexts/unified";
 import { getSearchIndexConfig } from "@/config";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { resolveItemHtmlUrl } from "./utils";
+import { useI18n } from "@/contexts/I18nContext";
 import {
   useSearchFilters,
   useFallbackDialog,
@@ -38,6 +39,7 @@ interface SearchDrawerProps {
 export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useI18n();
 
   const {
     currentBranch,
@@ -130,11 +132,15 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 
   const searchSummaries = useMemo(() => {
     if (search.searchResult === null) {
-      return "尚未搜索";
+      return t('search.empty');
     }
     const { items, took, mode } = search.searchResult;
-    return `${items.length.toString()} 项结果 • ${(took).toFixed(1)} ms • ${mode === "search-index" ? "索引模式" : "API 模式"}`;
-  }, [search.searchResult]);
+    return t('search.results.summary', {
+      count: items.length,
+      took: took.toFixed(1),
+      mode: mode === "search-index" ? t('search.results.indexMode') : t('search.results.apiMode')
+    });
+  }, [search.searchResult, t]);
 
   const disableSearchButton = search.keyword.trim() === "";
 
@@ -161,8 +167,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
           px: isSmallScreen ? 2 : 3,
           py: isSmallScreen ? 1.5 : 2
         }}>
-          <Typography component="span" variant={isSmallScreen ? "subtitle1" : "h6"}>文件搜索</Typography>
-          <IconButton onClick={onClose} aria-label="关闭搜索面板" size={isSmallScreen ? "small" : "medium"}>
+          <Typography component="span" variant={isSmallScreen ? "subtitle1" : "h6"}>{t('search.title')}</Typography>
+          <IconButton onClick={onClose} aria-label={t('search.actions.close')} size={isSmallScreen ? "small" : "medium"}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -231,7 +237,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 
             {search.searchError !== null && (
               <Alert severity="error">
-                搜索失败：{search.searchError.message}
+                {t('search.error', { message: search.searchError.message })}
               </Alert>
             )}
 
@@ -250,14 +256,14 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
                   onClick={handleResetFilters}
                   sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
                 >
-                  重置筛选
+                  {t('search.actions.resetFilters')}
                 </Button>
                 <Button
                   size="small"
                   onClick={() => { search.clearResults(); }}
                   sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
                 >
-                  清除结果
+                  {t('search.actions.clearResults')}
                 </Button>
               </Stack>
             </Stack>
@@ -286,4 +292,3 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 };
 
 export default SearchDrawer;
-

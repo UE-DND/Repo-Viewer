@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Typography,
   IconButton,
   alpha,
   useTheme,
@@ -12,67 +13,24 @@ import {
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch';
 import { ImagePreviewSkeleton } from '@/components/ui/skeletons';
 import ImageToolbar from './ImageToolbar';
 import type { ImagePreviewContentProps } from './types';
+import {
+  useAspectRatioTracker,
+  useContainerSize,
+  useDesktopNavigation,
+  useTouchNavigation,
+  useKeyboardNavigation,
+  useStageMetrics,
+} from './hooks';
+import { useI18n } from '@/contexts/I18nContext';
 
-const DEFAULT_ASPECT_RATIO = 16 / 9;
-const MIN_PREVIEW_HEIGHT = 320;
-const VIEWPORT_RESERVE = { mobile: 220, desktop: 280 };
-const MAX_ZOOM_SCALE = 8;
-
-interface ViewportSize {
-  width: number;
-  height: number;
-}
-
-const useViewportSize = (): ViewportSize => {
-  const getSize = (): ViewportSize => {
-    if (typeof window === 'undefined') {
-      return { width: 0, height: 0 };
-    }
-    return { width: window.innerWidth, height: window.innerHeight };
-  };
-
-  const [size, setSize] = useState<ViewportSize>(getSize);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
-
-    const handleResize = (): void => {
-      setSize(getSize());
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return size;
-};
-
-const calculateContainedSize = (
-  width: number,
-  height: number,
-  aspectRatio: number,
-): { width: number; height: number } => {
-  if (width <= 0 || height <= 0 || !Number.isFinite(aspectRatio) || aspectRatio <= 0) {
-    return { width: 0, height: 0 };
-  }
-
-  const constrainedWidth = Math.min(width, height * aspectRatio);
-  const constrainedHeight = constrainedWidth / aspectRatio;
-
-  return {
-    width: constrainedWidth,
-    height: constrainedHeight,
-  };
-};
-
+/**
+ * 图片预览内容组件
+ *
+ * 显示图片预览主体内容，支持缩放、旋转和拖拽。
+ */
 const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   imageUrl,
   fileName,
@@ -96,311 +54,141 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   onAspectRatioChange,
 }) => {
   const theme = useTheme();
-  const { width: viewportWidth, height: viewportHeight } = useViewportSize();
-
-  const horizontalMargin = isSmallScreen ? 24 : 64;
-
-  const previewMaxWidth = useMemo(() => {
-    if (viewportWidth === 0) {
-      return isSmallScreen ? 360 : 960;
-    }
-    const available = viewportWidth - horizontalMargin * 2;
-    const minWidth = isSmallScreen ? 320 : 640;
-    return Math.max(minWidth, available);
-  }, [viewportWidth, isSmallScreen, horizontalMargin]);
-
-  const previewMaxHeight = useMemo(() => {
-    const reserve = isSmallScreen ? VIEWPORT_RESERVE.mobile : VIEWPORT_RESERVE.desktop;
-    if (viewportHeight === 0) {
-      return 520;
-    }
-    return Math.max(MIN_PREVIEW_HEIGHT, viewportHeight - reserve);
-  }, [viewportHeight, isSmallScreen]);
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState<number>(previewMaxWidth);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container === null || typeof ResizeObserver === 'undefined') {
-      return undefined;
-    }
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry !== undefined) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-
-    observer.observe(container);
-    return () => {
-      observer.disconnect();
-    };
-  }, [previewMaxWidth]);
-
-  const [activeNavSide, setActiveNavSide] = useState<'left' | 'right' | null>(null);
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const { t } = useI18n();
+  const { containerRef, containerSize } = useContainerSize();
+  const { dominantAspectRatio, processAspectRatioFromImage, handleImageRef } = useAspectRatioTracker({
+    imageUrl,
+    imgRef,
+    onLoad,
+    ...(typeof initialAspectRatio === 'number' ? { initialAspectRatio } : {}),
+    ...(onAspectRatioChange !== undefined ? { onAspectRatioChange } : {}),
+  });
+  const stageMetrics = useStageMetrics({ containerSize, dominantAspectRatio, isSmallScreen });
+  const stageWidth = stageMetrics?.width ?? null;
+  const stageHeight = stageMetrics?.height ?? null;
+  const stageMaxWidth = stageMetrics?.availableWidth ?? null;
+  const stageMaxHeight = stageMetrics?.availableHeight ?? null;
   const [currentScale, setCurrentScale] = useState(1);
-  const internalImgRef = useRef<HTMLImageElement | null>(null);
-  const transformRef = useRef<ReactZoomPanPinchContentRef | null>(null);
 
-  const [aspectRatio, setAspectRatio] = useState<number>(initialAspectRatio ?? DEFAULT_ASPECT_RATIO);
+  const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
+  const displayFileName = normalizedFileName ?? '未知文件';
+  const altText = normalizedFileName ?? '图片预览';
+  const hasError = error;
 
-  const updateAspectRatio = useCallback((ratio: number): void => {
-    if (!Number.isFinite(ratio) || ratio <= 0) {
-      return;
-    }
-    setAspectRatio(ratio);
-    onAspectRatioChange?.(ratio);
-  }, [onAspectRatioChange]);
+  const { dragOffset, isDragging, handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchNavigation({
+    isSmallScreen,
+    currentScale,
+    hasError,
+    loading,
+    hasPrevious,
+    hasNext,
+    imageUrl,
+    ...(onPrevious !== undefined ? { onPrevious } : {}),
+    ...(onNext !== undefined ? { onNext } : {}),
+  });
 
-  const handleImageMetrics = useCallback((img: HTMLImageElement | null): void => {
-    if (img === null) {
-      return;
-    }
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      updateAspectRatio(img.naturalWidth / img.naturalHeight);
-    }
-  }, [updateAspectRatio]);
+  const { activeNavSide, handleContainerMouseMove, handleContainerMouseLeave } = useDesktopNavigation({
+    containerRef,
+    isSmallScreen,
+    hasError,
+    loading,
+    hasPrevious,
+    hasNext,
+  });
+
+  useKeyboardNavigation({
+    loading,
+    hasError,
+    hasPrevious,
+    hasNext,
+    ...(onPrevious !== undefined ? { onPrevious } : {}),
+    ...(onNext !== undefined ? { onNext } : {}),
+  });
+
+  const rotationTransform = `rotate(${String(rotation)}deg)`;
+  const containerClassName = [className, 'image-preview-container']
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join(' ');
 
   useEffect(() => {
     setCurrentScale(toolbarProps.scale);
   }, [toolbarProps.scale]);
 
-  const availableWidth = containerWidth > 0 ? containerWidth : previewMaxWidth;
-  const availableHeight = Math.max(previewMaxHeight, 200);
-
-  const { width: contentWidth, height: contentHeight } = useMemo(() => {
-    return calculateContainedSize(availableWidth, availableHeight, aspectRatio);
-  }, [availableWidth, availableHeight, aspectRatio]);
-
-  const targetWidth = contentWidth > 0 ? contentWidth : availableWidth;
-  const targetHeight = contentHeight > 0 ? contentHeight : availableHeight;
-  const displayHeight = useMemo(() => {
-    const minHeight = Math.max(targetHeight, MIN_PREVIEW_HEIGHT);
-    return Math.min(previewMaxHeight, minHeight);
-  }, [targetHeight, previewMaxHeight]);
-  const toolbarContainerWidth = useMemo(() => {
-    const minWidth = isSmallScreen ? 280 : 360;
-    const width = containerWidth > 0 ? containerWidth : previewMaxWidth;
-    return Math.max(width, minWidth);
-  }, [isSmallScreen, containerWidth, previewMaxWidth]);
-
-  const rotationTransform = `rotate(${String(rotation)}deg)`;
-  const altText = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : '图片预览';
-
-  const applyCenteredTransform = useCallback((targetScale: number, animationTime = 200): boolean => {
-    const instance = transformRef.current;
-    if (instance === null) {
-      return false;
-    }
-
-    const wrapperWidth = containerWidth > 0 ? containerWidth : previewMaxWidth;
-    const wrapperHeight = displayHeight;
-
-    if (
-      !Number.isFinite(wrapperWidth)
-      || !Number.isFinite(wrapperHeight)
-      || wrapperWidth <= 0
-      || wrapperHeight <= 0
-      || targetWidth <= 0
-      || targetHeight <= 0
-    ) {
-      return false;
-    }
-
-    const effectiveWidth = targetWidth * targetScale;
-    const effectiveHeight = targetHeight * targetScale;
-
-    const offsetX = (wrapperWidth - effectiveWidth) / 2;
-    const offsetY = (wrapperHeight - effectiveHeight) / 2;
-
-    instance.setTransform(offsetX, offsetY, targetScale, animationTime);
-    return true;
-  }, [containerWidth, previewMaxWidth, displayHeight, targetWidth, targetHeight]);
-
-  useEffect(() => {
-    if (currentScale !== 1) {
-      return;
-    }
-    applyCenteredTransform(1, 0);
-  }, [applyCenteredTransform, imageUrl, rotation, containerWidth, displayHeight, targetWidth, targetHeight, currentScale]);
-
-  const fitWidthScale = useMemo(() => {
-    const baseWidth = targetWidth;
-    if (baseWidth <= 0) {
-      return 1;
-    }
-    const wrapperWidth = containerWidth > 0 ? containerWidth : previewMaxWidth;
-    if (!Number.isFinite(wrapperWidth) || wrapperWidth <= 0) {
-      return 1;
-    }
-    return wrapperWidth / baseWidth;
-  }, [targetWidth, containerWidth, previewMaxWidth]);
-
-  const handleContainerMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>): void => {
-    if (isSmallScreen || error || loading) {
-      setActiveNavSide(null);
-      return;
-    }
-
-    const container = containerRef.current;
-    if (container === null) {
-      return;
-    }
-
-    const rect = container.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const threshold = Math.min(160, rect.width * 0.18);
-
-    if (hasPrevious && x < threshold) {
-      setActiveNavSide('left');
-      return;
-    }
-
-    if (hasNext && x > rect.width - threshold) {
-      setActiveNavSide('right');
-      return;
-    }
-
-    setActiveNavSide(null);
-  }, [isSmallScreen, error, loading, hasPrevious, hasNext]);
-
-  const handleContainerMouseLeave = useCallback((): void => {
-    setActiveNavSide(null);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      if (loading || error) {
-        return;
-      }
-
-      if (event.key === 'ArrowLeft' && hasPrevious && onPrevious !== undefined) {
-        event.preventDefault();
-        onPrevious();
-      } else if (event.key === 'ArrowRight' && hasNext && onNext !== undefined) {
-        event.preventDefault();
-        onNext();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [loading, error, hasPrevious, hasNext, onPrevious, onNext]);
-
-  const handleTouchStart = (event: React.TouchEvent): void => {
-    if (!isSmallScreen || currentScale !== 1 || error || loading) {
-      return;
-    }
-
-    const touch = event.touches[0];
-    if (touch !== undefined) {
-      setTouchStart({
-        x: touch.clientX,
-        y: touch.clientY,
-        time: Date.now(),
-      });
-    }
-  };
-
-  const handleTouchMove = (event: React.TouchEvent): void => {
-    if (touchStart === null || !isSmallScreen || currentScale !== 1 || error || loading) {
-      return;
-    }
-
-    const touch = event.touches[0];
-    if (touch === undefined) {
-      return;
-    }
-
-    const deltaX = touch.clientX - touchStart.x;
-    const deltaY = touch.clientY - touchStart.y;
-
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-      setIsDragging(true);
-      let offset = deltaX;
-      if (!hasPrevious && deltaX > 0) {
-        offset = deltaX * 0.3;
-      }
-      if (!hasNext && deltaX < 0) {
-        offset = deltaX * 0.3;
-      }
-      setDragOffset(offset);
-    }
-  };
-
-  const handleTouchEnd = (): void => {
-    if (touchStart === null || !isSmallScreen || currentScale !== 1 || error || loading) {
-      setTouchStart(null);
-      setDragOffset(0);
-      setIsDragging(false);
-      return;
-    }
-
-    const elapsed = Date.now() - touchStart.time;
-    const velocity = Math.abs(dragOffset) / Math.max(elapsed, 1);
-    const exceedDistance = Math.abs(dragOffset) > 80;
-    const exceedVelocity = velocity > 0.4 && Math.abs(dragOffset) > 30;
-
-    if ((exceedDistance || exceedVelocity) && dragOffset > 0 && hasPrevious && onPrevious !== undefined) {
-      onPrevious();
-    } else if ((exceedDistance || exceedVelocity) && dragOffset < 0 && hasNext && onNext !== undefined) {
-      onNext();
-    }
-
-    setTouchStart(null);
-    setDragOffset(0);
-    setIsDragging(false);
-  };
-
-  const handleImageRef = useCallback((img: HTMLImageElement | null): void => {
-    imgRef.current = img;
-    internalImgRef.current = img;
-    if (img !== null && img.complete && img.naturalHeight !== 0) {
-      handleImageMetrics(img);
-      onLoad();
-    }
-  }, [imgRef, handleImageMetrics, onLoad]);
-
   return (
     <Box
-      className={className}
-      style={style}
       sx={{
         width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        gap: { xs: 1.5, md: 2 },
+        position: 'relative',
+        overflow: 'hidden',
+        bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#f5f5f5',
+        '--rv-image-preview-aspect-ratio': dominantAspectRatio.toFixed(3),
+        ...(stageWidth !== null
+          ? { '--rv-image-preview-stage-width': `${stageWidth.toString()}px` }
+          : {}),
+        ...(stageHeight !== null
+          ? { '--rv-image-preview-stage-height': `${stageHeight.toString()}px` }
+          : {}),
       }}
-      data-oid="image-preview-root"
+      className={containerClassName.length > 0 ? containerClassName : 'image-preview-container'}
+      style={style}
+      data-oid="j_s1bp2"
     >
+      {/* 屏幕阅读器状态提示区域 */}
+      <Box
+        component="div"
+        aria-live="polite"
+        aria-atomic="true"
+        sx={{
+          position: 'absolute',
+          left: '-10000px',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+        }}
+      >
+        {loading && '正在加载图片'}
+        {hasError && '图片加载失败'}
+        {!loading && !hasError && `图片已加载：${displayFileName}`}
+      </Box>
+
+      {/* 文件名标题（仅在非小屏幕时显示） */}
+      {!isSmallScreen && (
+        <Typography
+          variant="h6"
+          sx={{
+            py: 1.5,
+            px: 2,
+            textAlign: 'center',
+            bgcolor:
+              theme.palette.mode === 'dark'
+                ? 'rgba(0,0,0,0.4)'
+                : 'rgba(255,255,255,0.8)',
+            backdropFilter: 'blur(8px)',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+          }}
+          data-oid="5q_.d-t"
+        >
+          {displayFileName}
+        </Typography>
+      )}
+
+      {/* 主要内容区域 */}
       <Box
         ref={containerRef}
         onMouseMove={handleContainerMouseMove}
         onMouseLeave={handleContainerMouseLeave}
         sx={{
-          width: '100%',
-          maxWidth: `${previewMaxWidth.toString()}px`,
-          minHeight: `${displayHeight.toString()}px`,
+          flex: 1,
+          overflow: 'hidden',
           position: 'relative',
-          overflow: 'visible',
-          borderRadius: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: { xs: 1.5, md: 2 },
-          bgcolor: 'transparent',
-          mx: 'auto',
         }}
-        data-oid="image-preview-stage"
+        data-oid="znlgest"
       >
+        {/* 全局样式 */}
         <GlobalStyles
           styles={{
             '.react-transform-wrapper': {
@@ -412,39 +200,52 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
               height: '100%',
             },
           }}
+          data-oid="v02yxzy"
         />
 
+        {/* 加载骨架屏 */}
         {loading && (
           <ImagePreviewSkeleton
             isSmallScreen={isSmallScreen}
-            aspectRatio={aspectRatio}
-            targetWidth={targetWidth}
-            targetHeight={targetHeight}
-            data-oid="image-skeleton"
+            aspectRatio={dominantAspectRatio}
+            data-oid="84nup28"
+            {...(stageWidth !== null ? { targetWidth: stageWidth } : {})}
+            {...(stageHeight !== null ? { targetHeight: stageHeight } : {})}
           />
         )}
 
-        {error && (
+        {/* 错误状态显示 */}
+        {hasError && (
           <Box
             sx={{
-              position: 'absolute',
-              inset: 0,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 2,
-              zIndex: 5,
-              bgcolor: alpha(theme.palette.background.default, 0.72),
+              p: 4,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 10,
             }}
-            data-oid="image-error-overlay"
+            data-oid="w:-3iqj"
           >
+            <Typography
+              color="error"
+              sx={{ mb: 2 }}
+              data-oid="tex3zwr"
+            >
+              图像加载失败
+            </Typography>
             <IconButton
-              size="large"
-              color="primary"
               onClick={() => {
-                toolbarProps.setError?.(false);
+                if (typeof toolbarProps.setError === 'function') {
+                  toolbarProps.setError(false);
+                }
               }}
+              color="primary"
               sx={{
                 bgcolor: alpha(theme.palette.primary.main, 0.1),
                 '&:hover': {
@@ -452,315 +253,293 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
                 },
               }}
             >
-              <ReplayIcon />
+              <ReplayIcon data-oid=":znocig" />
             </IconButton>
           </Box>
         )}
 
-        <Box
-          sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
+        {/* 缩放平移组件 */}
         <TransformWrapper
-          ref={(instance) => {
-            transformRef.current = instance;
-          }}
           initialScale={1}
           minScale={0.1}
-          maxScale={MAX_ZOOM_SCALE}
-          wheel={{ disabled: error }}
-          pinch={{ disabled: error }}
-          panning={{ disabled: error || (isSmallScreen && currentScale === 1) }}
+          maxScale={5}
           centerOnInit={true}
-          onTransformed={(ref, state) => {
-            transformRef.current = ref;
-            onTransformed(state.scale);
+          wheel={{ disabled: hasError }}
+          pinch={{ disabled: hasError }}
+          panning={{ disabled: hasError || (isSmallScreen && currentScale === 1) }}
+          onTransformed={(ref) => {
+            onTransformed(ref.state.scale);
           }}
-          data-oid="image-transform-wrapper"
+          data-oid="2kb8slc"
         >
-          {({ zoomIn, zoomOut, resetTransform }) => {
-            const handleApplyScale = (scale: number): boolean => {
-              const boundedScale = Math.min(Math.max(scale, 0.1), MAX_ZOOM_SCALE);
-              return applyCenteredTransform(boundedScale);
-            };
-
-            const handleZoomIn = (): void => {
-              const widthScale = Math.min(Math.max(fitWidthScale, 1), MAX_ZOOM_SCALE);
-              if (widthScale > currentScale + 0.05 && handleApplyScale(widthScale)) {
-                return;
-              }
-              zoomIn();
-            };
-
-            const handleZoomOut = (): void => {
-              zoomOut();
-            };
-
-            const handleReset = (): void => {
-              if (handleApplyScale(1)) {
-                return;
-              }
-              resetTransform();
-            };
-
-            return (
-              <Box
-                sx={{
+          {({ zoomIn, zoomOut, resetTransform }) => (
+            <>
+              {/* 图片内容 */}
+              <TransformComponent
+                wrapperStyle={{
                   width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: { xs: 1.5, md: 2 },
+                  height: '100%',
+                  boxSizing: 'border-box',
                 }}
-              >
-              <Box
-                sx={{
-                  position: 'relative',
+                contentStyle={{
                   width: '100%',
-                  maxWidth: `${previewMaxWidth.toString()}px`,
-                  minHeight: `${displayHeight.toString()}px`,
-                  maxHeight: `${previewMaxHeight.toString()}px`,
-                  margin: '0 auto',
+                  height: '100%',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  mx: 'auto',
+                  transform: isSmallScreen && isDragging ? `translateX(${String(dragOffset)}px)` : undefined,
+                  transition: isDragging ? 'none' : 'transform 0.3s ease',
                 }}
+                wrapperProps={{
+                  onTouchStart: handleTouchStart,
+                  onTouchMove: handleTouchMove,
+                  onTouchEnd: handleTouchEnd,
+                  onTouchCancel: handleTouchEnd,
+                }}
+                data-oid=":ze-2ev"
               >
-                <TransformComponent
-                  wrapperProps={{
-                    onTouchStart: handleTouchStart,
-                    onTouchMove: handleTouchMove,
-                    onTouchEnd: handleTouchEnd,
-                    onTouchCancel: handleTouchEnd,
-                  }}
-                  wrapperStyle={{
-                    width: '100%',
-                    height: `${displayHeight.toString()}px`,
-                    maxWidth: `${previewMaxWidth.toString()}px`,
-                    maxHeight: `${previewMaxHeight.toString()}px`,
-                    margin: '0 auto',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    boxSizing: 'border-box',
-                  }}
-                  contentStyle={{
-                    width: `${Math.max(targetWidth, 1).toString()}px`,
-                    height: `${displayHeight.toString()}px`,
-                    maxWidth: '100%',
-                    maxHeight: `${displayHeight.toString()}px`,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    margin: '0 auto',
-                    transform: isSmallScreen && isDragging ? `translateX(${dragOffset.toString()}px)` : undefined,
-                    transition: isDragging ? 'none' : 'transform 0.3s ease',
-                  }}
-                  data-oid="image-transform-component"
-                >
-                  {!error && !loading && (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        transform: rotationTransform,
-                        transition: 'transform 0.3s ease',
-                        transformOrigin: 'center center',
-                        width: '100%',
-                        height: '100%',
-                      }}
-                      data-oid="image-content"
-                    >
-                      <img
-                        ref={handleImageRef}
-                        src={shouldLoad ? imageUrl : ''}
-                        alt={altText}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'contain',
-                        }}
-                        onLoad={(event) => {
-                          handleImageMetrics(event.currentTarget);
-                          onLoad();
-                        }}
-                        onError={onError}
-                        data-oid="image-preview"
-                      />
-                    </Box>
-                  )}
-
-                  {!error && loading && (
+                {!hasError && !loading && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      transform: rotationTransform,
+                      transition: 'transform 0.3s ease, width 0.35s ease, height 0.35s ease',
+                      transformOrigin: 'center center',
+                      width: stageWidth !== null ? `${stageWidth.toString()}px` : 'auto',
+                      height: stageHeight !== null ? `${stageHeight.toString()}px` : 'auto',
+                      maxWidth: stageMaxWidth !== null ? `${stageMaxWidth.toString()}px` : '100%',
+                      maxHeight: stageMaxHeight !== null ? `${stageMaxHeight.toString()}px` : '100%',
+                      position: 'relative',
+                    }}
+                    data-oid="y6kwode"
+                  >
                     <img
                       ref={handleImageRef}
                       src={shouldLoad ? imageUrl : ''}
                       alt={altText}
-                      style={{ display: 'none' }}
+                      className="loaded"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        opacity: 1,
+                        transition: 'opacity 0.3s ease',
+                      }}
                       onLoad={(event) => {
-                        handleImageMetrics(event.currentTarget);
+                        processAspectRatioFromImage(event.currentTarget);
                         onLoad();
                       }}
                       onError={onError}
-                      data-oid="image-preload"
+                      data-oid="nyva-.q"
                     />
+                  </div>
+                )}
+                {!hasError && loading && (
+                  <img
+                    ref={handleImageRef}
+                    src={shouldLoad ? imageUrl : ''}
+                    alt={altText}
+                    style={{
+                      display: 'none',
+                    }}
+                    onLoad={(event) => {
+                      processAspectRatioFromImage(event.currentTarget);
+                      onLoad();
+                    }}
+                    onError={onError}
+                    data-oid="nyva-loading"
+                  />
+                )}
+              </TransformComponent>
+
+              {/* 工具栏 */}
+              <ImageToolbar
+                {...toolbarProps}
+                zoomIn={zoomIn}
+                zoomOut={zoomOut}
+                resetTransform={resetTransform}
+              />
+
+              {/* 移动端拖动视觉反馈 */}
+              {isSmallScreen && isDragging && (
+                <>
+                  {/* 左侧提示（上一张） */}
+                  {hasPrevious && dragOffset > 30 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        left: 16,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        zIndex: 60,
+                        opacity: Math.min(dragOffset / 100, 0.8),
+                        transition: 'opacity 0.2s ease',
+                        pointerEvents: 'none',
+                      }}
+                      data-oid="drag-left-indicator"
+                    >
+                      <Box
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: '50%',
+                          bgcolor: alpha(theme.palette.primary.main, 0.9),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
+                        }}
+                      >
+                        <ChevronLeftIcon
+                          sx={{
+                            fontSize: '2rem',
+                            color: '#fff',
+                          }}
+                        />
+                      </Box>
+                    </Box>
                   )}
-                </TransformComponent>
 
-                {isSmallScreen && isDragging && (
-                  <>
-                    {hasPrevious && dragOffset > 30 && (
+                  {/* 右侧提示（下一张） */}
+                  {hasNext && dragOffset < -30 && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        right: 16,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        zIndex: 60,
+                        opacity: Math.min(Math.abs(dragOffset) / 100, 0.8),
+                        transition: 'opacity 0.2s ease',
+                        pointerEvents: 'none',
+                      }}
+                      data-oid="drag-right-indicator"
+                    >
                       <Box
                         sx={{
-                          position: 'absolute',
-                          left: 16,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          opacity: Math.min(dragOffset / 100, 0.8),
-                          transition: 'opacity 0.2s ease',
-                          pointerEvents: 'none',
+                          width: 48,
+                          height: 48,
+                          borderRadius: '50%',
+                          bgcolor: alpha(theme.palette.primary.main, 0.9),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
                         }}
                       >
-                        <Box
+                        <ChevronRightIcon
                           sx={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: '50%',
-                            bgcolor: alpha(theme.palette.primary.main, 0.9),
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
+                            fontSize: '2rem',
+                            color: '#fff',
                           }}
-                        >
-                          <ChevronLeftIcon sx={{ fontSize: '2rem', color: '#fff' }} />
-                        </Box>
+                        />
                       </Box>
-                    )}
+                    </Box>
+                  )}
+                </>
+              )}
 
-                    {hasNext && dragOffset < -30 && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          right: 16,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          opacity: Math.min(Math.abs(dragOffset) / 100, 0.8),
-                          transition: 'opacity 0.2s ease',
-                          pointerEvents: 'none',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: '50%',
-                            bgcolor: alpha(theme.palette.primary.main, 0.9),
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.3)}`,
-                          }}
-                        >
-                          <ChevronRightIcon sx={{ fontSize: '2rem', color: '#fff' }} />
-                        </Box>
-                      </Box>
-                    )}
-                  </>
-                )}
-
-                {!isSmallScreen && hasPrevious && onPrevious !== undefined && (
-                  <Box
+              {/* 左侧导航按钮（仅桌面端且有上一张图片时显示） */}
+              {!isSmallScreen && hasPrevious && onPrevious !== undefined && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: '72px', // 避开底部工具栏
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    paddingLeft: 2,
+                    zIndex: 50,
+                    cursor: activeNavSide === 'left' ? 'pointer' : 'default',
+                    pointerEvents: activeNavSide === 'left' ? 'auto' : 'none',
+                  }}
+                  data-oid="prev-nav-area"
+                >
+                  <IconButton
+                    onClick={onPrevious}
+                    aria-label={t('ui.image.previous')}
                     sx={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-start',
-                      px: 2,
+                      bgcolor: alpha(theme.palette.background.paper, activeNavSide === 'left' ? 0.95 : 0),
+                      backdropFilter: activeNavSide === 'left' ? 'blur(10px)' : 'none',
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.background.paper, 0.98),
+                      },
+                      width: '56px',
+                      height: '56px',
                       opacity: activeNavSide === 'left' ? 1 : 0,
+                      transform: activeNavSide === 'left' ? 'translateX(0)' : 'translateX(-20px)',
+                      transition: 'all 0.3s ease',
+                      boxShadow: activeNavSide === 'left' ? `0 4px 12px ${alpha(theme.palette.common.black, 0.15)}` : 'none',
                       pointerEvents: activeNavSide === 'left' ? 'auto' : 'none',
-                      transition: 'opacity 0.3s ease',
                     }}
+                    data-oid="prev-nav-btn"
                   >
-                    <IconButton
-                      onClick={onPrevious}
+                    <ChevronLeftIcon
                       sx={{
-                        bgcolor: alpha(theme.palette.background.paper, 0.9),
-                        boxShadow: theme.shadows[4],
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.background.paper, 0.98),
-                        },
+                        fontSize: '2rem',
+                        color: theme.palette.text.primary,
                       }}
-                    >
-                      <ChevronLeftIcon sx={{ fontSize: '2rem' }} />
-                    </IconButton>
-                  </Box>
-                )}
+                      data-oid="prev-icon"
+                    />
+                  </IconButton>
+                </Box>
+              )}
 
-                {!isSmallScreen && hasNext && onNext !== undefined && (
-                  <Box
+              {/* 右侧导航按钮（仅桌面端且有下一张图片时显示） */}
+              {!isSmallScreen && hasNext && onNext !== undefined && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                    bottom: '72px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    paddingRight: 2,
+                    zIndex: 50,
+                    cursor: activeNavSide === 'right' ? 'pointer' : 'default',
+                    pointerEvents: activeNavSide === 'right' ? 'auto' : 'none',
+                  }}
+                  data-oid="next-nav-area"
+                >
+                  <IconButton
+                    onClick={onNext}
+                    aria-label={t('ui.image.next')}
                     sx={{
-                      position: 'absolute',
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      px: 2,
+                      bgcolor: alpha(theme.palette.background.paper, activeNavSide === 'right' ? 0.95 : 0),
+                      backdropFilter: activeNavSide === 'right' ? 'blur(10px)' : 'none',
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.background.paper, 0.98),
+                      },
+                      width: '56px',
+                      height: '56px',
                       opacity: activeNavSide === 'right' ? 1 : 0,
+                      transform: activeNavSide === 'right' ? 'translateX(0)' : 'translateX(20px)',
+                      transition: 'all 0.3s ease',
+                      boxShadow: activeNavSide === 'right' ? `0 4px 12px ${alpha(theme.palette.common.black, 0.15)}` : 'none',
                       pointerEvents: activeNavSide === 'right' ? 'auto' : 'none',
-                      transition: 'opacity 0.3s ease',
                     }}
+                    data-oid="next-nav-btn"
                   >
-                    <IconButton
-                      onClick={onNext}
+                    <ChevronRightIcon
                       sx={{
-                        bgcolor: alpha(theme.palette.background.paper, 0.9),
-                        boxShadow: theme.shadows[4],
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.background.paper, 0.98),
-                        },
+                        fontSize: '2rem',
+                        color: theme.palette.text.primary,
                       }}
-                    >
-                      <ChevronRightIcon sx={{ fontSize: '2rem' }} />
-                    </IconButton>
-                  </Box>
-                )}
-              </Box>
-
-              <Box
-                sx={{
-                  width: 'auto',
-                  maxWidth: `${toolbarContainerWidth.toString()}px`,
-                  mx: 'auto',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <ImageToolbar
-                  {...toolbarProps}
-                  zoomIn={handleZoomIn}
-                  zoomOut={handleZoomOut}
-                  resetTransform={handleReset}
-                  variant={toolbarProps.fullScreenMode ? 'floating' : 'inline'}
-                />
-              </Box>
-              </Box>
-            );
-          }}
+                      data-oid="next-icon"
+                    />
+                  </IconButton>
+                </Box>
+              )}
+            </>
+          )}
         </TransformWrapper>
       </Box>
-      </Box>
-
     </Box>
   );
 };

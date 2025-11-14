@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { BranchSwitcher } from "@/components/ui";
 import { getFeaturesConfig } from "@/config";
+import { useI18n } from "@/contexts/I18nContext";
 
 declare const __APP_VERSION__: string;
 
@@ -39,12 +40,13 @@ const parseFooterLeftText = (text: string): { type: 'link'; content: string; hre
 
 /**
  * 页脚组件
- * 
+ *
  * 显示应用底部信息，包括分支切换器、版权信息和自定义左侧信息。
  */
 const Footer: React.FC = () => {
   const version = __APP_VERSION__;
   const theme = useTheme();
+  const { t } = useI18n();
   const featuresConfig = getFeaturesConfig();
   const footerLeftConfig = useMemo(
     () => parseFooterLeftText(featuresConfig.footer.leftText),
@@ -162,7 +164,7 @@ const Footer: React.FC = () => {
                 textAlign: "center",
               }}
             >
-              Presented by{" "}
+              {t('ui.footer.presentedBy')}{" "}
               <Link
                 color="primary"
                 href="https://github.com/UE-DND/Repo-Viewer"
@@ -200,7 +202,7 @@ const Footer: React.FC = () => {
             }}
             data-oid="78vii.:"
           >
-            Presented by{" "}
+            {t('ui.footer.presentedBy')}{" "}
             <Link
               color="primary"
               href="https://github.com/UE-DND/Repo-Viewer"

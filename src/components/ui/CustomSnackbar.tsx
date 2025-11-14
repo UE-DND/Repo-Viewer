@@ -10,8 +10,9 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { useSnackbar } from "notistack";
 import type { CustomContentProps } from "notistack";
-import { eventEmitter, EVENTS } from "@/utils/events/eventEmitter";
-import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
+import { eventEmitter } from "@/utils/events/eventEmitter";
+import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 自定义通知组件属性接口
@@ -22,17 +23,18 @@ interface CustomSnackbarProps extends CustomContentProps {
 
 /**
  * 自定义通知组件
- * 
+ *
  * 提供增强的通知UI，支持进度显示和自定义样式。
  */
 const CustomSnackbar = memo(
   forwardRef<HTMLDivElement, CustomSnackbarProps>(
     ({ id, message, variant, progress }, ref) => {
       const { closeSnackbar } = useSnackbar();
+      const { t } = useI18n();
 
       const handleDismiss = (): void => {
         if (isDownloadRelated()) {
-          eventEmitter.dispatch(EVENTS.CANCEL_DOWNLOAD, { downloadId: String(id) });
+          eventEmitter.dispatch("cancel_download", { downloadId: String(id) });
         }
         closeSnackbar(id);
       };
@@ -40,12 +42,12 @@ const CustomSnackbar = memo(
       const severity = variant === "default" ? "info" : variant;
       const title =
         variant === "success"
-          ? "成功"
+          ? t("ui.notification.success")
           : variant === "error"
-            ? "错误"
+            ? t("ui.notification.error")
             : variant === "warning"
-              ? "警告"
-              : "信息";
+              ? t("ui.notification.warning")
+              : t("ui.notification.info");
 
       const isDownloadRelated = (): boolean => {
         if (
@@ -114,6 +116,7 @@ const CustomSnackbar = memo(
                 size="small"
                 color="inherit"
                 onClick={handleDismiss}
+                aria-label={t('ui.notification.close')}
                 data-oid="b8064jp"
               >
                 <CloseIcon fontSize="small" data-oid="x-n8pii" />

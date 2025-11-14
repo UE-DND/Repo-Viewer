@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Button, useTheme } from '@mui/material';
 import { g3BorderRadius, G3_PRESETS } from '@/theme/g3Curves';
 import type { ImageThumbnailProps } from './types';
+import { useI18n } from '@/contexts/I18nContext';
 
 /**
  * 图片缩略图组件
@@ -20,6 +21,7 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
   imgRef,
 }) => {
   const theme = useTheme();
+  const { t } = useI18n();
   const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
   const altText = normalizedFileName ?? '缩略图';
 
@@ -76,9 +78,10 @@ const ImageThumbnail: React.FC<ImageThumbnailProps> = ({
       <Button
         variant="contained"
         onClick={onOpenPreview}
+        aria-label={t('ui.image.openPreview')}
         data-oid="otw7voa"
       >
-        查看大图
+        {t('ui.image.openPreview')}
       </Button>
     </Box>
   );
