@@ -226,6 +226,18 @@
       "viewerTitle": "PDF Viewer",
       "downloaded": "Downloaded @@loaded@@",
       "downloadedWithProgress": "Downloaded @@loaded@@ / @@total@@ (@@percent@@%)"
+    },
+    "text": {
+      "closePreview": "Close preview",
+      "title": "Text Preview",
+      "viewOnGitHub": "View on GitHub",
+      "enableWrap": "Enable word wrap",
+      "disableWrap": "Disable word wrap",
+      "copyAll": "Copy all content",
+      "copied": "Copied",
+      "meta": {
+        "totalLines": "Total @@count@@ lines"
+      }
     }
   }
 }

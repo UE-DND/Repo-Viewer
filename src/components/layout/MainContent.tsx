@@ -168,8 +168,14 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     path: string,
     direction: NavigationDirection = "backward",
   ): void => {
+    // 如果有正在预览的文件，直接关闭预览
+    const previewingItem = previewState.previewingItem ?? previewState.previewingImageItem;
+    if (previewingItem !== null) {
+      closePreview();
+    }
+
     navigateTo(path, direction);
-  }, [navigateTo]);
+  }, [navigateTo, previewState.previewingItem, previewState.previewingImageItem, closePreview]);
 
   // 处理文件/文件夹点击
   const handleItemClick = useCallback((item: GitHubContent): void => {

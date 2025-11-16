@@ -6,5 +6,4 @@ export interface TextPreviewProps {
   isSmallScreen: boolean;
   previewingItem?: GitHubContent | null;
   onClose?: () => void;
-  onOpenInGithub?: () => void;
 }

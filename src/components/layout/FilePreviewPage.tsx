@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React from "react";
 import { Box } from "@mui/material";
 import { motion, type Variants } from "framer-motion";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
@@ -54,19 +54,6 @@ const FilePreviewPage: React.FC<FilePreviewPageProps> = ({
 }) => {
   const previewingFile: GitHubContent | null =
     previewState.previewingItem ?? previewState.previewingImageItem;
-
-  const htmlUrl =
-    typeof previewingFile?.html_url === "string"
-      ? previewingFile.html_url.trim()
-      : "";
-
-  const handleOpenInGithub = useCallback(() => {
-    if (htmlUrl.length === 0) {
-      return;
-    }
-
-    window.open(htmlUrl, "_blank", "noopener,noreferrer");
-  }, [htmlUrl]);
 
   const imagePreviewUrl =
     previewState.previewingImageItem !== null && typeof previewState.imagePreviewUrl === "string"
@@ -157,7 +144,6 @@ const FilePreviewPage: React.FC<FilePreviewPageProps> = ({
               isSmallScreen={isSmallScreen}
               previewingItem={previewState.previewingItem}
               onClose={onClose}
-              {...(htmlUrl.length > 0 ? { onOpenInGithub: handleOpenInGithub } : {})}
               data-oid="preview-page-text"
             />
           ) : null}

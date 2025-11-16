@@ -177,7 +177,7 @@
     },
     "toolbar": {
       "searchFiles": "搜索仓库文件",
-      "viewOnGitHub": "在GitHub中查看",
+      "viewOnGitHub": "在 GitHub 中查看",
       "lightMode": "浅色模式",
       "darkMode": "深色模式"
     },
@@ -226,6 +226,18 @@
       "viewerTitle": "PDF 查看器",
       "downloaded": "已下载 @@loaded@@",
       "downloadedWithProgress": "已下载 @@loaded@@ / @@total@@ (@@percent@@%)"
+    },
+    "text": {
+      "closePreview": "关闭预览",
+      "title": "文本预览",
+      "viewOnGitHub": "在 GitHub 中查看",
+      "enableWrap": "开启自动换行",
+      "disableWrap": "关闭自动换行",
+      "copyAll": "复制全部内容",
+      "copied": "已复制",
+      "meta": {
+        "totalLines": "共 @@count@@ 行"
+      }
     }
   }
 }

@@ -226,6 +226,18 @@
       "viewerTitle": "PDF ビューア",
       "downloaded": "@@loaded@@ をダウンロード済み",
       "downloadedWithProgress": "@@loaded@@ / @@total@@ (@@percent@@%) をダウンロード済み"
+    },
+    "text": {
+      "closePreview": "プレビューを閉じる",
+      "title": "テキストプレビュー",
+      "viewOnGitHub": "GitHub で表示",
+      "enableWrap": "自動折り返しを有効化",
+      "disableWrap": "自動折り返しを無効化",
+      "copyAll": "すべてのコンテンツをコピー",
+      "copied": "コピーしました",
+      "meta": {
+        "totalLines": "合計 @@count@@ 行"
+      }
     }
   }
 }
