@@ -17,7 +17,7 @@ import { GitHub } from "@/services/github";
 import axios from "axios";
 import { getGithubConfig } from "@/config";
 import { logger } from "@/utils";
-import { useContentContext } from "@/contexts/unified";
+import { useContentContext, usePreviewContext } from "@/contexts/unified";
 import { useI18n } from "@/contexts/I18nContext";
 
 // 懒加载搜索组件
@@ -91,6 +91,12 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
     refreshBranches,
     setCurrentPath,
   } = useContentContext();
+
+  const {
+    previewState,
+    selectFile,
+    closePreview,
+  } = usePreviewContext();
 
   const BROWSER_REFRESH_FLAG = "repo-viewer:pending-refresh";
   const refreshSyncHandledRef = useRef<boolean>(false);
@@ -321,10 +327,36 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
   }, []);
 
   // 处理主题切换按钮点击
-  const onThemeToggleClick = useCallback(() => {
-    // 执行主题切换（事件将在 useThemeMode 中自动发出）
+  // 如果存在文本文件预览，先关闭预览，切换主题，然后自动重新打开
+  const onThemeToggleClick = useCallback(async () => {
+    // 检查是否有文本文件预览（性能优化：避免主题切换时的卡顿）
+    const hasTextPreview = previewState.previewType === 'text' && previewState.previewingItem !== null;
+
+    let previewItemToRestore: typeof previewState.previewingItem = null;
+
+    if (hasTextPreview) {
+      // 保存当前预览的文件信息
+      previewItemToRestore = previewState.previewingItem;
+
+      // 关闭预览
+      closePreview();
+
+      // 等待一小段时间，确保预览已完全关闭
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    // 执行主题切换
     toggleColorMode();
-  }, [toggleColorMode]);
+
+    // 如果有文本文件预览，在主题切换后重新打开
+    if (hasTextPreview && previewItemToRestore !== null) {
+      // 等待主题切换完成（通常在 600ms 左右）
+      setTimeout(() => {
+        // 重新打开之前预览的文件
+        void selectFile(previewItemToRestore);
+      }, 650);
+    }
+  }, [toggleColorMode, previewState, closePreview, selectFile]);
 
   // 处理GitHub按钮点击
   const onGitHubClick = useCallback(() => {
@@ -449,7 +481,9 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
         data-oid="skn4izp"
       >
         <IconButton
-          onClick={onThemeToggleClick}
+          onClick={() => {
+            void onThemeToggleClick();
+          }}
           color="inherit"
           aria-label={theme.palette.mode === "dark" ? t('ui.toolbar.lightMode') : t('ui.toolbar.darkMode')}
           sx={{

@@ -126,6 +126,7 @@
       "unsupportedFileType": "This file type is not supported for preview",
       "downloadLinkUnavailable": "Unable to get file download link",
       "markdownLoadFailed": "Failed to load Markdown file: @@message@@",
+      "textLoadFailed": "Failed to load text file: @@message@@",
       "pdfLoadFailed": "Failed to open PDF: @@message@@",
       "imageLoadFailed": "Failed to load image file: @@message@@",
       "filePreviewFailed": "Failed to preview file: @@message@@",
@@ -225,7 +226,18 @@
       "viewerTitle": "PDF Viewer",
       "downloaded": "Downloaded @@loaded@@",
       "downloadedWithProgress": "Downloaded @@loaded@@ / @@total@@ (@@percent@@%)"
+    },
+    "text": {
+      "closePreview": "Close preview",
+      "title": "Text Preview",
+      "viewOnGitHub": "View on GitHub",
+      "enableWrap": "Enable word wrap",
+      "disableWrap": "Disable word wrap",
+      "copyAll": "Copy all content",
+      "copied": "Copied",
+      "meta": {
+        "totalLines": "Total @@count@@ lines"
+      }
     }
   }
 }
-

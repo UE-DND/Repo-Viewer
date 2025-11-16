@@ -2,9 +2,6 @@
 
 ***基于 Material Design 3设计风格的 GitHub仓库浏览应用***
 
-[**🖥️ 在线演示**](https://repoviewer.uednd.top)
-[**⚙️ Dev 预览**](https://repoviewer-dev.uednd.top)
-
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7.1.20-646CFF?style=for-the-badge&logo=vite&logoColor=white)
@@ -142,10 +139,6 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
 #### 配置文件索引
 
 文件检索功能由 [Repo-Viewer-Search](https://github.com/H-Sofie/Repo-Viewer-Search) 支持，需在目标仓库配置 Github Action。详细配置见 [Repo-Viewer-Search 文档](https://github.com/H-Sofie/Repo-Viewer-Search/tree/main/docs)。
-
-### Dev 预览
-
-想要查看项目的最新开发进度？通过 [Repo-Viewer/dev](https://repoviewer-dev.uednd.top) 预览 `dev` 分支的最新特性。
 
 ### 许可证
 

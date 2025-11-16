@@ -219,7 +219,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
 
         {/* 关闭按钮 */}
         {typeof onClose === "function" ? (
-          <Tooltip title={t('ui.markdown.closePreview')} placement="left">
+          <Tooltip title={t('ui.markdown.closePreview')} placement="bottom">
             <IconButton
               onClick={onClose}
               aria-label={t('ui.markdown.closePreview')}

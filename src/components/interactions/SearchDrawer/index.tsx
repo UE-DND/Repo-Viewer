@@ -292,4 +292,3 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({ open, onClose }) => 
 };
 
 export default SearchDrawer;
-

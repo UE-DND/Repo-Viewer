@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 
 const colors = {
   reset: '\x1b[0m',
@@ -605,17 +605,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           'Accept': 'application/vnd.github.v3.raw'
         };
 
-        const response = await handleRequestWithRetry(() =>
+        const response = await handleRequestWithRetry<AxiosResponse<ArrayBuffer>>(() =>
           axios.get<ArrayBuffer>(urlString, {
             headers,
             responseType: 'arraybuffer'
           })
         );
 
-        const upstreamContentType = response.headers?.['content-type'];
-        const upstreamContentLength = response.headers?.['content-length'];
-        const upstreamDisposition = response.headers?.['content-disposition'];
-        const upstreamCacheControl = response.headers?.['cache-control'];
+        const getHeader = (name: string): string | undefined => {
+          if (typeof response.headers.get === 'function') {
+            const value = response.headers.get(name);
+            return typeof value === 'string' ? value : undefined;
+          }
+          const rawValue = (response.headers as Record<string, unknown>)[name];
+          return typeof rawValue === 'string' ? rawValue : undefined;
+        };
+
+        const upstreamContentType = getHeader('content-type');
+        const upstreamContentLength = getHeader('content-length');
+        const upstreamDisposition = getHeader('content-disposition');
+        const upstreamCacheControl = getHeader('cache-control');
 
         res.setHeader('Content-Type', upstreamContentType ?? 'application/octet-stream');
         if (upstreamContentLength !== undefined) {

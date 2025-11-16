@@ -1,6 +1,7 @@
 import { createLazyPreviewComponent } from '../core/createLazyPreviewComponent';
 import type { MarkdownPreviewProps } from '../../../components/preview/markdown/types';
 import type { ImagePreviewProps } from '../../../components/preview/image/types';
+import type { TextPreviewProps } from '../../../components/preview/text/types';
 import { MarkdownPreviewSkeleton } from '../../../components/ui/skeletons';
 
 /**
@@ -20,4 +21,16 @@ export const LazyMarkdownPreview = createLazyPreviewComponent<MarkdownPreviewPro
  */
 export const LazyImagePreview = createLazyPreviewComponent<ImagePreviewProps>(
   () => import('../../../components/preview/image')
+);
+
+/**
+ * 懒加载文本预览组件
+ */
+export const LazyTextPreview = createLazyPreviewComponent<TextPreviewProps>(
+  () => import('../../../components/preview/text'),
+  {
+    fallback: ({ isSmallScreen }) => (
+      <MarkdownPreviewSkeleton isSmallScreen={isSmallScreen} />
+    ),
+  }
 );
