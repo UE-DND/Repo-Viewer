@@ -553,7 +553,8 @@ export default defineConfig(({ mode }) => {
         'remark-gfm',
         'remark-math',
         'rehype-katex',
-        'jszip'
+        'jszip',
+        'prismjs'
       ],
       exclude: [
         'katex'

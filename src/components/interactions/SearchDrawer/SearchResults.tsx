@@ -61,21 +61,21 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             px: isSmallScreen ? 1.5 : 2
           }}
           action={
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={onFallbackPrompt}
-              disabled={disableSearchButton}
-              sx={{
-                borderRadius: g3BorderRadius(G3_PRESETS.button),
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {isSmallScreen ? t('search.results.apiSearchButtonShort') : t('search.results.apiSearchButton')}
-            </Button>
-          }
-        >
-          <Typography variant={isSmallScreen ? "caption" : "body2"}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={onFallbackPrompt}
+                disabled={disableSearchButton}
+                sx={{
+                  borderRadius: g3BorderRadius(G3_PRESETS.button),
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {isSmallScreen ? t('search.results.apiSearchButtonShort') : t('search.results.apiSearchButton')}
+              </Button>
+            }
+          >
+              <Typography variant={isSmallScreen ? "caption" : "body2"}>
             {t('search.results.emptyIndexResult')}
           </Typography>
         </Alert>
@@ -118,4 +118,3 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     </>
   );
 };
-

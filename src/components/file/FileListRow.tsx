@@ -29,17 +29,14 @@ const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualLis
 
   const item = contents[index];
 
-  // 使用 IntersectionObserver 检测项是否在视口中
   useEffect(() => {
     const element = rowRef.current;
     if (element === null) {
       return;
     }
 
-    // 查找最近的滚动容器（FixedSizeList 的滚动容器）
-    const scrollContainer: HTMLElement | null = element.closest('.virtual-file-list') ?? null;
+    const scrollContainer = element.closest('.virtual-file-list');
 
-    // 创建 IntersectionObserver 来检测可见性
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -47,7 +44,7 @@ const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualLis
         });
       },
       {
-        root: scrollContainer,
+        root: scrollContainer ?? null,
         rootMargin: "100px",
         threshold: 0.01,
       }
@@ -115,4 +112,3 @@ const Row = React.memo(RowComponent);
 Row.displayName = "FileListRow";
 
 export default Row;
-

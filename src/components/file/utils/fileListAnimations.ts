@@ -82,4 +82,3 @@ export const getDynamicItemVariants = (
   animationVariantsCache.set(cacheKey, variants);
   return variants;
 };
-

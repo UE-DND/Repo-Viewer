@@ -133,4 +133,3 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
     </ListItem>
   );
 };
-

@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import BreadcrumbNavigation from "@/components/layout/BreadcrumbNavigation";
 import FileList from "@/components/file/FileList";
+import FilePreviewPage from "@/components/layout/FilePreviewPage";
 import { preloadPreviewComponents } from "@/utils/lazy-loading";
 import ErrorDisplay from "@/components/ui/ErrorDisplay";
 import {
@@ -126,6 +127,13 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     onSelectFile: selectFile
   });
 
+  const hasTextOrMarkdownPreview =
+    previewState.previewingItem !== null &&
+    previewState.previewType !== null &&
+    previewState.previewContent !== null;
+
+  const showPreviewPage = hasTextOrMarkdownPreview;
+
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {
     const segments: BreadcrumbSegment[] = [{ name: "Home", path: "" }];
@@ -160,8 +168,14 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     path: string,
     direction: NavigationDirection = "backward",
   ): void => {
+    // 如果有正在预览的文件，直接关闭预览
+    const previewingItem = previewState.previewingItem ?? previewState.previewingImageItem;
+    if (previewingItem !== null) {
+      closePreview();
+    }
+
     navigateTo(path, direction);
-  }, [navigateTo]);
+  }, [navigateTo, previewState.previewingItem, previewState.previewingImageItem, closePreview]);
 
   // 处理文件/文件夹点击
   const handleItemClick = useCallback((item: GitHubContent): void => {
@@ -337,18 +351,36 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
         </Portal>
       ) : null}
 
-      <Box
-        sx={{
-          opacity: shouldShowInToolbar ? 0 : 1,
-          transform: shouldShowInToolbar ? 'translateY(-20px)' : 'translateY(0)',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          pointerEvents: shouldShowInToolbar ? 'none' : 'auto',
-        }}
-      >
-        {breadcrumbNavigation}
-      </Box>
+      {!showPreviewPage && (
+        <Box
+          sx={{
+            opacity: shouldShowInToolbar ? 0 : 1,
+            transform: shouldShowInToolbar ? 'translateY(-20px)' : 'translateY(0)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: shouldShowInToolbar ? 'none' : 'auto',
+          }}
+        >
+          {breadcrumbNavigation}
+        </Box>
+      )}
 
-      {loading ? (
+      {showPreviewPage ? (
+        <FilePreviewPage
+          previewState={previewState}
+          onClose={closePreview}
+          isSmallScreen={isSmallScreen}
+          currentBranch={currentBranch}
+          breadcrumbSegments={breadcrumbSegments}
+          breadcrumbsMaxItems={breadcrumbsMaxItems}
+          handleBreadcrumbClick={handleBreadcrumbClick}
+          breadcrumbsContainerRef={breadcrumbsContainerRef as React.RefObject<HTMLDivElement>}
+          shouldShowInToolbar={shouldShowInToolbar}
+          hasPreviousImage={hasPreviousImage}
+          hasNextImage={hasNextImage}
+          onPreviousImage={handlePreviousImage}
+          onNextImage={handleNextImage}
+        />
+      ) : loading ? (
         <FileListSkeleton
           isSmallScreen={isSmallScreen}
           itemCount={8}

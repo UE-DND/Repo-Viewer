@@ -7,12 +7,12 @@ import {
   Tooltip,
   Typography,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from "@mui/material";
 import { Refresh as RefreshIcon } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { useI18n } from "@/contexts/I18nContext";
-import type { InterpolationOptions } from '@/utils/i18n/types';
+import type { InterpolationOptions } from "@/utils/i18n/types";
 
 interface IndexStatusProps {
   enabled: boolean;
@@ -30,7 +30,12 @@ interface ErrorScenario {
   description: string[];
 }
 
-const getErrorScenario = (error: { message: string; code?: string } | null, ready: boolean, indexBranchName: string, t: (key: string, options?: InterpolationOptions) => string): ErrorScenario | null => {
+const getErrorScenario = (
+  error: { message: string; code?: string } | null,
+  ready: boolean,
+  indexBranchName: string,
+  t: (key: string, options?: InterpolationOptions) => string
+): ErrorScenario | null => {
   if (error?.code !== undefined) {
     switch (error.code) {
       case 'SEARCH_INDEX_BRANCH_MISSING':
@@ -38,55 +43,53 @@ const getErrorScenario = (error: { message: string; code?: string } | null, read
           title: t('search.index.errors.branchMissing.title'),
           description: [
             t('search.index.errors.branchMissing.description1', { branch: indexBranchName }),
-            t('search.index.errors.branchMissing.description2')
-          ]
+            t('search.index.errors.branchMissing.description2'),
+          ],
         };
       case 'SEARCH_INDEX_MANIFEST_NOT_FOUND':
         return {
           title: t('search.index.errors.manifestNotFound.title'),
           description: [
             t('search.index.errors.manifestNotFound.description1', { branch: indexBranchName }),
-            t('search.index.errors.manifestNotFound.description2')
-          ]
+            t('search.index.errors.manifestNotFound.description2'),
+          ],
         };
       case 'SEARCH_INDEX_MANIFEST_INVALID':
         return {
           title: t('search.index.errors.manifestInvalid.title'),
-          description: [
-            t('search.index.errors.manifestInvalid.description1')
-          ]
+          description: [t('search.index.errors.manifestInvalid.description1')],
         };
       case 'SEARCH_INDEX_FILE_NOT_FOUND':
         return {
           title: t('search.index.errors.fileNotFound.title'),
           description: [
             t('search.index.errors.fileNotFound.description1'),
-            t('search.index.errors.fileNotFound.description2')
-          ]
+            t('search.index.errors.fileNotFound.description2'),
+          ],
         };
       case 'SEARCH_INDEX_DOCUMENT_INVALID':
         return {
           title: t('search.index.errors.documentInvalid.title'),
           description: [
             t('search.index.errors.documentInvalid.description1'),
-            t('search.index.errors.documentInvalid.description2')
-          ]
+            t('search.index.errors.documentInvalid.description2'),
+          ],
         };
       case 'SEARCH_INDEX_UNSUPPORTED_COMPRESSION':
         return {
           title: t('search.index.errors.unsupportedCompression.title'),
           description: [
             t('search.index.errors.unsupportedCompression.description1'),
-            t('search.index.errors.unsupportedCompression.description2')
-          ]
+            t('search.index.errors.unsupportedCompression.description2'),
+          ],
         };
       default:
         return {
           title: t('search.index.errors.default.title'),
           description: [
             t('search.index.errors.default.description1', { message: error.message }),
-            t('search.index.errors.default.description2')
-          ]
+            t('search.index.errors.default.description2'),
+          ],
         };
     }
   }
@@ -96,8 +99,8 @@ const getErrorScenario = (error: { message: string; code?: string } | null, read
       title: t('search.index.notReady.title'),
       description: [
         t('search.index.notReady.description1'),
-        t('search.index.notReady.description2', { branch: indexBranchName })
-      ]
+        t('search.index.notReady.description2', { branch: indexBranchName }),
+      ],
     };
   }
 
@@ -112,7 +115,7 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
   indexedBranches,
   lastUpdatedAt,
   indexBranchName,
-  onRefresh
+  onRefresh,
 }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -127,7 +130,6 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
       );
     }
 
-    // 正在加载
     if (loading) {
       return (
         <Alert severity="info" icon={<CircularProgress size={16} />}>
@@ -136,7 +138,6 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
       );
     }
 
-    // 检查是否有错误场景
     const scenario = getErrorScenario(error, ready, indexBranchName, t);
 
     if (scenario !== null) {
@@ -148,7 +149,7 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
             flexDirection: "column",
             gap: isSmallScreen ? 0.75 : 1,
             pl: isSmallScreen ? 2 : 3,
-            px: isSmallScreen ? 1.5 : 2
+            px: isSmallScreen ? 1.5 : 2,
           }}
         >
           <Box
@@ -166,9 +167,7 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
                   onClick={onRefresh}
                   disabled={loading}
                   size={isSmallScreen ? "small" : "medium"}
-                  sx={{
-                    borderRadius: g3BorderRadius(G3_PRESETS.button)
-                  }}
+                  sx={{ borderRadius: g3BorderRadius(G3_PRESETS.button) }}
                 >
                   <RefreshIcon fontSize="small" />
                 </IconButton>
@@ -184,12 +183,11 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
       );
     }
 
-    // 索引就绪
     return (
       <Alert severity="success">
         {t('search.index.ready', {
           time: new Date(lastUpdatedAt ?? Date.now()).toLocaleString(),
-          count: indexedBranches.length
+          count: indexedBranches.length,
         })}
       </Alert>
     );
@@ -197,4 +195,3 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
 
   return statusAlert;
 };
-
