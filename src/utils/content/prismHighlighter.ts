@@ -234,7 +234,11 @@ export function highlightCodeByFilename(code: string, filename: string | undefin
   if (typeof window !== 'undefined') {
     const windowAny = window as unknown as Record<string, unknown>;
     const windowDev = windowAny['__DEV__'];
-    const isDev = process.env['NODE_ENV'] === 'development' ||
+    const globalProcess = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+    const nodeEnv = globalProcess?.env?.['NODE_ENV'];
+    const viteDev = import.meta.env.DEV;
+    const isDev = nodeEnv === 'development' ||
+                  viteDev ||
                   (typeof windowDev === 'boolean' && windowDev) ||
                   location.hostname === 'localhost' ||
                   location.hostname === '127.0.0.1';
@@ -256,4 +260,3 @@ export function highlightCodeByFilename(code: string, filename: string | undefin
   const lines = code.replace(/\r\n/g, '\n').split('\n');
   return highlightLines(lines, language);
 }
-

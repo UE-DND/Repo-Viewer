@@ -14,6 +14,8 @@ import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { useI18n } from "@/contexts/I18nContext";
 import type { InterpolationOptions } from "@/utils/i18n/types";
 
+const FALLBACK_INDEX_TIME = Date.now();
+
 interface IndexStatusProps {
   enabled: boolean;
   loading: boolean;
@@ -186,7 +188,7 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
     return (
       <Alert severity="success">
         {t('search.index.ready', {
-          time: new Date(lastUpdatedAt ?? Date.now()).toLocaleString(),
+          time: new Date(lastUpdatedAt ?? FALLBACK_INDEX_TIME).toLocaleString(),
           count: indexedBranches.length,
         })}
       </Alert>

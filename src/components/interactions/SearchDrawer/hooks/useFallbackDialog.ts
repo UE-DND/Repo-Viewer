@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 interface UseFallbackDialogProps {
   search: {
@@ -17,57 +17,33 @@ export const useFallbackDialog = ({ search }: UseFallbackDialogProps): {
   openFallbackPrompt: () => void;
   handleFallbackDialogClose: () => void;
 } => {
-  const [fallbackDialogOpen, setFallbackDialogOpen] = useState(false);
-  const fallbackPromptMetaRef = useRef<{ resultId: number | null; dismissed: boolean }>({
-    resultId: null,
-    dismissed: false
-  });
+  const [dismissedResultId, setDismissedResultId] = useState<number | null>(null);
+
+  const currentResultId = search.searchResult?.completedAt ?? null;
+  const shouldPrompt = useMemo(() => {
+    if (search.searchLoading || search.searchResult === null) {
+      return false;
+    }
+    const { mode, items } = search.searchResult;
+    const keyword = search.keyword.trim();
+    return mode === 'search-index' && items.length === 0 && keyword.length > 0;
+  }, [search.searchLoading, search.searchResult, search.keyword]);
+
+  const fallbackDialogOpen = shouldPrompt &&
+    currentResultId !== null &&
+    currentResultId !== dismissedResultId;
 
   const openFallbackPrompt = useCallback(() => {
-    const currentMeta = fallbackPromptMetaRef.current;
-    fallbackPromptMetaRef.current = {
-      resultId: currentMeta.resultId,
-      dismissed: false
-    };
-    setFallbackDialogOpen(true);
-  }, []);
+    if (currentResultId !== null) {
+      setDismissedResultId(null);
+    }
+  }, [currentResultId]);
 
   const handleFallbackDialogClose = useCallback(() => {
-    fallbackPromptMetaRef.current = {
-      ...fallbackPromptMetaRef.current,
-      dismissed: true
-    };
-    setFallbackDialogOpen(false);
-  }, []);
-
-  useEffect(() => {
-    if (search.searchLoading || search.searchResult === null) {
-      return;
+    if (currentResultId !== null) {
+      setDismissedResultId(currentResultId);
     }
-
-    const { mode, items, completedAt } = search.searchResult;
-    const keyword = search.keyword.trim();
-
-    if (mode === 'search-index' && items.length === 0 && keyword.length > 0) {
-      const meta = fallbackPromptMetaRef.current;
-      if (meta.resultId !== completedAt) {
-        fallbackPromptMetaRef.current = {
-          resultId: completedAt,
-          dismissed: false
-        };
-      }
-
-      if (!fallbackPromptMetaRef.current.dismissed) {
-        setFallbackDialogOpen(true);
-      }
-    } else {
-      fallbackPromptMetaRef.current = {
-        resultId: null,
-        dismissed: false
-      };
-      setFallbackDialogOpen(false);
-    }
-  }, [search.searchLoading, search.searchResult, search.keyword]);
+  }, [currentResultId]);
 
   return {
     fallbackDialogOpen,
@@ -75,4 +51,3 @@ export const useFallbackDialog = ({ search }: UseFallbackDialogProps): {
     handleFallbackDialogClose
   };
 };
-

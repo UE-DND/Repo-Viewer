@@ -17,7 +17,12 @@ export const useImagePreview = ({
   const [fullScreenMode, setFullScreenMode] = useState<boolean>(isFullScreen);
   const [showPreview, setShowPreview] = useState<boolean>(!thumbnailMode);
   const [scale, setScale] = useState<number>(1);
-  const [shouldLoad, setShouldLoad] = useState<boolean>(!lazyLoad);
+  const [shouldLoad, setShouldLoad] = useState<boolean>(() => {
+    if (!lazyLoad) {
+      return true;
+    }
+    return typeof IntersectionObserver === 'undefined';
+  });
 
   const imgRef = useRef<HTMLImageElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -29,7 +34,6 @@ export const useImagePreview = ({
     }
 
     if (typeof IntersectionObserver === 'undefined') {
-      setShouldLoad(true);
       return;
     }
 

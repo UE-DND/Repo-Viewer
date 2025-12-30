@@ -59,17 +59,22 @@ export const getContainerTransitionStyles = (isExiting: boolean): SystemStyleObj
  */
 export const useSkeletonVisibility = (visible: boolean, onExited?: () => void): boolean => {
   const [isExiting, setIsExiting] = useState(!visible);
+  const scheduleExitState = (next: boolean): void => {
+    window.requestAnimationFrame(() => {
+      setIsExiting(next);
+    });
+  };
 
   useEffect(() => {
     let timer: number | null = null;
 
     if (!visible && !isExiting) {
-      setIsExiting(true);
+      scheduleExitState(true);
       timer = window.setTimeout(() => {
         onExited?.();
       }, 300);
     } else if (visible && isExiting) {
-      setIsExiting(false);
+      scheduleExitState(false);
     }
 
     return () => {

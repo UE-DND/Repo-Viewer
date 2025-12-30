@@ -14,6 +14,16 @@ const themeIconMap: Readonly<Record<string, string>> = {
   '青色': '/icons/icon-cyan.svg'
 };
 
+const getThemeIconPath = (): string => {
+  try {
+    const currentTheme = getCurrentThemeName();
+    return themeIconMap[currentTheme] ?? DEFAULT_ICON;
+  } catch (error) {
+    logger.error('获取当前主题名称失败:', error);
+    return DEFAULT_ICON;
+  }
+};
+
 /**
  * 动态图标Hook返回值接口
  */
@@ -34,18 +44,10 @@ interface DynamicIconHook {
  * @returns 动态图标状态和操作函数
  */
 export const useDynamicIcon = (): DynamicIconHook => {
-  const [iconPath, setIconPath] = useState<string>(DEFAULT_ICON);
+  const [iconPath, setIconPath] = useState<string>(getThemeIconPath);
 
   const updateIcon = (): void => {
-    try {
-      const currentTheme = getCurrentThemeName();
-      const themePath = themeIconMap[currentTheme] ?? DEFAULT_ICON;
-
-      setIconPath(themePath);
-    } catch (error) {
-      logger.error('获取当前主题名称失败:', error);
-      setIconPath(DEFAULT_ICON);
-    }
+    setIconPath(getThemeIconPath());
   };
 
   useEffect(() => {
@@ -54,9 +56,6 @@ export const useDynamicIcon = (): DynamicIconHook => {
     }
 
     logger.info('[DynamicIcon] 初始化动态图标系统');
-
-    // 初始化图标
-    updateIcon();
 
     // 监听主题变化
     const observer = new MutationObserver((mutations) => {

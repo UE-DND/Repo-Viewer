@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -68,7 +68,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   const stageHeight = stageMetrics?.height ?? null;
   const stageMaxWidth = stageMetrics?.availableWidth ?? null;
   const stageMaxHeight = stageMetrics?.availableHeight ?? null;
-  const [currentScale, setCurrentScale] = useState(1);
+  const currentScale = toolbarProps.scale;
 
   const normalizedFileName = typeof fileName === 'string' && fileName.trim().length > 0 ? fileName : undefined;
   const displayFileName = normalizedFileName ?? '未知文件';
@@ -109,10 +109,6 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
   const containerClassName = [className, 'image-preview-container']
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .join(' ');
-
-  useEffect(() => {
-    setCurrentScale(toolbarProps.scale);
-  }, [toolbarProps.scale]);
 
   return (
     <Box

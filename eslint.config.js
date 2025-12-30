@@ -6,6 +6,7 @@ import globals from "globals";
 export default tseslint.config(
   {
     ignores: [
+      ".vite",
       "dist",
       "node_modules",
       "public",

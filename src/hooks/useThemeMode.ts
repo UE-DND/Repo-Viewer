@@ -114,15 +114,6 @@ export const useThemeMode = (): {
   }, []);
 
   useEffect(() => {
-    if (isAutoMode) {
-      const systemBasedMode = getSystemBasedMode();
-      if (systemBasedMode !== mode) {
-        setMode(systemBasedMode);
-      }
-    }
-  }, [isAutoMode, mode]);
-
-  useEffect(() => {
     const themeData = JSON.stringify({
       mode,
       timestamp: new Date().getTime(),

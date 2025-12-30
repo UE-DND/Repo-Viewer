@@ -48,8 +48,15 @@ export function useTouchNavigation({
 
   // 图片切换时重置移动端拖动状态
   useEffect(() => {
-    setDragOffset(0);
-    setIsDragging(false);
+    const rafId = window.requestAnimationFrame(() => {
+      setTouchStart(null);
+      setDragOffset(0);
+      setIsDragging(false);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
   }, [imageUrl]);
 
   const handleTouchStart = (e: React.TouchEvent): void => {
