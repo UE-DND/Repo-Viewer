@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { formatExtensionInput, parseExtensionInput } from "../utils";
 
 interface UseSearchFiltersProps {
@@ -26,10 +26,6 @@ export const useSearchFilters = ({ search }: UseSearchFiltersProps): {
     formatExtensionInput(search.extensionFilter)
   );
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-
-  useEffect(() => {
-    setExtensionInput(formatExtensionInput(search.extensionFilter));
-  }, [search.extensionFilter]);
 
   const applyExtensionFilter = useCallback(() => {
     const parsed = parseExtensionInput(extensionInput);
@@ -77,4 +73,3 @@ export const useSearchFilters = ({ search }: UseSearchFiltersProps): {
     handleResetFilters
   };
 };
-

@@ -2,14 +2,19 @@ import React, { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import { motion } from "framer-motion";
 import type { MotionStyle } from "framer-motion";
-import type { ListChildComponentProps } from "react-window";
+import type { RowComponentProps } from "react-window";
 
 import FileListItem from "./FileListItem";
 import { FILE_ITEM_CONFIG } from "./utils/fileListConfig";
 import { getDynamicItemVariants, optimizedAnimationStyle } from "./utils/fileListAnimations";
 import type { VirtualListItemData } from "./utils/types";
 
-const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualListItemData>): ReactElement | null => {
+const RowComponent = ({
+  ariaAttributes,
+  index,
+  style,
+  ...data
+}: RowComponentProps<VirtualListItemData>): ReactElement => {
   const rowRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const {
@@ -58,15 +63,29 @@ const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualLis
   }, []);
 
   if (item === undefined) {
-    return null;
+    return (
+      <div
+        ref={rowRef}
+        style={style}
+        {...ariaAttributes}
+        aria-hidden="true"
+      />
+    );
   }
 
   const isHighlighted = highlightedIndex === index;
 
-  const adjustedStyle: MotionStyle = {
-    ...(style as MotionStyle),
-    paddingTop: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
-    paddingBottom: FILE_ITEM_CONFIG.spacing.marginBottom / 2,
+  const adjustedStyle: React.CSSProperties = {
+    ...style,
+    boxSizing: "border-box",
+    alignItems: "flex-start",
+  };
+
+  const innerStyle: MotionStyle = {
+    height: "100%",
+    width: "100%",
+    paddingTop: 0,
+    paddingBottom: FILE_ITEM_CONFIG.spacing.marginBottom,
     paddingRight: "12px",
     boxSizing: "border-box",
     ...optimizedAnimationStyle,
@@ -75,40 +94,46 @@ const RowComponent = ({ data, index, style }: ListChildComponentProps<VirtualLis
   const currentVariants = getDynamicItemVariants(scrollSpeed, isScrolling);
 
   return (
-    <motion.div
+    <div
       ref={rowRef}
       style={adjustedStyle}
       className="file-list-item-container"
-      variants={currentVariants}
-      custom={index}
-      initial="hidden"
-      animate="visible"
-      role="listitem"
+      {...ariaAttributes}
       aria-hidden={!isVisible ? "true" : undefined}
       data-oid="_c:db-1"
     >
-      <FileListItem
-        key={item.path}
-        item={item}
-        downloadingPath={downloadingPath}
-        downloadingFolderPath={downloadingFolderPath}
-        folderDownloadProgress={folderDownloadProgress}
-        handleItemClick={handleItemClick}
-        handleDownloadClick={handleDownloadClick}
-        handleFolderDownloadClick={handleFolderDownloadClick}
-        handleCancelDownload={handleCancelDownload}
-        currentPath={currentPath}
-        contents={contents}
-        isHighlighted={isHighlighted}
-        isVisible={isVisible}
-        data-oid="k4zj3qr"
-      />
-    </motion.div>
+      <motion.div
+        style={innerStyle}
+        variants={currentVariants}
+        custom={index}
+        initial="hidden"
+        animate="visible"
+      >
+        <FileListItem
+          key={item.path}
+          item={item}
+          downloadingPath={downloadingPath}
+          downloadingFolderPath={downloadingFolderPath}
+          folderDownloadProgress={folderDownloadProgress}
+          handleItemClick={handleItemClick}
+          handleDownloadClick={handleDownloadClick}
+          handleFolderDownloadClick={handleFolderDownloadClick}
+          handleCancelDownload={handleCancelDownload}
+          currentPath={currentPath}
+          contents={contents}
+          isHighlighted={isHighlighted}
+          isVisible={isVisible}
+          data-oid="k4zj3qr"
+        />
+      </motion.div>
+    </div>
   );
 };
 
 const Row = React.memo(RowComponent);
 
 Row.displayName = "FileListRow";
+
+export { RowComponent };
 
 export default Row;

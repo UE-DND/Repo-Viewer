@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useEffect } from "react";
 import {
   Container,
   useTheme,
@@ -277,12 +277,9 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
   ]);
 
   // 获取顶部栏面包屑容器
-  const [toolbarBreadcrumbContainer, setToolbarBreadcrumbContainer] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const container = document.getElementById('toolbar-breadcrumb-container');
-    setToolbarBreadcrumbContainer(container);
-  }, []);
+  const toolbarBreadcrumbContainer = typeof document !== "undefined"
+    ? document.getElementById('toolbar-breadcrumb-container')
+    : null;
 
   // 渲染面包屑导航组件
   const breadcrumbNavigation = useMemo(() => (

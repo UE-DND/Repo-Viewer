@@ -328,13 +328,16 @@ export function useGitHubContentStateMachine(): {
   /**
    * 切换路径
    */
+  const branchType = state.branch.type;
+  const currentBranch = state.branch.current;
+
   const setCurrentPath = useCallback((path: string, direction: NavigationDirection = 'none') => {
     dispatch({ type: 'SET_NAVIGATION_DIRECTION', direction });
     
-    if (state.branch.type !== 'idle') {
-      void loadContent(path, state.branch.current);
+    if (branchType !== 'idle') {
+      void loadContent(path, currentBranch);
     }
-  }, [state.branch, loadContent]);
+  }, [branchType, currentBranch, loadContent]);
 
   /**
    * 切换分支

@@ -40,7 +40,23 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const { t } = useI18n();
-  const [isVisible, setIsVisible] = useState(false);
+  const getInitialVisibility = (): boolean => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return false;
+    }
+
+    const pageOffset = window.pageYOffset;
+    const scrollTop = Number.isFinite(pageOffset)
+      ? pageOffset
+      : document.documentElement.scrollTop;
+    const hasContent = showOnlyWithContent
+      ? document.body.scrollHeight > window.innerHeight
+      : true;
+
+    return scrollTop > threshold && hasContent;
+  };
+
+  const [isVisible, setIsVisible] = useState(getInitialVisibility);
   const [isScrolling, setIsScrolling] = useState(false);
 
   const getScrollTop = useCallback((): number => {
@@ -131,7 +147,6 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    checkScrollPosition();
 
     return () => {
       window.removeEventListener("scroll", handleScroll);

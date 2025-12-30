@@ -402,7 +402,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       }
 
       const repoScopeParam = getSingleQueryParam(req.query['repoScope']);
-      const useSearchIndexRepo = repoScopeParam !== undefined && repoScopeParam.toLowerCase() === 'search-index';
+      const useSearchIndexRepo = repoScopeParam?.toLowerCase() === 'search-index';
       const { repoOwner, repoName } = useSearchIndexRepo ? getSearchIndexRepoEnvConfig() : getRepoEnvConfig();
       if (repoOwner.length === 0 || repoName.length === 0) {
         res.status(500).json({

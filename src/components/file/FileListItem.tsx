@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import {
   Folder as FolderIcon,
+  Description as DefaultFileIcon,
   Download as DownloadIcon,
   Cancel as CancelIcon,
 } from "@mui/icons-material";
@@ -136,7 +137,19 @@ const FileListItem = memo<FileListItemProps>(
     }, [isItemDownloading]);
 
     const IconComponent = React.useMemo(() => {
-      return item.type === "dir" ? FolderIcon : file.getFileIcon(item.name);
+      if (item.type === "dir") {
+        return FolderIcon;
+      }
+
+      const extension = item.name.split('.').pop()?.toLowerCase();
+      if (typeof extension === "string" && extension.length > 0) {
+        const icon = file.fileExtensionIcons[extension];
+        if (icon !== undefined) {
+          return icon;
+        }
+      }
+
+      return DefaultFileIcon;
     }, [item.type, item.name]);
 
     // 检查是否是首页文件夹（用于显示过滤）
@@ -417,7 +430,7 @@ const FileListItem = memo<FileListItemProps>(
             flexDirection: { xs: "column", sm: "row" },
             alignItems: { xs: "flex-start", sm: "center" },
             flex: 1,
-            mx: "auto" /* 确保水平居中 */,
+            mx: "auto",
             position: "relative",
             willChange: "transform, background-color",
             transform: "translateZ(0)",

@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect, useState, useCallback } from "react";
 import { Box } from "@mui/material";
-import { FixedSizeList } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
+import { List, useListCallbackRef } from "react-window";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 import { motion } from "framer-motion";
 import AlphabetIndex from "./AlphabetIndex";
-import Row from "./FileListRow";
+import { RowComponent } from "./FileListRow";
 import { FILE_ITEM_CONFIG, LIST_HEIGHT_CONFIG } from "./utils/fileListConfig";
 import { listAnimationVariants } from "./utils/fileListAnimations";
 import { calculateLayoutMetrics } from "./utils/fileListLayout";
@@ -58,7 +58,7 @@ const FileList = React.memo<FileListProps>(
       fastScrollThreshold: 0.3
     });
 
-    const listRef = React.useRef<FixedSizeList>(null);
+    const [listApi, setListApi] = useListCallbackRef(null);
     const [showAlphabetIndex, setShowAlphabetIndex] = React.useState(false);
     const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null);
     const highlightTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -89,30 +89,12 @@ const FileList = React.memo<FileListProps>(
      * 滚动到指定索引的文件
      */
     const handleScrollToIndex = useCallback((index: number) => {
-      if (listRef.current !== null) {
-        // 在回调中动态计算行高
-        const baseHeight = isSmallScreen
-          ? FILE_ITEM_CONFIG.baseHeight.xs
-          : FILE_ITEM_CONFIG.baseHeight.sm;
-        const rowGap = FILE_ITEM_CONFIG.spacing.marginBottom;
-        const calculatedRowHeight = baseHeight + rowGap;
-
-        const targetOffset = index * calculatedRowHeight;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-        const outerElement = (listRef.current as any)._outerRef;
-
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-        if (outerElement) {
-          // 使用原生的平滑滚动
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-          outerElement.scrollTo({
-            top: targetOffset,
-            behavior: 'smooth'
-          });
-        } else {
-          // 降级到直接跳转
-          listRef.current.scrollToItem(index, 'start');
-        }
+      if (listApi !== null) {
+        listApi.scrollToRow({
+          index,
+          align: "start",
+          behavior: "smooth",
+        });
 
         setHighlightedIndex(index);
 
@@ -124,7 +106,7 @@ const FileList = React.memo<FileListProps>(
           setHighlightedIndex(null);
         }, 1500);
       }
-    }, [isSmallScreen]);
+    }, [listApi]);
 
     // 清理定时器
     React.useEffect(() => {
@@ -158,25 +140,28 @@ const FileList = React.memo<FileListProps>(
       ? LIST_HEIGHT_CONFIG.containerPadding.few
       : LIST_HEIGHT_CONFIG.containerPadding.normal;
 
-    const computeMetrics = useCallback((): FileListLayoutMetrics => {
-      const viewportHeight = typeof window !== "undefined" ? window.innerHeight : null;
-      return calculateLayoutMetrics({
+    const [viewportHeight, setViewportHeight] = useState<number | null>(() => {
+      if (typeof window === "undefined") {
+        return null;
+      }
+      return window.innerHeight;
+    });
+
+    const layoutMetrics = useMemo(
+      (): FileListLayoutMetrics => calculateLayoutMetrics({
         fileCount: contents.length,
         rowHeight,
         isSmallScreen,
         hasReadmePreview,
         hoverExtraSpace,
         viewportHeight,
-      });
-    }, [contents.length, rowHeight, isSmallScreen, hasReadmePreview, hoverExtraSpace]);
-
-    const [layoutMetrics, setLayoutMetrics] = useState<FileListLayoutMetrics>(() => computeMetrics());
+      }),
+      [contents.length, rowHeight, isSmallScreen, hasReadmePreview, hoverExtraSpace, viewportHeight],
+    );
     const { height: availableHeight, needsScrolling } = layoutMetrics;
 
-    // 监听窗口大小变化和文件数量变化
+    // 监听窗口大小变化
     useEffect(() => {
-      setLayoutMetrics(computeMetrics());
-
       if (typeof window === "undefined") {
         return;
       }
@@ -188,7 +173,7 @@ const FileList = React.memo<FileListProps>(
           window.cancelAnimationFrame(rafId);
         }
         rafId = window.requestAnimationFrame(() => {
-          setLayoutMetrics(computeMetrics());
+          setViewportHeight(window.innerHeight);
         });
       };
 
@@ -200,7 +185,7 @@ const FileList = React.memo<FileListProps>(
         }
         window.removeEventListener("resize", handleResize);
       };
-    }, [computeMetrics]);
+    }, []);
 
     // 仅当相关数据变化时才更新列表项数据
     const itemData = useMemo(
@@ -240,30 +225,35 @@ const FileList = React.memo<FileListProps>(
       if (!needsScrolling) {
         const padding = isSmallScreen ? 16 : 20;
         return {
-          paddingTop: padding,
+          paddingTop: padding - 4,
           paddingBottom: padding,
         };
       }
 
       // 滚动模式：使用较小的内边距
       return {
-        paddingTop: 8,
+        paddingTop: 0,
         paddingBottom: 8,
       };
     }, [needsScrolling, isSmallScreen]);
 
-    // 处理滚动事件（适配 react-window 接口）
-    const handleScroll = React.useCallback(
-      ({
-        scrollOffset,
-      }: {
-        scrollOffset: number;
-        scrollDirection: "forward" | "backward";
-      }): void => {
-        handleScrollEvent(scrollOffset);
-      },
-      [handleScrollEvent]
-    );
+    // 处理滚动事件（监听列表容器）
+    React.useEffect(() => {
+      const element = listApi?.element ?? null;
+      if (element === null) {
+        return;
+      }
+
+      const handleScroll = (): void => {
+        handleScrollEvent(element.scrollTop);
+      };
+
+      element.addEventListener("scroll", handleScroll, { passive: true });
+
+      return () => {
+        element.removeEventListener("scroll", handleScroll);
+      };
+    }, [handleScrollEvent, listApi]);
 
     // 简化的虚拟列表样式
     const virtualListStyle = useMemo((): React.CSSProperties => {
@@ -318,7 +308,16 @@ const FileList = React.memo<FileListProps>(
           >
             {contents.map((item, index) => (
               <div key={`${item.name}-${String(index)}`} style={{ height: rowHeight }}>
-                <Row index={index} style={{ height: rowHeight }} data={itemData} />
+                <RowComponent
+                  index={index}
+                  style={{ height: rowHeight }}
+                  ariaAttributes={{
+                    role: "listitem",
+                    "aria-posinset": index + 1,
+                    "aria-setsize": contents.length,
+                  }}
+                  {...itemData}
+                />
               </div>
             ))}
           </motion.div>
@@ -351,24 +350,26 @@ const FileList = React.memo<FileListProps>(
             initial="hidden"
             animate="visible"
           >
-            <AutoSizer>
-              {({ width, height }: { width: number; height: number }) => (
-                <FixedSizeList
-                  ref={listRef}
-                  height={height}
-                  width={width}
-                  itemCount={contents.length}
-                  itemSize={rowHeight}
-                  itemData={itemData}
-                  style={virtualListStyle}
-                  onScroll={handleScroll}
-                  overscanCount={10}
-                  className={`virtual-file-list ${isScrolling ? "is-scrolling" : ""}`}
-                >
-                  {Row}
-                </FixedSizeList>
-              )}
-            </AutoSizer>
+            <AutoSizer
+              renderProp={({ width, height }) => {
+                if (width === undefined || height === undefined) {
+                  return null;
+                }
+
+                return (
+                  <List
+                    listRef={setListApi}
+                    rowCount={contents.length}
+                    rowHeight={rowHeight}
+                    rowProps={itemData}
+                    rowComponent={RowComponent}
+                    style={{ ...virtualListStyle, height, width }}
+                    overscanCount={10}
+                    className={`virtual-file-list ${isScrolling ? "is-scrolling" : ""}`}
+                  />
+                );
+              }}
+            />
           </motion.div>
         </Box>
 
