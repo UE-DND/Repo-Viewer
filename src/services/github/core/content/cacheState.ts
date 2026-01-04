@@ -90,7 +90,7 @@ export async function getCachedDirectoryContents(
 ): Promise<GitHubContent[] | null | undefined> {
   if (cacheAvailable) {
     const contentCache = CacheManager.getContentCache();
-    return contentCache.get(cacheKey) as Promise<GitHubContent[] | null | undefined>;
+    return (await contentCache.get(cacheKey)) as GitHubContent[] | null | undefined;
   }
   return fallbackCache.get(cacheKey) as GitHubContent[] | null | undefined;
 }
@@ -104,7 +104,7 @@ export async function getCachedDirectoryContents(
 export async function getCachedFileContent(cacheKey: string): Promise<string | null | undefined> {
   if (cacheAvailable) {
     const fileCache = CacheManager.getFileCache();
-    return fileCache.get(cacheKey) as Promise<string | null | undefined>;
+    return (await fileCache.get(cacheKey)) as string | null | undefined;
   }
   return fallbackCache.get(cacheKey) as string | null | undefined;
 }
@@ -154,4 +154,3 @@ export async function storeFileContent(cacheKey: string, fileUrl: string, conten
 
   fallbackCache.set(cacheKey, content);
 }
-

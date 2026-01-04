@@ -45,6 +45,10 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
 
   const CHARS_PER_LINE = 12;
   const MAX_VISIBLE_LINES = 2;
+  const getDisplayBranchName = useCallback(
+    (branchName: string): string => (branchName !== '' ? branchName : 'main'),
+    []
+  );
 
   // 处理分支名显示为最多两行，并对过长文本进行省略
   const formatBranchName = useCallback((branchName: string): string[] => {
@@ -92,6 +96,21 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
   }, [CHARS_PER_LINE, MAX_VISIBLE_LINES]);
 
   const containerWidth = CHARS_PER_LINE * 8 + 16;
+  const getBranchHeight = useCallback(
+    (branchName: string): number => {
+      const branchLines = formatBranchName(getDisplayBranchName(branchName));
+      return branchLines.length * 14 + 14;
+    },
+    [formatBranchName, getDisplayBranchName]
+  );
+  const getCurrentBranchHeight = useCallback(
+    (): number => getBranchHeight(isAnimating && animatingBranch !== '' ? animatingBranch : currentBranch),
+    [animatingBranch, currentBranch, getBranchHeight, isAnimating]
+  );
+  const getCollapsedBranchLines = useCallback(
+    (): string[] => formatBranchName(getDisplayBranchName(isAnimating && animatingBranch !== '' ? animatingBranch : currentBranch)),
+    [animatingBranch, currentBranch, formatBranchName, getDisplayBranchName, isAnimating]
+  );
 
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(anchorEl !== null ? null : event.currentTarget);
@@ -216,17 +235,10 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
               height: (open && !isAnimating) ? (() => {
                 const totalHeight = branches
                   .filter(branch => branch !== currentBranch)
-                  .reduce((acc, branch) => {
-                    const branchLines = formatBranchName(branch);
-                    return acc + (branchLines.length * 14 + 14);
-                  }, 0);
-                const currentBranchLines = formatBranchName(currentBranch !== '' ? currentBranch : "main");
-                const currentBranchHeight = currentBranchLines.length * 14 + 14;
+                  .reduce((acc, branch) => acc + getBranchHeight(branch), 0);
+                const currentBranchHeight = getBranchHeight(currentBranch);
                 return Math.min(totalHeight + currentBranchHeight, 280);
-              })() : (() => {
-                const currentBranchLines = formatBranchName(isAnimating && animatingBranch !== "" ? animatingBranch : (currentBranch !== '' ? currentBranch : "main"));
-                return currentBranchLines.length * 14 + 14;
-              })(),
+              })() : getCurrentBranchHeight(),
               maxHeight: 280,
               borderColor: open
                 ? theme.palette.primary.main
@@ -249,10 +261,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                   top: 0,
                   left: 0,
                   right: 0,
-                  bottom: (() => {
-                    const currentBranchLines = formatBranchName(currentBranch !== '' ? currentBranch : "main");
-                    return currentBranchLines.length * 14 + 14;
-                  })(),
+                  bottom: getCurrentBranchHeight(),
                   overflow: "hidden",
                 }}
               >
@@ -333,12 +342,8 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
               const expandedHeight = (() => {
                 const totalHeight = branches
                   .filter(branch => branch !== currentBranch)
-                  .reduce((acc, branch) => {
-                    const branchLines = formatBranchName(branch);
-                    return acc + (branchLines.length * 14 + 14);
-                  }, 0);
-                const currentBranchLines = formatBranchName(currentBranch !== '' ? currentBranch : "main");
-                const currentBranchHeight = currentBranchLines.length * 14 + 14;
+                  .reduce((acc, branch) => acc + getBranchHeight(branch), 0);
+                const currentBranchHeight = getBranchHeight(currentBranch);
                 return Math.min(totalHeight + currentBranchHeight, 280);
               })();
 
@@ -408,14 +413,8 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                 left: 0,
                 right: 0,
                 px: 1,
-                height: (() => {
-                  const currentBranchLines = formatBranchName(currentBranch !== '' ? currentBranch : "main");
-                  return currentBranchLines.length * 14 + 14;
-                })(),
-                minHeight: (() => {
-                  const currentBranchLines = formatBranchName(currentBranch !== '' ? currentBranch : "main");
-                  return currentBranchLines.length * 14 + 14;
-                })(),
+                height: getCurrentBranchHeight(),
+                minHeight: getCurrentBranchHeight(),
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
@@ -440,7 +439,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                 },
               }}
             >
-              {formatBranchName(currentBranch !== '' ? currentBranch : "main").map((line, lineIndex) => (
+              {getCollapsedBranchLines().map((line, lineIndex) => (
                 <Box
                   key={lineIndex}
                   sx={{
@@ -461,10 +460,7 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
           </Box>
           {/* 占位元素，保持外层容器宽度固定 */}
           <Box sx={{
-            height: (() => {
-              const currentBranchLines = formatBranchName(currentBranch !== '' ? currentBranch : "main");
-              return currentBranchLines.length * 14 + 14;
-            })(),
+            height: getCurrentBranchHeight(),
             width: containerWidth,
             visibility: "hidden"
           }} />

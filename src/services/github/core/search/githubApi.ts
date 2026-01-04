@@ -61,7 +61,7 @@ async function searchViaDirectApi(query: string): Promise<unknown> {
       throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
     }
 
-    return response.json() as Promise<unknown>;
+    return (await response.json()) as unknown;
   }, {
     priority: 'medium',
     method: 'GET',
@@ -102,4 +102,3 @@ export async function searchWithGitHubApi(
     throw new Error(`搜索失败: ${message}`);
   }
 }
-

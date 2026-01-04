@@ -167,12 +167,9 @@ export const useFilePreview = (
     dispatch({ type: 'RESET_PREVIEW' });
 
     try {
-      let proxyUrl = item.download_url;
-      if (getForceServerProxy()) {
-        proxyUrl = `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`;
-      } else {
-        proxyUrl = GitHub.Proxy.transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url;
-      }
+      const proxyUrl = getForceServerProxy()
+        ? `/api/github?action=getFileContent&url=${encodeURIComponent(item.download_url)}`
+        : (GitHub.Proxy.transformImageUrl(item.download_url, item.path, useTokenMode) ?? item.download_url);
 
       const fileNameLower = item.name.toLowerCase();
       const isCurrentTarget = (): boolean => currentPreviewItemRef.current?.path === targetPath;

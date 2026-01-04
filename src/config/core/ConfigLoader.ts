@@ -236,4 +236,3 @@ export class ConfigLoader {
     return result;
   }
 }
-

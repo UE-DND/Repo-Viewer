@@ -18,10 +18,10 @@ const DEFAULT_BRANCH = GitHub.Branch.getDefaultBranchName();
 
 /**
  * GitHub内容管理Hook
- * 
+ *
  * 管理GitHub仓库内容的获取、缓存和状态，支持分支切换、路径导航和README预览。
  * 自动处理URL参数和浏览器历史导航。
- * 
+ *
  * @returns GitHub内容状态和操作函数
  */
 export const useGitHubContent = (): {
@@ -48,13 +48,13 @@ export const useGitHubContent = (): {
 } => {
   // 使用分支管理 Hook
   const branchState = useBranchManagement();
-  
+
   // 使用路径管理 Hook
   const pathState = usePathManagement(branchState.currentBranch);
-  
+
   // 使用内容加载 Hook
   const contentState = useContentLoading(pathState.currentPath, branchState.currentBranch);
-  
+
   // 使用 README 内容 Hook
   const readmeState = useReadmeContent(contentState.contents, pathState.currentPath, branchState.currentBranch);
 
@@ -90,18 +90,18 @@ export const useGitHubContent = (): {
     currentPath: pathState.currentPath,
     navigationDirection: pathState.navigationDirection,
     setCurrentPath: pathState.setCurrentPath,
-    
+
     // 内容相关
     contents: contentState.contents,
     loading: contentState.loading,
     error: contentState.error,
     refreshContents,
-    
+
     // README 相关
     readmeContent: readmeState.readmeContent,
     loadingReadme: readmeState.loadingReadme,
     readmeLoaded: readmeState.readmeLoaded,
-    
+
     // 分支相关
     currentBranch: branchState.currentBranch,
     branches: branchState.branches,
@@ -110,7 +110,7 @@ export const useGitHubContent = (): {
     setCurrentBranch: handleBranchChange,
     refreshBranches: branchState.refreshBranches,
     search: searchState,
-    
+
     // 仓库信息
     repoOwner: GITHUB_REPO_OWNER,
     repoName: GITHUB_REPO_NAME,

@@ -22,6 +22,7 @@ export class MinHeap<T> {
    * 从数组构建堆
    * 
    * @param items - 要插入的元素数组
+   * @param compareFn - 比较函数，返回负数表示 a < b，正数表示 a > b，0 表示相等
    */
   static fromArray<T>(items: T[], compareFn: (a: T, b: T) => number): MinHeap<T> {
     const heap = new MinHeap(compareFn);
@@ -213,4 +214,3 @@ export function getMinK<T>(
   const heap = MinHeap.fromArray(items, compareFn);
   return heap.extractMin(k);
 }
-

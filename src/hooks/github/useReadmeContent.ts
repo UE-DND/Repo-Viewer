@@ -13,6 +13,7 @@ import type { ReadmeContentState } from './types';
  * 
  * @param contents - 当前目录的内容列表
  * @param currentPath - 当前路径
+ * @param currentBranch - 当前分支
  * @returns README 内容状态
  */
 export function useReadmeContent(contents: GitHubContent[], currentPath: string, currentBranch: string): ReadmeContentState {

@@ -143,31 +143,31 @@ const loadConfig = async (): Promise<ConfigInfo> => {
 
 /**
  * 获取当前配置信息
- * 
+ *
  * @returns 当前的配置信息对象
  */
 const getConfig = (): ConfigInfo => currentConfig;
 
 /**
  * 获取网站标题
- * 
+ *
  * @returns 当前网站标题
  */
 const getSiteTitle = (): string => currentConfig.siteTitle;
 
 /**
  * 检查配置服务是否已初始化
- * 
+ *
  * @returns 如果已初始化返回true，否则返回false
  */
 const isServiceInitialized = (): boolean => isInitialized;
 
 /**
  * 初始化配置服务
- * 
+ *
  * 从API加载配置信息并更新文档标题。
  * 使用 Promise 缓存防止竞态条件，确保配置只加载一次。
- * 
+ *
  * @returns Promise，解析为配置信息对象
  */
 const init = (): Promise<ConfigInfo> => {
@@ -180,7 +180,7 @@ const init = (): Promise<ConfigInfo> => {
   if (initPromise !== null) {
     return initPromise;
   }
-  
+
   // 先设置 initPromise，防止竞态条件
   initPromise = loadConfig()
     .then(config => {
@@ -194,7 +194,7 @@ const init = (): Promise<ConfigInfo> => {
       initPromise = null;
       return currentConfig;
     });
-  
+
   return initPromise;
 };
 
@@ -216,7 +216,7 @@ interface ConfigServiceApi {
 
 /**
  * 配置服务对象
- * 
+ *
  * 提供配置管理功能，包括从API加载配置、获取配置信息和检查初始化状态。
  */
 export const ConfigService: ConfigServiceApi = {

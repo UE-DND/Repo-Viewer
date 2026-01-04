@@ -80,8 +80,8 @@ export function highlightCode(code: string, language: string | null): string {
  * 为了保持 HTML 标签的完整性并确保每行都能正确高亮，
  * 我们先将整个代码块高亮，然后使用标记来分割行。
  *
- * @param lines - 代码行数组
- * @param language - Prism 语言标识符
+ * @param html - 高亮后的 HTML 字符串
+ * @param lineCount - 需要切分的行数
  * @returns 每行高亮后的 HTML 字符串数组
  */
 function splitHighlightedHtml(html: string, lineCount: number): string[] {

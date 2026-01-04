@@ -90,7 +90,7 @@ async function fetchFromServerApi<T>(
     return buffer as unknown as T;
   }
 
-  return response.json() as Promise<T>;
+  return (await response.json()) as T;
 }
 
 async function fetchDirect<T>(
@@ -129,7 +129,7 @@ async function fetchDirect<T>(
     return buffer as unknown as T;
   }
 
-  return response.json() as Promise<T>;
+  return (await response.json()) as T;
 }
 
 async function decompressGzip(arrayBuffer: ArrayBuffer): Promise<string> {
@@ -342,4 +342,3 @@ export async function prefetchSearchIndexForBranch(
 
   return true;
 }
-

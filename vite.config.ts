@@ -2,10 +2,11 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import * as path from 'path'
 import * as http from 'http'
-import * as https from 'https'
 import { readFileSync } from 'fs'
 import { configManager, applyEnvMappingForVite } from './src/config'
 import type { GitHubContent, InitialContentHydrationPayload } from './src/types'
+
+const rootDir = path.resolve(process.cwd())
 
 const colors = {
   reset: '\x1b[0m',
@@ -331,7 +332,7 @@ function getAllGithubPATs() {
 }
 function getPackageVersion() {
   try {
-    const packagePath = path.resolve(__dirname, 'package.json');
+    const packagePath = path.resolve(rootDir, 'package.json');
     const packageContent = readFileSync(packagePath, 'utf-8');
     const packageJson = JSON.parse(packageContent);
     return packageJson.version;
@@ -534,7 +535,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: [
-        { find: '@', replacement: path.resolve(__dirname, './src') }
+        { find: '@', replacement: path.resolve(rootDir, 'src') }
       ]
     },
     optimizeDeps: {

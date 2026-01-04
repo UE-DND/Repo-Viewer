@@ -6,6 +6,7 @@ import { requestManager } from '@/utils/request/requestManager';
 import { handleError } from '@/utils/error/errorHandler';
 import { processContents } from '@/utils/content';
 import { getFeaturesConfig } from '@/config';
+import { useThemeTransitionFlag } from '@/hooks/useThemeTransition';
 import type { ContentLoadingState } from './types';
 
 /**
@@ -25,7 +26,7 @@ export function useContentLoading(path: string, branch: string): ContentLoadingS
 
   const currentPathRef = useRef<string>(path);
   const currentBranchRef = useRef<string>(branch);
-  const isThemeChangingRef = useRef<boolean>(false);
+  const isThemeChangingRef = useThemeTransitionFlag();
 
   useEffect(() => {
     currentPathRef.current = path;
@@ -34,25 +35,6 @@ export function useContentLoading(path: string, branch: string): ContentLoadingS
   useEffect(() => {
     currentBranchRef.current = branch;
   }, [branch]);
-
-  // 监听主题切换事件
-  useEffect(() => {
-    const handleThemeChanging = (): void => {
-      isThemeChangingRef.current = true;
-    };
-
-    const handleThemeChanged = (): void => {
-      isThemeChangingRef.current = false;
-    };
-
-    window.addEventListener('theme:changing', handleThemeChanging);
-    window.addEventListener('theme:changed', handleThemeChanged);
-
-    return () => {
-      window.removeEventListener('theme:changing', handleThemeChanging);
-      window.removeEventListener('theme:changed', handleThemeChanged);
-    };
-  }, []);
 
   const displayError = useCallback((message: string) => {
     setError(message);
@@ -113,7 +95,7 @@ export function useContentLoading(path: string, branch: string): ContentLoadingS
     }
     
     void loadContents();
-  }, [path, branch, refreshTrigger, loadContents]);
+  }, [path, branch, refreshTrigger, loadContents, isThemeChangingRef]);
 
   const refresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);

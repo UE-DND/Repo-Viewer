@@ -126,7 +126,7 @@ async function fetchFromServerApi<T>(
     return buffer as unknown as T;
   }
 
-  return response.json() as Promise<T>;
+  return (await response.json()) as T;
 }
 
 function hasAuthorizationHeader(headers: HeadersInit): boolean {
@@ -176,7 +176,7 @@ async function fetchDirect<T>(
     return buffer as unknown as T;
   }
 
-  return response.json() as Promise<T>;
+  return (await response.json()) as T;
 }
 
 async function fetchManifest(signal?: AbortSignal): Promise<SearchIndexManifest> {
