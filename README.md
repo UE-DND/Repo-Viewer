@@ -1,15 +1,14 @@
-# Repo-Viewer
+<h1 align="center">
+  <em>Repo-Viewer</em>
+</h1>
 
-***基于 Material Design 3设计风格的 GitHub仓库浏览应用***
-
-![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7.3.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1.18-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![Material-UI](https://img.shields.io/badge/Material--UI-7.3.5-007FFF?style=for-the-badge&logo=mui&logoColor=white)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.23.24-0055FF?style=for-the-badge&logo=framer&logoColor=white)
-![Axios](https://img.shields.io/badge/Axios-1.13.2-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
-![Zod](https://img.shields.io/badge/Zod-4.1.12-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+<p align="center">
+  <strong>基于 Material Design 3设计风格的 GitHub仓库浏览应用</strong>
+  &nbsp;&nbsp;
+  <a href="https://deepwiki.com/UE-DND/Repo-Viewer">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
+</p>
 
 ![Preview Dark](docs/image/dark.png)
 
@@ -23,11 +22,11 @@
 
 ### 主要功能
 
-- 📁 **仓库浏览**：直观的文件结构导航，同时提供首页文件和文件夹过滤
-- 🔎 **文件搜索**：支持基于索引和 API 的快速文件搜索，可按分支、路径前缀和扩展名过滤
-- 📄 **文件预览**：支持多种文件格式预览，目前包括 `Markdown`、 `PDF` 和 `图片`
-- ⬇️ **文件下载**：可下载单个文件或整个文件夹
-- 🌐 **SEO优化**：提高搜索引擎可见性
+- 📁 **仓库浏览**：直观的文件结构导航，同时提供首页文件和文件夹排除选项.
+- 🔎 **文件搜索**：支持基于自建索引和 Github API 的快速文件搜索，可按分支、路径前缀和扩展名过滤.
+- 📄 **文件预览**：多种文件格式预览，目前支持 `Markdown`、 `PDF` 和 `图片`.
+- ⬇️ **文件下载**：可下载单个文件或整个文件夹.
+- 🌐 **SEO优化**：提高搜索引擎可见性.
 
 ### 本地开发
 
@@ -41,7 +40,7 @@
 2. **安装依赖**
 
     ```bash
-   npm install --legacy-peer-deps
+   npm install
    ```
 
 3. **创建环境配置**：复制 `.env.example` 到 `.env` 并配置必要的环境变量（参见下方内容）
@@ -134,7 +133,7 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
 
 4. **部署应用**:
    - 点击 `Deploy` 按钮
-   - Vercel将自动构建和部署你的应用
+   - Vercel 将自动构建和部署你的应用
 
 #### 配置文件索引
 
