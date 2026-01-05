@@ -44,7 +44,7 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
   }, [currentBranch]);
 
   const loadReadmeContent = useCallback(async (readmeItem: GitHubContent, requestKey: string) => {
-    if (typeof readmeItem.path !== 'string' || readmeItem.path.trim() === '') {
+    if (readmeItem.path.trim() === '') {
       return;
     }
 

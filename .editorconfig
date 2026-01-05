@@ -14,24 +14,16 @@ indent_size = 2
 
 # JavaScript, TypeScript files
 [*.{js,ts,tsx}]
-indent_style = space
-indent_size = 2
 max_line_length = 100
 
 # JSON files
 [*.json]
-indent_style = space
-indent_size = 2
 
 # HTML files
 [*.html]
-indent_style = space
-indent_size = 2
 
 # CSS files
 [*.css]
-indent_style = space
-indent_size = 2
 
 # Markdown files
 [*.md]
@@ -40,20 +32,12 @@ max_line_length = off
 
 # YAML files
 [*.{yml,yaml}]
-indent_style = space
-indent_size = 2
 
 # Configuration files
 [*.config.{js,ts}]
-indent_style = space
-indent_size = 2
 
 # Package files
 [package.json]
-indent_style = space
-indent_size = 2
 
 [package-lock.json]
-indent_style = space
-indent_size = 2
 insert_final_newline = false

@@ -3,6 +3,9 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
+const strictConfigs = tseslint.configs.strictTypeChecked;
+const stylisticConfigs = tseslint.configs.stylisticTypeChecked;
+
 export default tseslint.config(
   {
     ignores: [
@@ -16,8 +19,8 @@ export default tseslint.config(
       "vite.config.ts",
     ],
   },
-  ...tseslint.configs.strictTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
+  ...strictConfigs,
+  ...stylisticConfigs,
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
     languageOptions: {

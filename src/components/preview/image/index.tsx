@@ -89,11 +89,9 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     if (typeof radius === 'number') {
       return radius * 2;
     }
-    if (typeof radius === 'string') {
-      const trimmedRadius = radius.trim();
-      if (trimmedRadius.length > 0) {
-        return `calc(${trimmedRadius} * 2)`;
-      }
+    const trimmedRadius = radius.trim();
+    if (trimmedRadius.length > 0) {
+      return `calc(${trimmedRadius} * 2)`;
     }
     return radius;
   }, [theme.shape.borderRadius]);

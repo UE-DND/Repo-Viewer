@@ -26,7 +26,7 @@ export function interpolateString(
   onMissingInterpolationFn: ((key: string, interpolation: string) => void) | null,
   locale: Locale,
 ): string {
-  const result = phrase.replace(
+  return phrase.replace(
     DEFAULT_INTERPOLATION_REGEX,
     function (expression: string, argument: string) {
       const optionHasProperty = options.hasOwnProperty(argument);
@@ -47,11 +47,7 @@ export function interpolateString(
           optionType === 'number' &&
           options.hasOwnProperty('count')
         ) {
-          const formattedValue = (validValue as number).toLocaleString([
-            locale,
-            'en-US',
-          ]);
-          value = formattedValue;
+          value = (validValue as number).toLocaleString([locale, 'en-US']);
         } else {
           value = typeof validValue === 'string' ? validValue : String(validValue);
         }
@@ -61,8 +57,6 @@ export function interpolateString(
       return value;
     },
   );
-
-  return result;
 }
 
 /**
@@ -124,11 +118,11 @@ function getNestedValue(obj: ILocaleJSON, path: string): string | null {
  * 管理翻译、复数规则和插值
  */
 class Translator implements ITranslator {
-  private translationMap: Map<string, string>;
-  private locale: Locale;
-  private onMissingKeyFn: (key: string) => string;
-  private onMissingInterpolationFn: ((key: string, interpolation: string) => void) | null;
-  private translations: ILocaleJSON;
+  private readonly translationMap: Map<string, string>;
+  private readonly locale: Locale;
+  private readonly onMissingKeyFn: (key: string) => string;
+  private readonly onMissingInterpolationFn: ((key: string, interpolation: string) => void) | null;
+  private readonly translations: ILocaleJSON;
 
   constructor(
     locale: Locale,

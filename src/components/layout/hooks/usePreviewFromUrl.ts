@@ -43,7 +43,7 @@ export function usePreviewFromUrl({
 
       const previewFileName = getPreviewFromUrl();
 
-      if (typeof previewFileName !== "string" || previewFileName.trim().length === 0) {
+      if (previewFileName.trim().length === 0) {
         return;
       }
 

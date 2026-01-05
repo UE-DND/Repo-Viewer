@@ -437,7 +437,7 @@ export default defineConfig(({ mode }) => {
     ],
     build: {
       chunkSizeWarningLimit: 2000,
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           manualChunks: (id) => {
             if (!id.includes('node_modules')) {

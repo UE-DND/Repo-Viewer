@@ -143,7 +143,7 @@ const EXTENSION_TO_LANGUAGE: Record<string, string> = {
  * @returns Prism 语言标识符，如果无法识别则返回 null
  */
 export function detectLanguage(filename: string): string | null {
-  if (typeof filename !== 'string' || filename.length === 0) {
+  if (filename.length === 0) {
     return null;
   }
 

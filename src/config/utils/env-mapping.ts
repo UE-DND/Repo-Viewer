@@ -139,8 +139,8 @@ export const resolveEnvWithMapping = (
   fallback: string
 ): string => {
   // 优先使用VITE_前缀的变量（如果存在）
-  const viteKey = ENV_MAPPING[plainKey as keyof typeof ENV_MAPPING];
-  if (typeof viteKey === 'string') {
+  if (plainKey in ENV_MAPPING) {
+    const viteKey = ENV_MAPPING[plainKey as keyof typeof ENV_MAPPING];
     // 尝试查找 VITE_ 前缀变量
     const viteValue = lookupEnv(env, viteKey);
     if (viteValue !== undefined) {

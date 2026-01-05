@@ -105,7 +105,7 @@ export function useAspectRatioTracker({
     }
 
     const src = img.currentSrc !== '' ? img.currentSrc : img.src;
-    if (typeof src !== 'string' || src === '') {
+    if (src === '') {
       return;
     }
 

@@ -347,10 +347,8 @@ const BranchSwitcher: React.FC<BranchSwitcherProps> = ({
                 return Math.min(totalHeight + currentBranchHeight, 280);
               })();
 
-              const collapsedHeight = animatingBranchHeight;
-
               // 从底部算起，需要向上偏移的距离
-              const startOffsetFromBottom = expandedHeight - collapsedHeight - animatingBranchStartY;
+              const startOffsetFromBottom = expandedHeight - animatingBranchHeight - animatingBranchStartY;
 
               return (
                 <Box

@@ -118,8 +118,8 @@ export class ErrorFactory {
 
     const rateLimitProps = rateLimitInfo !== undefined
       ? {
-          ...(typeof rateLimitInfo.remaining === 'number' ? { rateLimitRemaining: rateLimitInfo.remaining } : {}),
-          ...(typeof rateLimitInfo.reset === 'number' ? { rateLimitReset: rateLimitInfo.reset } : {}),
+          rateLimitRemaining: rateLimitInfo.remaining,
+          rateLimitReset: rateLimitInfo.reset,
         }
       : {};
 

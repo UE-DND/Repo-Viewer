@@ -52,7 +52,7 @@ const AlphabetIndex: React.FC<AlphabetIndexProps> = ({
    * 获取所有可用的字母（按字母顺序排序）
    */
   const availableLetters = useMemo(() => {
-    const letters = Array.from(letterIndexMap.keys()).sort((a, b) => {
+    return Array.from(letterIndexMap.keys()).sort((a, b) => {
       // # 排在最后
       if (a === '#') {
         return 1;
@@ -62,8 +62,6 @@ const AlphabetIndex: React.FC<AlphabetIndexProps> = ({
       }
       return a.localeCompare(b);
     });
-    
-    return letters;
   }, [letterIndexMap]);
 
   /**

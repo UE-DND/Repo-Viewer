@@ -90,13 +90,13 @@ class GitHubTokenManager {
           return false;
         }
         const value = process.env[key];
-        return typeof value === 'string' && value.trim().length > 0;
+        return value !== undefined && value.trim().length > 0;
       });
 
       // 收集所有有效的PAT
       this.tokens = patKeys
         .map(key => process.env[key])
-        .filter((token): token is string => typeof token === 'string' && token.trim().length > 0);
+        .filter((token): token is string => token !== undefined && token.trim().length > 0);
 
       apiLogger.info(`${colors.green}Loaded${colors.reset} ${colors.brightWhite}${String(this.tokens.length)}${colors.reset} GitHub token(s)`);
     } catch (error) {
@@ -276,8 +276,7 @@ interface AxiosErrorResponse {
 // 处理API请求失败
 async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T> {
   try {
-    const result = await requestFn();
-    return result;
+    return await requestFn();
   } catch (error) {
     const axiosError = error as AxiosErrorResponse;
     // 检查是否是认证错误或速率限制错误
@@ -293,8 +292,7 @@ async function handleRequestWithRetry<T>(requestFn: () => Promise<T>): Promise<T
       const newToken = tokenManager.getNextToken();
       if (newToken.length > 0 && newToken !== currentToken) {
         apiLogger.info('Rotated to new token');
-        const retryResult = await requestFn(); // 使用新令牌重试
-        return retryResult;
+        return requestFn(); // 使用新令牌重试
       }
     }
 
@@ -319,7 +317,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     const actionParam = Array.isArray(action) ? action[0] : action;
 
-    if (actionParam === undefined || typeof actionParam !== 'string' || actionParam.length === 0) {
+    if (actionParam === undefined || actionParam.length === 0) {
       res.status(400).json({ error: 'Missing action parameter' });
       return;
     }
@@ -665,7 +663,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
       // 规范化查询参数
       const qParam = Array.isArray(q) ? (q.length > 0 ? q[0] : '') : (q ?? '');
-      if (typeof qParam !== 'string' || qParam.trim() === '') {
+      if (qParam === undefined || qParam.trim() === '') {
         res.status(400).json({ error: 'Missing search parameter' });
         return;
       }

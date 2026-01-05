@@ -127,12 +127,10 @@ const MainContent: React.FC<MainContentProps> = ({ showBreadcrumbInToolbar }) =>
     onSelectFile: selectFile
   });
 
-  const hasTextOrMarkdownPreview =
+  const showPreviewPage =
     previewState.previewingItem !== null &&
     previewState.previewType !== null &&
     previewState.previewContent !== null;
-
-  const showPreviewPage = hasTextOrMarkdownPreview;
 
   // 生成面包屑导航路径段
   const breadcrumbSegments = useMemo(() => {

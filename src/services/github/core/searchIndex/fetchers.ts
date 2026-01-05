@@ -52,23 +52,12 @@ function hasAuthorizationHeader(headers: HeadersInit): boolean {
   return Object.keys(headers as Record<string, string>).some(key => key.toLowerCase() === 'authorization');
 }
 
-async function fetchFromServerApi<T>(
+async function processSearchIndexResponse<T>(
+  response: Response,
   asset: SearchIndexAssetParams,
   errorCode: SearchIndexErrorCode,
-  options: FetchOptions = {}
+  options: FetchOptions
 ): Promise<T> {
-  const query = new URLSearchParams({
-    action: 'getSearchIndexAsset',
-    indexBranch: asset.indexBranch,
-    path: asset.path
-  });
-  query.set('responseType', options.expectBinary === true ? 'binary' : 'json');
-
-  const response = await fetch(`/api/github?${query.toString()}`, {
-    method: 'GET',
-    signal: options.signal ?? null
-  });
-
   if (response.status === 404) {
     throw createSearchIndexError(errorCode, 'Search index asset not found', {
       status: 404,
@@ -93,6 +82,26 @@ async function fetchFromServerApi<T>(
   return (await response.json()) as T;
 }
 
+async function fetchFromServerApi<T>(
+  asset: SearchIndexAssetParams,
+  errorCode: SearchIndexErrorCode,
+  options: FetchOptions = {}
+): Promise<T> {
+  const query = new URLSearchParams({
+    action: 'getSearchIndexAsset',
+    indexBranch: asset.indexBranch,
+    path: asset.path
+  });
+  query.set('responseType', options.expectBinary === true ? 'binary' : 'json');
+
+  const response = await fetch(`/api/github?${query.toString()}`, {
+    method: 'GET',
+    signal: options.signal ?? null
+  });
+
+  return processSearchIndexResponse<T>(response, asset, errorCode, options);
+}
+
 async function fetchDirect<T>(
   asset: SearchIndexAssetParams,
   errorCode: SearchIndexErrorCode,
@@ -108,28 +117,7 @@ async function fetchDirect<T>(
     signal: options.signal ?? null
   });
 
-  if (response.status === 404) {
-    throw createSearchIndexError(errorCode, 'Search index asset not found', {
-      status: 404,
-      path: asset.path,
-      branch: asset.indexBranch
-    });
-  }
-
-  if (!response.ok) {
-    throw createSearchIndexError(errorCode, 'Failed to fetch search index asset', {
-      status: response.status,
-      path: asset.path,
-      branch: asset.indexBranch
-    });
-  }
-
-  if (options.expectBinary === true) {
-    const buffer = await response.arrayBuffer();
-    return buffer as unknown as T;
-  }
-
-  return (await response.json()) as T;
+  return processSearchIndexResponse<T>(response, asset, errorCode, options);
 }
 
 async function decompressGzip(arrayBuffer: ArrayBuffer): Promise<string> {
