@@ -60,8 +60,8 @@ body.theme-transition .file-list-container {
   will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
 }
 body.theme-transition .readme-container {
   transform: scale(0.96) !important;
@@ -71,8 +71,8 @@ body.theme-transition .readme-container {
   will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
 }
 body.theme-transition .MuiBreadcrumbs-root {
   transform: translateY(-3px) !important;
@@ -82,8 +82,8 @@ body.theme-transition .MuiBreadcrumbs-root {
   will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
 }
 body.theme-transition .MuiLinearProgress-root {
   opacity: 1 !important;
@@ -195,15 +195,15 @@ body {
 .MuiContainer-root {
   transform: translateZ(0);
   transform-style: preserve-3d;
-  image-rendering: optimizeSpeed;
+  image-rendering: auto;
   text-rendering: optimizeSpeed;
 }
 .image-preview-container {
   will-change: transform, opacity;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
 }
 .image-preview-container img {
   will-change: transform, opacity;
@@ -278,7 +278,6 @@ body {
   overflow-x: hidden;
 }
 
-/* 文件夹悬浮样式效果 */
 .MuiListItemButton-root {
   position: relative;
   transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out !important;
@@ -289,29 +288,26 @@ body {
   transform: translateX(3px);
 }
 
-/* 虚拟滚动列表样式 */
 .virtual-file-list {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
   transition: all 0.3s ease;
 }
 
-/* 滚动时显示滚动条 */
 .virtual-file-list.is-scrolling::-webkit-scrollbar-thumb {
   opacity: 1;
   visibility: visible;
 }
 
-/* 自定义滚动条样式 */
 .virtual-file-list::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .virtual-file-list::-webkit-scrollbar-track {
-  background: transparent; /* 确保轨道完全透明 */
-  border-radius: 0; /* 移除轨道的圆角 */
-  box-shadow: none; /* 移除任何阴影效果 */
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .virtual-file-list::-webkit-scrollbar-thumb {
@@ -320,19 +316,18 @@ body {
   border: 2px solid transparent;
   background-clip: padding-box;
   opacity: 0;
-  visibility: visible; /* 保持可见性，但通过opacity控制显示 */
-  transition: opacity 0.8s ease; /* 增加过渡时间，使渐隐更平滑 */
+  visibility: visible;
+  transition: opacity 0.8s ease;
 }
 
-/* 深色主题滚动条样式 */
 [data-theme="dark"] .virtual-file-list {
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* 修改Firefox滚动条颜色，轨道设为透明 */
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 [data-theme="dark"] .virtual-file-list::-webkit-scrollbar-track {
-  background: transparent; /* 确保深色模式下轨道也完全透明 */
-  border-radius: 0; /* 移除轨道的圆角 */
-  box-shadow: none; /* 移除任何阴影效果 */
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 [data-theme="dark"] .virtual-file-list::-webkit-scrollbar-thumb {
@@ -340,8 +335,8 @@ body {
   border: 2px solid transparent;
   background-clip: padding-box;
   opacity: 0;
-  visibility: visible; /* 保持可见性，但通过opacity控制显示 */
-  transition: opacity 0.8s ease; /* 增加过渡时间，使渐隐更平滑 */
+  visibility: visible;
+  transition: opacity 0.8s ease;
 }
 
 [data-theme="dark"] .virtual-file-list.is-scrolling::-webkit-scrollbar-thumb {
@@ -349,13 +344,11 @@ body {
   visibility: visible;
 }
 
-/* 定义滚动条渐隐动画 */
 @keyframes fadeOutScrollbar {
   0% { opacity: 1; }
   100% { opacity: 0; }
 }
 
-/* 滚动结束后应用渐隐动画，增加延迟 */
 .virtual-file-list:not(.is-scrolling)::-webkit-scrollbar-thumb {
   animation: fadeOutScrollbar 0.8s ease 0.2s forwards;
 }
@@ -364,7 +357,6 @@ body {
   animation: fadeOutScrollbar 0.8s ease 0.2s forwards;
 }
 
-/* Firefox 滚动条样式 */
 @supports (scrollbar-width: thin) {
   .virtual-file-list {
     scrollbar-width: thin;
@@ -392,15 +384,13 @@ body {
   }
 }
 
-/* 文件列表项的视觉间距 */
 .file-list-item-container .MuiListItem-root {
   padding-top: 0;
   padding-bottom: 0;
 }
 
-/* 少量文件列表的特殊样式 */
 .file-list-container.few-items {
-  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.03) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
   border-width: 1px !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
@@ -409,21 +399,15 @@ body {
   border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* 确保虚拟列表的内边距完全由 JavaScript 控制 */
 .file-list-container.few-items .virtual-file-list {
-  /* 移除所有强制的内边距设置 */
   padding: 0;
 }
 
-/* 不需要滚动的文件列表样式 */
 .file-list-container.no-scroll {
-  /* 稍微降低边框强度，更轻量的视觉效果 */
-  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
 }
 
-/* 锁定布局的虚拟列表样式 */
 .virtual-file-list.locked-layout {
-  /* 确保不显示滚动条 */
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
@@ -434,15 +418,12 @@ body {
   height: 0 !important;
 }
 
-/* 文件列表项在不可滚动模式下的样式优化 */
 .file-list-container.no-scroll .file-list-item-container {
-  /* 确保在不可滚动模式下项目布局整齐 */
   margin-bottom: 0 !important;
 }
 
-/* 分割线长度调整 */
 .file-list-container .MuiBox-root[style*="height: 1px"] {
-  width: calc(100% - 20px) !important; /* 减去左右圆角的宽度 */
+  width: calc(100% - 20px) !important;
   position: relative;
 }
 
@@ -452,7 +433,7 @@ body {
   position: absolute;
   top: 0;
   height: 1px;
-  width: 8px; /* 圆角半径大小 */
+  width: 8px;
 }
 
 .file-list-container .MuiBox-root[style*="height: 1px"]::before {
@@ -463,13 +444,11 @@ body {
   right: -8px;
 }
 
-/* 优化大量文件渲染性能 */
 .file-list-container {
   contain: content;
   content-visibility: auto;
 }
 
-/* 当文件列表很长时，减少涟漪效果的视觉复杂度 */
 @media (min-height: 800px) {
   .file-list-container .MuiListItemButton-root:nth-child(n+20) .MuiTouchRipple-ripple {
     transition-duration: 220ms !important;
@@ -477,32 +456,24 @@ body {
   }
 }
 
-/* 移动端特定的虚拟列表优化 */
 @media (max-width: 768px) {
   .file-list-container.no-scroll .virtual-file-list {
-    /* 确保移动端的内边距计算正确 */
     box-sizing: border-box;
   }
 
   .file-list-container.few-items.no-scroll {
-    /* 移动端少量文件时使用更紧凑的布局 */
-    min-height: 100px; /* 减少最小高度 */
+    min-height: 100px;
   }
 
-  /* 移动端针对极少量文件的特殊优化 */
   .file-list-container.few-items.no-scroll .virtual-file-list {
-    /* 只对极少量文件（1-2个）应用最小内边距 */
     padding: 8px;
   }
 
-  /* 移动端中等数量文件的优化 */
   .file-list-container.no-scroll:not(.few-items) {
-    /* 确保中等数量文件也有合适的布局 */
     min-height: 120px;
   }
 }
 
-/* 添加Markdown图片和内容的懒加载淡入效果 */
 .markdown-body img {
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
@@ -512,20 +483,17 @@ body {
   opacity: 1;
 }
 
-/* 优化Markdown容器的性能 */
 .readme-container {
   contain: content;
   content-visibility: auto;
   contain-intrinsic-size: 1px 5000px;
 }
 
-/* 图片懒加载优化 */
 .image-preview-container img {
   will-change: transform, opacity;
   transition: opacity 0.4s ease;
 }
 
-/* KaTeX样式调整 */
 .katex {
   font-size: 1.1em;
   text-rendering: optimizeLegibility;
@@ -546,14 +514,12 @@ body {
   transition: background-color 0.3s ease-out;
 }
 
-/* 主题切换时的优化 */
 body.theme-transition .katex-display,
 body.theme-transition .katex {
   transition: none !important;
   opacity: 0.05 !important;
 }
 
-/* 防止LaTeX公式在主题切换时重排 */
 .katex * {
   transform: translateZ(0);
   backface-visibility: hidden;
@@ -575,7 +541,6 @@ html:not([data-theme="dark"]) .katex-display {
   border-radius: 4px;
 }
 
-/* 确保inline公式垂直对齐 */
 .katex-inline {
   display: inline-flex;
   align-items: center;
@@ -687,16 +652,12 @@ body.theme-transition .readme-container .MuiPaper-root {
   animation: slideInFromLeft 0.3s ease-out forwards;
 }
 
-/* 确保文件列表项也有平滑的过渡效果 */
 .file-list-item-container {
   transition: transform 250ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
               opacity 250ms cubic-bezier(0.1, 0.0, 0.2, 1.0);
   will-change: transform, opacity;
-  /* 确保内容可见 */
   overflow: visible;
-  /* 统一高度处理 */
   box-sizing: border-box;
-  /* 优化视觉间距 */
   display: flex;
   align-items: center;
 }
@@ -713,9 +674,7 @@ body.theme-transition .readme-container .MuiPaper-root {
 
 /* 字母索引样式优化 */
 .alphabet-index {
-  /* 确保字母索引在文件列表项之上 */
   z-index: 10 !important;
-  /* 防止遮挡滚动条 */
   pointer-events: auto;
 }
 
@@ -723,28 +682,23 @@ body.theme-transition .readme-container .MuiPaper-root {
   pointer-events: auto;
 }
 
-/* 移动端优化字母索引 - 在小屏幕上隐藏 */
 @media (max-width: 768px) {
   .alphabet-index {
-    /* 移动端位置稍微靠内一点 */
     right: -28px !important;
   }
 }
 
-/* 超小屏幕完全隐藏字母索引 */
 @media (max-width: 600px) {
   .alphabet-index {
     display: none !important;
   }
 }
 
-/* 文件列表平滑过渡效果 */
 .file-list-smooth-transition {
   transition: transform 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0),
               opacity 300ms cubic-bezier(0.1, 0.0, 0.2, 1.0) !important;
 }
 
-/* 淡入动画效果 */
 @keyframes fadeIn {
   0% {
     opacity: 0;
@@ -757,11 +711,10 @@ body.theme-transition .readme-container .MuiPaper-root {
 }
 
 .fade-in {
-  animation: fadeIn 0.5s ease-out 0.1s forwards; /* 添加0.1s延迟 */
-  opacity: 0; /* 确保初始状态是不可见的 */
+  animation: fadeIn 0.5s ease-out 0.1s forwards;
+  opacity: 0;
 }
 
-/* 确保README容器中的加载指示器不显示 */
 .readme-container .MuiCircularProgress-root {
   display: none !important;
 }

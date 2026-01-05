@@ -3,9 +3,9 @@ import { logger } from '../index';
 
 /**
  * 验证路径格式
- * 
+ *
  * 检查路径是否包含非法字符。
- * 
+ *
  * @param path - 待验证的路径
  * @returns 如果路径有效返回 true
  */
@@ -17,9 +17,9 @@ function isValidPath(path: string): boolean {
 
 /**
  * 从URL解析路径参数
- * 
+ *
  * 仅从路径段解析，并包含路径格式验证和详细的错误处理。
- * 
+ *
  * @returns 文件路径字符串，如果解析失败或路径无效则返回空字符串
  */
 export function getPathFromUrl(): string {
@@ -36,13 +36,13 @@ export function getPathFromUrl(): string {
     if (pathname.length > 0 && pathname !== '/') {
       try {
         const decodedPath = decodeURIComponent(pathname);
-        
+
         // 验证路径格式
         if (!isValidPath(decodedPath)) {
           logger.warn(`URL 路径包含非法字符，已忽略: ${pathname}`);
           return '';
         }
-        
+
         return decodedPath;
       } catch (decodeError) {
         logger.error('URL 路径解码失败:', decodeError);
@@ -63,9 +63,9 @@ export function getPathFromUrl(): string {
 
 /**
  * 从URL解析分支参数
- * 
+ *
  * 从history state中获取分支名称。
- * 
+ *
  * @returns 分支名称字符串
  */
 export function getBranchFromUrl(): string {
@@ -86,9 +86,9 @@ export function getBranchFromUrl(): string {
 
 /**
  * 从URL解析预览文件参数
- * 
+ *
  * 通过哈希部分获取预览文件名。
- * 
+ *
  * @returns 预览文件名
  */
 export function getPreviewFromUrl(): string {
@@ -120,9 +120,9 @@ interface UrlBuildResult {
 
 /**
  * 统一的 URL 构建核心函数
- * 
+ *
  * 将路径、预览参数和分支名称构建为完整的URL和状态对象。
- * 
+ *
  * @param path - 文件路径
  * @param preview - 预览文件路径（可选）
  * @param branch - 分支名称（可选）
@@ -157,9 +157,9 @@ function buildUrl(path: string, preview?: string, branch?: string): UrlBuildResu
 
 /**
  * 构建包含路径的URL
- * 
+ *
  * 根据路径、预览参数和分支构建完整URL。
- * 
+ *
  * @param path - 文件路径
  * @param preview - 预览文件路径（可选）
  * @param branch - 分支名称（可选）
@@ -171,9 +171,9 @@ export function buildUrlWithParams(path: string, preview?: string, branch?: stri
 
 /**
  * 更新浏览器URL（不添加历史记录）
- * 
+ *
  * 使用replaceState更新URL，不会在浏览器历史中创建新条目。
- * 
+ *
  * @param path - 文件路径
  * @param preview - 预览文件路径（可选）
  * @param branch - 分支名称（可选）
@@ -191,9 +191,9 @@ export function updateUrlWithoutHistory(path: string, preview?: string, branch?:
 
 /**
  * 更新浏览器URL（添加历史记录）
- * 
+ *
  * 使用pushState更新URL，在浏览器历史中创建新条目。
- * 
+ *
  * @param path - 文件路径
  * @param preview - 预览文件路径（可选）
  * @param branch - 分支名称（可选）
@@ -211,9 +211,9 @@ export function updateUrlWithHistory(path: string, preview?: string, branch?: st
 
 /**
  * 检查URL中是否有预览参数
- * 
+ *
  * 检查哈希部分是否包含预览参数。
- * 
+ *
  * @returns 如果包含预览参数返回true
  */
 export function hasPreviewParam(): boolean {
@@ -229,7 +229,7 @@ export function hasPreviewParam(): boolean {
 
 /**
  * 检查URL是否为有效的应用URL
- * 
+ *
  * @returns 如果是有效的应用URL返回true
  */
 export function isValidAppUrl(): boolean {

@@ -64,8 +64,7 @@ export function highlightCode(code: string, language: string | null): string {
 
   try {
     const grammar = Prism.languages[language];
-    const highlighted = Prism.highlight(code, grammar, language);
-    return typeof highlighted === 'string' ? highlighted : code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return Prism.highlight(code, grammar, language);
   } catch (error) {
     // 如果高亮失败，只转义 HTML
     logger.warn('Prism highlight failed:', error);
@@ -80,8 +79,8 @@ export function highlightCode(code: string, language: string | null): string {
  * 为了保持 HTML 标签的完整性并确保每行都能正确高亮，
  * 我们先将整个代码块高亮，然后使用标记来分割行。
  *
- * @param lines - 代码行数组
- * @param language - Prism 语言标识符
+ * @param html - 高亮后的 HTML 字符串
+ * @param lineCount - 需要切分的行数
  * @returns 每行高亮后的 HTML 字符串数组
  */
 function splitHighlightedHtml(html: string, lineCount: number): string[] {
@@ -205,8 +204,7 @@ export function highlightLines(lines: string[], language: string | null): string
 
     try {
       const highlighted = Prism.highlight(fullCode, grammar, language);
-      const highlightedString = typeof highlighted === 'string' ? highlighted : fullCode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      return splitHighlightedHtml(highlightedString, lines.length);
+      return splitHighlightedHtml(highlighted, lines.length);
     } catch (highlightError) {
       // 完全失败，只转义 HTML，不进行语法高亮
       logger.warn('[Prism] Highlight also failed, using plain text:', highlightError);

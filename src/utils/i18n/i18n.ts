@@ -100,11 +100,6 @@ export class I18N {
 
     const internalOptions: InterpolationOptions = formatOptions(options);
 
-    if (typeof key !== 'string') {
-      logger.warn('i18n: received non-string key:', key);
-      return '';
-    }
-
     return this.translator.translate(key, internalOptions);
   };
 }

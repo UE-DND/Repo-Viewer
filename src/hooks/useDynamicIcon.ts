@@ -38,9 +38,9 @@ interface DynamicIconHook {
 
 /**
  * 动态图标Hook
- * 
+ *
  * 根据当前主题返回对应的图标路径，自动监听主题变化。
- * 
+ *
  * @returns 动态图标状态和操作函数
  */
 export const useDynamicIcon = (): DynamicIconHook => {
@@ -107,9 +107,9 @@ export const useDynamicIcon = (): DynamicIconHook => {
 
 /**
  * Favicon更新Hook
- * 
+ *
  * 自动根据主题变化更新网站的favicon图标。
- * 
+ *
  * @returns 当前favicon路径
  */
 export const useFaviconUpdater = (): string => {

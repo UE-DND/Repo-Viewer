@@ -39,9 +39,9 @@ export const fileExtensionIcons: Record<string, React.ElementType> = {
 
 /**
  * 获取文件图标
- * 
+ *
  * 根据文件扩展名返回对应的Material-UI图标组件。
- * 
+ *
  * @param filename - 文件名
  * @returns 图标组件
  */
@@ -58,9 +58,9 @@ export const getFileIcon = (filename: string): React.ElementType => {
 
 /**
  * 通用的文件扩展名检测函数
- * 
+ *
  * 检查文件名是否具有指定的扩展名列表中的任何一个。
- * 
+ *
  * @param filename - 文件名
  * @param extensions - 扩展名数组（可以带或不带前缀点）
  * @returns 如果文件扩展名匹配返回true
@@ -158,7 +158,7 @@ const TEXT_FILE_NAMES = new Set([
 
 /**
  * 检查是否为图像文件
- * 
+ *
  * @param filename - 文件名
  * @returns 如果是图像文件返回true
  */
@@ -168,7 +168,7 @@ export const isImageFile = (filename: string): boolean => {
 
 /**
  * 检查是否为PDF文件
- * 
+ *
  * @param filename - 文件名
  * @returns 如果是PDF文件返回true
  */
@@ -178,7 +178,7 @@ export const isPdfFile = (filename: string): boolean => {
 
 /**
  * 检查是否为Markdown文件
- * 
+ *
  * @param filename - 文件名
  * @returns 如果是Markdown文件返回true
  */
@@ -188,7 +188,7 @@ export const isMarkdownFile = (filename: string): boolean => {
 
 /**
  * 检查是否为文本类文件
- * 
+ *
  * @param filename - 文件名
  * @returns 如果是文本文件返回true
  */
@@ -208,9 +208,7 @@ export const isTextFile = (filename: string): boolean => {
     return true;
   }
 
-  if (lowerCaseName.startsWith('.') && TEXT_FILE_NAMES.has(lowerCaseName)) {
-    return true;
-  }
+  return lowerCaseName.startsWith('.') && TEXT_FILE_NAMES.has(lowerCaseName);
 
-  return false;
+
 };

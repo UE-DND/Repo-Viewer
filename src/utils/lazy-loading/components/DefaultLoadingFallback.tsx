@@ -25,7 +25,7 @@ export const DefaultLoadingFallback: React.FC<{ loadingText?: string }> = ({
     }}
   >
     <CircularProgress size={40} />
-    {typeof loadingText === 'string' && loadingText.length > 0 && (
+    {loadingText !== undefined && loadingText.length > 0 && (
       <Box
         component="span"
         sx={{

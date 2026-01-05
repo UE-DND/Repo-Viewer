@@ -19,8 +19,8 @@ import type { TextPreviewProps } from "./types";
 import { formatFileSize } from "@/utils/format/formatters";
 import { useI18n } from "@/contexts/I18nContext";
 import { highlightCodeByFilename } from "@/utils/content/prismHighlighter";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
-const COPY_RESET_DELAY = 2000;
 const MONO_FONT_STACK =
   "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, 'Source Code Pro', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 
@@ -29,26 +29,15 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
     const theme = useTheme();
     const { t } = useI18n();
     const [wrapText, setWrapText] = useState<boolean>(false);
-    const [copied, setCopied] = useState<boolean>(false);
-    const timerRef = useRef<number | null>(null);
+    const { copied, copy, reset } = useCopyToClipboard();
+    const [prevContent, setPrevContent] = useState(content);
 
-    useEffect(() => {
-      return () => {
-        if (timerRef.current !== null) {
-          window.clearTimeout(timerRef.current);
-          timerRef.current = null;
-        }
-      };
-    }, []);
-
-    useEffect(() => {
+    // 当 content 变化时，重置 UI 状态
+    if (content !== prevContent) {
+      setPrevContent(content);
       setWrapText(false);
-      setCopied(false);
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    }, [content]);
+      reset();
+    }
 
     const normalizedLines = useMemo(() => {
       if (typeof content !== "string") {
@@ -99,36 +88,11 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
       return digitCount.toString() + "ch";
     }, [lineCount]);
 
-    const handleCopy = useCallback(async () => {
-      if (typeof content !== "string") {
-        return;
+    const handleCopy = (): void => {
+      if (typeof content === "string") {
+        void copy(content);
       }
-
-      try {
-        if (typeof navigator === "undefined") {
-          throw new Error("navigator 未定义");
-        }
-
-        const clipboard = navigator.clipboard as Clipboard | undefined;
-
-        if (clipboard === undefined || typeof clipboard.writeText !== "function") {
-          return;
-        }
-
-        await clipboard.writeText(content);
-
-        setCopied(true);
-        if (timerRef.current !== null) {
-          window.clearTimeout(timerRef.current);
-        }
-        timerRef.current = window.setTimeout(() => {
-          setCopied(false);
-          timerRef.current = null;
-        }, COPY_RESET_DELAY);
-      } catch {
-        // 忽略剪贴板错误，日志由全局捕获系统处理
-      }
-    }, [content]);
+    };
 
     const handleToggleWrap = useCallback(() => {
       setWrapText((prev) => !prev);
@@ -460,9 +424,7 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
               <Tooltip title={copied ? t("ui.text.copied") : t("ui.text.copyAll")}>
                 <IconButton
                   size="small"
-                  onClick={() => {
-                    void handleCopy();
-                  }}
+                  onClick={handleCopy}
                   sx={{
                     width: { xs: 28, sm: 32 },
                     height: { xs: 28, sm: 32 },

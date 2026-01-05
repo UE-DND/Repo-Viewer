@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect } from 'react';
 import { useContentContext } from '@/contexts/unified';
 import { removeLatexElements, restoreLatexElements } from '@/utils/rendering/latexOptimizer';
 import { logger } from '@/utils';
+import { useThemeTransitionFlag } from '@/hooks/useThemeTransition';
 
 const MIN_ANIMATION_DURATION = 600;
 
@@ -19,30 +20,11 @@ export const useRefresh = (): (() => void) => {
   const startTimeRef = useRef<number>(0);
   const currentPathRef = useRef(currentPath);
   const refreshTargetPathRef = useRef<string | null>(null);
-  const isThemeChangingRef = useRef<boolean>(false);
+  const isThemeChangingRef = useThemeTransitionFlag();
 
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
-
-  // 监听主题切换事件
-  useEffect(() => {
-    const handleThemeChanging = (): void => {
-      isThemeChangingRef.current = true;
-    };
-
-    const handleThemeChanged = (): void => {
-      isThemeChangingRef.current = false;
-    };
-
-    window.addEventListener('theme:changing', handleThemeChanging);
-    window.addEventListener('theme:changed', handleThemeChanged);
-
-    return () => {
-      window.removeEventListener('theme:changing', handleThemeChanging);
-      window.removeEventListener('theme:changed', handleThemeChanged);
-    };
-  }, []);
 
   useEffect(() => {
     if (refreshingRef.current && !loading) {
@@ -116,5 +98,5 @@ export const useRefresh = (): (() => void) => {
         }
       }, 3000);
     }, 10);
-  }, [refresh]);
+  }, [refresh, isThemeChangingRef]);
 };

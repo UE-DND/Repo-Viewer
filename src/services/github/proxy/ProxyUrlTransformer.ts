@@ -72,7 +72,7 @@ function applyProxyToUrl(url: string, proxyUrl: string): string {
     if (trimmedProxyUrl.includes('staticdn')) {
       if (processedUrl.includes('raw.githubusercontent.com')) {
         const [, rawPath] = processedUrl.split('raw.githubusercontent.com/');
-        if (typeof rawPath === 'string' && rawPath !== '') {
+        if (rawPath !== undefined && rawPath !== '') {
           return `${trimmedProxyUrl}/${rawPath}`;
         }
       }

@@ -68,7 +68,7 @@ export const tryDirectImageLoad = (imgSrc: string): string | null => {
     let directPath: string | null = null;
     if (imgSrc.includes("/api/github?action=getFileContent&url=")) {
       const encodedUrl = imgSrc.split("url=")[1];
-      if (typeof encodedUrl === "string" && encodedUrl.length > 0) {
+      if (encodedUrl !== undefined && encodedUrl.length > 0) {
         const decodedUrl = decodeURIComponent(encodedUrl);
         directPath = extractGithubusercontentPath(decodedUrl);
       }
@@ -261,7 +261,7 @@ export const handleImageLoad = (
   logger.debug("图片加载成功:", imgSrc);
 
   // 记录已加载的图片，以便主题切换时不再重复加载效果
-  if (typeof imgSrc === "string" && imgSrc.length > 0) {
+  if (imgSrc.length > 0) {
     imageState.loadedImages.add(imgSrc);
     imageState.failedImages.delete(imgSrc);
 

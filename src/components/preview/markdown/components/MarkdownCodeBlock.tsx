@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ClassAttributes, HTMLAttributes } from "react";
 import { Box, IconButton, Tooltip, useTheme, useMediaQuery } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import { logger } from "@/utils";
 import { useI18n } from "@/contexts/I18nContext";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 type CodeElementProps = (HTMLAttributes<HTMLElement> & ClassAttributes<HTMLElement>) | undefined;
 
@@ -17,8 +17,6 @@ interface MarkdownCodeBlockProps {
   dataOid?: string | undefined;
 }
 
-const COPY_RESET_DELAY = 2000;
-
 export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
   className,
   language,
@@ -28,47 +26,13 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
 }) => {
   const theme = useTheme();
   const { t } = useI18n();
-  const [copied, setCopied] = useState(false);
-  const timerRef = useRef<number | null>(null);
+  const { copied, copy } = useCopyToClipboard();
   const [isHovered, setIsHovered] = useState(false);
   const isDesktop = useMediaQuery(theme.breakpoints.up("sm"));
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, []);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      if (typeof navigator === "undefined") {
-        throw new Error("navigator 未定义");
-      }
-
-      const clipboard = navigator.clipboard as Clipboard | undefined;
-
-      if (clipboard === undefined || typeof clipboard.writeText !== "function") {
-        logger.warn("当前环境不支持 Clipboard API 自动复制");
-        return;
-      }
-
-      await clipboard.writeText(content);
-
-      setCopied(true);
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-      }
-      timerRef.current = window.setTimeout(() => {
-        setCopied(false);
-        timerRef.current = null;
-      }, COPY_RESET_DELAY);
-    } catch (error) {
-      logger.error("复制代码失败:", error);
-    }
-  }, [content]);
+  const handleCopy = (): void => {
+    void copy(content);
+  };
 
   const { restProps: codeAttributes, ref: codeRef } = useMemo(() => {
     if (codeProps === undefined) {
@@ -127,7 +91,7 @@ export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
         <IconButton
           size="small"
           aria-label={t('ui.markdown.copy.aria')}
-          onClick={() => { void handleCopy(); }}
+          onClick={handleCopy}
           sx={{
             position: "absolute",
             top: theme.spacing(0),

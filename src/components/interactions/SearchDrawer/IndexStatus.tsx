@@ -123,7 +123,7 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const { t } = useI18n();
 
-  const statusAlert = useMemo(() => {
+  return useMemo(() => {
     if (!enabled) {
       return (
         <Alert severity="info" variant="outlined">
@@ -194,6 +194,4 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
       </Alert>
     );
   }, [enabled, loading, error, ready, indexedBranches.length, lastUpdatedAt, indexBranchName, isSmallScreen, onRefresh, t]);
-
-  return statusAlert;
 };

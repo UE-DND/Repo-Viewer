@@ -30,10 +30,10 @@ let isThemeChanging = false;
 
 /**
  * 移除所有LaTeX元素
- * 
+ *
  * 在主题切换时临时移除LaTeX元素以优化性能，
  * 用占位符保持布局稳定性。
- * 
+ *
  * @returns void
  */
 export const removeLatexElements = (): void => {
@@ -85,9 +85,9 @@ export const removeLatexElements = (): void => {
 
 /**
  * 分批恢复LaTeX元素
- * 
+ *
  * 在主题切换完成后，分批恢复LaTeX元素以避免阻塞主线程。
- * 
+ *
  * @returns void
  */
 export const restoreLatexElements = (): void => {
@@ -107,23 +107,17 @@ export const restoreLatexElements = (): void => {
       const { element, parent, nextSibling } = entry;
 
       // 查找占位符
-      const placeholders = parent.querySelectorAll('.latex-placeholder');
-      let placeholder: HTMLElement | null = null;
-
-      // 尝试恢复到原位置
-      for (const placeholderElement of placeholders) {
-        placeholder = placeholderElement as HTMLElement;
+      const placeholder = parent.querySelector('.latex-placeholder');
+      if (placeholder !== null) {
         parent.replaceChild(element, placeholder);
-        break;
+        continue;
       }
 
       // 如果没有找到占位符，则尝试使用原始位置信息
-      if (placeholder === null) {
-        if (nextSibling !== null) {
-          parent.insertBefore(element, nextSibling);
-        } else {
-          parent.appendChild(element);
-        }
+      if (nextSibling !== null) {
+        parent.insertBefore(element, nextSibling);
+      } else {
+        parent.appendChild(element);
       }
     }
 
@@ -148,9 +142,9 @@ export const restoreLatexElements = (): void => {
 
 /**
  * 隐藏所有LaTeX元素
- * 
+ *
  * 后备方案，调用removeLatexElements实现。
- * 
+ *
  * @returns void
  */
 export const hideLatexElements = (): void => {
@@ -160,9 +154,9 @@ export const hideLatexElements = (): void => {
 
 /**
  * 显示所有LaTeX元素
- * 
+ *
  * 后备方案，调用restoreLatexElements实现。
- * 
+ *
  * @returns void
  */
 export const showLatexElements = (): void => {
@@ -177,7 +171,7 @@ export const debouncedShowLatexElements = debounce(restoreLatexElements, 100);
 
 /**
  * 计算页面中LaTeX元素的数量
- * 
+ *
  * @returns LaTeX元素总数
  */
 export const countLatexElements = (): number => {
@@ -186,9 +180,9 @@ export const countLatexElements = (): number => {
 
 /**
  * 添加LaTeX优化器样式
- * 
+ *
  * 在文档中注入优化LaTeX渲染所需的CSS样式。
- * 
+ *
  * @returns void
  */
 const addLatexOptimizerStyles = (): void => {
@@ -218,9 +212,9 @@ const addLatexOptimizerStyles = (): void => {
 
 /**
  * 设置LaTeX优化
- * 
+ *
  * 设置主题变化监听器，自动处理LaTeX元素的移除和恢复。
- * 
+ *
  * @returns 清理函数
  */
 export const setupLatexOptimization = (): () => void => {

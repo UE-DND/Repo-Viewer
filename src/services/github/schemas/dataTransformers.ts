@@ -176,11 +176,11 @@ export function validateGitHubContentItem(item: GitHubContent): {
 } {
   const errors: string[] = [];
 
-  if (item.name === '' || typeof item.name !== 'string') {
+  if (item.name === '') {
     errors.push('缺少有效的name字段');
   }
 
-  if (item.path === '' || typeof item.path !== 'string') {
+  if (item.path === '') {
     errors.push('缺少有效的path字段');
   }
 
@@ -188,7 +188,7 @@ export function validateGitHubContentItem(item: GitHubContent): {
     errors.push('缺少有效的type字段');
   }
 
-  if (item.sha === '' || typeof item.sha !== 'string') {
+  if (item.sha === '') {
     errors.push('缺少有效的sha字段');
   }
 

@@ -159,7 +159,7 @@ export async function getBranches(): Promise<string[]> {
         defaultBranch,
         currentBranch,
         ...branches
-      ].filter(branch => typeof branch === 'string' && branch.trim().length > 0))
+      ].filter(branch => branch.trim().length > 0))
     );
 
     deduplicated.sort((a, b) => a.localeCompare(b));

@@ -1,6 +1,6 @@
 /**
  * 标准化字符串值
- * 
+ *
  * @param value - 待标准化的值
  * @returns 标准化后的字符串，如果无效则返回undefined
  */
@@ -14,7 +14,7 @@ const normalizeString = (value: unknown): string | undefined => {
 
 /**
  * 解析布尔值
- * 
+ *
  * @param value - 字符串值
  * @returns 如果值为'true'返回true，否则返回false
  */
@@ -22,9 +22,9 @@ export const parseBoolean = (value: string | undefined): boolean => value === 't
 
 /**
  * 解析字符串数组
- * 
+ *
  * 将逗号分隔的字符串解析为数组。
- * 
+ *
  * @param value - 逗号分隔的字符串
  * @returns 解析后的字符串数组
  */
@@ -81,9 +81,9 @@ export const parseInteger = (
 
 /**
  * 验证Token是否有效
- * 
+ *
  * 检查token是否为有效的字符串，且不是占位符。
- * 
+ *
  * @param token - 待验证的token
  * @returns 如果是有效token返回true，否则返回false
  */
@@ -92,15 +92,13 @@ export const validateToken = (token: unknown): token is string => {
   if (normalized === undefined) {
     return false;
   }
-  if (normalized === 'your_token_here' || normalized.includes('placeholder')) {
-    return false;
-  }
-  return true;
+  return !(normalized === 'your_token_here' || normalized.includes('placeholder'));
+
 };
 
 /**
  * 环境变量解析器
- * 
+ *
  * 提供解析和验证环境变量的工具函数。
  */
 export const EnvParser = {
