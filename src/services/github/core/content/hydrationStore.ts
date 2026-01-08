@@ -7,7 +7,7 @@ import type {
 import { logger } from '@/utils';
 
 import { filterAndNormalizeGitHubContents } from '../../schemas';
-import { storeDirectoryContents, storeFileContent } from './cacheState';
+import { storeDirectoryContents, storeFileContent, removeCachedFileContent } from './cacheState';
 import { normalizeDirectoryPath, normalizeFilePath, escapeRegExp } from './pathUtils';
 
 /**
@@ -292,6 +292,41 @@ const isHydrationExpired = (maxAge: number): boolean => {
 };
 
 /**
+ * 检查 README 文件的注入数据是否已过期。
+ *
+ * 此函数用于在缓存检查之前调用，以确保过期的 README 数据不会被缓存永久保留。
+ *
+ * @param fileUrl - 文件 URL
+ * @param branch - Git 分支名
+ * @returns 如果是过期的 README 返回 true，否则返回 false
+ */
+export function isReadmeHydrationExpired(fileUrl: string, branch: string): boolean {
+  if (!isHydrationActiveForBranch(branch)) {
+    return false;
+  }
+
+  const path = extractPathFromFileUrl(fileUrl);
+  if (path === null || path === '') {
+    return false;
+  }
+
+  // 只对 README 文件检查过期
+  if (!isReadmeFile(path)) {
+    return false;
+  }
+
+  const key = makeFileStoreKey(branch, path);
+  const entry = initialFileStore.get(key);
+
+  // 如果注入数据存在且已过期
+  if (entry !== undefined && isHydrationExpired(HYDRATION_README_MAX_AGE)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * 消费文件注水数据，若命中则写入缓存并返回。
  *
  * @param fileUrl - 文件 URL
@@ -325,15 +360,18 @@ export async function consumeHydratedFile(
 
   // 对 README 文件检查注入数据是否已过期
   if (isReadmeFile(path) && isHydrationExpired(HYDRATION_README_MAX_AGE)) {
-    // README 注入数据已过期，移除并让调用方从 API 获取
+    // README 注入数据已过期，移除注水数据并清除缓存，让调用方从 API 获取
     initialFileStore.delete(key);
     cleanupInitialHydrationStateIfEmpty();
+
+    // 同时清除缓存中可能存在的旧 README 内容
+    await removeCachedFileContent(cacheKey);
 
     const generatedAt = initialHydrationMeta?.generatedAt;
     const ageMinutes = typeof generatedAt === 'string' && generatedAt.length > 0
       ? Math.round((Date.now() - new Date(generatedAt).getTime()) / 60000)
       : 0;
-    logger.debug(`ContentHydration: README 注入数据已过期 (${ageMinutes.toString()}分钟)，将从 API 获取最新内容`);
+    logger.debug(`ContentHydration: README 注入数据已过期 (${ageMinutes.toString()}分钟)，已清除缓存，将从 API 获取最新内容`);
     return null;
   }
 
