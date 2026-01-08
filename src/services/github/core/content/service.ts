@@ -22,14 +22,12 @@ import {
   getCachedFileContent,
   isCacheAvailable,
   storeDirectoryContents,
-  storeFileContent,
-  removeCachedFileContent
+  storeFileContent
 } from './cacheState';
 import { buildContentsCacheKey } from './cacheKeys';
 import {
   consumeHydratedDirectory,
   consumeHydratedFile,
-  isReadmeHydrationExpired,
   hydrateInitialContent as hydratePayload,
   INITIAL_CONTENT_EXCLUDE_FILES
 } from './hydrationStore';
@@ -159,13 +157,6 @@ export async function getFileContent(fileUrl: string): Promise<string> {
   const branch = getCurrentBranch();
   const cacheKey = `file:${fileUrl}`;
 
-  // 对于 README 文件，先检查注入数据是否过期
-  // 如果过期，需要清除缓存以确保后续请求能获取最新内容
-  if (isReadmeHydrationExpired(fileUrl, branch)) {
-    await removeCachedFileContent(cacheKey);
-    logger.debug(`README 注入数据已过期，已清除缓存: ${fileUrl}`);
-  }
-
   const cachedContent = await getCachedFileContent(cacheKey);
   if (cachedContent !== undefined && cachedContent !== null) {
     logger.debug(`从${isCacheAvailable() ? '主' : '降级'}缓存获取文件内容: ${fileUrl}`);
@@ -239,4 +230,3 @@ export function clearBatcherCache(): void {
 export const hydrateInitialContent: (
   payload: InitialContentHydrationPayload | null | undefined
 ) => void = hydratePayload;
-
