@@ -258,12 +258,50 @@ export async function consumeHydratedDirectory(
 }
 
 /**
+ * README 注入数据的最大有效期（毫秒）
+ *
+ * 超过此时间后，README 将从 API 获取以确保内容最新。
+ */
+const HYDRATION_README_MAX_AGE = 10 * 60 * 1000;
+
+/**
+ * 判断文件路径是否为 README 文件
+ */
+const isReadmeFile = (filePath: string): boolean => {
+  const filename = filePath.split('/').pop()?.toLowerCase() ?? '';
+  return filename.includes('readme') && filename.endsWith('.md');
+};
+
+/**
+ * 检查注入数据是否已过期
+ *
+ * @returns 如果已过期返回 true，否则返回 false
+ */
+const isHydrationExpired = (maxAge: number): boolean => {
+  if (initialHydrationMeta?.generatedAt === undefined) {
+    return false;
+  }
+
+  const generatedTime = new Date(initialHydrationMeta.generatedAt).getTime();
+  if (Number.isNaN(generatedTime)) {
+    return false;
+  }
+
+  const age = Date.now() - generatedTime;
+  return age > maxAge;
+};
+
+/**
  * 消费文件注水数据，若命中则写入缓存并返回。
  *
  * @param fileUrl - 文件 URL
  * @param branch - Git 分支名
  * @param cacheKey - 文件缓存键
  * @returns 文件内容，未命中时返回 null
+ *
+ * @remarks
+ * 对于 README 文件，会检查注入数据的时间戳。如果数据已过期（超过 HYDRATION_README_MAX_AGE），
+ * 则不使用注入数据，返回 null 让调用方从 API 获取最新内容。
  */
 export async function consumeHydratedFile(
   fileUrl: string,
@@ -282,6 +320,20 @@ export async function consumeHydratedFile(
   const key = makeFileStoreKey(branch, path);
   const entry = initialFileStore.get(key);
   if (entry === undefined) {
+    return null;
+  }
+
+  // 对 README 文件检查注入数据是否已过期
+  if (isReadmeFile(path) && isHydrationExpired(HYDRATION_README_MAX_AGE)) {
+    // README 注入数据已过期，移除并让调用方从 API 获取
+    initialFileStore.delete(key);
+    cleanupInitialHydrationStateIfEmpty();
+
+    const generatedAt = initialHydrationMeta?.generatedAt;
+    const ageMinutes = typeof generatedAt === 'string' && generatedAt.length > 0
+      ? Math.round((Date.now() - new Date(generatedAt).getTime()) / 60000)
+      : 0;
+    logger.debug(`ContentHydration: README 注入数据已过期 (${ageMinutes.toString()}分钟)，将从 API 获取最新内容`);
     return null;
   }
 

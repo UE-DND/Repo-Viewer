@@ -35,7 +35,7 @@ const previewAnimation: Variants = {
   },
 };
 
-const MotionBox = motion(Box);
+const MotionBox = motion.create(Box);
 
 const FilePreviewPage: React.FC<FilePreviewPageProps> = ({
   previewState,
