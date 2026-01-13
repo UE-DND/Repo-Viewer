@@ -42,6 +42,13 @@ import {
 
 const batcher = new RequestBatcher();
 
+type ContentSource = 'cache' | 'hydration' | 'network';
+
+interface GetContentsOptions {
+  forceRefresh?: boolean;
+  onSource?: (source: ContentSource) => void;
+}
+
 /**
  * 获取目录内容。
  *
@@ -56,21 +63,31 @@ const batcher = new RequestBatcher();
  * 3. 根据配置选择服务端代理或直连 GitHub；
  * 4. 对响应进行 Schema 验证、标准化与缓存落盘。
  */
-export async function getContents(path: string, signal?: AbortSignal): Promise<GitHubContent[]> {
+export async function getContents(
+  path: string,
+  signal?: AbortSignal,
+  options?: GetContentsOptions
+): Promise<GitHubContent[]> {
   await ensureCacheInitialized();
 
   const branch = getCurrentBranch();
   const cacheKey = buildContentsCacheKey(path, branch);
 
-  const cachedContents = await getCachedDirectoryContents(cacheKey);
-  if (cachedContents !== null && cachedContents !== undefined) {
-    logger.debug(`已从${isCacheAvailable() ? '主' : '降级'}缓存中获取内容: ${path}`);
-    return cachedContents;
-  }
+  const forceRefresh = options?.forceRefresh === true;
 
-  const hydratedContents = await consumeHydratedDirectory(path, branch, cacheKey);
-  if (hydratedContents !== null) {
-    return hydratedContents;
+  if (!forceRefresh) {
+    const cachedContents = await getCachedDirectoryContents(cacheKey);
+    if (cachedContents !== null && cachedContents !== undefined) {
+      logger.debug(`已从${isCacheAvailable() ? '主' : '降级'}缓存中获取内容: ${path}`);
+      options?.onSource?.('cache');
+      return cachedContents;
+    }
+
+    const hydratedContents = await consumeHydratedDirectory(path, branch, cacheKey);
+    if (hydratedContents !== null) {
+      options?.onSource?.('hydration');
+      return hydratedContents;
+    }
   }
 
   try {
@@ -133,6 +150,7 @@ export async function getContents(path: string, signal?: AbortSignal): Promise<G
     }
 
     await storeDirectoryContents(cacheKey, path, branch, contents);
+    options?.onSource?.('network');
 
     return contents;
   } catch (unknownError) {
@@ -230,4 +248,3 @@ export function clearBatcherCache(): void {
 export const hydrateInitialContent: (
   payload: InitialContentHydrationPayload | null | undefined
 ) => void = hydratePayload;
-

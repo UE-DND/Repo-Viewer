@@ -13,6 +13,7 @@ export default tseslint.config(
       "dist",
       "node_modules",
       "public",
+      "scripts",
       "eslint.config.js",
       "postcss.config.js",
       "tailwind.config.js",

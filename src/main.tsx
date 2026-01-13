@@ -5,36 +5,24 @@ import "@/index.css";
 import "github-markdown-css/github-markdown.css";
 import { logger } from "@/utils";
 import ThemeProvider from "@/providers/ThemeProvider";
+import { GitHub } from "@/services/github";
 import { setupLatexOptimization } from "@/utils/rendering/latexOptimizer";
 import SEOProvider from "@/contexts/SEOContext";
 import { ResponsiveSnackbarProvider } from "@/components/ui/ResponsiveSnackbarProvider";
 import { getDeveloperConfig } from "@/config";
-import { GitHub } from "@/services/github";
 import { ErrorManager, setupGlobalErrorHandlers } from "@/utils/error";
-import type { InitialContentHydrationPayload } from "@/types";
+import { initialContentPayload } from "@/generated/initialContent";
 
 // 扩展Window接口以支持LaTeX优化清理函数
 declare global {
   interface Window {
     __latexOptimizerCleanup?: () => void;
-    __INITIAL_CONTENT__?: InitialContentHydrationPayload;
   }
 }
 
 // 开发者模式配置 - 控制调试信息显示
 const developerConfig = getDeveloperConfig();
 const allowConsoleOutput = developerConfig.mode || developerConfig.consoleLogging;
-
-if (typeof window !== "undefined" && window.__INITIAL_CONTENT__ !== undefined) {
-  try {
-    GitHub.Content.hydrate(window.__INITIAL_CONTENT__);
-    logger.debug("首屏内容已通过静态注入恢复");
-  } catch (error) {
-    logger.warn("首屏内容注水恢复失败", error);
-  } finally {
-    delete window.__INITIAL_CONTENT__;
-  }
-}
 
 /**
  * 初始化日志系统
@@ -64,6 +52,8 @@ if (!allowConsoleOutput) {
 
 // 设置全局错误处理器
 setupGlobalErrorHandlers(ErrorManager);
+
+GitHub.Content.hydrate(initialContentPayload);
 
 // 应用LaTeX渲染优化
 // 在应用加载后设置LaTeX优化监听器

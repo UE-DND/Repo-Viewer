@@ -26,6 +26,7 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
   const lastReadmeKeyRef = useRef<string | null>(null);
   const loadingReadmeRef = useRef<boolean>(loadingReadme);
   const readmeLoadedRef = useRef<boolean>(readmeLoaded);
+  const readmeContentRef = useRef<string | null>(readmeContent);
   const currentBranchRef = useRef<string>(currentBranch);
 
   useEffect(() => {
@@ -43,7 +44,20 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
     }
   }, [currentBranch]);
 
-  const loadReadmeContent = useCallback(async (readmeItem: GitHubContent, requestKey: string) => {
+  const appendCacheBuster = useCallback((url: string, value: string): string => {
+    if (value.trim().length === 0) {
+      return url;
+    }
+
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}v=${encodeURIComponent(value)}`;
+  }, []);
+
+  const loadReadmeContent = useCallback(async (
+    readmeItem: GitHubContent,
+    requestKey: string,
+    preserveContent: boolean
+  ) => {
     if (readmeItem.path.trim() === '') {
       return;
     }
@@ -52,16 +66,26 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
       ? readmeItem.path.split('/').slice(0, -1).join('/')
       : '';
 
+    const hasExistingContent = typeof readmeContentRef.current === 'string' &&
+      readmeContentRef.current.trim().length > 0;
+    const shouldPreserve = preserveContent && hasExistingContent;
+
     setLoadingReadme(true);
-    setReadmeContent(null);
-    setReadmeLoaded(false);
+    if (!shouldPreserve) {
+      setReadmeContent(null);
+      setReadmeLoaded(false);
+    }
 
     try {
       const encodedPath = readmeItem.path
         .split('/')
         .map(segment => encodeURIComponent(segment))
         .join('/');
-      const fileUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/${encodeURIComponent(currentBranchRef.current)}/${encodedPath}`;
+      const cacheTag = typeof readmeItem.sha === 'string' && readmeItem.sha.length > 0
+        ? readmeItem.sha
+        : requestKey;
+      const baseUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/${encodeURIComponent(currentBranchRef.current)}/${encodedPath}`;
+      const fileUrl = appendCacheBuster(baseUrl, cacheTag);
       const content = await GitHub.Content.getFileContent(fileUrl);
 
       // 检查路径是否已经变更
@@ -84,12 +108,14 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
         userMessage: `加载 README 失败: ${e instanceof Error ? e.message : '未知错误'}`
       });
       logger.error(`加载 README 失败: ${e instanceof Error ? e.message : '未知错误'}`);
-      setReadmeContent(null);
+      if (!shouldPreserve) {
+        setReadmeContent(null);
+      }
       setReadmeLoaded(true); // 出错时也设置为已加载完成
     } finally {
       setLoadingReadme(false);
     }
-  }, []);
+  }, [appendCacheBuster]);
 
   // 监听内容变化，自动加载 README
   useEffect(() => {
@@ -109,9 +135,10 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
         return;
       }
 
+      const shouldPreserve = lastReadmePathRef.current === nextReadmePath;
       lastReadmePathRef.current = nextReadmePath;
       lastReadmeKeyRef.current = nextReadmeKey;
-      void loadReadmeContent(readmeItem, nextReadmeKey);
+      void loadReadmeContent(readmeItem, nextReadmeKey, shouldPreserve);
     } else {
       lastReadmePathRef.current = null;
       lastReadmeKeyRef.current = null;
@@ -130,6 +157,10 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
   useEffect(() => {
     readmeLoadedRef.current = readmeLoaded;
   }, [readmeLoaded]);
+
+  useEffect(() => {
+    readmeContentRef.current = readmeContent;
+  }, [readmeContent]);
 
   return {
     readmeContent,

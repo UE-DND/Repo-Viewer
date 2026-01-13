@@ -42,6 +42,8 @@ let initialHydrationMeta:
     }
   | null = null;
 
+let allowReadmeHydration = false;
+
 const makeDirectoryStoreKey = (branch: string, path: string): DirectoryStoreKey =>
   `${branch}::dir::${normalizeDirectoryPath(path)}`;
 
@@ -50,6 +52,11 @@ const makeFileStoreKey = (branch: string, path: string): FileStoreKey =>
 
 const isHydrationActiveForBranch = (branch: string): boolean =>
   initialHydrationMeta !== null && initialHydrationMeta.branch === branch;
+
+const isReadmePath = (filePath: string): boolean => {
+  const filename = filePath.split('/').pop()?.toLowerCase() ?? '';
+  return filename.includes('readme');
+};
 
 const stripSearchAndHash = (value: string): string => {
   if (value.startsWith('http://') || value.startsWith('https://')) {
@@ -165,6 +172,7 @@ const cleanupInitialHydrationStateIfEmpty = (): void => {
   ) {
     logger.debug('ContentHydration: 首屏注水数据已全部消费');
     initialHydrationMeta = null;
+    allowReadmeHydration = false;
   }
 };
 
@@ -202,7 +210,7 @@ const registerHydrationFile = (
   entry: InitialContentFileEntry
 ): void => {
   const normalizedPath = normalizeFilePath(entry.path);
-  if (normalizedPath === '') {
+  if (normalizedPath === '' || (!allowReadmeHydration && isReadmePath(normalizedPath))) {
     return;
   }
 
@@ -300,6 +308,7 @@ export async function consumeHydratedFile(
  */
 export function hydrateInitialContent(payload: InitialContentHydrationPayload | null | undefined): void {
   if (payload === undefined || payload === null) {
+    allowReadmeHydration = false;
     return;
   }
 
@@ -310,6 +319,7 @@ export function hydrateInitialContent(payload: InitialContentHydrationPayload | 
     const branch = payload.branch;
     const repoOwner = payload.repo.owner;
     const repoName = payload.repo.name;
+    allowReadmeHydration = payload.metadata?.['allowReadmeHydration'] === true;
 
     initialHydrationMeta = {
       branch,
@@ -329,6 +339,7 @@ export function hydrateInitialContent(payload: InitialContentHydrationPayload | 
 
     if (initialDirectoryStore.size === 0 && initialFileStore.size === 0) {
       initialHydrationMeta = null;
+      allowReadmeHydration = false;
       return;
     }
 
@@ -343,6 +354,6 @@ export function hydrateInitialContent(payload: InitialContentHydrationPayload | 
     initialDirectoryStore.clear();
     initialFileStore.clear();
     initialHydrationMeta = null;
+    allowReadmeHydration = false;
   }
 }
-

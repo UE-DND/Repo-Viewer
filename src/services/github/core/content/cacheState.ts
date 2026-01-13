@@ -154,3 +154,21 @@ export async function storeFileContent(cacheKey: string, fileUrl: string, conten
 
   fallbackCache.set(cacheKey, content);
 }
+
+/**
+ * 移除文件内容缓存。
+ *
+ * 用于在注水数据过期时清除对应的缓存条目，确保后续请求从 API 获取最新内容。
+ *
+ * @param cacheKey - 文件缓存键
+ * @returns Promise<void>
+ */
+export async function removeCachedFileContent(cacheKey: string): Promise<void> {
+  if (cacheAvailable) {
+    const fileCache = CacheManager.getFileCache();
+    await fileCache.delete(cacheKey);
+    return;
+  }
+
+  fallbackCache.delete(cacheKey);
+}
