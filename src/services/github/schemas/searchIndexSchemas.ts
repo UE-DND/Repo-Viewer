@@ -52,19 +52,18 @@ const SearchIndexFragmentSchema = z.object({
 
 export const SearchIndexFileEntrySchema = z.object({
   path: NonEmptyStringSchema,
-  name: NonEmptyStringSchema,
-  type: z.enum(['file', 'dir', 'symlink']).default('file'),
-  size: z.number().int().nonnegative().optional(),
+  size: z.number().int().nonnegative(),
   sha: NonEmptyStringSchema,
-  extension: z.string().optional(),
   language: z.string().optional(),
-  binary: z.boolean().optional(),
+  binary: z.boolean(),
   lastModified: IsoDateStringSchema.optional(),
-  downloadUrl: z.url().optional(),
-  htmlUrl: z.url().optional(),
   fragments: z.array(SearchIndexFragmentSchema).optional(),
   tokens: z.array(z.string()).optional(),
   scoreBoost: z.number().optional()
+});
+
+const SearchIndexInvertedIndexSchema = z.object({
+  tokens: z.record(z.string(), z.array(z.number().int().nonnegative()))
 });
 
 export const SearchIndexStatsSchema = z.object({
@@ -86,6 +85,11 @@ export const SearchIndexDocumentSchema = z.object({
     name: NonEmptyStringSchema,
     version: z.string().optional()
   }).optional(),
+  baseUrls: z.object({
+    raw: z.url(),
+    html: z.url()
+  }).optional(),
+  invertedIndex: SearchIndexInvertedIndexSchema,
   stats: SearchIndexStatsSchema,
   files: z.array(SearchIndexFileEntrySchema)
 });

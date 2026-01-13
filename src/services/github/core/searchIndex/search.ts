@@ -1,4 +1,4 @@
-import { getSearchIndexConfig } from '@/config';
+import { getGithubConfig, getSearchIndexConfig } from '@/config';
 
 import type { SearchIndexDocument, SearchIndexFileEntry } from '../../schemas';
 import { createSearchIndexError, SearchIndexErrorCode } from './errors';
@@ -39,6 +39,119 @@ function normalizeExtensions(extensions?: string[]): Set<string> | null {
   return normalized.length > 0 ? new Set(normalized) : null;
 }
 
+const WORD_TOKEN_PATTERN = /[\p{L}\p{N}_]{2,}/gu;
+const HAN_SEQUENCE_PATTERN = /[\p{Script=Han}]+/gu;
+const HAN_CHAR_PATTERN = /[\p{Script=Han}]/u;
+
+function resolveEntryName(filePath: string): string {
+  return filePath.split('/').pop() ?? filePath;
+}
+
+function resolveEntryExtension(filePath: string): string {
+  const name = resolveEntryName(filePath);
+  const dotIndex = name.lastIndexOf('.');
+  if (dotIndex <= 0 || dotIndex === name.length - 1) {
+    return '';
+  }
+  return name.slice(dotIndex + 1).toLowerCase();
+}
+
+function resolveDocumentBaseUrls(document: SearchIndexDocument): { raw?: string; html?: string } {
+  if (document.baseUrls !== undefined) {
+    return {
+      raw: document.baseUrls.raw,
+      html: document.baseUrls.html
+    };
+  }
+
+  const { repoOwner, repoName } = getGithubConfig();
+  if (repoOwner.trim() === '' || repoName.trim() === '') {
+    return {};
+  }
+
+  const safeOwner = encodeURIComponent(repoOwner);
+  const safeRepo = encodeURIComponent(repoName);
+  const safeCommit = encodeURIComponent(document.commit);
+  return {
+    raw: `https://raw.githubusercontent.com/${safeOwner}/${safeRepo}/${safeCommit}`,
+    html: `https://github.com/${safeOwner}/${safeRepo}/blob/${safeCommit}`
+  };
+}
+
+function normalizeToken(token: string): string | undefined {
+  const normalized = token.trim().toLowerCase();
+  if (normalized.length > 64) {
+    return undefined;
+  }
+  const hasHan = HAN_CHAR_PATTERN.test(normalized);
+  const minLength = hasHan ? 2 : 3;
+  if (normalized.length < minLength) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function tokenizeKeyword(keyword: string): string[] {
+  const seen = new Set<string>();
+  const matches = keyword.match(WORD_TOKEN_PATTERN);
+  if (matches !== null) {
+    for (const token of matches) {
+      const normalized = normalizeToken(token);
+      if (normalized !== undefined && !seen.has(normalized)) {
+        seen.add(normalized);
+      }
+    }
+  }
+
+  const hanMatches = keyword.match(HAN_SEQUENCE_PATTERN);
+  if (hanMatches !== null) {
+    for (const sequence of hanMatches) {
+      const chars = [...sequence];
+      if (chars.length < 2) {
+        continue;
+      }
+      for (let i = 0; i < chars.length - 1; i += 1) {
+        const bigram = `${chars[i]}${chars[i + 1]}`;
+        const normalized = normalizeToken(bigram);
+        if (normalized !== undefined && !seen.has(normalized)) {
+          seen.add(normalized);
+        }
+      }
+    }
+  }
+
+  return Array.from(seen);
+}
+
+function resolveCandidateIndexes(document: SearchIndexDocument, keyword: string): number[] | null {
+  const tokens = tokenizeKeyword(keyword);
+  if (tokens.length === 0) {
+    return null;
+  }
+
+  const index = document.invertedIndex?.tokens;
+  if (index === undefined) {
+    return null;
+  }
+
+  const candidates = new Set<number>();
+  for (const token of tokens) {
+    const hitList = index[token];
+    if (!Array.isArray(hitList)) {
+      continue;
+    }
+    for (const value of hitList) {
+      candidates.add(value);
+    }
+  }
+
+  if (candidates.size === 0) {
+    return null;
+  }
+
+  return Array.from(candidates);
+}
+
 function scoreMatch(entry: SearchIndexFileEntry, keyword: string): {
   matched: boolean;
   score: number;
@@ -49,7 +162,7 @@ function scoreMatch(entry: SearchIndexFileEntry, keyword: string): {
   let snippet: string | undefined;
 
   const pathLower = entry.path.toLowerCase();
-  const nameLower = entry.name.toLowerCase();
+  const nameLower = resolveEntryName(entry.path).toLowerCase();
 
   if (nameLower.includes(normalizedKeyword)) {
     score += 5;
@@ -95,17 +208,21 @@ function collectBranchResults(
   results: SearchIndexResultItem[]
 ): void {
   for (const document of documents) {
-    for (const entry of document.files) {
-      if (entry.type !== 'file') {
-        continue;
-      }
+    const baseUrls = resolveDocumentBaseUrls(document);
+    const candidateIndexes = resolveCandidateIndexes(document, keyword);
+    const candidates = candidateIndexes === null
+      ? document.files.map((entry) => entry)
+      : candidateIndexes
+        .map((index) => document.files[index])
+        .filter((entry): entry is SearchIndexFileEntry => entry !== undefined);
 
+    for (const entry of candidates) {
       if (pathPrefix.length > 0 && !entry.path.toLowerCase().startsWith(pathPrefix)) {
         continue;
       }
 
       if (extensionFilter !== null) {
-        const extension = entry.extension?.toLowerCase() ?? '';
+        const extension = resolveEntryExtension(entry.path);
         if (!extensionFilter.has(extension)) {
           continue;
         }
@@ -116,33 +233,31 @@ function collectBranchResults(
         continue;
       }
 
+      const name = resolveEntryName(entry.path);
       const resultItem: SearchIndexResultItem = {
         branch,
         path: entry.path,
-        name: entry.name,
+        name,
         commit: document.commit,
         shortCommit: document.shortCommit,
         score
       };
 
-      if (entry.extension !== undefined) {
-        resultItem.extension = entry.extension;
+      const extension = resolveEntryExtension(entry.path);
+      if (extension !== '') {
+        resultItem.extension = extension;
       }
 
-      if (entry.size !== undefined) {
-        resultItem.size = entry.size;
+      resultItem.size = entry.size;
+      resultItem.binary = entry.binary;
+
+      const normalizedPath = entry.path.replace(/^\/+/u, '');
+      if (baseUrls.html !== undefined) {
+        resultItem.htmlUrl = `${baseUrls.html}/${normalizedPath}`;
       }
 
-      if (entry.binary !== undefined) {
-        resultItem.binary = entry.binary;
-      }
-
-      if (entry.htmlUrl !== undefined) {
-        resultItem.htmlUrl = entry.htmlUrl;
-      }
-
-      if (entry.downloadUrl !== undefined) {
-        resultItem.downloadUrl = entry.downloadUrl;
+      if (baseUrls.raw !== undefined) {
+        resultItem.downloadUrl = `${baseUrls.raw}/${normalizedPath}`;
       }
 
       if (snippet !== undefined) {
@@ -244,4 +359,3 @@ export async function searchIndex(options: SearchIndexSearchOptions): Promise<Se
 
   return results.slice(0, limit);
 }
-
