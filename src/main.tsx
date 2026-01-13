@@ -5,11 +5,13 @@ import "@/index.css";
 import "github-markdown-css/github-markdown.css";
 import { logger } from "@/utils";
 import ThemeProvider from "@/providers/ThemeProvider";
+import { GitHub } from "@/services/github";
 import { setupLatexOptimization } from "@/utils/rendering/latexOptimizer";
 import SEOProvider from "@/contexts/SEOContext";
 import { ResponsiveSnackbarProvider } from "@/components/ui/ResponsiveSnackbarProvider";
 import { getDeveloperConfig } from "@/config";
 import { ErrorManager, setupGlobalErrorHandlers } from "@/utils/error";
+import { initialContentPayload } from "@/generated/initialContent";
 
 // 扩展Window接口以支持LaTeX优化清理函数
 declare global {
@@ -50,6 +52,8 @@ if (!allowConsoleOutput) {
 
 // 设置全局错误处理器
 setupGlobalErrorHandlers(ErrorManager);
+
+GitHub.Content.hydrate(initialContentPayload);
 
 // 应用LaTeX渲染优化
 // 在应用加载后设置LaTeX优化监听器

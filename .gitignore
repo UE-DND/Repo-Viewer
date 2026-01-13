@@ -18,3 +18,4 @@ coverage
 .temp
 .tmp
 report
+src/generated/

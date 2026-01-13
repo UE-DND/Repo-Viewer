@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -p scripts/tsconfig.json && node scripts/dist/generateInitialContent.js && tsc && vite build",
     "install-deps": "npm install --legacy-peer-deps",
     "lint": "eslint . --ext ts,tsx",
     "preview": "vite preview"
