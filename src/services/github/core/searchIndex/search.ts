@@ -1,6 +1,6 @@
 import { getGithubConfig, getSearchIndexConfig } from '@/config';
 
-import type { SearchIndexDocument, SearchIndexFileEntry } from '../../schemas';
+import type { SearchIndexDocument } from '../../schemas';
 import { createSearchIndexError, SearchIndexErrorCode } from './errors';
 import { fetchManifest, loadIndexDocument } from './fetchers';
 
@@ -106,12 +106,17 @@ function tokenizeKeyword(keyword: string): string[] {
   const hanMatches = keyword.match(HAN_SEQUENCE_PATTERN);
   if (hanMatches !== null) {
     for (const sequence of hanMatches) {
-      const chars = [...sequence];
+      const chars = Array.from(sequence);
       if (chars.length < 2) {
         continue;
       }
       for (let i = 0; i < chars.length - 1; i += 1) {
-        const bigram = `${chars[i]}${chars[i + 1]}`;
+        const first = chars[i];
+        const second = chars[i + 1];
+        if (first === undefined || second === undefined) {
+          continue;
+        }
+        const bigram = `${first}${second}`;
         const normalized = normalizeToken(bigram);
         if (normalized !== undefined && !seen.has(normalized)) {
           seen.add(normalized);
@@ -129,10 +134,7 @@ function resolveCandidateIndexes(document: SearchIndexDocument, keyword: string)
     return null;
   }
 
-  const index = document.invertedIndex?.tokens;
-  if (index === undefined) {
-    return null;
-  }
+  const index = document.invertedIndex.tokens;
 
   const candidates = new Set<number>();
   for (const token of tokens) {
@@ -152,17 +154,15 @@ function resolveCandidateIndexes(document: SearchIndexDocument, keyword: string)
   return Array.from(candidates);
 }
 
-function scoreMatch(entry: SearchIndexFileEntry, keyword: string): {
+function scoreMatch(path: string, keyword: string): {
   matched: boolean;
   score: number;
-  snippet?: string;
 } {
   const normalizedKeyword = keyword.toLowerCase();
   let score = 0;
-  let snippet: string | undefined;
 
-  const pathLower = entry.path.toLowerCase();
-  const nameLower = resolveEntryName(entry.path).toLowerCase();
+  const pathLower = path.toLowerCase();
+  const nameLower = resolveEntryName(path).toLowerCase();
 
   if (nameLower.includes(normalizedKeyword)) {
     score += 5;
@@ -172,30 +172,8 @@ function scoreMatch(entry: SearchIndexFileEntry, keyword: string): {
     score += 3;
   }
 
-  if (Array.isArray(entry.tokens) && entry.tokens.some(token => token.toLowerCase() === normalizedKeyword)) {
-    score += 2;
-  }
-
-  if (Array.isArray(entry.fragments)) {
-    const matchedFragment = entry.fragments.find(fragment =>
-      fragment.snippet.toLowerCase().includes(normalizedKeyword)
-    );
-    if (matchedFragment !== undefined) {
-      score += 1;
-      snippet = matchedFragment.snippet;
-    }
-  }
-
-  if (typeof entry.scoreBoost === 'number') {
-    score += entry.scoreBoost;
-  }
-
   const matched = score > 0;
-  const result: { matched: boolean; score: number; snippet?: string } = { matched, score };
-  if (snippet !== undefined) {
-    result.snippet = snippet;
-  }
-  return result;
+  return { matched, score };
 }
 
 function collectBranchResults(
@@ -214,54 +192,47 @@ function collectBranchResults(
       ? document.files.map((entry) => entry)
       : candidateIndexes
         .map((index) => document.files[index])
-        .filter((entry): entry is SearchIndexFileEntry => entry !== undefined);
+        .filter((entry): entry is string => typeof entry === 'string');
 
     for (const entry of candidates) {
-      if (pathPrefix.length > 0 && !entry.path.toLowerCase().startsWith(pathPrefix)) {
+      if (pathPrefix.length > 0 && !entry.toLowerCase().startsWith(pathPrefix)) {
         continue;
       }
 
       if (extensionFilter !== null) {
-        const extension = resolveEntryExtension(entry.path);
+        const extension = resolveEntryExtension(entry);
         if (!extensionFilter.has(extension)) {
           continue;
         }
       }
 
-      const { matched, score, snippet } = scoreMatch(entry, keyword);
+      const { matched, score } = scoreMatch(entry, keyword);
       if (!matched) {
         continue;
       }
 
-      const name = resolveEntryName(entry.path);
+      const name = resolveEntryName(entry);
       const resultItem: SearchIndexResultItem = {
         branch,
-        path: entry.path,
+        path: entry,
         name,
         commit: document.commit,
         shortCommit: document.shortCommit,
         score
       };
 
-      const extension = resolveEntryExtension(entry.path);
+      const extension = resolveEntryExtension(entry);
       if (extension !== '') {
         resultItem.extension = extension;
       }
 
-      resultItem.size = entry.size;
-      resultItem.binary = entry.binary;
-
-      const normalizedPath = entry.path.replace(/^\/+/u, '');
+      const normalizedPath = entry.replace(/^\/+/u, '');
       if (baseUrls.html !== undefined) {
         resultItem.htmlUrl = `${baseUrls.html}/${normalizedPath}`;
       }
 
       if (baseUrls.raw !== undefined) {
         resultItem.downloadUrl = `${baseUrls.raw}/${normalizedPath}`;
-      }
-
-      if (snippet !== undefined) {
-        resultItem.snippet = snippet;
       }
 
       results.push(resultItem);

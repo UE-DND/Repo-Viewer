@@ -28,7 +28,7 @@ export const SearchIndexBranchEntrySchema = z.object({
 });
 
 export const SearchIndexManifestSchema = z.object({
-  schemaVersion: NonEmptyStringSchema,
+  schemaVersion: z.literal('2.0'),
   generatedAt: IsoDateStringSchema,
   generator: z.object({
     name: NonEmptyStringSchema,
@@ -43,40 +43,18 @@ export const SearchIndexManifestSchema = z.object({
   retention: z.record(z.string(), z.unknown()).optional()
 });
 
-const SearchIndexFragmentSchema = z.object({
-  offset: z.number().int().nonnegative(),
-  length: z.number().int().nonnegative(),
-  snippet: z.string(),
-  hash: z.string().optional()
-});
-
-export const SearchIndexFileEntrySchema = z.object({
-  path: NonEmptyStringSchema,
-  size: z.number().int().nonnegative(),
-  sha: NonEmptyStringSchema,
-  language: z.string().optional(),
-  binary: z.boolean(),
-  lastModified: IsoDateStringSchema.optional(),
-  fragments: z.array(SearchIndexFragmentSchema).optional(),
-  tokens: z.array(z.string()).optional(),
-  scoreBoost: z.number().optional()
-});
+export const SearchIndexFileEntrySchema = NonEmptyStringSchema;
 
 const SearchIndexInvertedIndexSchema = z.object({
   tokens: z.record(z.string(), z.array(z.number().int().nonnegative()))
 });
 
 export const SearchIndexStatsSchema = z.object({
-  fileCount: z.number().int().nonnegative(),
-  textCount: z.number().int().nonnegative().optional(),
-  binaryCount: z.number().int().nonnegative().optional(),
-  totalSize: z.number().int().nonnegative().optional()
-}).partial().refine((value) => Object.keys(value).length > 0, {
-  message: 'stats must contain at least one field'
-}).optional();
+  fileCount: z.number().int().nonnegative()
+});
 
 export const SearchIndexDocumentSchema = z.object({
-  schemaVersion: NonEmptyStringSchema,
+  schemaVersion: z.literal('2.0'),
   branch: NonEmptyStringSchema,
   commit: NonEmptyStringSchema,
   shortCommit: NonEmptyStringSchema,

@@ -12,6 +12,7 @@ import { ResponsiveSnackbarProvider } from "@/components/ui/ResponsiveSnackbarPr
 import { getDeveloperConfig } from "@/config";
 import { ErrorManager, setupGlobalErrorHandlers } from "@/utils/error";
 import { initialContentPayload } from "@/generated/initialContent";
+import type { InitialContentHydrationPayload } from "@/types";
 
 // 扩展Window接口以支持LaTeX优化清理函数
 declare global {
@@ -53,7 +54,9 @@ if (!allowConsoleOutput) {
 // 设置全局错误处理器
 setupGlobalErrorHandlers(ErrorManager);
 
-GitHub.Content.hydrate(initialContentPayload);
+GitHub.Content.hydrate(
+  initialContentPayload as InitialContentHydrationPayload | null | undefined
+);
 
 // 应用LaTeX渲染优化
 // 在应用加载后设置LaTeX优化监听器

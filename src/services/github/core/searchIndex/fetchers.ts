@@ -1,5 +1,6 @@
 import { getGithubConfig, getSearchIndexConfig } from '@/config';
 import { logger } from '@/utils';
+import { decompressSync } from 'fflate';
 
 import { shouldUseServerAPI } from '../../config';
 import { getAuthHeaders } from '../Auth';
@@ -122,21 +123,45 @@ async function fetchDirect<T>(
 
 async function decompressGzip(arrayBuffer: ArrayBuffer): Promise<string> {
   if (typeof DecompressionStream === 'function') {
-    const stream = new Response(arrayBuffer).body;
-    if (stream === null) {
-      throw new Error('无法创建解压流');
+    try {
+      const stream = new Response(arrayBuffer).body;
+      if (stream === null) {
+        throw new Error('无法创建解压流');
+      }
+      const decompressedStream = stream.pipeThrough(new DecompressionStream('gzip'));
+      const decompressedBuffer = await new Response(decompressedStream).arrayBuffer();
+      return decodeUtf8(decompressedBuffer);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown gzip error';
+      logger.warn(`[SearchIndex] 原生 gzip 解压失败，切换到 fflate: ${message}`);
     }
-    const decompressedStream = stream.pipeThrough(new DecompressionStream('gzip'));
-    const decompressedBuffer = await new Response(decompressedStream).arrayBuffer();
-    const decoder = new TextDecoder('utf-8');
-    return decoder.decode(decompressedBuffer);
   }
 
-  throw createSearchIndexError(
-    SearchIndexErrorCode.UNSUPPORTED_COMPRESSION,
-    '当前环境不支持 gzip 解压，请在生成索引时关闭压缩或添加 polyfill',
-    { compression: 'gzip' }
-  );
+  try {
+    const decompressed = decompressSync(new Uint8Array(arrayBuffer));
+    return decodeUtf8Bytes(decompressed);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown gzip error';
+    throw createSearchIndexError(
+      SearchIndexErrorCode.UNSUPPORTED_COMPRESSION,
+      message,
+      { compression: 'gzip', cause: error }
+    );
+  }
+}
+
+function decodeUtf8(buffer: ArrayBuffer): string {
+  return decodeUtf8Bytes(new Uint8Array(buffer));
+}
+
+function decodeUtf8Bytes(bytes: Uint8Array): string {
+  const decoder = new TextDecoder('utf-8');
+  return decoder.decode(bytes);
+}
+
+function hasGzipSignature(buffer: ArrayBuffer): boolean {
+  const bytes = new Uint8Array(buffer);
+  return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
 }
 
 export async function fetchManifest(signal?: AbortSignal): Promise<SearchIndexManifest> {
@@ -276,8 +301,27 @@ export async function loadIndexDocument(
 
     if (expectBinary) {
       const buffer = data as ArrayBuffer;
-      const text = await decompressGzip(buffer);
-      rawJson = JSON.parse(text) as unknown;
+      let text: string;
+      if (hasGzipSignature(buffer)) {
+        try {
+          text = await decompressGzip(buffer);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown gzip error';
+          logger.warn(`[SearchIndex] gzip 解压失败，尝试按纯文本解析: ${message}`);
+          text = decodeUtf8(buffer);
+        }
+      } else {
+        logger.warn('[SearchIndex] 索引文件标记为 gzip，但内容未检测到 gzip 头，尝试按纯文本解析。');
+        text = decodeUtf8(buffer);
+      }
+      try {
+        rawJson = JSON.parse(text) as unknown;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown JSON parse error';
+        throw createSearchIndexError(SearchIndexErrorCode.INDEX_DOCUMENT_INVALID, message, {
+          path: descriptor.path
+        });
+      }
     }
 
     const validation = safeValidateSearchIndexDocument(rawJson);
