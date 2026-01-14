@@ -10,6 +10,6 @@
     }
   ],
   "headers": [],
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
-  "installCommand": "npm install --legacy-peer-deps"
+  "buildCommand": "npm install && npm run build",
+  "installCommand": "npm install"
 }
