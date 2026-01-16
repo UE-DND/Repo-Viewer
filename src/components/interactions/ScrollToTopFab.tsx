@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { KeyboardArrowUp as ArrowUpIcon } from "@mui/icons-material";
 import { useI18n } from "@/contexts/I18nContext";
+import { scroll } from "@/utils";
 
 /**
  * 返回顶部浮动按钮组件属性接口
@@ -45,10 +46,7 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
       return false;
     }
 
-    const pageOffset = window.pageYOffset;
-    const scrollTop = Number.isFinite(pageOffset)
-      ? pageOffset
-      : document.documentElement.scrollTop;
+    const scrollTop = scroll.getScrollTop();
     const hasContent = showOnlyWithContent
       ? document.body.scrollHeight > window.innerHeight
       : true;
@@ -59,31 +57,13 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
   const [isVisible, setIsVisible] = useState(getInitialVisibility);
   const [isScrolling, setIsScrolling] = useState(false);
 
-  const getScrollTop = useCallback((): number => {
-    if (typeof window === "undefined" || typeof document === "undefined") {
-      return 0;
-    }
-
-    const pageOffset = window.pageYOffset;
-    if (Number.isFinite(pageOffset)) {
-      return pageOffset;
-    }
-
-    const docScrollTop = document.documentElement.scrollTop;
-    if (Number.isFinite(docScrollTop)) {
-      return docScrollTop;
-    }
-
-    return 0;
-  }, []);
-
   // 检查滚动位置和内容
   const checkScrollPosition = useCallback((): void => {
     if (typeof document === "undefined" || typeof window === "undefined") {
       return;
     }
 
-    const scrollTop = getScrollTop();
+    const scrollTop = scroll.getScrollTop();
     const hasContent = showOnlyWithContent
       ? document.body.scrollHeight > window.innerHeight
       : true;
@@ -96,35 +76,19 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
       }
       return shouldBeVisible;
     });
-  }, [getScrollTop, threshold, showOnlyWithContent]);
+  }, [threshold, showOnlyWithContent]);
 
   // 平滑滚动到顶部
-  const scrollToTop = useCallback((): void => {
+  const handleScrollToTop = useCallback((): void => {
     if (isScrolling) {
       return;
     }
 
     setIsScrolling(true);
-    const startTime = performance.now();
-    const startScrollTop = getScrollTop();
-
-    const animateScroll = (currentTime: number): void => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / scrollDuration, 1);
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      const currentScrollTop = startScrollTop * (1 - easeOutQuart);
-
-      window.scrollTo(0, currentScrollTop);
-
-      if (progress < 1) {
-        requestAnimationFrame(animateScroll);
-      } else {
-        setIsScrolling(false);
-      }
-    };
-
-    requestAnimationFrame(animateScroll);
-  }, [getScrollTop, scrollDuration, isScrolling]);
+    void scroll.scrollToTop({ duration: scrollDuration }).then(() => {
+      setIsScrolling(false);
+    });
+  }, [scrollDuration, isScrolling]);
 
   // 监听滚动事件
   useEffect(() => {
@@ -196,7 +160,7 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
         <Fab
           size={isSmallScreen ? "medium" : "large"}
           aria-label={t('ui.scrollToTop.aria')}
-          onClick={scrollToTop}
+          onClick={handleScrollToTop}
           disabled={isScrolling}
           sx={fabStyles}
         >

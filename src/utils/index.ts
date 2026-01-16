@@ -1,12 +1,5 @@
 /**
- * 工具函数模块 - 按功能域组织
- *
- * 使用方式:
- * import { file, network, cache } from '@/utils';
- *
- * file.isImageFile('test.jpg');
- * network.getProxiedUrl(url);
- * cache.SmartCache;
+ * 工具函数模块
  */
 
 // 文件操作工具
@@ -86,6 +79,10 @@ export const content = contentFilters;
 import * as sortingUtils from './sorting/contentSorting';
 export const sorting = sortingUtils;
 
+// 滚动工具
+import * as scrollUtils from './scroll/scrollUtils';
+export const scroll = scrollUtils;
+
 // 主题相关工具
 import * as g3Curves from '@/theme/g3Curves';
 export const theme = g3Curves;
@@ -149,7 +146,6 @@ export const performance = {
   }
 };
 
-// 类型导出（保持类型的扁平导出以便使用）
 export type { RetryOptions } from './retry/retryUtils';
 export type { SmartCacheOptions } from './cache/SmartCache';
 export type { RequestOptions } from './request/requestManager';
