@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { memo, useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useI18n } from "@/contexts/I18nContext";
-import { useContentContext, usePreviewContext } from "@/contexts/unified";
 import type { MarkdownPreviewProps } from "./types";
 import { katexOptions } from "./config/katex";
 import { loadKatexStyles } from "@/utils/lazy-loading";
@@ -25,8 +24,32 @@ import type { ImageLoadingState } from "./utils/imageUtils";
 import { checkLatexCount, createLatexCodeHandler } from "./utils/latexUtils";
 import { MarkdownImage } from "./components/MarkdownImage";
 import { MarkdownLink } from "./components/MarkdownLink";
-import { logger, scroll } from "@/utils";
+import { logger } from "@/utils";
 import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
+
+/**
+ * 内部链接点击处理器类型
+ */
+export type InternalLinkClickHandler = (relativePath: string) => void;
+
+/**
+ * 扩展的 Markdown 预览组件属性接口
+ */
+export interface ExtendedMarkdownPreviewProps extends MarkdownPreviewProps {
+  /** 内部链接点击处理器（由父组件提供） */
+  onInternalLinkClick?: InternalLinkClickHandler;
+}
+
+/**
+ * fadeIn 动画样式（静态定义，避免重复创建）
+ */
+const fadeInAnimationStyles = {
+  "@keyframes markdownFadeIn": {
+    from: { opacity: 0 },
+    to: { opacity: 1 }
+  },
+  animation: "markdownFadeIn 0.25s ease forwards",
+} as const;
 
 /**
  * Markdown预览组件
@@ -34,7 +57,7 @@ import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
  * 渲染Markdown内容，支持GFM语法、LaTeX公式、代码高亮等。
  * 包含图片代理处理、懒加载和主题切换优化。
  */
-const MarkdownPreview = memo<MarkdownPreviewProps>(
+const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
   ({
     readmeContent,
     loadingReadme,
@@ -43,13 +66,10 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     onClose,
     lazyLoad = true,
     currentBranch,
+    onInternalLinkClick,
   }) => {
-  const theme = useTheme();
-  const { t } = useI18n();
-
-    // 获取导航和预览上下文
-    const { navigateTo, findFileItemByPath, currentPath } = useContentContext();
-    const { selectFile } = usePreviewContext();
+    const theme = useTheme();
+    const { t } = useI18n();
 
     // 懒加载状态
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
@@ -165,76 +185,14 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     // 创建LaTeX代码处理器
     const latexCodeHandler = createLatexCodeHandler();
 
-    // 获取当前 README 文件所在的目录路径
-    const previewingItemPath = previewingItem?.path ?? null;
-    const currentReadmeDir = useMemo(() => {
-      if (previewingItemPath !== null && previewingItemPath.length > 0) {
-        // 从文件路径中获取目录部分
-        const lastSlashIndex = previewingItemPath.lastIndexOf('/');
-        return lastSlashIndex >= 0 ? previewingItemPath.substring(0, lastSlashIndex) : '';
-      }
-      // 如果没有 previewingItem，使用 currentPath
-      return currentPath;
-    }, [previewingItemPath, currentPath]);
-
-    // 处理内部链接点击
-    const handleInternalLinkClick = useCallback(
+    // 内部链接点击处理（仅当提供了处理器时才处理）
+    const handleLinkClick = useCallback(
       (relativePath: string) => {
-        // 解析相对路径
-        let targetPath = relativePath;
-
-        // 移除开头的 ./
-        if (targetPath.startsWith('./')) {
-          targetPath = targetPath.substring(2);
+        if (onInternalLinkClick !== undefined) {
+          onInternalLinkClick(relativePath);
         }
-
-        // 处理 ../ 路径
-        const baseParts = currentReadmeDir.length > 0 ? currentReadmeDir.split('/') : [];
-        const targetParts = targetPath.split('/');
-
-        const resolvedParts = [...baseParts];
-        for (const part of targetParts) {
-          if (part === '..') {
-            resolvedParts.pop();
-          } else if (part !== '.' && part !== '') {
-            resolvedParts.push(part);
-          }
-        }
-
-        const resolvedPath = resolvedParts.join('/');
-        logger.debug(`内部链接导航: ${relativePath} -> ${resolvedPath}`);
-
-        // 尝试找到对应的文件项
-        const fileItem = findFileItemByPath(resolvedPath);
-
-        if (fileItem !== undefined) {
-          // 如果找到了文件项，根据类型进行处理
-          if (fileItem.type === 'dir') {
-            navigateTo(resolvedPath, 'forward');
-          } else {
-            // 文件类型，打开预览
-            void selectFile(fileItem);
-          }
-        } else {
-          // 如果在当前目录内容中找不到，尝试直接导航
-          // 判断是否可能是目录（没有扩展名或特定的目录标识）
-          const hasExtension = /\.[^/]+$/.test(resolvedPath);
-          if (!hasExtension) {
-            // 可能是目录，尝试导航
-            navigateTo(resolvedPath, 'forward');
-          } else {
-            // 可能是其他目录中的文件，导航到其父目录
-            const lastSlashIdx = resolvedPath.lastIndexOf('/');
-            const parentPath = lastSlashIdx >= 0 ? resolvedPath.substring(0, lastSlashIdx) : '';
-            navigateTo(parentPath, 'forward');
-            logger.info(`文件不在当前目录，导航到父目录: ${parentPath}`);
-          }
-        }
-
-        // 导航后滚动到页面顶部
-        void scroll.scrollToTop();
       },
-      [currentReadmeDir, findFileItemByPath, navigateTo, selectFile]
+      [onInternalLinkClick]
     );
 
     if (loadingReadme) {
@@ -309,10 +267,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
               data-color-mode={theme.palette.mode}
               data-light-theme="light"
               data-dark-theme="dark"
-              sx={{
-                "@keyframes fadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
-                animation: "fadeIn 0.25s ease",
-              }}
+              sx={fadeInAnimationStyles}
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
@@ -327,7 +282,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
                       <MarkdownLink
                         href={href}
                         style={linkStyle}
-                        onInternalLinkClick={handleInternalLinkClick}
+                        onInternalLinkClick={handleLinkClick}
                         {...props}
                       >
                         {children}
