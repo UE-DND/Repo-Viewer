@@ -135,9 +135,9 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
    - 点击 `Deploy` 按钮
    - Vercel 将自动构建和部署你的应用
 
-#### 配置文件索引
+#### 自建文件索引
 
-文件检索功能由 [Repo-Viewer-Search](https://github.com/H-Sofie/Repo-Viewer-Search) 支持，需在目标仓库配置 Github Action。详细配置见 [Repo-Viewer-Search 文档](https://github.com/H-Sofie/Repo-Viewer-Search/tree/main/docs)。
+索引模式由 [Repo-Viewer-Search](https://github.com/H-Sofie/Repo-Viewer-Search) 提供，需在目标仓库配置 Github Action。详细配置见 Repo-Viewer-Search [文档](https://github.com/H-Sofie/Repo-Viewer-Search/tree/main/docs)。
 
 ### 许可证
 

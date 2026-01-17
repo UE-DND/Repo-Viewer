@@ -13,7 +13,7 @@ const RowComponent = ({
   ariaAttributes,
   index,
   style,
-  ...data
+  ...rowData
 }: RowComponentProps<VirtualListItemData>): ReactElement => {
   const rowRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
@@ -30,7 +30,7 @@ const RowComponent = ({
     isScrolling,
     scrollSpeed,
     highlightedIndex,
-  } = data;
+  } = rowData;
 
   const item = contents[index];
 

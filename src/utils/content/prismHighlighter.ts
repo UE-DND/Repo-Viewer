@@ -1,4 +1,4 @@
-import Prism from 'prismjs';
+import * as Prism from 'prismjs';
 import { detectLanguage } from './languageDetector';
 import { logger } from '@/utils';
 import 'prismjs/components/prism-javascript';

@@ -28,12 +28,36 @@ import { logger } from "@/utils";
 import { MarkdownPreviewSkeleton } from "@/components/ui/skeletons";
 
 /**
+ * 内部链接点击处理器类型
+ */
+export type InternalLinkClickHandler = (relativePath: string) => void;
+
+/**
+ * 扩展的 Markdown 预览组件属性接口
+ */
+export interface ExtendedMarkdownPreviewProps extends MarkdownPreviewProps {
+  /** 内部链接点击处理器（由父组件提供） */
+  onInternalLinkClick?: InternalLinkClickHandler;
+}
+
+/**
+ * fadeIn 动画样式（静态定义，避免重复创建）
+ */
+const fadeInAnimationStyles = {
+  "@keyframes markdownFadeIn": {
+    from: { opacity: 0 },
+    to: { opacity: 1 }
+  },
+  animation: "markdownFadeIn 0.25s ease forwards",
+} as const;
+
+/**
  * Markdown预览组件
  *
  * 渲染Markdown内容，支持GFM语法、LaTeX公式、代码高亮等。
  * 包含图片代理处理、懒加载和主题切换优化。
  */
-const MarkdownPreview = memo<MarkdownPreviewProps>(
+const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
   ({
     readmeContent,
     loadingReadme,
@@ -42,9 +66,10 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     onClose,
     lazyLoad = true,
     currentBranch,
+    onInternalLinkClick,
   }) => {
-  const theme = useTheme();
-  const { t } = useI18n();
+    const theme = useTheme();
+    const { t } = useI18n();
 
     // 懒加载状态
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
@@ -160,6 +185,16 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
     // 创建LaTeX代码处理器
     const latexCodeHandler = createLatexCodeHandler();
 
+    // 内部链接点击处理（仅当提供了处理器时才处理）
+    const handleLinkClick = useCallback(
+      (relativePath: string) => {
+        if (onInternalLinkClick !== undefined) {
+          onInternalLinkClick(relativePath);
+        }
+      },
+      [onInternalLinkClick]
+    );
+
     if (loadingReadme) {
       return (
         <MarkdownPreviewSkeleton
@@ -232,10 +267,7 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
               data-color-mode={theme.palette.mode}
               data-light-theme="light"
               data-dark-theme="dark"
-              sx={{
-                "@keyframes fadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
-                animation: "fadeIn 0.25s ease",
-              }}
+              sx={fadeInAnimationStyles}
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
@@ -247,7 +279,12 @@ const MarkdownPreview = memo<MarkdownPreviewProps>(
                     }
 
                     return (
-                      <MarkdownLink href={href} style={linkStyle} {...props}>
+                      <MarkdownLink
+                        href={href}
+                        style={linkStyle}
+                        onInternalLinkClick={handleLinkClick}
+                        {...props}
+                      >
                         {children}
                       </MarkdownLink>
                     );

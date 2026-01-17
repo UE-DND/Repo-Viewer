@@ -20,4 +20,4 @@ jobs:
       - name: Generate Repo Viewer search index
         uses: H-Sofie/Repo-Viewer-Search@main
         with:
-          branches: master, dev
+          branches: master
