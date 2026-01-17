@@ -104,8 +104,10 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
         }
       }
 
-      // 导航后滚动到页面顶部
-      void scroll.scrollToTop();
+      // 避免渲染过程中闪烁
+      window.setTimeout(() => {
+        void scroll.scrollToTop();
+      }, 500);
     },
     [currentReadmeDir, findFileItemByPath, navigateTo, selectFile]
   );
