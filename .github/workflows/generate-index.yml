@@ -12,6 +12,7 @@ on:
 jobs:
   generate-index:
     runs-on: ubuntu-latest
+    environment: RV-Index
     permissions:
       contents: write
     steps:
