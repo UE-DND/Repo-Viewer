@@ -19,6 +19,7 @@ interface DocfindManifest {
   branches: Record<string, DocfindManifestBranch>;
 }
 
+// 默认文本/代码文件扩展名白名单（仅用于内容索引，路径始终进入索引）
 const DEFAULT_EXTENSION_WHITELIST = [
   "md",
   "markdown",
@@ -68,9 +69,12 @@ const DEFAULT_EXTENSION_WHITELIST = [
   "lua"
 ];
 
+// 默认最大内容索引体积，超限文件只索引路径
 const DEFAULT_MAX_FILE_SIZE = 512 * 1024;
 const DOCFIND_SCHEMA_VERSION = "docfind-1" as const;
 
+// 统一处理命令输出，避免在调用处重复拼接逻辑
+// 运行外部命令并返回 stdout 文本
 const runCommandText = (command: string, args: string[], cwd: string): Promise<string> =>
   new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
@@ -96,6 +100,7 @@ const runCommandText = (command: string, args: string[], cwd: string): Promise<s
     });
   });
 
+// 运行外部命令并返回 stdout 二进制
 const runCommandBuffer = (command: string, args: string[], cwd: string): Promise<Buffer> =>
   new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
@@ -121,6 +126,7 @@ const runCommandBuffer = (command: string, args: string[], cwd: string): Promise
     });
   });
 
+// 运行外部命令，继承 stdout/stderr
 const runCommand = (command: string, args: string[], cwd: string): Promise<void> =>
   new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, stdio: "inherit" });
@@ -134,10 +140,12 @@ const runCommand = (command: string, args: string[], cwd: string): Promise<void>
     });
   });
 
+// 将路径标准化为 POSIX 风格，确保 docfind 输出稳定
 const toPosixPath = (value: string): string => value.split(path.sep).join("/");
 
 type GenerationMode = "build" | "action" | "off";
 
+// 支持大小写与空格容错，减少误配
 const normalizeGenerationMode = (value: string): GenerationMode => {
   const normalized = value.trim().toLowerCase();
   if (normalized === "build" || normalized === "action" || normalized === "off") {
@@ -146,11 +154,13 @@ const normalizeGenerationMode = (value: string): GenerationMode => {
   return "build";
 };
 
+// 优先由 CI 环境决定上下文
 const resolveGenerationContext = (): "build" | "action" => {
   const isActions = parseBoolean(resolveEnvValue(["GITHUB_ACTIONS"], "false"));
   return isActions ? "action" : "build";
 };
 
+// 仅在匹配的上下文中生成索引
 const shouldGenerateIndex = (mode: GenerationMode, context: "build" | "action"): boolean => {
   if (mode === "off") {
     return false;
@@ -158,6 +168,7 @@ const shouldGenerateIndex = (mode: GenerationMode, context: "build" | "action"):
   return mode === context;
 };
 
+// 根据运行平台选择 docfind release 产物
 const computeDocfindAssetName = (): string => {
   const platform = process.platform;
   const arch = process.arch;
@@ -186,6 +197,8 @@ const computeDocfindAssetName = (): string => {
   throw new Error(`Unsupported platform: ${platform} (${arch})`);
 };
 
+// Windows 使用 PowerShell 解压 zip 其他平台使用 tar
+// 解压下载的 docfind 归档
 const extractDocfindArchive = async (archivePath: string, destDir: string, rootDir: string): Promise<void> => {
   if (archivePath.endsWith(".zip")) {
     const archiveArg = toPosixPath(archivePath);
@@ -198,6 +211,7 @@ const extractDocfindArchive = async (archivePath: string, destDir: string, rootD
   await runCommand("tar", ["-xzf", archivePath, "-C", destDir], rootDir);
 };
 
+// 在解压目录中查找 docfind 可执行文件
 const findDocfindBinary = async (rootDir: string): Promise<string | null> => {
   const entries = await fs.promises.readdir(rootDir, { withFileTypes: true });
   for (const entry of entries) {
@@ -226,6 +240,7 @@ const findDocfindBinary = async (rootDir: string): Promise<string | null> => {
   return null;
 };
 
+// 确保 docfind 可执行文件存在，缺失则下载官方 release
 const ensureDocfindBinary = async (rootDir: string, explicitPath?: string): Promise<string> => {
   if (explicitPath && explicitPath.trim().length > 0) {
     return explicitPath.trim();
@@ -274,16 +289,20 @@ const ensureDocfindBinary = async (rootDir: string, explicitPath?: string): Prom
   return binPath;
 };
 
+// 按扩展名与大小限制决定是否读取内容
+// 仅按扩展名判定文本类型，内容仍需做二进制探测
 const resolveExtension = (filePath: string): string => {
   const ext = path.posix.extname(filePath);
   return ext.startsWith(".") ? ext.slice(1).toLowerCase() : ext.toLowerCase();
 };
 
+// 以 NUL 字节探测二进制文件
 const isBinaryBuffer = (buffer: Buffer): boolean => {
   const sample = buffer.subarray(0, Math.min(buffer.length, 8000));
   return sample.includes(0);
 };
 
+// 为 wasm 文件生成 hash 作为缓存版本
 const hashFile = async (filePath: string): Promise<string> => {
   const hash = crypto.createHash("sha256");
   const stream = fs.createReadStream(filePath);
@@ -298,6 +317,7 @@ const hashFile = async (filePath: string): Promise<string> => {
   });
 };
 
+// 准备临时仓库目录，必要时走带 token 的 clone URL
 const ensureTempRepo = async (
   rootDir: string,
   repoOwner: string,
@@ -320,6 +340,8 @@ const ensureTempRepo = async (
   return repoPath;
 };
 
+// 远端分支缺失时返回 null 继续后续分支
+// 只拉取单个分支，用于多分支索引生成
 const fetchBranch = async (repoPath: string, branch: string): Promise<string | null> => {
   const remoteRef = `refs/remotes/origin/${branch}`;
   try {
@@ -337,6 +359,7 @@ const fetchBranch = async (repoPath: string, branch: string): Promise<string | n
   }
 };
 
+// 解析可用的分支引用（本地/远端）
 const resolveBranchRef = async (repoPath: string, branch: string): Promise<string | null> => {
   const candidates = [branch, `refs/heads/${branch}`, `refs/remotes/origin/${branch}`];
   for (const candidate of candidates) {
@@ -350,10 +373,12 @@ const resolveBranchRef = async (repoPath: string, branch: string): Promise<strin
   return null;
 };
 
+// 使用 detach 模式切换分支，避免工作区污染
 const checkoutBranch = async (repoPath: string, branchRef: string): Promise<void> => {
   await runCommand("git", ["checkout", "--force", "--detach", branchRef], repoPath);
 };
 
+// 仅收集 git 跟踪的文件，避免索引临时文件
 const listTrackedFiles = async (repoPath: string): Promise<string[]> => {
   const output = await runCommandBuffer("git", ["ls-files", "-z"], repoPath);
   return output
@@ -379,6 +404,8 @@ const buildDocumentsForBranch = async (
   const documents: Record<string, unknown>[] = [];
   let skipped = 0;
 
+  // 路径永远进入索引 内容根据白名单与大小判断
+  // 所有已跟踪文件都会建立“路径索引”，内容仅白名单内写入
   for (const filePath of filePaths) {
     const normalizedPath = toPosixPath(filePath);
     const extension = resolveExtension(normalizedPath);
@@ -400,6 +427,7 @@ const buildDocumentsForBranch = async (
     const fileName = path.posix.basename(normalizedPath);
     let body = normalizedPath;
 
+    // 白名单内且体积符合时才读取内容，避免大文件拖慢索引
     if (extensionWhitelist.has(extension) && stats.size <= maxFileSize) {
       let contentBuffer: Buffer;
       try {
@@ -438,11 +466,14 @@ const buildDocumentsForBranch = async (
   return { documents, skipped };
 };
 
+// 生成分支索引前清空目录
 const ensureEmptyDir = async (targetDir: string): Promise<void> => {
   await fs.promises.rm(targetDir, { recursive: true, force: true });
   await fs.promises.mkdir(targetDir, { recursive: true });
 };
 
+// docfind.js 需要补丁以支持自定义 wasm URL
+// 修补 docfind.js 的 init 签名，确保可传入 wasm URL
 const patchDocfindInit = async (branchDir: string): Promise<void> => {
   const docfindJsPath = path.join(branchDir, "docfind.js");
   if (!fs.existsSync(docfindJsPath)) {
@@ -458,6 +489,7 @@ const patchDocfindInit = async (branchDir: string): Promise<void> => {
   await fs.promises.writeFile(docfindJsPath, patched, "utf8");
 };
 
+// 主流程：拉取分支 → 生成 payload → 运行 docfind → 输出 manifest
 const run = async (): Promise<void> => {
   const rootDir = resolveRepoRoot(import.meta.url);
   loadEnvFiles(rootDir);
@@ -489,9 +521,11 @@ const run = async (): Promise<void> => {
   const branchList = parseList(resolveEnvValue(["SEARCH_INDEX_BRANCHES"], ""));
   const branches = branchList.length > 0 ? branchList : [defaultBranch];
 
+  // 产物路径固定在 public/search-index
   const basePath = "/search-index";
   const manifestUrlPath = `${basePath}/manifest.json`;
 
+  // 内容索引大小限制独立于路径索引
   const safeMaxFileSize = DEFAULT_MAX_FILE_SIZE;
 
   const extensionOverride = parseList(resolveEnvValue(["SEARCH_INDEX_EXTENSIONS"], ""));
@@ -504,8 +538,10 @@ const run = async (): Promise<void> => {
   const outputRoot = path.join(rootDir, "public", basePath.replace(/^\//, ""));
   const manifestOutputPath = path.join(rootDir, "public", manifestUrlPath.replace(/^\//, ""));
 
+  // 支持显式指定二进制路径
   const docfindBin = await ensureDocfindBinary(rootDir, resolveEnvValue(["DOCFIND_BIN"], ""));
 
+  // 本地路径优先 否则拉取远端
   const repoPath = resolveEnvValue(["DOCFIND_REPO_PATH"], "");
   const tokens = collectTokens();
   const tempRepoPath = repoPath.length > 0
@@ -523,6 +559,7 @@ const run = async (): Promise<void> => {
   };
 
   for (const branch of branches) {
+    // action 模式使用 fetch 本地模式走 ref 解析
     const branchRef = repoPath.length > 0
       ? await resolveBranchRef(tempRepoPath, branch)
       : await fetchBranch(tempRepoPath, branch);
@@ -549,6 +586,7 @@ const run = async (): Promise<void> => {
     const branchDir = path.join(outputRoot, ...branchSegments);
     await ensureEmptyDir(branchDir);
 
+    // docfind 输入为结构化 JSON
     const tempDir = path.join(rootDir, ".docfind", "payloads");
     await fs.promises.mkdir(tempDir, { recursive: true });
     const payloadPath = path.join(tempDir, `${branchSegments.join("-") || "default"}.json`);

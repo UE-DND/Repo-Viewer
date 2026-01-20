@@ -46,7 +46,7 @@ const buildActionAssetUrl = (path: string, responseType: ActionResponseType, has
   params.set("indexBranch", ACTION_INDEX_BRANCH);
   params.set("path", path);
   params.set("responseType", responseType);
-  if (hash && hash.length > 0) {
+  if (typeof hash === "string" && hash.length > 0) {
     params.set("v", hash);
   }
   return resolveUrl(`/api/github?${params.toString()}`);
@@ -120,7 +120,7 @@ export async function fetchManifest(signal?: AbortSignal): Promise<SearchIndexMa
       });
     }
 
-    const data = await response.json();
+    const data: unknown = await response.json();
     const validation = safeValidateSearchIndexManifest(data);
     if (!validation.success) {
       throw createSearchIndexError(SearchIndexErrorCode.MANIFEST_INVALID, validation.error);
@@ -143,7 +143,7 @@ async function loadDocfindModule(
   entry: SearchIndexBranchEntry
 ): Promise<DocfindSearchHandler> {
   const cached = getModuleCacheEntry(branch);
-  if (cached !== undefined && cached.hash === entry.hash) {
+  if (cached?.hash === entry.hash) {
     return cached.search;
   }
 

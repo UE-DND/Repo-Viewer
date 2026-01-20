@@ -10,6 +10,7 @@ export default tseslint.config(
   {
     ignores: [
       ".vite",
+      ".docfind",
       "dist",
       "node_modules",
       "public",

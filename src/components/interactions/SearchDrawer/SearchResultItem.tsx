@@ -40,7 +40,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   const snippet = ("snippet" in item && typeof (item as { snippet?: unknown }).snippet === "string")
     ? (item as { snippet?: string }).snippet
     : undefined;
-  const snippetParts = snippet ? highlightKeywords(snippet, keyword) : null;
+  const snippetParts = snippet !== undefined && snippet.length > 0 ? highlightKeywords(snippet, keyword) : null;
 
   return (
     <ListItem disablePadding alignItems="flex-start">
@@ -97,7 +97,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
                     )
                   ))}
                 </Box>
-                {snippetParts && snippetParts.length > 0 && (
+                {snippetParts !== null && snippetParts.length > 0 && (
                   <Box component="span" display="block" mt={0.5}>
                     {snippetParts.map((part: { text: string; highlight: boolean }, idx: number) => (
                       part.highlight ? (

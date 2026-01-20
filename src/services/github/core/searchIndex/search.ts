@@ -92,7 +92,7 @@ function buildSnippet(body: string, keyword: string): string | undefined {
   if (hitIndex >= 0) {
     start = Math.max(0, hitIndex - SNIPPET_CONTEXT);
   }
-  let end = Math.min(normalized.length, start + SNIPPET_MAX_LENGTH);
+  const end = Math.min(normalized.length, start + SNIPPET_MAX_LENGTH);
   if (end - start < SNIPPET_MAX_LENGTH && start > 0) {
     start = Math.max(0, end - SNIPPET_MAX_LENGTH);
   }
