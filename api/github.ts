@@ -195,19 +195,7 @@ const getRepoEnvConfig = (): RepoEnvConfig => {
   };
 };
 
-const getSearchIndexRepoEnvConfig = (): RepoEnvConfig => {
-  const baseRepo = getRepoEnvConfig();
-  const branch = resolveEnvValue(
-    ['SEARCH_DEFAULT_BRANCH', 'VITE_SEARCH_DEFAULT_BRANCH'],
-    baseRepo.repoBranch
-  );
-
-  return {
-    repoOwner: baseRepo.repoOwner,
-    repoName: baseRepo.repoName,
-    repoBranch: branch.length > 0 ? branch : baseRepo.repoBranch
-  };
-};
+const getSearchIndexRepoEnvConfig = (): RepoEnvConfig => getRepoEnvConfig();
 
 const encodePathSegments = (input: string): string =>
   input.split('/').map(segment => encodeURIComponent(segment)).join('/');
@@ -505,6 +493,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${encodedBranch}/${encodedPath}`;
 
       try {
+        const normalizedPath = pathParam.replace(/^\/+/, '');
+        const isWasm = normalizedPath.toLowerCase().endsWith('.wasm');
+        const isJavascript = normalizedPath.toLowerCase().endsWith('.js');
+
         if (responseTypeParam === 'binary') {
           const response = await handleRequestWithRetry(() =>
             axios.get<ArrayBuffer>(rawUrl, {
@@ -513,8 +505,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
             })
           );
 
-          res.setHeader('Content-Type', 'application/octet-stream');
+          res.setHeader('Content-Type', isWasm ? 'application/wasm' : 'application/octet-stream');
           res.status(200).send(Buffer.from(response.data));
+          return;
+        }
+
+        if (responseTypeParam === 'text') {
+          const response = await handleRequestWithRetry(() =>
+            axios.get<string>(rawUrl, {
+              headers: getAuthHeaders(),
+              responseType: 'text'
+            })
+          );
+
+          if (isJavascript) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+          } else {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          }
+          res.status(200).send(response.data);
           return;
         }
 

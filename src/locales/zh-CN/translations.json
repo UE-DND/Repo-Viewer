@@ -48,13 +48,13 @@
     "error": "搜索失败：@@message@@",
     "index": {
       "refresh": "刷新索引状态",
-      "detecting": "正在检测索引文件…",
+      "detecting": "正在检测索引产物…",
       "disabled": "已禁用索引模式，将使用 API 模式搜索。配置 ENABLED_SEARCH_INDEX 以启用索引模式。",
       "ready": "索引最新更新时间：@@time@@。支持的分支数：@@count@@。",
       "notReady": {
         "title": "未检测到可用索引",
-        "description1": "在目标仓库配置 Repo-Viewer-Search Actions",
-        "description2": "生成 @@branch@@ 分支下的索引文件"
+        "description1": "请先生成 docfind 索引产物并随站点发布",
+        "description2": "确认 manifest.json 与 docfind.js/docfind_bg.wasm 已部署"
       },
       "errors": {
         "branchMissing": {
@@ -63,23 +63,23 @@
           "description2": "在目标仓库配置 Actions 以生成索引分支"
         },
         "manifestNotFound": {
-          "title": "索引文件缺失，将使用 API 模式搜索",
-          "description1": "@@branch@@ 中未找到索引文件",
-          "description2": "检查 Actions 是否正确生成索引文件"
+          "title": "索引清单缺失，将使用 API 模式搜索",
+          "description1": "未找到 manifest.json",
+          "description2": "检查构建流程是否生成并发布索引产物"
         },
         "manifestInvalid": {
-          "title": "索引格式错误，将使用 API 模式搜索",
-          "description1": "尝试重新运行 Actions 生成索引文件"
+          "title": "索引清单格式错误，将使用 API 模式搜索",
+          "description1": "请重新生成索引产物"
         },
         "fileNotFound": {
-          "title": "索引内容缺失，将使用 API 模式搜索",
-          "description1": "被索引的文件不存在",
-          "description2": "尝试重新运行 Actions 生成索引文件"
+          "title": "索引产物缺失，将使用 API 模式搜索",
+          "description1": "未找到 docfind.js 或 docfind_bg.wasm",
+          "description2": "请重新生成索引产物"
         },
         "documentInvalid": {
-          "title": "索引文件格式错误，将使用 API 模式搜索",
+          "title": "索引结果异常，将使用 API 模式搜索",
           "description1": "索引内容损坏或格式不正确",
-          "description2": "尝试重新运行 Actions 生成索引文件"
+          "description2": "请重新生成索引产物"
         },
         "unsupportedCompression": {
           "title": "不支持的压缩格式，将使用 API 模式搜索",

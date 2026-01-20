@@ -36,14 +36,7 @@ export {
 export {
   SearchIndexManifestSchema,
   SearchIndexBranchEntrySchema,
-  SearchIndexFileDescriptorSchema,
-  SearchIndexDocumentSchema,
-  SearchIndexFileEntrySchema,
   safeValidateSearchIndexManifest,
-  safeValidateSearchIndexDocument,
   type SearchIndexManifest,
-  type SearchIndexBranchEntry,
-  type SearchIndexFileDescriptor,
-  type SearchIndexDocument,
-  type SearchIndexFileEntry
+  type SearchIndexBranchEntry
 } from './searchIndexSchemas';

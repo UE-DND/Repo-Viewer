@@ -1,8 +1,7 @@
-import { getGithubConfig, getSearchIndexConfig } from '@/config';
+import { getGithubConfig, getSearchIndexConfig } from "@/config";
 
-import type { SearchIndexDocument } from '../../schemas';
-import { createSearchIndexError, SearchIndexErrorCode } from './errors';
-import { fetchManifest, loadIndexDocument } from './fetchers';
+import { createSearchIndexError, SearchIndexErrorCode } from "./errors";
+import { fetchManifest, getDocfindSearchHandler } from "./fetchers";
 
 export interface SearchIndexSearchOptions {
   keyword: string;
@@ -22,11 +21,12 @@ export interface SearchIndexResultItem {
   binary?: boolean;
   htmlUrl?: string;
   downloadUrl?: string;
-  commit: string;
-  shortCommit: string;
   score: number;
   snippet?: string;
 }
+
+const SNIPPET_MAX_LENGTH = 180;
+const SNIPPET_CONTEXT = 60;
 
 function normalizeExtensions(extensions?: string[]): Set<string> | null {
   if (extensions === undefined) {
@@ -35,223 +35,101 @@ function normalizeExtensions(extensions?: string[]): Set<string> | null {
   const normalized = extensions
     .map(ext => ext.trim().toLowerCase())
     .filter(ext => ext.length > 0)
-    .map(ext => (ext.startsWith('.') ? ext.slice(1) : ext));
+    .map(ext => (ext.startsWith(".") ? ext.slice(1) : ext));
   return normalized.length > 0 ? new Set(normalized) : null;
 }
 
-const WORD_TOKEN_PATTERN = /[\p{L}\p{N}_]{2,}/gu;
-const HAN_SEQUENCE_PATTERN = /[\p{Script=Han}]+/gu;
-const HAN_CHAR_PATTERN = /[\p{Script=Han}]/u;
-
 function resolveEntryName(filePath: string): string {
-  return filePath.split('/').pop() ?? filePath;
+  return filePath.split("/").pop() ?? filePath;
 }
 
 function resolveEntryExtension(filePath: string): string {
   const name = resolveEntryName(filePath);
-  const dotIndex = name.lastIndexOf('.');
+  const dotIndex = name.lastIndexOf(".");
   if (dotIndex <= 0 || dotIndex === name.length - 1) {
-    return '';
+    return "";
   }
   return name.slice(dotIndex + 1).toLowerCase();
 }
 
-function resolveDocumentBaseUrls(document: SearchIndexDocument): { raw?: string; html?: string } {
-  if (document.baseUrls !== undefined) {
-    return {
-      raw: document.baseUrls.raw,
-      html: document.baseUrls.html
-    };
+function resolveDocPath(result: Record<string, unknown>): string | null {
+  const pathValue = result["path"];
+  if (typeof pathValue === "string" && pathValue.trim().length > 0) {
+    return pathValue;
+  }
+  const hrefValue = result["href"];
+  if (typeof hrefValue === "string" && hrefValue.trim().length > 0) {
+    return hrefValue;
+  }
+  return null;
+}
+
+function normalizeBody(body: string): string {
+  return body.replace(/\s+/g, " ").trim();
+}
+
+function buildSnippet(body: string, keyword: string): string | undefined {
+  const normalized = normalizeBody(body);
+  if (normalized.length === 0) {
+    return undefined;
   }
 
+  const tokens = keyword
+    .split(/\s+/)
+    .map(token => token.trim().toLowerCase())
+    .filter(token => token.length > 0);
+
+  const lowerBody = normalized.toLowerCase();
+  let hitIndex = -1;
+  for (const token of tokens) {
+    const index = lowerBody.indexOf(token);
+    if (index >= 0 && (hitIndex === -1 || index < hitIndex)) {
+      hitIndex = index;
+    }
+  }
+
+  let start = 0;
+  if (hitIndex >= 0) {
+    start = Math.max(0, hitIndex - SNIPPET_CONTEXT);
+  }
+  let end = Math.min(normalized.length, start + SNIPPET_MAX_LENGTH);
+  if (end - start < SNIPPET_MAX_LENGTH && start > 0) {
+    start = Math.max(0, end - SNIPPET_MAX_LENGTH);
+  }
+
+  let snippet = normalized.slice(start, end).trim();
+  if (snippet.length === 0) {
+    return undefined;
+  }
+  if (start > 0) {
+    snippet = `…${snippet}`;
+  }
+  if (end < normalized.length) {
+    snippet = `${snippet}…`;
+  }
+  return snippet;
+}
+
+function buildGithubUrls(branch: string, filePath: string): { htmlUrl?: string; downloadUrl?: string } {
   const { repoOwner, repoName } = getGithubConfig();
-  if (repoOwner.trim() === '' || repoName.trim() === '') {
+  if (repoOwner.trim() === "" || repoName.trim() === "") {
     return {};
   }
-
   const safeOwner = encodeURIComponent(repoOwner);
   const safeRepo = encodeURIComponent(repoName);
-  const safeCommit = encodeURIComponent(document.commit);
+  const safeBranch = branch.split("/").map(encodeURIComponent).join("/");
+  const normalizedPath = filePath.replace(/^\/+/u, "");
+  const encodedPath = normalizedPath.split("/").map(encodeURIComponent).join("/");
   return {
-    raw: `https://raw.githubusercontent.com/${safeOwner}/${safeRepo}/${safeCommit}`,
-    html: `https://github.com/${safeOwner}/${safeRepo}/blob/${safeCommit}`
+    htmlUrl: `https://github.com/${safeOwner}/${safeRepo}/blob/${safeBranch}/${encodedPath}`,
+    downloadUrl: `https://raw.githubusercontent.com/${safeOwner}/${safeRepo}/${safeBranch}/${encodedPath}`
   };
-}
-
-function normalizeToken(token: string): string | undefined {
-  const normalized = token.trim().toLowerCase();
-  if (normalized.length > 64) {
-    return undefined;
-  }
-  const hasHan = HAN_CHAR_PATTERN.test(normalized);
-  const minLength = hasHan ? 2 : 3;
-  if (normalized.length < minLength) {
-    return undefined;
-  }
-  return normalized;
-}
-
-function tokenizeKeyword(keyword: string): string[] {
-  const seen = new Set<string>();
-  const matches = keyword.match(WORD_TOKEN_PATTERN);
-  if (matches !== null) {
-    for (const token of matches) {
-      const normalized = normalizeToken(token);
-      if (normalized !== undefined && !seen.has(normalized)) {
-        seen.add(normalized);
-      }
-    }
-  }
-
-  const hanMatches = keyword.match(HAN_SEQUENCE_PATTERN);
-  if (hanMatches !== null) {
-    for (const sequence of hanMatches) {
-      const chars = Array.from(sequence);
-      if (chars.length < 2) {
-        continue;
-      }
-      for (let i = 0; i < chars.length - 1; i += 1) {
-        const first = chars[i];
-        const second = chars[i + 1];
-        if (first === undefined || second === undefined) {
-          continue;
-        }
-        const bigram = `${first}${second}`;
-        const normalized = normalizeToken(bigram);
-        if (normalized !== undefined && !seen.has(normalized)) {
-          seen.add(normalized);
-        }
-      }
-    }
-  }
-
-  return Array.from(seen);
-}
-
-function resolveCandidateIndexes(document: SearchIndexDocument, keyword: string): number[] | null {
-  const tokens = tokenizeKeyword(keyword);
-  if (tokens.length === 0) {
-    return null;
-  }
-
-  const index = document.invertedIndex.tokens;
-
-  const candidates = new Set<number>();
-  for (const token of tokens) {
-    const hitList = index[token];
-    if (!Array.isArray(hitList)) {
-      continue;
-    }
-    for (const value of hitList) {
-      candidates.add(value);
-    }
-  }
-
-  if (candidates.size === 0) {
-    return null;
-  }
-
-  return Array.from(candidates);
-}
-
-function scoreMatch(path: string, keyword: string): {
-  matched: boolean;
-  score: number;
-} {
-  const normalizedKeyword = keyword.toLowerCase();
-  let score = 0;
-
-  const pathLower = path.toLowerCase();
-  const nameLower = resolveEntryName(path).toLowerCase();
-
-  if (nameLower.includes(normalizedKeyword)) {
-    score += 5;
-  }
-
-  if (pathLower.includes(normalizedKeyword)) {
-    score += 3;
-  }
-
-  const matched = score > 0;
-  return { matched, score };
-}
-
-function collectBranchResults(
-  branch: string,
-  documents: SearchIndexDocument[],
-  keyword: string,
-  extensionFilter: Set<string> | null,
-  pathPrefix: string,
-  limit: number,
-  results: SearchIndexResultItem[]
-): void {
-  for (const document of documents) {
-    const baseUrls = resolveDocumentBaseUrls(document);
-    const candidateIndexes = resolveCandidateIndexes(document, keyword);
-    const candidates = candidateIndexes === null
-      ? document.files.map((entry) => entry)
-      : candidateIndexes
-        .map((index) => document.files[index])
-        .filter((entry): entry is string => typeof entry === 'string');
-
-    for (const entry of candidates) {
-      if (pathPrefix.length > 0 && !entry.toLowerCase().startsWith(pathPrefix)) {
-        continue;
-      }
-
-      if (extensionFilter !== null) {
-        const extension = resolveEntryExtension(entry);
-        if (!extensionFilter.has(extension)) {
-          continue;
-        }
-      }
-
-      const { matched, score } = scoreMatch(entry, keyword);
-      if (!matched) {
-        continue;
-      }
-
-      const name = resolveEntryName(entry);
-      const resultItem: SearchIndexResultItem = {
-        branch,
-        path: entry,
-        name,
-        commit: document.commit,
-        shortCommit: document.shortCommit,
-        score
-      };
-
-      const extension = resolveEntryExtension(entry);
-      if (extension !== '') {
-        resultItem.extension = extension;
-      }
-
-      const normalizedPath = entry.replace(/^\/+/u, '');
-      if (baseUrls.html !== undefined) {
-        resultItem.htmlUrl = `${baseUrls.html}/${normalizedPath}`;
-      }
-
-      if (baseUrls.raw !== undefined) {
-        resultItem.downloadUrl = `${baseUrls.raw}/${normalizedPath}`;
-      }
-
-      results.push(resultItem);
-
-      if (results.length >= limit) {
-        return;
-      }
-    }
-
-    if (results.length >= limit) {
-      return;
-    }
-  }
 }
 
 export async function searchIndex(options: SearchIndexSearchOptions): Promise<SearchIndexResultItem[]> {
   const config = getSearchIndexConfig();
   if (!config.enabled) {
-    throw createSearchIndexError(SearchIndexErrorCode.DISABLED, 'Search index feature is disabled');
+    throw createSearchIndexError(SearchIndexErrorCode.DISABLED, "Search index feature is disabled");
   }
 
   const keyword = options.keyword.trim();
@@ -260,60 +138,98 @@ export async function searchIndex(options: SearchIndexSearchOptions): Promise<Se
   }
 
   const manifest = await fetchManifest(options.signal);
-  const manifestDefaultBranch = manifest.repository.defaultBranch.trim().length > 0
-    ? manifest.repository.defaultBranch
-    : config.defaultBranch;
+  const manifestBranches = Object.keys(manifest.branches);
+  if (manifestBranches.length === 0) {
+    throw createSearchIndexError(
+      SearchIndexErrorCode.INDEX_BRANCH_NOT_INDEXED,
+      "No indexed branches found"
+    );
+  }
 
   const requestedBranches = options.branches !== undefined && options.branches.length > 0
     ? options.branches
-    : [manifestDefaultBranch];
+    : [config.defaultBranch];
 
-  const normalizedBranches = requestedBranches
+  let candidateBranches = requestedBranches
     .map(branch => branch.trim())
-    .filter(branch => branch.length > 0)
-    .filter(branch => branch !== config.indexBranch);
+    .filter(branch => branch.length > 0);
 
-  let candidateBranches = Array.from(new Set(normalizedBranches));
   if (candidateBranches.length === 0) {
-    candidateBranches = Object.keys(manifest.branches);
+    candidateBranches = manifestBranches;
   }
 
   const indexedBranches = candidateBranches.filter(branch => manifest.branches[branch] !== undefined);
   if (indexedBranches.length === 0) {
     throw createSearchIndexError(
       SearchIndexErrorCode.INDEX_BRANCH_NOT_INDEXED,
-      'No indexed branches found for search request',
-      { branch: candidateBranches.join(', ') }
+      "No indexed branches found for search request",
+      { branch: candidateBranches.join(", ") }
     );
   }
 
   const extensionFilter = normalizeExtensions(options.extensions);
-  const pathPrefix = options.pathPrefix?.trim().toLowerCase() ?? '';
+  const pathPrefix = options.pathPrefix?.trim().toLowerCase() ?? "";
   const limit = options.limit ?? 100;
 
   const results: SearchIndexResultItem[] = [];
 
   for (const branch of indexedBranches) {
-    const branchInfo = manifest.branches[branch];
-    if (branchInfo === undefined) {
-      continue;
-    }
+    const searchHandler = await getDocfindSearchHandler(branch, options.signal);
+    const branchResults = await searchHandler(keyword, limit);
 
-    const documents: SearchIndexDocument[] = [];
-    for (const descriptor of branchInfo.indexFiles) {
-      const document = await loadIndexDocument(descriptor, config.indexBranch, options.signal);
-      documents.push(document);
-    }
+    for (const rawResult of branchResults) {
+      if (typeof rawResult !== "object" || rawResult === null) {
+        continue;
+      }
+      const result = rawResult as Record<string, unknown>;
+      const path = resolveDocPath(result);
+      if (path === null) {
+        continue;
+      }
 
-    collectBranchResults(
-      branch,
-      documents,
-      keyword,
-      extensionFilter,
-      pathPrefix,
-      limit,
-      results
-    );
+      if (pathPrefix.length > 0 && !path.toLowerCase().startsWith(pathPrefix)) {
+        continue;
+      }
+
+      const extension = resolveEntryExtension(path);
+      if (extensionFilter !== null && !extensionFilter.has(extension)) {
+        continue;
+      }
+
+      const name = resolveEntryName(path);
+      const scoreValue = result["score"];
+      const score = typeof scoreValue === "number" ? scoreValue : 0;
+      const bodyValue = result["body"];
+      const body = typeof bodyValue === "string" ? bodyValue : "";
+      const snippet = body.length > 0 ? buildSnippet(body, keyword) : undefined;
+      const urls = buildGithubUrls(branch, path);
+
+      const item: SearchIndexResultItem = {
+        branch,
+        path,
+        name,
+        score
+      };
+
+      if (extension.length > 0) {
+        item.extension = extension;
+      }
+      if (snippet !== undefined) {
+        item.snippet = snippet;
+      }
+      if (urls.htmlUrl !== undefined) {
+        item.htmlUrl = urls.htmlUrl;
+      }
+      if (urls.downloadUrl !== undefined) {
+        item.downloadUrl = urls.downloadUrl;
+      }
+
+      results.push(item);
+
+      if (results.length >= limit) {
+        break;
+      }
+    }
 
     if (results.length >= limit) {
       break;

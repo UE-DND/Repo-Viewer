@@ -52,8 +52,8 @@ export class ConfigValidator {
       return;
     }
 
-    if (searchIndex.indexBranch.trim() === '') {
-      throw new Error('搜索索引配置不完整：缺少 indexBranch');
+    if (!['build', 'action', 'off'].includes(searchIndex.generationMode)) {
+      throw new Error('搜索索引配置不合法：generationMode 仅支持 build/action/off');
     }
 
     if (searchIndex.defaultBranch.trim() === '') {
@@ -62,6 +62,10 @@ export class ConfigValidator {
 
     if (searchIndex.manifestPath.trim() === '') {
       throw new Error('搜索索引配置不完整：缺少 manifestPath');
+    }
+
+    if (searchIndex.assetBasePath.trim() === '') {
+      throw new Error('搜索索引配置不完整：缺少 assetBasePath');
     }
 
     if (searchIndex.refreshIntervalMs < CONFIG_DEFAULTS.SEARCH_INDEX_MIN_REFRESH_INTERVAL_MS) {

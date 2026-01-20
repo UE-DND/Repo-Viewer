@@ -1,23 +1,19 @@
-import type { SearchIndexManifest, SearchIndexDocument, SearchIndexFileDescriptor } from '../../schemas';
+import type { SearchIndexManifest } from '../../schemas';
 
 interface ManifestCacheEntry {
   data: SearchIndexManifest;
   fetchedAt: number;
 }
 
-interface IndexCacheEntry {
-  document: SearchIndexDocument;
-  fetchedAt: number;
-}
+export type DocfindSearchHandler = (query: string, limit?: number) => Promise<unknown[]>;
 
-interface BranchCacheEntry {
-  exists: boolean;
-  fetchedAt: number;
+interface ModuleCacheEntry {
+  search: DocfindSearchHandler;
+  hash: string;
 }
 
 let manifestCache: ManifestCacheEntry | null = null;
-const indexCache = new Map<string, IndexCacheEntry>();
-const branchExistenceCache = new Map<string, BranchCacheEntry>();
+const moduleCache = new Map<string, ModuleCacheEntry>();
 
 export function getManifestCache(): ManifestCacheEntry | null {
   return manifestCache;
@@ -27,29 +23,15 @@ export function setManifestCache(entry: ManifestCacheEntry | null): void {
   manifestCache = entry;
 }
 
-export function getIndexCacheEntry(cacheKey: string): IndexCacheEntry | undefined {
-  return indexCache.get(cacheKey);
+export function getModuleCacheEntry(branch: string): ModuleCacheEntry | undefined {
+  return moduleCache.get(branch);
 }
 
-export function setIndexCacheEntry(cacheKey: string, entry: IndexCacheEntry): void {
-  indexCache.set(cacheKey, entry);
-}
-
-export function getBranchExistenceCache(branch: string): BranchCacheEntry | undefined {
-  return branchExistenceCache.get(branch);
-}
-
-export function setBranchExistenceCache(branch: string, entry: BranchCacheEntry): void {
-  branchExistenceCache.set(branch, entry);
+export function setModuleCacheEntry(branch: string, entry: ModuleCacheEntry): void {
+  moduleCache.set(branch, entry);
 }
 
 export function clearCaches(): void {
   manifestCache = null;
-  indexCache.clear();
-  branchExistenceCache.clear();
+  moduleCache.clear();
 }
-
-export function getCacheKeyForDescriptor(descriptor: SearchIndexFileDescriptor): string {
-  return `${descriptor.path}@${descriptor.sha256 ?? ''}`;
-}
-
