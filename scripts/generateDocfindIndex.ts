@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { once } from "events";
 import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
@@ -317,22 +318,45 @@ const hashFile = async (filePath: string): Promise<string> => {
   });
 };
 
-// 准备临时仓库目录，必要时走带 token 的 clone URL
+// 构建带或不带 token 的仓库远端地址
+const buildRemoteUrl = (repoOwner: string, repoName: string, token?: string): string => {
+  const safeOwner = encodeURIComponent(repoOwner);
+  const safeName = encodeURIComponent(repoName);
+  if (token && token.trim().length > 0) {
+    return `https://${encodeURIComponent("x-access-token")}:${encodeURIComponent(token)}@github.com/${safeOwner}/${safeName}.git`;
+  }
+  return `https://github.com/${safeOwner}/${safeName}.git`;
+};
+
+// 生成远端地址候选列表 依次尝试不同 token
+const buildRemoteCandidates = (repoOwner: string, repoName: string, tokens: string[]): string[] => {
+  const uniqueTokens = Array.from(
+    new Set(tokens.map((token) => token.trim()).filter((token) => token.length > 0))
+  );
+  const candidates = uniqueTokens.map((token) => buildRemoteUrl(repoOwner, repoName, token));
+  const fallback = buildRemoteUrl(repoOwner, repoName);
+  if (!candidates.includes(fallback)) {
+    candidates.push(fallback);
+  }
+  return candidates;
+};
+
+// 更新远端地址 用于在不同 token 间切换
+const updateRemoteUrl = async (repoPath: string, remoteUrl: string): Promise<void> => {
+  await runCommandText("git", ["remote", "set-url", "origin", remoteUrl], repoPath);
+};
+
+// 准备临时仓库目录并初始化远端
 const ensureTempRepo = async (
   rootDir: string,
   repoOwner: string,
-  repoName: string,
-  token: string | undefined
+  repoName: string
 ): Promise<string> => {
   const tempRoot = path.join(rootDir, ".docfind", "tmp");
   await fs.promises.mkdir(tempRoot, { recursive: true });
   const repoPath = await fs.promises.mkdtemp(path.join(tempRoot, "repo-"));
 
-  const safeOwner = encodeURIComponent(repoOwner);
-  const safeName = encodeURIComponent(repoName);
-  const remoteUrl = token && token.trim().length > 0
-    ? `https://${encodeURIComponent("x-access-token")}:${encodeURIComponent(token)}@github.com/${safeOwner}/${safeName}.git`
-    : `https://github.com/${safeOwner}/${safeName}.git`;
+  const remoteUrl = buildRemoteUrl(repoOwner, repoName);
 
   await runCommandText("git", ["init", repoPath], rootDir);
   await runCommandText("git", ["remote", "add", "origin", remoteUrl], repoPath);
@@ -342,21 +366,32 @@ const ensureTempRepo = async (
 
 // 远端分支缺失时返回 null 继续后续分支
 // 只拉取单个分支，用于多分支索引生成
-const fetchBranch = async (repoPath: string, branch: string): Promise<string | null> => {
+const fetchBranch = async (
+  repoPath: string,
+  branch: string,
+  remoteUrls: string[]
+): Promise<string | null> => {
   const remoteRef = `refs/remotes/origin/${branch}`;
-  try {
-    console.log(`[docfind] Fetching ${branch}...`);
-    await runCommand(
-      "git",
-      ["fetch", "--depth", "1", "--no-tags", "--progress", "origin", `${branch}:${remoteRef}`],
-      repoPath
-    );
-    console.log(`[docfind] Fetched ${branch}`);
-    return remoteRef;
-  } catch (error) {
-    console.warn(`[docfind] Failed to fetch branch ${branch}:`, error);
-    return null;
+  let lastError: unknown = null;
+
+  for (const remoteUrl of remoteUrls) {
+    try {
+      await updateRemoteUrl(repoPath, remoteUrl);
+      console.log(`[docfind] Fetching ${branch}...`);
+      await runCommand(
+        "git",
+        ["fetch", "--depth", "1", "--no-tags", "--progress", "origin", `${branch}:${remoteRef}`],
+        repoPath
+      );
+      console.log(`[docfind] Fetched ${branch}`);
+      return remoteRef;
+    } catch (error) {
+      lastError = error;
+    }
   }
+
+  console.warn(`[docfind] Failed to fetch branch ${branch}:`, lastError);
+  return null;
 };
 
 // 解析可用的分支引用（本地/远端）
@@ -392,8 +427,9 @@ const buildDocumentsForBranch = async (
   branchRef: string,
   branchName: string,
   extensionWhitelist: Set<string>,
-  maxFileSize: number
-): Promise<{ documents: Record<string, unknown>[]; skipped: number }> => {
+  maxFileSize: number,
+  payloadPath: string
+): Promise<{ documentCount: number; skipped: number }> => {
   console.log(`[docfind] Checking out ${branchName}...`);
   await checkoutBranch(repoPath, branchRef);
 
@@ -401,69 +437,94 @@ const buildDocumentsForBranch = async (
   const filePaths = await listTrackedFiles(repoPath);
   console.log(`[docfind] ${branchName}: ${filePaths.length} tracked files`);
 
-  const documents: Record<string, unknown>[] = [];
+  const stream = fs.createWriteStream(payloadPath, { encoding: "utf8" });
+  const writeChunk = async (chunk: string): Promise<void> => {
+    if (!stream.write(chunk)) {
+      await once(stream, "drain");
+    }
+  };
+
+  let documentCount = 0;
   let skipped = 0;
+
+  await writeChunk("[\n");
 
   // 路径永远进入索引 内容根据白名单与大小判断
   // 所有已跟踪文件都会建立“路径索引”，内容仅白名单内写入
-  for (const filePath of filePaths) {
-    const normalizedPath = toPosixPath(filePath);
-    const extension = resolveExtension(normalizedPath);
+  try {
+    for (const filePath of filePaths) {
+      const normalizedPath = toPosixPath(filePath);
+      const extension = resolveExtension(normalizedPath);
 
-    const absolutePath = path.join(repoPath, filePath);
-    let stats: fs.Stats;
-    try {
-      stats = await fs.promises.stat(absolutePath);
-    } catch (error) {
-      console.warn(`[docfind] Failed to stat ${branchName}:${normalizedPath}`, error);
-      skipped += 1;
-      continue;
-    }
-    if (!stats.isFile()) {
-      skipped += 1;
-      continue;
-    }
-
-    const fileName = path.posix.basename(normalizedPath);
-    let body = normalizedPath;
-
-    // 白名单内且体积符合时才读取内容，避免大文件拖慢索引
-    if (extensionWhitelist.has(extension) && stats.size <= maxFileSize) {
-      let contentBuffer: Buffer;
+      const absolutePath = path.join(repoPath, filePath);
+      let stats: fs.Stats;
       try {
-        contentBuffer = await fs.promises.readFile(absolutePath);
+        stats = await fs.promises.stat(absolutePath);
       } catch (error) {
-        console.warn(`[docfind] Failed to read ${branchName}:${normalizedPath}`, error);
-        documents.push({
-          title: fileName,
-          category: extension,
-          href: normalizedPath,
-          path: normalizedPath,
-          branch: branchName,
-          extension,
-          body
-        });
+        console.warn(`[docfind] Failed to stat ${branchName}:${normalizedPath}`, error);
+        skipped += 1;
+        continue;
+      }
+      if (!stats.isFile()) {
+        skipped += 1;
         continue;
       }
 
-      if (!isBinaryBuffer(contentBuffer)) {
-        const contentText = contentBuffer.toString("utf8");
-        body = `${normalizedPath}\n${contentText}`;
+      const fileName = path.posix.basename(normalizedPath);
+      let body = normalizedPath;
+
+      // 白名单内且体积符合时才读取内容，避免大文件拖慢索引
+      if (extensionWhitelist.has(extension) && stats.size <= maxFileSize) {
+        let contentBuffer: Buffer;
+        try {
+          contentBuffer = await fs.promises.readFile(absolutePath);
+        } catch (error) {
+          console.warn(`[docfind] Failed to read ${branchName}:${normalizedPath}`, error);
+          const doc = {
+            title: fileName,
+            category: extension,
+            href: normalizedPath,
+            path: normalizedPath,
+            branch: branchName,
+            extension,
+            body
+          };
+          await writeChunk(`${documentCount > 0 ? ",\n" : ""}${JSON.stringify(doc)}`);
+          documentCount += 1;
+          continue;
+        }
+
+        if (!isBinaryBuffer(contentBuffer)) {
+          const contentText = contentBuffer.toString("utf8");
+          body = `${normalizedPath}\n${contentText}`;
+        }
       }
+
+      const doc = {
+        title: fileName,
+        category: extension,
+        href: normalizedPath,
+        path: normalizedPath,
+        branch: branchName,
+        extension,
+        body
+      };
+      await writeChunk(`${documentCount > 0 ? ",\n" : ""}${JSON.stringify(doc)}`);
+      documentCount += 1;
     }
 
-    documents.push({
-      title: fileName,
-      category: extension,
-      href: normalizedPath,
-      path: normalizedPath,
-      branch: branchName,
-      extension,
-      body
+    await writeChunk("\n]\n");
+    await new Promise<void>((resolve, reject) => {
+      stream.on("error", reject);
+      stream.on("finish", () => resolve());
+      stream.end();
     });
+  } catch (error) {
+    stream.destroy();
+    throw error;
   }
 
-  return { documents, skipped };
+  return { documentCount, skipped };
 };
 
 // 生成分支索引前清空目录
@@ -544,9 +605,10 @@ const run = async (): Promise<void> => {
   // 本地路径优先 否则拉取远端
   const repoPath = resolveEnvValue(["DOCFIND_REPO_PATH"], "");
   const tokens = collectTokens();
+  const remoteCandidates = buildRemoteCandidates(repoOwner, repoName, tokens);
   const tempRepoPath = repoPath.length > 0
     ? path.resolve(rootDir, repoPath)
-    : await ensureTempRepo(rootDir, repoOwner, repoName, tokens[0]);
+    : await ensureTempRepo(rootDir, repoOwner, repoName);
 
   if (repoPath.length === 0) {
     console.log(`[docfind] Temporary repo at ${tempRepoPath}`);
@@ -562,35 +624,35 @@ const run = async (): Promise<void> => {
     // action 模式使用 fetch 本地模式走 ref 解析
     const branchRef = repoPath.length > 0
       ? await resolveBranchRef(tempRepoPath, branch)
-      : await fetchBranch(tempRepoPath, branch);
+      : await fetchBranch(tempRepoPath, branch, remoteCandidates);
 
     if (!branchRef) {
       console.warn(`[docfind] Skip missing branch: ${branch}`);
       continue;
     }
 
-    const { documents, skipped } = await buildDocumentsForBranch(
+    // docfind 输入为结构化 JSON
+    const tempDir = path.join(rootDir, ".docfind", "payloads");
+    await fs.promises.mkdir(tempDir, { recursive: true });
+    const branchSegments = branch.split("/").filter((segment: string) => segment.length > 0);
+    const payloadPath = path.join(tempDir, `${branchSegments.join("-") || "default"}.json`);
+
+    const { documentCount, skipped } = await buildDocumentsForBranch(
       tempRepoPath,
       branchRef,
       branch,
       extensionWhitelist,
-      safeMaxFileSize
+      safeMaxFileSize,
+      payloadPath
     );
 
-    if (documents.length === 0) {
+    if (documentCount === 0) {
       console.warn(`[docfind] Skip branch with no documents: ${branch} (skipped ${skipped})`);
       continue;
     }
 
-    const branchSegments = branch.split("/").filter((segment: string) => segment.length > 0);
     const branchDir = path.join(outputRoot, ...branchSegments);
     await ensureEmptyDir(branchDir);
-
-    // docfind 输入为结构化 JSON
-    const tempDir = path.join(rootDir, ".docfind", "payloads");
-    await fs.promises.mkdir(tempDir, { recursive: true });
-    const payloadPath = path.join(tempDir, `${branchSegments.join("-") || "default"}.json`);
-    await fs.promises.writeFile(payloadPath, `${JSON.stringify(documents, null, 2)}\n`, "utf8");
 
     console.log(`[docfind] Running docfind for ${branch}...`);
     await runCommand(docfindBin, [payloadPath, branchDir], rootDir);
@@ -604,11 +666,11 @@ const run = async (): Promise<void> => {
     manifest.branches[branch] = {
       docfindPath,
       hash,
-      fileCount: documents.length,
+      fileCount: documentCount,
       generatedAt: new Date().toISOString()
     };
 
-    console.log(`[docfind] Built ${branch}: ${documents.length} documents (${skipped} skipped)`);
+    console.log(`[docfind] Built ${branch}: ${documentCount} documents (${skipped} skipped)`);
   }
 
   await fs.promises.mkdir(path.dirname(manifestOutputPath), { recursive: true });

@@ -53,7 +53,7 @@ export const parseList = (value: string | undefined): string[] => {
 };
 
 export const collectTokens = (
-  prefixes: string[] = ["GITHUB_PAT", "VITE_GITHUB_PAT"],
+  prefixes: string[] = ["GITHUB_PAT", "VITE_GITHUB_PAT", "GITHUB_TOKEN"],
   env: NodeJS.ProcessEnv = process.env
 ): string[] => {
   const tokens: string[] = [];
