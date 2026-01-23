@@ -17,5 +17,7 @@ yarn-error.log*
 coverage
 .temp
 .tmp
+.docfind
 report
 src/generated/
+public/search-index/

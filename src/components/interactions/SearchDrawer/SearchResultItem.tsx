@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { GitHub as GitHubIcon } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
-import { highlightKeyword, resolveItemHtmlUrl } from "./utils";
+import { highlightKeyword, highlightKeywords, resolveItemHtmlUrl } from "./utils";
 import type { RepoSearchItem } from "@/hooks/github/useRepoSearch";
 import { useI18n } from "@/contexts/I18nContext";
 
@@ -40,6 +40,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
   const snippet = ("snippet" in item && typeof (item as { snippet?: unknown }).snippet === "string")
     ? (item as { snippet?: string }).snippet
     : undefined;
+  const snippetParts = snippet !== undefined && snippet.length > 0 ? highlightKeywords(snippet, keyword) : null;
 
   return (
     <ListItem disablePadding alignItems="flex-start">
@@ -96,9 +97,24 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
                     )
                   ))}
                 </Box>
-                {typeof snippet === "string" && snippet.trim().length > 0 && (
+                {snippetParts !== null && snippetParts.length > 0 && (
                   <Box component="span" display="block" mt={0.5}>
-                    {snippet.trim()}
+                    {snippetParts.map((part: { text: string; highlight: boolean }, idx: number) => (
+                      part.highlight ? (
+                        <Box
+                          component="span"
+                          key={idx}
+                          sx={{
+                            color: (theme) => theme.palette.primary.main,
+                            fontWeight: 600
+                          }}
+                        >
+                          {part.text}
+                        </Box>
+                      ) : (
+                        <Box component="span" key={idx}>{part.text}</Box>
+                      )
+                    ))}
                   </Box>
                 )}
               </Box>

@@ -2,7 +2,6 @@ import { getSearchIndexConfig } from '@/config';
 
 import type { SearchIndexManifest } from '../../schemas';
 import {
-  checkIndexBranchExists,
   fetchManifest,
   invalidateSearchIndexCache as clearSearchIndexCache,
   prefetchSearchIndexForBranch as prefetchBranch,
@@ -37,15 +36,6 @@ export async function ensureSearchIndexReady(signal?: AbortSignal): Promise<void
     throw createSearchIndexError(SearchIndexErrorCode.DISABLED, 'Search index feature is disabled');
   }
 
-  const branchExists = await checkIndexBranchExists(signal);
-  if (!branchExists) {
-    throw createSearchIndexError(
-      SearchIndexErrorCode.INDEX_BRANCH_MISSING,
-      'Search index branch does not exist',
-      { branch: config.indexBranch }
-    );
-  }
-
   await fetchManifest(signal);
 }
 
@@ -58,6 +48,7 @@ export async function prefetchSearchIndexForBranch(branch: string, signal?: Abor
   return prefetchBranch(branch, signal);
 }
 
+
 export function invalidateSearchIndexCache(): void {
   clearSearchIndexCache();
 }
@@ -65,4 +56,3 @@ export function invalidateSearchIndexCache(): void {
 export async function refreshSearchIndex(signal?: AbortSignal): Promise<SearchIndexManifest> {
   return refreshSearchIndexManifest(signal);
 }
-

@@ -2,11 +2,9 @@ import React, { useMemo, useEffect, useState, useCallback } from "react";
 import { Box } from "@mui/material";
 import { List, useListCallbackRef } from "react-window";
 import { AutoSizer } from "react-virtualized-auto-sizer";
-import { motion } from "framer-motion";
 import AlphabetIndex from "./AlphabetIndex";
 import { RowComponent } from "./FileListRow";
 import { FILE_ITEM_CONFIG, LIST_HEIGHT_CONFIG } from "./utils/fileListConfig";
-import { listAnimationVariants } from "./utils/fileListAnimations";
 import { calculateLayoutMetrics } from "./utils/fileListLayout";
 import type { VirtualListItemData, FileListLayoutMetrics } from "./utils/types";
 import type { GitHubContent } from "@/types";
@@ -295,16 +293,14 @@ const FileList = React.memo<FileListProps>(
           role="list"
           aria-label={`文件列表，共 ${String(contents.length)} 项`}
         >
-          <motion.div
+          <Box
             style={{
               width: "100%",
               paddingTop: listPadding.paddingTop,
               paddingBottom: listPadding.paddingBottom,
             }}
             key={currentPath}
-            variants={listAnimationVariants}
-            initial="hidden"
-            animate="visible"
+            className="file-list-fade-in"
           >
             {contents.map((item, index) => (
               <div key={`${item.name}-${String(index)}`} style={{ height: rowHeight }}>
@@ -320,7 +316,7 @@ const FileList = React.memo<FileListProps>(
                 />
               </div>
             ))}
-          </motion.div>
+          </Box>
         </Box>
       );
     }
@@ -343,12 +339,10 @@ const FileList = React.memo<FileListProps>(
           role="list"
           aria-label={`文件列表，共 ${String(contents.length)} 项`}
         >
-          <motion.div
+          <Box
             style={{ height: "100%", width: "100%" }}
             key={currentPath}
-            variants={listAnimationVariants}
-            initial="hidden"
-            animate="visible"
+            className="file-list-fade-in"
           >
             <AutoSizer
               renderProp={({ width, height }) => {
@@ -370,7 +364,7 @@ const FileList = React.memo<FileListProps>(
                 );
               }}
             />
-          </motion.div>
+          </Box>
         </Box>
 
         {/* 右侧悬停触发区域 */}

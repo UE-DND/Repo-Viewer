@@ -85,7 +85,7 @@ const ScrollToTopFab: FC<ScrollToTopFabProps> = ({
     }
 
     setIsScrolling(true);
-    void scroll.scrollToTop({ duration: scrollDuration }).then(() => {
+    void scroll.scrollToTop({ duration: scrollDuration }).finally(() => {
       setIsScrolling(false);
     });
   }, [scrollDuration, isScrolling]);

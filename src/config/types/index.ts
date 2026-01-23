@@ -25,9 +25,10 @@ export interface Config {
     };
     searchIndex: {
       enabled: boolean;
-      indexBranch: string;
+      generationMode: 'build' | 'action' | 'off';
       defaultBranch: string;
       manifestPath: string;
+      assetBasePath: string;
       refreshIntervalMs: number;
     };
     footer: {

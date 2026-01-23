@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect, useCallback } from "react";
+import { memo, useState, useRef, useEffect, useCallback, type AnimationEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -38,18 +38,9 @@ export type InternalLinkClickHandler = (relativePath: string) => void;
 export interface ExtendedMarkdownPreviewProps extends MarkdownPreviewProps {
   /** 内部链接点击处理器（由父组件提供） */
   onInternalLinkClick?: InternalLinkClickHandler;
+  /** 渲染完成回调（用于滚动或后续处理） */
+  onRenderComplete?: () => void;
 }
-
-/**
- * fadeIn 动画样式（静态定义，避免重复创建）
- */
-const fadeInAnimationStyles = {
-  "@keyframes markdownFadeIn": {
-    from: { opacity: 0 },
-    to: { opacity: 1 }
-  },
-  animation: "markdownFadeIn 0.25s ease forwards",
-} as const;
 
 /**
  * Markdown预览组件
@@ -67,6 +58,7 @@ const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
     lazyLoad = true,
     currentBranch,
     onInternalLinkClick,
+    onRenderComplete,
   }) => {
     const theme = useTheme();
     const { t } = useI18n();
@@ -75,6 +67,7 @@ const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
     const [shouldRender, setShouldRender] = useState<boolean>(!lazyLoad);
     const markdownRef = useRef<HTMLDivElement>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
+    const renderCompleteRef = useRef<string | null>(null);
 
     // 图片加载状态
     const imageStateRef = useRef<ImageLoadingState>(createImageLoadingState());
@@ -91,6 +84,29 @@ const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
     const isLazyLoadEnabled = lazyLoad;
     const hasReadmeContent =
       typeof readmeContent === "string" && readmeContent.length > 0;
+    const previewPath = previewingItem?.path ?? "";
+
+    const notifyRenderComplete = useCallback((): void => {
+      if (onRenderComplete === undefined) {
+        return;
+      }
+      if (!shouldRender || !hasReadmeContent || isThemeChanging) {
+        return;
+      }
+      const renderKey = `${previewPath}:${readmeContent ?? ""}`;
+      if (renderCompleteRef.current === renderKey) {
+        return;
+      }
+      renderCompleteRef.current = renderKey;
+      onRenderComplete();
+    }, [
+      onRenderComplete,
+      shouldRender,
+      hasReadmeContent,
+      isThemeChanging,
+      previewPath,
+      readmeContent
+    ]);
 
     // 动态加载 katex 样式
     useEffect(() => {
@@ -195,6 +211,36 @@ const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
       [onInternalLinkClick]
     );
 
+    useEffect(() => {
+      if (onRenderComplete === undefined) {
+        return;
+      }
+      if (!shouldRender || !hasReadmeContent || isThemeChanging) {
+        return;
+      }
+
+      const timer = window.setTimeout(() => {
+        notifyRenderComplete();
+      }, 300);
+
+      return () => {
+        window.clearTimeout(timer);
+      };
+    }, [onRenderComplete, shouldRender, hasReadmeContent, isThemeChanging, notifyRenderComplete]);
+
+    const handleFadeInAnimationEnd = useCallback(
+      (event: AnimationEvent<HTMLDivElement>) => {
+        if (event.currentTarget !== event.target) {
+          return;
+        }
+        if (event.animationName !== "markdownFadeIn") {
+          return;
+        }
+        notifyRenderComplete();
+      },
+      [notifyRenderComplete]
+    );
+
     if (loadingReadme) {
       return (
         <MarkdownPreviewSkeleton
@@ -263,11 +309,11 @@ const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
           {shouldRender && !isThemeChanging && (
             <Box
               key={readmeContent}
-              className="markdown-body"
+              className="markdown-body markdown-fade-in"
               data-color-mode={theme.palette.mode}
               data-light-theme="light"
               data-dark-theme="dark"
-              sx={fadeInAnimationStyles}
+              onAnimationEnd={handleFadeInAnimationEnd}
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}

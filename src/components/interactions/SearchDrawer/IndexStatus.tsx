@@ -23,7 +23,6 @@ interface IndexStatusProps {
   ready: boolean;
   indexedBranches: string[];
   lastUpdatedAt: number | undefined;
-  indexBranchName: string;
   onRefresh: () => void;
 }
 
@@ -35,24 +34,15 @@ interface ErrorScenario {
 const getErrorScenario = (
   error: { message: string; code?: string } | null,
   ready: boolean,
-  indexBranchName: string,
   t: (key: string, options?: InterpolationOptions) => string
 ): ErrorScenario | null => {
   if (error?.code !== undefined) {
     switch (error.code) {
-      case 'SEARCH_INDEX_BRANCH_MISSING':
-        return {
-          title: t('search.index.errors.branchMissing.title'),
-          description: [
-            t('search.index.errors.branchMissing.description1', { branch: indexBranchName }),
-            t('search.index.errors.branchMissing.description2'),
-          ],
-        };
       case 'SEARCH_INDEX_MANIFEST_NOT_FOUND':
         return {
           title: t('search.index.errors.manifestNotFound.title'),
           description: [
-            t('search.index.errors.manifestNotFound.description1', { branch: indexBranchName }),
+            t('search.index.errors.manifestNotFound.description1'),
             t('search.index.errors.manifestNotFound.description2'),
           ],
         };
@@ -77,14 +67,6 @@ const getErrorScenario = (
             t('search.index.errors.documentInvalid.description2'),
           ],
         };
-      case 'SEARCH_INDEX_UNSUPPORTED_COMPRESSION':
-        return {
-          title: t('search.index.errors.unsupportedCompression.title'),
-          description: [
-            t('search.index.errors.unsupportedCompression.description1'),
-            t('search.index.errors.unsupportedCompression.description2'),
-          ],
-        };
       default:
         return {
           title: t('search.index.errors.default.title'),
@@ -101,7 +83,7 @@ const getErrorScenario = (
       title: t('search.index.notReady.title'),
       description: [
         t('search.index.notReady.description1'),
-        t('search.index.notReady.description2', { branch: indexBranchName }),
+        t('search.index.notReady.description2'),
       ],
     };
   }
@@ -116,7 +98,6 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
   ready,
   indexedBranches,
   lastUpdatedAt,
-  indexBranchName,
   onRefresh,
 }) => {
   const theme = useTheme();
@@ -140,7 +121,7 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
       );
     }
 
-    const scenario = getErrorScenario(error, ready, indexBranchName, t);
+    const scenario = getErrorScenario(error, ready, t);
 
     if (scenario !== null) {
       return (
@@ -193,5 +174,5 @@ export const IndexStatus: React.FC<IndexStatusProps> = ({
         })}
       </Alert>
     );
-  }, [enabled, loading, error, ready, indexedBranches.length, lastUpdatedAt, indexBranchName, isSmallScreen, onRefresh, t]);
+  }, [enabled, loading, error, ready, indexedBranches.length, lastUpdatedAt, isSmallScreen, onRefresh, t]);
 };

@@ -20,7 +20,7 @@
   <tr>
 </table>
 
-### 主要功能
+## 主要功能
 
 - 📁 **仓库浏览**：直观的文件结构导航，同时提供首页文件和文件夹排除选项.
 - 🔎 **文件搜索**：支持基于自建索引和 Github API 的快速文件搜索，可按分支、路径前缀和扩展名过滤.
@@ -28,96 +28,16 @@
 - ⬇️ **文件下载**：可下载单个文件或整个文件夹.
 - 🌐 **SEO优化**：提高搜索引擎可见性.
 
-### 本地开发
-
-1. **克隆仓库**
-
-    ```bash
-    git clone https://github.com/UE-DND/Repo-Viewer.git
-    cd Repo-Viewer
-    ```
-
-2. **安装依赖**
-
-    ```bash
-   npm install
-   ```
-
-3. **创建环境配置**：复制 `.env.example` 到 `.env` 并配置必要的环境变量（参见下方内容）
-
-   ```bash
-   cp .env.example .env
-   ```
-
-4. **启动开发服务器**
-
-   ```bash
-   npm run dev
-   ```
+## 部署指南
 
 ### 环境变量配置
 
-**必需的环境变量**:
+详见 [.env.example](.env.example)。其中包括必须配置的变量，以及可忽略的变量。
 
-```env
-# 基础配置，用于SEO
-SITE_TITLE =                                          # 站点标题
-SITE_DESCRIPTION =                                    # 站点描述
-SITE_OG_IMAGE = /icon.svg                             # 站点图标
-SITE_KEYWORDS =                                       # 站点关键词，可用逗号分隔
-
-# 仓库信息
-GITHUB_REPO_OWNER =                                   # 仓库所有者
-GITHUB_REPO_NAME =                                    # 仓库名称
-GITHUB_REPO_BRANCH =                                  # 分支名称（默认为main）
-
-# GitHub访问令牌
-GITHUB_PAT1 =                                         # 个人GitHub令牌
-GITHUB_PAT2 =                                         # 【可选】备用令牌
-```
-
-**可选的环境变量（以下任意变量均可忽略）**:
-
-```env
-# 首页内容过滤- 仅对仓库根目录（首页）生效
-HOMEPAGE_FILTER_ENABLED = true||false                 # 启用首页过滤功能
-HOMEPAGE_ALLOWED_FOLDERS = folder1, folder2           # 允许在首页显示的文件夹，使用逗号分隔
-HOMEPAGE_ALLOWED_FILETYPES = md, pdf, txt             # 允许在首页显示的文件类型，使用逗号分隔
-
-# 首页下载按钮控制- 仅对仓库根目录（首页）生效
-HIDE_MAIN_FOLDER_DOWNLOAD = true||false               # 隐藏首页的主文件夹下载按钮
-HIDE_DOWNLOAD_FOLDERS = folder1, folder2              # 首页上需要隐藏下载按钮的文件夹，使用逗号分隔
-
-# 页脚显示控制
-FOOTER_LEFT_TEXT = [text](link)                       # 页脚左侧自定义信息
-
-# 搜索索引功能
-ENABLED_SEARCH_INDEX = true||false                    # 启用搜索索引功能
-SEARCH_INDEX_BRANCH = RV-Index                        # 索引文件分支名称
-SEARCH_DEFAULT_BRANCH = master                        # 默认搜索分支
-SEARCH_MANIFEST_PATH = manifest.json                  # 索引文件路径
-SEARCH_REFRESH_INTERVAL = 300000                      # 索引刷新间隔（毫秒）
-
-# 文件下载代理设置（仅用于下载功能，不影响内容浏览）
-DOWNLOAD_PROXY_URL =                                  # 下载主代理URL
-DOWNLOAD_PROXY_URL_BACKUP1 =                          # 下载备用代理URL1
-DOWNLOAD_PROXY_URL_BACKUP2 =                          # 下载备用代理URL2
-
-# 开发者选项
-DEVELOPER_MODE = true||false                          # 启用开发者模式
-CONSOLE_LOGGING = true||false                         # 控制台日志
-
-...
-
-剩余配置见 `.env.example`
-```
-
-### 部署指南
-
-#### 使用Vercel部署
+### 使用Vercel部署
 
 1. **在GitHub上创建个人访问令牌（PAT）**:
-   - 访问 [GitHub设置→开发者设置→个人访问令牌](https://github.com/settings/tokens)
+   - 访问 [GitHub设置 → 开发者设置 → 个人访问令牌](https://github.com/settings/tokens)
    - 创建一个或多个具有 `repo` 权限的令牌
    - 保存这些令牌，你将在下一步中使用它们
 
@@ -135,25 +55,29 @@ CONSOLE_LOGGING = true||false                         # 控制台日志
    - 点击 `Deploy` 按钮
    - Vercel 将自动构建和部署你的应用
 
-#### 自建文件索引
+### RV-Index 索引
 
-索引模式由 [Repo-Viewer-Search](https://github.com/H-Sofie/Repo-Viewer-Search) 提供，需在目标仓库配置 Github Action。详细配置见 Repo-Viewer-Search [文档](https://github.com/H-Sofie/Repo-Viewer-Search/tree/main/docs)。
+> 此功能由 [docfind](https://github.com/microsoft/docfind) 提供支持
 
-### 许可证
+Repo-Viewer 使用 docfind 生成静态索引并随站点发布。构建时运行 `scripts/generateDocfindIndex`，产物位于 `public/search-index/`：
 
-本项目使用 **AGPL-3.0** 许可证。
+- `public/search-index/manifest.json`
+- `public/search-index/<branch>/docfind.js`
+- `public/search-index/<branch>/docfind_bg.wasm`
+
+## 许可证
+
+> 本项目使用 **AGPL-3.0** 许可证。完整条款见 [[LICENSE](LICENSE)]
 
 - ✅ 可以自由使用、修改和分发
 - ⚠️ 必须开源修改后的代码并保留原作者版权信息
-- ⚠️ 网络部署也需要开源
 - ⚠️ 修改后的版本必须使用相同的 AGPL-3.0 许可证
+- ⚠️ 网络部署也需要开源
 
-> 完整条款见 [[LICENSE](LICENSE)]
-
-### 贡献者
+## 贡献者
 
 [![Contributors](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
 
-### Stars
+## Stars
 
 ![Star History](https://api.star-history.com/svg?repos=UE-DND/Repo-Viewer&type=Date)

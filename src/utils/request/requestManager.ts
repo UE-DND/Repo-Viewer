@@ -37,7 +37,67 @@ export interface RequestOptions {
  */
 export class RequestManager {
   private pendingRequests = new Map<string, AbortController>();
-  private debounceTimers = new Map<string, NodeJS.Timeout>();
+  private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  private createAbortError(): Error {
+    const error = new Error('Request aborted');
+    error.name = 'AbortError';
+    return error;
+  }
+
+  private async waitForDebounce(
+    key: string,
+    delay: number,
+    signal: AbortSignal
+  ): Promise<void> {
+    if (delay <= 0) {
+      return;
+    }
+
+    if (signal.aborted) {
+      throw this.createAbortError();
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      let settled = false;
+
+      const cleanup = (abortHandler: () => void): void => {
+        if (timer !== null) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        this.debounceTimers.delete(key);
+        signal.removeEventListener('abort', abortHandler);
+      };
+
+      const finalize = (action: () => void, abortHandler: () => void): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        cleanup(abortHandler);
+        action();
+      };
+
+      const onAbort = (): void => {
+        finalize(() => {
+          reject(this.createAbortError());
+        }, onAbort);
+      };
+
+      timer = setTimeout(() => {
+        finalize(resolve, onAbort);
+      }, delay);
+
+      signal.addEventListener('abort', onAbort, { once: true });
+      this.debounceTimers.set(key, timer);
+
+      if (signal.aborted) {
+        onAbort();
+      }
+    });
+  }
 
   /**
    * 发起请求
@@ -68,24 +128,22 @@ export class RequestManager {
     // 取消之前的同 key 请求
     this.cancel(key);
 
+    // 创建新的 AbortController
+    const controller = new AbortController();
+    this.pendingRequests.set(key, controller);
+
     // 如果设置了防抖，等待防抖延迟
     if (debounce !== undefined && debounce > 0) {
       if (verbose) {
         logger.debug(`请求防抖: ${key}, 延迟 ${debounce.toString()}ms`);
       }
 
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(() => {
-          this.debounceTimers.delete(key);
-          resolve();
-        }, debounce);
-        this.debounceTimers.set(key, timer);
-      });
+      await this.waitForDebounce(key, debounce, controller.signal);
     }
 
-    // 创建新的 AbortController
-    const controller = new AbortController();
-    this.pendingRequests.set(key, controller);
+    if (controller.signal.aborted) {
+      throw this.createAbortError();
+    }
 
     if (verbose) {
       logger.debug(`开始请求: ${key}`);
@@ -223,4 +281,3 @@ if (typeof window !== 'undefined') {
     requestManager.cleanup();
   });
 }
-

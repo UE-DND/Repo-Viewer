@@ -7,6 +7,17 @@ type EnvSourceValue = string | boolean | null | undefined;
 type EnvSource = Record<string, EnvSourceValue>;
 type EnvStringRecord = Record<string, string | undefined>;
 
+const normalizeSearchIndexGenerationMode = (
+  value: string,
+  fallback: 'build' | 'action' | 'off'
+): 'build' | 'action' | 'off' => {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'build' || normalized === 'action' || normalized === 'off') {
+    return normalized;
+  }
+  return fallback;
+};
+
 /**
  * 配置加载器
  *
@@ -34,30 +45,25 @@ export class ConfigLoader {
     const searchIndexEnabled = EnvParser.parseBoolean(
       resolveEnvWithMapping(stringEnv, 'ENABLED_SEARCH_INDEX', 'false')
     );
-    const searchIndexIndexBranch = resolveEnvWithMapping(
-      stringEnv,
-      'SEARCH_INDEX_BRANCH',
-      CONFIG_DEFAULTS.SEARCH_INDEX_BRANCH
-    );
-    const searchIndexDefaultBranch = resolveEnvWithMapping(
-      stringEnv,
-      'SEARCH_DEFAULT_BRANCH',
-      repoBranch
-    );
-    const searchIndexManifestPath = resolveEnvWithMapping(
-      stringEnv,
-      'SEARCH_MANIFEST_PATH',
-      CONFIG_DEFAULTS.SEARCH_INDEX_MANIFEST_PATH
-    );
-    const searchIndexRefreshIntervalMs = EnvParser.parseInteger(
+    const searchIndexGenerationMode = normalizeSearchIndexGenerationMode(
       resolveEnvWithMapping(
         stringEnv,
-        'SEARCH_REFRESH_INTERVAL',
-        CONFIG_DEFAULTS.SEARCH_INDEX_REFRESH_INTERVAL_MS.toString()
+        'SEARCH_INDEX_GENERATION_MODE',
+        CONFIG_DEFAULTS.SEARCH_INDEX_GENERATION_MODE
       ),
-      CONFIG_DEFAULTS.SEARCH_INDEX_REFRESH_INTERVAL_MS,
-      { min: CONFIG_DEFAULTS.SEARCH_INDEX_MIN_REFRESH_INTERVAL_MS }
+      CONFIG_DEFAULTS.SEARCH_INDEX_GENERATION_MODE
     );
+    const searchIndexBranchesValue = resolveEnvWithMapping(stringEnv, 'SEARCH_INDEX_BRANCHES', '');
+    const searchIndexBranches = Array.from(new Set(
+      searchIndexBranchesValue
+        .split(/[\s,]+/)
+        .map(branch => branch.trim())
+        .filter(branch => branch.length > 0)
+    ));
+    const searchIndexDefaultBranch = searchIndexBranches[0] ?? repoBranch;
+    const searchIndexManifestPath = CONFIG_DEFAULTS.SEARCH_INDEX_MANIFEST_PATH;
+    const searchIndexAssetBasePath = CONFIG_DEFAULTS.SEARCH_INDEX_ASSET_BASE_PATH;
+    const searchIndexRefreshIntervalMs = CONFIG_DEFAULTS.SEARCH_INDEX_REFRESH_INTERVAL_MS;
 
     return {
       site: {
@@ -83,9 +89,10 @@ export class ConfigLoader {
         },
         searchIndex: {
           enabled: searchIndexEnabled,
-          indexBranch: searchIndexIndexBranch,
+          generationMode: searchIndexGenerationMode,
           defaultBranch: searchIndexDefaultBranch,
           manifestPath: searchIndexManifestPath,
+          assetBasePath: searchIndexAssetBasePath,
           refreshIntervalMs: searchIndexRefreshIntervalMs
         },
         footer: {

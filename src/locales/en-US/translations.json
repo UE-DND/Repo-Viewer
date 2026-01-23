@@ -48,13 +48,13 @@
     "error": "Search failed: @@message@@",
     "index": {
       "refresh": "Refresh index status",
-      "detecting": "Detecting index files…",
+      "detecting": "Detecting index assets…",
       "disabled": "Index mode is disabled. API mode search will be used. Configure ENABLED_SEARCH_INDEX to enable index mode.",
       "ready": "Index last updated: @@time@@. Supported branches: @@count@@.",
       "notReady": {
         "title": "No available index detected",
-        "description1": "Configure Repo-Viewer-Search Actions in the target repository",
-        "description2": "Generate index files under the @@branch@@ branch"
+        "description1": "Generate docfind assets and publish them with the site",
+        "description2": "Ensure manifest.json and docfind.js/docfind_bg.wasm are deployed"
       },
       "errors": {
         "branchMissing": {
@@ -63,23 +63,23 @@
           "description2": "Configure Actions in the target repository to generate index branch"
         },
         "manifestNotFound": {
-          "title": "Index file missing. API mode search will be used",
-          "description1": "Index file not found in @@branch@@",
-          "description2": "Check if Actions correctly generated index files"
+          "title": "Manifest missing. API mode search will be used",
+          "description1": "manifest.json not found",
+          "description2": "Check if the build generated and published index assets"
         },
         "manifestInvalid": {
-          "title": "Index format error. API mode search will be used",
-          "description1": "Try running Actions again to generate index files"
+          "title": "Manifest format error. API mode search will be used",
+          "description1": "Regenerate the index assets"
         },
         "fileNotFound": {
-          "title": "Index content missing. API mode search will be used",
-          "description1": "Indexed file does not exist",
-          "description2": "Try running Actions again to generate index files"
+          "title": "Index assets missing. API mode search will be used",
+          "description1": "docfind.js or docfind_bg.wasm not found",
+          "description2": "Regenerate the index assets"
         },
         "documentInvalid": {
-          "title": "Index file format error. API mode search will be used",
+          "title": "Index results invalid. API mode search will be used",
           "description1": "Index content is corrupted or incorrectly formatted",
-          "description2": "Try running Actions again to generate index files"
+          "description2": "Regenerate the index assets"
         },
         "unsupportedCompression": {
           "title": "Unsupported compression format. API mode search will be used",

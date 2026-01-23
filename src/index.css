@@ -129,6 +129,17 @@ body {
 .markdown-body img.failed {
   opacity: 1;
 }
+@keyframes markdownFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.markdown-fade-in {
+  animation: markdownFadeIn 0.25s ease forwards;
+}
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -644,6 +655,10 @@ body.theme-transition .readme-container .MuiPaper-root {
   will-change: transform, opacity;
 }
 
+.file-list-fade-in {
+  animation: fileListFadeIn 0.15s ease-out;
+}
+
 .file-list-slide-left {
   animation: slideInFromRight 0.3s ease-out forwards;
 }
@@ -707,6 +722,15 @@ body.theme-transition .readme-container .MuiPaper-root {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fileListFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 

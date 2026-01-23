@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
-import * as dotenv from "dotenv";
+import { resolveRepoRoot } from "./utils/paths.js";
+import { collectTokens, loadEnvFiles, resolveEnvValue } from "./utils/env.js";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
@@ -27,48 +27,10 @@ interface InitialContentHydrationPayload {
   metadata?: Record<string, JsonValue>;
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.basename(__dirname) === "dist"
-  ? path.resolve(__dirname, "..", "..")
-  : path.resolve(__dirname, "..");
+const rootDir = resolveRepoRoot(import.meta.url);
 const outputPath = path.join(rootDir, "src", "generated", "initialContent.ts");
 
-const loadEnvFile = (fileName: string): void => {
-  const fullPath = path.join(rootDir, fileName);
-  if (fs.existsSync(fullPath)) {
-    dotenv.config({ path: fullPath, override: true });
-  }
-};
-
-const envFiles = [".env", ".env.local", ".env.production", ".env.production.local"];
-envFiles.forEach(loadEnvFile);
-
-const resolveEnvValue = (keys: string[], fallback = ""): string => {
-  for (const key of keys) {
-    const value = process.env[key];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-  return fallback;
-};
-
-const collectTokens = (): string[] => {
-  const tokens: string[] = [];
-  const keys = Object.keys(process.env)
-    .filter((key) => key.startsWith("GITHUB_PAT") || key.startsWith("VITE_GITHUB_PAT"))
-    .sort((a, b) => a.localeCompare(b, "en"));
-
-  for (const key of keys) {
-    const value = process.env[key];
-    if (typeof value === "string" && value.trim().length > 0) {
-      tokens.push(value.trim());
-    }
-  }
-
-  return tokens;
-};
+loadEnvFiles(rootDir);
 
 const owner = resolveEnvValue(["VITE_GITHUB_REPO_OWNER", "GITHUB_REPO_OWNER"]);
 const repo = resolveEnvValue(["VITE_GITHUB_REPO_NAME", "GITHUB_REPO_NAME"]);

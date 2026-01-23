@@ -37,6 +37,8 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
   const { t } = useI18n();
   const { navigateTo, findFileItemByPath, currentPath } = useContentContext();
   const { selectFile } = usePreviewContext();
+  const pendingScrollRef = React.useRef(false);
+  const pendingScrollTimerRef = React.useRef<number | null>(null);
 
   // 提取路径值，避免 useMemo 依赖项问题
   const readmeFilePath = readmeFileItem?.path;
@@ -49,6 +51,47 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
     }
     return currentPath;
   }, [readmeFilePath, currentPath]);
+
+  const scheduleScrollToTop = useCallback((): void => {
+    pendingScrollRef.current = true;
+
+    if (pendingScrollTimerRef.current !== null) {
+      window.clearTimeout(pendingScrollTimerRef.current);
+      pendingScrollTimerRef.current = null;
+    }
+
+    pendingScrollTimerRef.current = window.setTimeout(() => {
+      pendingScrollTimerRef.current = null;
+      if (!pendingScrollRef.current) {
+        return;
+      }
+      pendingScrollRef.current = false;
+      void scroll.scrollToTop();
+    }, 1000);
+  }, []);
+
+  const handleReadmeRenderComplete = useCallback((): void => {
+    if (!pendingScrollRef.current) {
+      return;
+    }
+
+    pendingScrollRef.current = false;
+
+    if (pendingScrollTimerRef.current !== null) {
+      window.clearTimeout(pendingScrollTimerRef.current);
+      pendingScrollTimerRef.current = null;
+    }
+
+    void scroll.scrollToTop();
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (pendingScrollTimerRef.current !== null) {
+        window.clearTimeout(pendingScrollTimerRef.current);
+      }
+    };
+  }, []);
 
   // 处理内部链接点击
   const handleInternalLinkClick = useCallback(
@@ -104,12 +147,15 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
         }
       }
 
-      // 避免渲染过程中闪烁
-      window.setTimeout(() => {
-        void scroll.scrollToTop();
-      }, 500);
+      scheduleScrollToTop();
     },
-    [currentReadmeDir, findFileItemByPath, navigateTo, selectFile]
+    [
+      currentReadmeDir,
+      findFileItemByPath,
+      navigateTo,
+      selectFile,
+      scheduleScrollToTop
+    ]
   );
 
   if (!hasReadmeFile) {
@@ -171,6 +217,7 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
           currentBranch={currentBranch}
           previewingItem={readmeFileItem}
           onInternalLinkClick={handleInternalLinkClick}
+          onRenderComplete={handleReadmeRenderComplete}
           data-oid="6nohd:r"
         />
       ) : readmeLoaded ? (
@@ -197,4 +244,4 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
   );
 };
 
-export default ReadmeSection;
+export default React.memo(ReadmeSection);

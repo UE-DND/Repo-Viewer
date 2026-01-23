@@ -56,6 +56,57 @@ export const highlightKeyword = (
   return parts;
 };
 
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * 高亮文本中的多个关键字
+ */
+export const highlightKeywords = (
+  text: string,
+  keyword: string
+): { text: string; highlight: boolean }[] => {
+  const tokens = keyword
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+
+  if (tokens.length === 0) {
+    return [{ text, highlight: false }];
+  }
+
+  const uniqueTokens = Array.from(new Set(tokens))
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp);
+
+  const pattern = uniqueTokens.join("|");
+  if (pattern.length === 0) {
+    return [{ text, highlight: false }];
+  }
+
+  const regex = new RegExp(`(${pattern})`, "gi");
+  const parts: { text: string; highlight: boolean }[] = [];
+  let lastIndex = 0;
+  let match = regex.exec(text);
+
+  while (match !== null) {
+    const index = match.index;
+    if (index > lastIndex) {
+      parts.push({ text: text.slice(lastIndex, index), highlight: false });
+    }
+    const matchedText = match[0];
+    parts.push({ text: matchedText, highlight: true });
+    lastIndex = index + matchedText.length;
+    match = regex.exec(text);
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ text: text.slice(lastIndex), highlight: false });
+  }
+
+  return parts;
+};
+
 /**
  * 解析搜索结果项的 GitHub URL
  */
@@ -68,4 +119,3 @@ export const resolveItemHtmlUrl = (item: { htmlUrl?: string; html_url?: string }
   }
   return undefined;
 };
-
