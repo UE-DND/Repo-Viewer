@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc -p scripts/tsconfig.json && node scripts/dist/generateInitialContent.js && node scripts/dist/generateDocfindIndex.js && tsc && vite build",
     "generate:index": "tsc -p scripts/tsconfig.json && node scripts/dist/generateDocfindIndex.js",
-    "install-deps": "npm install --legacy-peer-deps",
+    "install-deps": "npm install",
     "lint": "eslint . --ext ts,tsx",
     "preview": "vite preview"
   },

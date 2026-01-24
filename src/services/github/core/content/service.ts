@@ -108,11 +108,16 @@ export async function getContents(
         apiUrl,
         async () => {
           logger.debug(`API请求: ${apiUrl}`);
-          const result = await fetch(apiUrl, {
+          const requestInit: RequestInit = {
             method: 'GET',
-            headers: getAuthHeaders(),
-            signal: signal ?? null
-          });
+            headers: getAuthHeaders()
+          };
+
+          if (signal !== undefined) {
+            requestInit.signal = signal;
+          }
+
+          const result = await fetch(apiUrl, requestInit);
 
           if (!result.ok) {
             throw new Error(`HTTP ${result.status.toString()}: ${result.statusText}`);

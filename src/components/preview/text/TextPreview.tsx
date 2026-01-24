@@ -24,20 +24,16 @@ import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 const MONO_FONT_STACK =
   "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, 'Source Code Pro', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 
-const TextPreview: React.FC<TextPreviewProps> = memo(
-  ({ content, loading, isSmallScreen, previewingItem, onClose }) => {
+interface TextPreviewContentProps extends Omit<TextPreviewProps, "content" | "loading"> {
+  content: string;
+}
+
+const TextPreviewContent: React.FC<TextPreviewContentProps> = memo(
+  ({ content, isSmallScreen, previewingItem, onClose }) => {
     const theme = useTheme();
     const { t } = useI18n();
     const [wrapText, setWrapText] = useState<boolean>(false);
-    const { copied, copy, reset } = useCopyToClipboard();
-    const [prevContent, setPrevContent] = useState(content);
-
-    // 当 content 变化时，重置 UI 状态
-    if (content !== prevContent) {
-      setPrevContent(content);
-      setWrapText(false);
-      reset();
-    }
+    const { copied, copy } = useCopyToClipboard();
 
     const normalizedLines = useMemo(() => {
       if (typeof content !== "string") {
@@ -174,28 +170,6 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
         container.style.setProperty('--text-primary', theme.palette.text.primary);
       }
     }, [prismTheme, theme.palette.text.primary]);
-
-    if (loading) {
-      return (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            minHeight: "220px",
-          }}
-          data-oid="text-preview-loading"
-        >
-          <CircularProgress size={28} />
-        </Box>
-      );
-    }
-
-    if (typeof content !== "string") {
-      return null;
-    }
 
     return (
       <Box sx={{ position: "relative", width: "100%", height: "100%" }} data-oid="text-preview">
@@ -551,6 +525,50 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
           </Box>
         </Paper>
       </Box>
+    );
+  },
+);
+
+TextPreviewContent.displayName = "TextPreviewContent";
+
+const TextPreview: React.FC<TextPreviewProps> = memo(
+  ({ content, loading, isSmallScreen, previewingItem, onClose }) => {
+    const contentKey = useMemo(() => {
+      const safeContent = typeof content === "string" ? content : "";
+      const pathKey = previewingItem?.path ?? "";
+      return `${pathKey}::${safeContent}`;
+    }, [content, previewingItem?.path]);
+
+    if (loading) {
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            minHeight: "220px",
+          }}
+          data-oid="text-preview-loading"
+        >
+          <CircularProgress size={28} />
+        </Box>
+      );
+    }
+
+    if (typeof content !== "string") {
+      return null;
+    }
+
+    return (
+      <TextPreviewContent
+        key={contentKey}
+        content={content}
+        isSmallScreen={isSmallScreen}
+        previewingItem={previewingItem ?? null}
+        {...(onClose !== undefined ? { onClose } : {})}
+      />
     );
   },
 );
