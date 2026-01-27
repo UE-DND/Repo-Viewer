@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import type { ReactElement } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactElement } from "react";
 import { motion } from "framer-motion";
 import type { MotionStyle } from "framer-motion";
 import type { RowComponentProps } from "react-window";
@@ -75,7 +75,7 @@ const RowComponent = ({
 
   const isHighlighted = highlightedIndex === index;
 
-  const adjustedStyle: React.CSSProperties = {
+  const adjustedStyle: CSSProperties = {
     ...style,
     boxSizing: "border-box",
     alignItems: "flex-start",
@@ -130,10 +130,4 @@ const RowComponent = ({
   );
 };
 
-const Row = React.memo(RowComponent);
-
-Row.displayName = "FileListRow";
-
 export { RowComponent };
-
-export default Row;

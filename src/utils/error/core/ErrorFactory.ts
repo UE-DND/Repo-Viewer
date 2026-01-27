@@ -1,10 +1,8 @@
 import type {
   BaseError,
   APIError,
-  NetworkError,
   GitHubError,
   ComponentError,
-  FileOperationError,
   ErrorContext
 } from '@/types/errors';
 import { ErrorLevel, ErrorCategory } from '@/types/errors';
@@ -19,13 +17,6 @@ export class ErrorFactory {
 
   constructor(sessionId: string) {
     this.sessionId = sessionId;
-  }
-
-  /**
-   * 更新会话ID
-   */
-  public updateSessionId(newSessionId: string): void {
-    this.sessionId = newSessionId;
   }
 
   /**
@@ -131,40 +122,6 @@ export class ErrorFactory {
   }
 
   /**
-   * 创建网络错误
-   *
-   * @param message - 错误消息
-   * @param url - 请求URL
-   * @param timeout - 是否为超时错误
-   * @param retryCount - 重试次数
-   * @param context - 额外的上下文信息
-   * @returns 网络错误对象
-   */
-  public createNetworkError(
-    message: string,
-    url: string,
-    timeout = false,
-    retryCount = 0,
-    context?: Record<string, unknown>
-  ): NetworkError {
-    const baseError = this.createBaseError(
-      timeout ? 'NETWORK_TIMEOUT' : 'NETWORK_ERROR',
-      message,
-      ErrorLevel.ERROR,
-      ErrorCategory.NETWORK,
-      context
-    );
-
-    return {
-      ...baseError,
-      category: ErrorCategory.NETWORK,
-      url,
-      timeout,
-      retryCount
-    };
-  }
-
-  /**
    * 创建组件错误
    *
    * @param componentName - 组件名称
@@ -196,91 +153,6 @@ export class ErrorFactory {
   }
 
   /**
-   * 创建文件操作错误
-   *
-   * @param fileName - 文件名
-   * @param operation - 操作类型
-   * @param message - 错误消息
-   * @param fileSize - 文件大小（可选）
-   * @param context - 额外的上下文信息
-   * @returns 文件操作错误对象
-   */
-  public createFileOperationError(
-    fileName: string,
-    operation: 'read' | 'write' | 'download' | 'compress' | 'parse',
-    message: string,
-    fileSize?: number,
-    context?: Record<string, unknown>
-  ): FileOperationError {
-    const baseError = this.createBaseError(
-      `FILE_${operation.toUpperCase()}_ERROR`,
-      message,
-      ErrorLevel.ERROR,
-      ErrorCategory.FILE_OPERATION,
-      context
-    );
-
-    return {
-      ...baseError,
-      category: ErrorCategory.FILE_OPERATION,
-      fileName,
-      ...(fileSize !== undefined ? { fileSize } : {}),
-      operation
-    };
-  }
-
-  /**
-   * 处理API错误响应
-   *
-   * 从axios或fetch错误中提取信息并创建结构化的API错误。
-   *
-   * @param error - 错误对象
-   * @param endpoint - API端点
-   * @param method - HTTP方法
-   * @returns API错误或GitHub错误对象
-   */
-  public handleAPIError(error: unknown, endpoint: string, method: string): APIError | GitHubError {
-    const errorObj = error as {
-      response?: {
-        status?: number;
-        data?: { message?: string };
-        headers?: Record<string, string>;
-      };
-      message?: string;
-      config?: { data?: unknown };
-    };
-
-    const statusCode = errorObj.response?.status ?? 0;
-    const message = errorObj.response?.data?.message ?? errorObj.message ?? '网络请求失败';
-
-    // GitHub API特定处理
-    if (endpoint.includes('api.github.com') || endpoint.includes('github')) {
-      const rateLimitRemaining = errorObj.response?.headers?.['x-ratelimit-remaining'];
-      const rateLimitReset = errorObj.response?.headers?.['x-ratelimit-reset'];
-
-      return this.createGitHubError(
-        message,
-        statusCode,
-        endpoint,
-        method,
-        rateLimitRemaining !== undefined ? {
-          remaining: parseInt(rateLimitRemaining, 10),
-          reset: parseInt(rateLimitReset ?? '0', 10)
-        } : undefined,
-        {
-          requestData: errorObj.config?.data,
-          responseData: errorObj.response?.data
-        }
-      );
-    }
-
-    return this.createAPIError(message, statusCode, endpoint, method, {
-      requestData: errorObj.config?.data,
-      responseData: errorObj.response?.data
-    });
-  }
-
-  /**
    * 根据状态码确定错误级别
    */
   private getErrorLevelByStatusCode(statusCode: number): ErrorLevel {
@@ -296,4 +168,3 @@ export class ErrorFactory {
     return ErrorLevel.INFO;
   }
 }
-

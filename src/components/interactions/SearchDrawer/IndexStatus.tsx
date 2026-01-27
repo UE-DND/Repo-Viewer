@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Alert,
   Box,
@@ -13,13 +13,14 @@ import { Refresh as RefreshIcon } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { useI18n } from "@/contexts/I18nContext";
 import type { InterpolationOptions } from "@/utils/i18n/types";
+import { SearchIndexErrorCode } from "@/services/github/core/searchIndex/errors";
 
 const FALLBACK_INDEX_TIME = Date.now();
 
 interface IndexStatusProps {
   enabled: boolean;
   loading: boolean;
-  error: { message: string; code?: string } | null;
+  error: { message: string; code?: SearchIndexErrorCode } | null;
   ready: boolean;
   indexedBranches: string[];
   lastUpdatedAt: number | undefined;
@@ -32,50 +33,52 @@ interface ErrorScenario {
 }
 
 const getErrorScenario = (
-  error: { message: string; code?: string } | null,
+  error: { message: string; code?: SearchIndexErrorCode } | null,
   ready: boolean,
   t: (key: string, options?: InterpolationOptions) => string
 ): ErrorScenario | null => {
-  if (error?.code !== undefined) {
-    switch (error.code) {
-      case 'SEARCH_INDEX_MANIFEST_NOT_FOUND':
-        return {
-          title: t('search.index.errors.manifestNotFound.title'),
-          description: [
-            t('search.index.errors.manifestNotFound.description1'),
-            t('search.index.errors.manifestNotFound.description2'),
-          ],
-        };
-      case 'SEARCH_INDEX_MANIFEST_INVALID':
-        return {
-          title: t('search.index.errors.manifestInvalid.title'),
-          description: [t('search.index.errors.manifestInvalid.description1')],
-        };
-      case 'SEARCH_INDEX_FILE_NOT_FOUND':
-        return {
-          title: t('search.index.errors.fileNotFound.title'),
-          description: [
-            t('search.index.errors.fileNotFound.description1'),
-            t('search.index.errors.fileNotFound.description2'),
-          ],
-        };
-      case 'SEARCH_INDEX_DOCUMENT_INVALID':
-        return {
-          title: t('search.index.errors.documentInvalid.title'),
-          description: [
-            t('search.index.errors.documentInvalid.description1'),
-            t('search.index.errors.documentInvalid.description2'),
-          ],
-        };
-      default:
-        return {
-          title: t('search.index.errors.default.title'),
-          description: [
-            t('search.index.errors.default.description1', { message: error.message }),
-            t('search.index.errors.default.description2'),
-          ],
-        };
+  if (error !== null) {
+    const code = error.code;
+    if (code === SearchIndexErrorCode.MANIFEST_NOT_FOUND) {
+      return {
+        title: t('search.index.errors.manifestNotFound.title'),
+        description: [
+          t('search.index.errors.manifestNotFound.description1'),
+          t('search.index.errors.manifestNotFound.description2'),
+        ],
+      };
     }
+    if (code === SearchIndexErrorCode.MANIFEST_INVALID) {
+      return {
+        title: t('search.index.errors.manifestInvalid.title'),
+        description: [t('search.index.errors.manifestInvalid.description1')],
+      };
+    }
+    if (code === SearchIndexErrorCode.INDEX_FILE_NOT_FOUND) {
+      return {
+        title: t('search.index.errors.fileNotFound.title'),
+        description: [
+          t('search.index.errors.fileNotFound.description1'),
+          t('search.index.errors.fileNotFound.description2'),
+        ],
+      };
+    }
+    if (code === SearchIndexErrorCode.INDEX_DOCUMENT_INVALID) {
+      return {
+        title: t('search.index.errors.documentInvalid.title'),
+        description: [
+          t('search.index.errors.documentInvalid.description1'),
+          t('search.index.errors.documentInvalid.description2'),
+        ],
+      };
+    }
+    return {
+      title: t('search.index.errors.default.title'),
+      description: [
+        t('search.index.errors.default.description1', { message: error.message }),
+        t('search.index.errors.default.description2'),
+      ],
+    };
   }
 
   if (!ready) {

@@ -16,6 +16,7 @@ import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { highlightKeyword, highlightKeywords, resolveItemHtmlUrl } from "./utils";
 import type { RepoSearchItem } from "@/hooks/github/useRepoSearch";
 import { useI18n } from "@/contexts/I18nContext";
+import React from "react";
 
 interface SearchResultItemProps {
   item: RepoSearchItem;

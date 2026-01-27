@@ -31,7 +31,6 @@ export class AdvancedCache<K extends string, V> {
   private readonly cache: LRUCache<K>;
   private readonly config: CacheConfig;
   private readonly stats: CacheStats;
-  private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly dbName: string;
   private db: IDBDatabase | null = null;
 
@@ -328,7 +327,7 @@ export class AdvancedCache<K extends string, V> {
 
     const scheduleNextCleanup = (): void => {
       const interval = getCleanupInterval();
-      this.cleanupTimer = setTimeout(() => {
+      setTimeout(() => {
         this.performPeriodicCleanup()
           .then(() => {
             // 清理完成后，根据新的缓存大小重新安排下次清理
@@ -387,25 +386,6 @@ export class AdvancedCache<K extends string, V> {
         });
       });
     }, this.config.prefetchDelay);
-  }
-
-  /**
-   * 销毁缓存实例
-   * 
-   * 清理定时器和数据库连接。
-   * 
-   * @returns void
-   */
-  destroy(): void {
-    if (this.cleanupTimer !== null) {
-      clearTimeout(this.cleanupTimer);
-      this.cleanupTimer = null;
-    }
-    if (this.db !== null) {
-      this.db.close();
-      this.db = null;
-    }
-    this.cache.clear();
   }
 
   private async loadItemFromPersistence(key: string): Promise<CacheItemMeta | undefined> {

@@ -1,5 +1,4 @@
 import type { AppError } from '@/types/errors';
-import { ErrorCategory } from '@/types/errors';
 
 /**
  * 错误历史管理类
@@ -37,64 +36,6 @@ export class ErrorHistory {
   }
 
   /**
-   * 获取错误历史
-   *
-   * @param category - 可选的错误分类过滤
-   * @param limit - 返回的最大错误数量，默认20
-   * @returns 错误历史数组
-   */
-  public getErrorHistory(category?: ErrorCategory, limit = 20): AppError[] {
-    let history = this.errorHistory;
-
-    if (category !== undefined) {
-      history = history.filter(error => error.category === category);
-    }
-
-    return history.slice(0, limit);
-  }
-
-  /**
-   * 清理错误历史
-   *
-   * 清空所有记录的错误历史。
-   */
-  public clearErrorHistory(): void {
-    this.errorHistory = [];
-  }
-
-  /**
-   * 获取错误统计
-   *
-   * 返回各类错误的数量统计。
-   *
-   * @returns 错误分类统计对象
-   */
-  public getErrorStats(): Record<ErrorCategory, number> {
-    const stats: Record<ErrorCategory, number> = {
-      [ErrorCategory.NETWORK]: 0,
-      [ErrorCategory.API]: 0,
-      [ErrorCategory.AUTH]: 0,
-      [ErrorCategory.VALIDATION]: 0,
-      [ErrorCategory.FILE_OPERATION]: 0,
-      [ErrorCategory.COMPONENT]: 0,
-      [ErrorCategory.SYSTEM]: 0
-    };
-
-    this.errorHistory.forEach(error => {
-      stats[error.category] = stats[error.category] + 1;
-    });
-
-    return stats;
-  }
-
-  /**
-   * 获取历史记录大小
-   */
-  public getHistorySize(): number {
-    return this.errorHistory.length;
-  }
-
-  /**
    * 清理超时的旧错误
    */
   private cleanupOldErrors(): void {
@@ -104,4 +45,3 @@ export class ErrorHistory {
     );
   }
 }
-

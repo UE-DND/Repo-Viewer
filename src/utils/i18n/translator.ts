@@ -175,14 +175,6 @@ class Translator implements ITranslator {
   }
 
   /**
-   * 获取未插值的字符串
-   */
-  getUninterpolatedString(key: string): string {
-    const keyValue = this.getValue(key);
-    return keyValue ?? this.onMissingKeyFn(key);
-  }
-
-  /**
    * 翻译字符串
    * 支持插值和复数形式
    */
@@ -224,4 +216,3 @@ class Translator implements ITranslator {
 }
 
 export default Translator;
-

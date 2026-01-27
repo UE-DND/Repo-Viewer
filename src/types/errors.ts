@@ -133,15 +133,6 @@ export type AppError =
   | SystemError;
 
 // 类型守卫函数
-export function isAPIError(error: AppError): error is APIError {
-  return (
-    error.category === ErrorCategory.API &&
-    'statusCode' in error &&
-    'endpoint' in error &&
-    'method' in error
-  );
-}
-
 export function isNetworkError(error: AppError): error is NetworkError {
   return error.category === ErrorCategory.NETWORK && 'url' in error;
 }
@@ -149,8 +140,8 @@ export function isNetworkError(error: AppError): error is NetworkError {
 export function isGitHubError(error: AppError): error is GitHubError {
   return (
     error.category === ErrorCategory.API &&
-    ('rateLimitRemaining' in error || 
-     'rateLimitReset' in error || 
+    ('rateLimitRemaining' in error ||
+     'rateLimitReset' in error ||
      'documentationUrl' in error)
   );
 }
@@ -161,26 +152,6 @@ export function isFileOperationError(error: AppError): error is FileOperationErr
     'fileName' in error &&
     'operation' in error
   );
-}
-
-export function isComponentError(error: AppError): error is ComponentError {
-  return error.category === ErrorCategory.COMPONENT && 'componentName' in error;
-}
-
-export function isAuthError(error: AppError): error is AuthError {
-  return error.category === ErrorCategory.AUTH;
-}
-
-export function isValidationError(error: AppError): error is ValidationError {
-  return (
-    error.category === ErrorCategory.VALIDATION &&
-    'field' in error &&
-    'value' in error
-  );
-}
-
-export function isSystemError(error: AppError): error is SystemError {
-  return error.category === ErrorCategory.SYSTEM;
 }
 
 // 错误上下文接口
@@ -202,11 +173,4 @@ export interface ErrorHandlerConfig {
   maxErrorsPerSession: number;
   retryAttempts: number;
   retryDelay: number;
-}
-
-// 错误恢复策略
-export interface ErrorRecoveryStrategy {
-  canRecover: (error: AppError) => boolean;
-  recover: (error: AppError) => Promise<void> | void;
-  fallback?: () => React.ReactNode;
 }

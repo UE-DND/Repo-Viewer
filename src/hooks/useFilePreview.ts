@@ -1,8 +1,10 @@
 import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
+import type { RefObject } from 'react';
 import { useTheme } from '@mui/material';
 import type { PreviewState, PreviewAction, GitHubContent } from '@/types';
 import { GitHub } from '@/services/github';
-import { file, logger, pdf } from '@/utils';
+import { logger, pdf } from '@/utils';
+import { isImageFile, isMarkdownFile, isPdfFile, isTextFile } from '@/utils/files/fileHelpers';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 import { useI18n } from '@/contexts/I18nContext';
@@ -97,7 +99,7 @@ export const useFilePreview = (
   closePreview: () => void;
   toggleImageFullscreen: () => void;
   handleImageError: (error: string) => void;
-  currentPreviewItemRef: React.RefObject<GitHubContent | null>;
+  currentPreviewItemRef: RefObject<GitHubContent | null>;
 } => {
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
   const [useTokenMode, setUseTokenMode] = useState(true);
@@ -174,7 +176,7 @@ export const useFilePreview = (
       const fileNameLower = item.name.toLowerCase();
       const isCurrentTarget = (): boolean => currentPreviewItemRef.current?.path === targetPath;
 
-      if (file.isMarkdownFile(fileNameLower)) {
+      if (isMarkdownFile(fileNameLower)) {
         updateUrlWithHistory(dirPath, item.path);
         dispatch({ type: 'SET_PREVIEW_LOADING', loading: true });
 
@@ -192,7 +194,7 @@ export const useFilePreview = (
           dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
         }
       }
-      else if (file.isTextFile(item.name)) {
+      else if (isTextFile(item.name)) {
         updateUrlWithHistory(dirPath, item.path);
         dispatch({ type: 'SET_PREVIEW_LOADING', loading: true });
 
@@ -210,7 +212,7 @@ export const useFilePreview = (
           dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
         }
       }
-      else if (file.isPdfFile(fileNameLower)) {
+      else if (isPdfFile(fileNameLower)) {
         // 使用新的 PDF 预览工具函数
         try {
           await pdf.openPDFPreview({
@@ -237,7 +239,7 @@ export const useFilePreview = (
         }
         return;
       }
-      else if (file.isImageFile(fileNameLower)) {
+      else if (isImageFile(fileNameLower)) {
         // 图片预览
         dispatch({ type: 'SET_IMAGE_LOADING', loading: true });
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });

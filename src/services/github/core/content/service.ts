@@ -54,6 +54,7 @@ interface GetContentsOptions {
  *
  * @param path - 仓库内目录路径，空字符串表示根目录
  * @param signal - 可选中断信号，用于取消正在执行的请求
+ * @param options
  * @returns 解析后的 GitHub 内容数组
  *
  * @remarks

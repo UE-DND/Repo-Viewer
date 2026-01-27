@@ -78,7 +78,6 @@ export function normalizeSearchIndexError(error: unknown): RepoSearchError {
   const message = error instanceof Error ? error.message : 'Unknown search index error';
   return {
     source: 'index',
-    code: 'UNKNOWN',
     message,
     raw: error
   } satisfies RepoSearchError;
@@ -96,11 +95,18 @@ export function normalizeSearchError(error: unknown, mode: RepoSearchMode): Repo
   }
 
   const message = error instanceof Error ? error.message : 'Unknown search error';
-  return {
+  const base: RepoSearchError = {
     source: 'search',
-    code: mode === 'search-index' ? SearchIndexErrorCode.INDEX_FILE_NOT_FOUND : 'UNKNOWN',
     message,
     raw: error
-  } satisfies RepoSearchError;
-}
+  };
 
+  if (mode === 'search-index') {
+    return {
+      ...base,
+      code: SearchIndexErrorCode.INDEX_FILE_NOT_FOUND
+    } satisfies RepoSearchError;
+  }
+
+  return base;
+}

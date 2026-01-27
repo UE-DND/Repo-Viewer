@@ -16,13 +16,6 @@ export class ErrorLogger {
   }
 
   /**
-   * 更新日志配置
-   */
-  public setLoggingEnabled(enabled: boolean): void {
-    this.enableLogging = enabled;
-  }
-
-  /**
    * 记录错误日志
    */
   public logError(error: AppError): void {
@@ -58,4 +51,3 @@ export class ErrorLogger {
     return `[${error.category}] ${error.code}: ${error.message}`;
   }
 }
-

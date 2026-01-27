@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { ClassAttributes, HTMLAttributes } from "react";
 import { Box, IconButton, Tooltip, useTheme, useMediaQuery } from "@mui/material";
 import { alpha } from "@mui/material/styles";

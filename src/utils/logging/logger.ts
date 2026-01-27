@@ -175,12 +175,3 @@ const createFacade = (name: string): Logger => ({
 export const logger = createFacade(APP_LOGGER_NAME);
 
 export const createScopedLogger = (name: string): ReturnType<typeof createFacade> => createFacade(name);
-
-export const getLoggerFactory = (): LoggerFactory => currentFactory;
-
-export const getLogRecorder = (): InMemoryLogRecorder => recorder;
-
-export const registerLoggerReporter = (reporter: ErrorReporter | undefined): void => {
-  customReporter = reporter;
-  rebuildFactory(developerConfigSnapshot);
-};

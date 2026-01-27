@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useSEO } from "@/contexts/SEOContext/useSEO";
 import SEO from "./SEO";
 

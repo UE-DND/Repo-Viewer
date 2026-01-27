@@ -1,4 +1,4 @@
-import { useContext, useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useContext, useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import {
   Box,
   IconButton,

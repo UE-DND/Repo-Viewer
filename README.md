@@ -1,14 +1,16 @@
-<h1 align="center">
-  <em>Repo-Viewer</em>
-</h1>
+<div style="text-align: center;">
+  <h1><em>Repo-Viewer</em></h1>
+</div>
 
-<p align="center">
-  <strong>基于 Material Design 3设计风格的 GitHub仓库浏览应用</strong>
-  &nbsp;&nbsp;
-  <a href="https://deepwiki.com/UE-DND/Repo-Viewer">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
-  </a>
-</p>
+<div style="text-align: center;">
+  <p>
+    <strong>基于 Material Design 3设计风格的 GitHub仓库浏览应用</strong>
+    &nbsp;&nbsp;
+    <a href="https://deepwiki.com/UE-DND/Repo-Viewer">
+      <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+    </a>
+  </p>
+</div>
 
 ![Preview Dark](docs/image/dark.png)
 
