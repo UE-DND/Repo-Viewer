@@ -1,10 +1,4 @@
 import { GitHubTokenManager } from '../TokenManager';
-import {
-  markProxyServiceFailed as proxyMarkServiceFailed,
-  getCurrentProxyService as proxyGetCurrentService,
-  resetFailedProxyServices as proxyResetFailedServices,
-  transformImageUrl as proxyTransformImageUrl
-} from '../proxy';
 import { ErrorManager } from '@/utils/error';
 import type { GitHubError } from '@/types/errors';
 import { shouldUseServerAPI } from '../config';
@@ -147,46 +141,6 @@ export function handleApiError(error: Response, endpoint: string, method = 'GET'
  * @param proxyUrl - 失败的代理服务URL
  * @returns void
  */
-export function markProxyServiceFailed(proxyUrl: string): void {
-  proxyMarkServiceFailed(proxyUrl);
-}
-
-/**
- * 获取当前使用的代理服务
- *
- * @returns 当前活跃的代理服务URL
- */
-export function getCurrentProxyService(): string {
-  return proxyGetCurrentService();
-}
-
-/**
- * 重置失败的代理服务记录
- *
- * 清除所有代理服务的失败标记，允许重新尝试使用。
- *
- * @returns void
- */
-export function resetFailedProxyServices(): void {
-  proxyResetFailedServices();
-}
-
-/**
- * 转换相对图片URL为绝对URL
- *
- * 将Markdown文件中的相对路径图片URL转换为可访问的绝对URL，
- * 根据useTokenMode决定是否使用代理服务。
- *
- * @param src - 原始图片URL（可能是相对路径）
- * @param markdownFilePath - Markdown文件的路径
- * @param useTokenMode - 是否使用Token模式
- * @param branch - 分支名称（可选）
- * @returns 转换后的绝对URL，如果输入为undefined则返回undefined
- */
-export function transformImageUrl(src: string | undefined, markdownFilePath: string, useTokenMode: boolean, branch?: string): string | undefined {
-  return proxyTransformImageUrl(src, markdownFilePath, useTokenMode, branch);
-}
-
 /**
  * 获取 Token 管理器实例
  *

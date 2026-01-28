@@ -39,9 +39,6 @@ export const pdf = {
 };
 
 
-// 重试工具
-import * as retryUtils from './retry/retryUtils';
-export const retry = retryUtils;
 
 // 请求管理工具
 import { requestManager as requestManagerInstance } from './request/requestManager';
@@ -101,7 +98,6 @@ export const performance = {
 
 };
 
-export type { RetryOptions } from './retry/retryUtils';
 export type { SmartCacheOptions } from './cache/SmartCache';
 export type { RequestOptions } from './request/requestManager';
 export type { ErrorHandlerOptions } from './error/errorHandler';

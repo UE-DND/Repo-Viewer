@@ -281,15 +281,6 @@ export class TimeWheel<T> {
     };
   }
 
-  /**
-   * 销毁时间轮
-   * 
-   * 停止时钟并清空所有数据。
-   */
-  destroy(): void {
-    this.stop();
-    this.clear();
-  }
 }
 
 /**
@@ -307,4 +298,3 @@ export function createTimeWheel<T>(options?: {
   wheel.start();
   return wheel;
 }
-

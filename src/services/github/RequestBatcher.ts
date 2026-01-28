@@ -1,5 +1,4 @@
-import { logger, retry } from '@/utils';
-import type { RetryOptions } from '@/utils';
+import { logger } from '@/utils';
 import { createTimeWheel } from '@/utils/data-structures/TimeWheel';
 import type { TimeWheel } from '@/utils/data-structures/TimeWheel';
 
@@ -20,6 +19,17 @@ interface BatchedRequest<T = unknown> {
 interface FingerprintData {
   result: unknown;
   hitCount: number;
+}
+
+/**
+ * 重试选项
+ */
+interface RetryOptions {
+  maxRetries: number;
+  backoff: (attempt: number) => number;
+  shouldRetry?: (error: unknown) => boolean;
+  onRetry?: (attempt: number, error: unknown) => void;
+  silent?: boolean;
 }
 
 /**
@@ -59,6 +69,55 @@ export class RequestBatcher {
     const headerStr = headers !== undefined ? JSON.stringify(headers) : '';
     return `${method}:${key}:${headerStr}`;
   }
+
+  /**
+   * 重试选项
+   */
+  private withRetry = async <T>(
+    fn: () => Promise<T>,
+    options: RetryOptions
+  ): Promise<T> => {
+    const {
+      maxRetries,
+      backoff,
+      shouldRetry = () => true,
+      onRetry,
+      silent = false
+    } = options;
+
+    let lastError: unknown = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await fn();
+        if (attempt > 0) {
+          logger.debug(`操作在第 ${(attempt + 1).toString()} 次尝试后成功`);
+        }
+        return result;
+      } catch (error: unknown) {
+        lastError = error;
+
+        if (attempt < maxRetries && shouldRetry(error)) {
+          const delay = backoff(attempt);
+
+          if (onRetry !== undefined) {
+            onRetry(attempt, error);
+          }
+
+          if (!silent) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.debug(`重试操作 (尝试 ${(attempt + 1).toString()}/${(maxRetries + 1).toString()})，延迟 ${delay.toString()}ms: ${errorMessage}`);
+          }
+
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          break;
+        }
+      }
+    }
+
+    throw lastError;
+  };
 
   /**
    * 将请求加入批处理队列
@@ -191,7 +250,7 @@ export class RequestBatcher {
 
     try {
       // 使用通用重试逻辑执行请求
-      const result = await retry.withRetry(executeRequest, retryOptions);
+      const result = await this.withRetry(executeRequest, retryOptions);
 
       // 缓存成功的请求结果
       if (!skipDeduplication) {
