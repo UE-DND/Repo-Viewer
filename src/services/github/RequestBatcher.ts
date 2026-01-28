@@ -61,23 +61,6 @@ export class RequestBatcher {
   }
 
   /**
-   * 销毁批处理器
-   * 
-   * 清理所有定时器和缓存，释放资源。
-   * 
-   * @returns void
-   */
-  public destroy(): void {
-    if (this.batchTimeout !== null && this.batchTimeout !== 0 && !isNaN(this.batchTimeout)) {
-      clearTimeout(this.batchTimeout);
-    }
-    this.batchedRequests.clear();
-    this.pendingRequests.clear();
-    this.fingerprintWheel.destroy();
-    logger.debug('RequestBatcher 已销毁');
-  }
-
-  /**
    * 将请求加入批处理队列
    * 
    * 支持请求去重、优先级管理和智能合并相同请求。
@@ -278,21 +261,4 @@ export class RequestBatcher {
     logger.debug('已清除请求指纹缓存');
   }
 
-  /**
-   * 强制取消所有等待的请求
-   * 
-   * 取消所有在队列中等待的请求，清空批处理队列。
-   * 
-   * @returns void
-   */
-  public cancelAllRequests(): void {
-    for (const [, queue] of this.batchedRequests.entries()) {
-      queue.forEach(request => {
-        request.reject(new Error('请求被取消'));
-      });
-    }
-    this.batchedRequests.clear();
-    this.pendingRequests.clear();
-    logger.debug('已取消所有等待的请求');
-  }
 }

@@ -13,7 +13,6 @@ import * as StatsServiceModule from './github/core/StatsService';
 import * as PrefetchServiceModule from './github/core/PrefetchService';
 import * as AuthModule from './github/core/Auth';
 import * as ConfigModule from './github/core/Config';
-import { getDefaultBranchName } from './github/core/Service';
 import { CacheManager as CacheManagerClass } from './github/cache';
 import { GitHubTokenManager } from './github/TokenManager';
 import {
@@ -72,7 +71,7 @@ export const GitHub = {
     getBranches: BranchServiceModule.getBranches,
     getCurrentBranch: ConfigModule.getCurrentBranch,
     setCurrentBranch: ConfigModule.setCurrentBranch,
-    getDefaultBranchName: getDefaultBranchName,
+    getDefaultBranchName: ConfigModule.getDefaultBranch,
   },
 
   /** 缓存服务 - 管理缓存和统计 */

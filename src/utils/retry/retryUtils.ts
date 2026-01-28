@@ -61,10 +61,6 @@ export const fixedDelay = (delay: number): ((attempt: number) => number) => {
  * @param increment - 每次重试增加的延迟时间（毫秒）
  * @returns 返回线性增长延迟的函数
  */
-export const linearBackoff = (initialDelay: number, increment: number): ((attempt: number) => number) => {
-  return (attempt: number) => initialDelay + (attempt * increment);
-};
-
 /**
  * 通用重试函数
  * 
@@ -135,84 +131,11 @@ export async function withRetry<T>(
  * @param options - 重试选项
  * @returns 返回一个装饰器函数
  */
-export function createRetryDecorator(options: RetryOptions) {
-  return function <T extends (...args: unknown[]) => Promise<unknown>>(
-    target: T
-  ): T {
-    return (async (...args: Parameters<T>) => {
-      return withRetry(() => target(...args), options);
-    }) as T;
-  };
-}
-
 /**
  * 常用的重试配置预设
  */
-export const RetryPresets = {
-  /**
-   * 快速重试：3次，固定100ms延迟
-   */
-  fast: {
-    maxRetries: 3,
-    backoff: fixedDelay(100)
-  } as RetryOptions,
-  
-  /**
-   * 标准重试：3次，指数退避
-   */
-  standard: {
-    maxRetries: 3,
-    backoff: exponentialBackoff
-  } as RetryOptions,
-  
-  /**
-   * 持久重试：5次，指数退避，最大延迟5秒
-   */
-  persistent: {
-    maxRetries: 5,
-    backoff: (attempt: number) => Math.min(1000 * Math.pow(2, attempt), 5000)
-  } as RetryOptions,
-  
-  /**
-   * 网络请求重试：3次，指数退避，跳过4xx错误
-   */
-  network: {
-    maxRetries: 3,
-    backoff: exponentialBackoff,
-    shouldRetry: (error: unknown) => {
-      if (error instanceof Response) {
-        return error.status >= 500 || error.status === 0;
-      }
-      return true;
-    }
-  } as RetryOptions
-};
-
 /**
  * 检查错误是否为网络错误
  * @param error - 错误对象
  * @returns 是否为网络错误
  */
-export function isNetworkError(error: unknown): boolean {
-  if (error instanceof Error) {
-    return error.name === 'NetworkError' || 
-           error.name === 'AbortError' ||
-           error.message.toLowerCase().includes('network') ||
-           error.message.toLowerCase().includes('fetch');
-  }
-  return false;
-}
-
-/**
- * 检查错误是否为超时错误
- * @param error - 错误对象
- * @returns 是否为超时错误
- */
-export function isTimeoutError(error: unknown): boolean {
-  if (error instanceof Error) {
-    return error.name === 'TimeoutError' ||
-           error.message.toLowerCase().includes('timeout');
-  }
-  return false;
-}
-

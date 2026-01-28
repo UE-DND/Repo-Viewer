@@ -14,8 +14,6 @@ export type * from './preview';
 // 导出下载相关类型
 export type * from './download';
 
-// 导出状态相关类型
-export type * from './state';
 
 /**
  * GitHub仓库内容项接口
