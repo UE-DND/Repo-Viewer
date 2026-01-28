@@ -5,7 +5,6 @@ import type { MotionStyle } from "framer-motion";
 import type { RowComponentProps } from "react-window";
 
 import FileListItem from "./FileListItem";
-import { FILE_ITEM_CONFIG } from "./utils/fileListConfig";
 import { getDynamicItemVariants, optimizedAnimationStyle } from "./utils/fileListAnimations";
 import type { VirtualListItemData } from "./utils/types";
 
@@ -30,6 +29,7 @@ const RowComponent = ({
     isScrolling,
     scrollSpeed,
     highlightedIndex,
+    rowPaddingBottom,
   } = rowData;
 
   const item = contents[index];
@@ -85,7 +85,7 @@ const RowComponent = ({
     height: "100%",
     width: "100%",
     paddingTop: 0,
-    paddingBottom: FILE_ITEM_CONFIG.spacing.marginBottom,
+    paddingBottom: rowPaddingBottom,
     paddingRight: "12px",
     boxSizing: "border-box",
     ...optimizedAnimationStyle,
