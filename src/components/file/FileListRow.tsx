@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactElement } from "react";
 import { motion } from "framer-motion";
 import type { MotionStyle } from "framer-motion";
@@ -14,8 +13,6 @@ const RowComponent = ({
   style,
   ...rowData
 }: RowComponentProps<VirtualListItemData>): ReactElement => {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(true);
   const {
     contents,
     downloadingPath,
@@ -34,38 +31,10 @@ const RowComponent = ({
 
   const item = contents[index];
 
-  useEffect(() => {
-    const element = rowRef.current;
-    if (element === null) {
-      return;
-    }
-
-    const scrollContainer = element.closest('.virtual-file-list');
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          setIsVisible(entry.isIntersecting);
-        });
-      },
-      {
-        root: scrollContainer ?? null,
-        rootMargin: "100px",
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   if (item === undefined) {
     return (
       <div
-        ref={rowRef}
         style={style}
         {...ariaAttributes}
         aria-hidden="true"
@@ -95,11 +64,9 @@ const RowComponent = ({
 
   return (
     <div
-      ref={rowRef}
       style={adjustedStyle}
       className="file-list-item-container"
       {...ariaAttributes}
-      aria-hidden={!isVisible ? "true" : undefined}
       data-oid="_c:db-1"
     >
       <motion.div
@@ -122,7 +89,6 @@ const RowComponent = ({
           currentPath={currentPath}
           contents={contents}
           isHighlighted={isHighlighted}
-          isVisible={isVisible}
           data-oid="k4zj3qr"
         />
       </motion.div>
