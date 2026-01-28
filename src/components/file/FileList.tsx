@@ -5,7 +5,7 @@ import { AutoSizer } from "react-virtualized-auto-sizer";
 import AlphabetIndex from "./AlphabetIndex";
 import { RowComponent } from "./FileListRow";
 import { FILE_ITEM_CONFIG, LIST_HEIGHT_CONFIG } from "./utils/fileListConfig";
-import { calculateLayoutMetrics } from "./utils/fileListLayout";
+import { calculateLayoutMetrics, getListPadding, getRowMetrics } from "./utils/fileListLayout";
 import type { VirtualListItemData, FileListLayoutMetrics } from "./utils/types";
 import type { GitHubContent } from "@/types";
 import { theme } from "@/utils";
@@ -70,17 +70,8 @@ const FileList = React.memo<FileListProps>(
 
     // 计算每个文件项的高度（包括间距）
     // 这个计算需要与 FileListItem 的实际高度保持一致
-    const rowHeight = useMemo(() => {
-      // 基础高度
-      const baseHeight = isSmallScreen
-        ? FILE_ITEM_CONFIG.baseHeight.xs
-        : FILE_ITEM_CONFIG.baseHeight.sm;
-
-      // 行间距（上下各分一半）
-      const rowGap = FILE_ITEM_CONFIG.spacing.marginBottom;
-
-      // 计算总高度：基础高度 + 行间距
-      return baseHeight + rowGap;
+    const { rowHeight, rowPaddingBottom } = useMemo(() => {
+      return getRowMetrics(isSmallScreen);
     }, [isSmallScreen]);
 
     /**
@@ -200,6 +191,7 @@ const FileList = React.memo<FileListProps>(
         isScrolling,
         scrollSpeed,
         highlightedIndex,
+        rowPaddingBottom,
       }),
       [
         contents,
@@ -214,26 +206,17 @@ const FileList = React.memo<FileListProps>(
         isScrolling,
         scrollSpeed,
         highlightedIndex,
+        rowPaddingBottom,
       ],
     );
 
     // 简化的列表内边距计算
-    const listPadding = useMemo((): { paddingTop: number; paddingBottom: number } => {
-      // 非滚动模式：使用固定的对称内边距，稍微增加一点
-      if (!needsScrolling) {
-        const padding = isSmallScreen ? 16 : 20;
-        return {
-          paddingTop: padding - 4,
-          paddingBottom: padding,
-        };
-      }
-
-      // 滚动模式：使用较小的内边距
-      return {
-        paddingTop: 0,
-        paddingBottom: 8,
-      };
-    }, [needsScrolling, isSmallScreen]);
+    // 列表内边距规则集中管理，区分滚动与非滚动模式。
+    const listPadding = useMemo(
+      (): { paddingTop: number; paddingBottom: number } =>
+        getListPadding(needsScrolling, isSmallScreen),
+      [needsScrolling, isSmallScreen],
+    );
 
     // 处理滚动事件（监听列表容器）
     React.useEffect(() => {

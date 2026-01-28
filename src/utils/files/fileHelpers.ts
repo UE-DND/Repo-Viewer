@@ -1,5 +1,4 @@
 import {
-  Description as FileIcon,
   PictureAsPdf as PdfIcon,
   Article as MarkdownIcon,
   TextSnippet as TxtIcon,
@@ -12,9 +11,10 @@ import {
   Code as CodeIcon,
   Archive as ArchiveIcon
 } from '@mui/icons-material';
+import type { ElementType } from "react";
 
 // 文件扩展名与图标映射
-export const fileExtensionIcons: Record<string, React.ElementType> = {
+export const fileExtensionIcons: Record<string, ElementType> = {
   zip: ArchiveIcon, rar: ArchiveIcon, '7z': ArchiveIcon, tar: ArchiveIcon, gz: ArchiveIcon,
   pdf: PdfIcon,
   doc: DocIcon, docx: DocIcon,
@@ -35,25 +35,6 @@ export const fileExtensionIcons: Record<string, React.ElementType> = {
   go: CodeIcon, rs: CodeIcon, dart: CodeIcon, lua: CodeIcon, sh: CodeIcon, bash: CodeIcon, zsh: CodeIcon, fish: CodeIcon,
   ps1: CodeIcon, bat: CodeIcon, cmd: CodeIcon,
   sql: CodeIcon, cs: CodeIcon, fs: CodeIcon, fsx: CodeIcon, vb: CodeIcon,
-};
-
-/**
- * 获取文件图标
- *
- * 根据文件扩展名返回对应的Material-UI图标组件。
- *
- * @param filename - 文件名
- * @returns 图标组件
- */
-export const getFileIcon = (filename: string): React.ElementType => {
-  const extension = filename.split('.').pop()?.toLowerCase();
-  if (typeof extension === 'string' && extension.length > 0) {
-    const icon = fileExtensionIcons[extension];
-    if (typeof icon !== 'undefined') {
-      return icon;
-    }
-  }
-  return FileIcon;
 };
 
 /**
@@ -209,6 +190,4 @@ export const isTextFile = (filename: string): boolean => {
   }
 
   return lowerCaseName.startsWith('.') && TEXT_FILE_NAMES.has(lowerCaseName);
-
-
 };

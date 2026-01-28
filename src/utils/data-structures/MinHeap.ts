@@ -71,15 +71,6 @@ export class MinHeap<T> {
   }
 
   /**
-   * 查看最小元素（不删除）
-   * 
-   * @returns 最小元素，如果堆为空则返回 undefined
-   */
-  peek(): T | undefined {
-    return this.heap[0];
-  }
-
-  /**
    * 提取最小的 k 个元素
    * 
    * @param k - 要提取的元素数量
@@ -104,13 +95,6 @@ export class MinHeap<T> {
    */
   get size(): number {
     return this.heap.length;
-  }
-
-  /**
-   * 检查堆是否为空
-   */
-  isEmpty(): boolean {
-    return this.heap.length === 0;
   }
 
   /**
@@ -184,14 +168,6 @@ export class MinHeap<T> {
     }
   }
 
-  /**
-   * 获取堆的数组表示（用于调试）
-   * 
-   * @returns 堆的数组副本
-   */
-  toArray(): T[] {
-    return [...this.heap];
-  }
 }
 
 /**

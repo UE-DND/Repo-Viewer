@@ -183,6 +183,4 @@ export async function getBranches(): Promise<string[]> {
   }
 }
 
-export default {
-  getBranches
-};
+

@@ -167,7 +167,7 @@ const Footer: React.FC = () => {
               {t('ui.footer.presentedBy')}{" "}
               <Link
                 color="primary"
-                href="https://github.com/UE-DND/Repo-Viewer"
+                href="https://github.com/CQUT-OpenProject/Repo-Viewer"
                 target="_blank"
                 rel="noopener"
                 sx={{
@@ -205,7 +205,7 @@ const Footer: React.FC = () => {
             {t('ui.footer.presentedBy')}{" "}
             <Link
               color="primary"
-              href="https://github.com/UE-DND/Repo-Viewer"
+              href="https://github.com/CQUT-OpenProject/Repo-Viewer"
               target="_blank"
               rel="noopener"
               sx={{

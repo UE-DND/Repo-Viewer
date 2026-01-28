@@ -12,7 +12,7 @@ interface UseKeyboardNavigationOptions {
 /**
  * 键盘导航 Hook
  *
- * 处理键盘左右箭头切换图片
+ * 处理键盘左右方向键切换图片
  */
 export function useKeyboardNavigation({
   loading,

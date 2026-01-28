@@ -29,43 +29,6 @@ export class TypedEventEmitter<T extends Record<string, any>> {
   private events = new Map<keyof T, Set<(data: T[keyof T]) => void>>();
 
   /**
-   * 订阅事件
-   * 
-   * @param event - 事件名称（类型安全）
-   * @param callback - 事件回调函数（类型安全）
-   * @returns 取消订阅的函数
-   * 
-   * @example
-   * ```typescript
-   * const unsubscribe = eventEmitter.subscribe('refresh_content', (data) => {
-   *   console.log('路径:', data.path); // ✅ 类型安全
-   * });
-   * ```
-   */
-  subscribe<K extends keyof T>(
-    event: K,
-    callback: (data: T[K]) => void
-  ): () => void {
-    if (!this.events.has(event)) {
-      this.events.set(event, new Set());
-    }
-    
-    const handlers = this.events.get(event);
-    if (handlers !== undefined) {
-      handlers.add(callback as (data: T[keyof T]) => void);
-      logger.debug(`事件订阅: ${String(event)}, 当前订阅者数量: ${handlers.size.toString()}`);
-    }
-    
-    return () => {
-      const handlers = this.events.get(event);
-      if (handlers !== undefined) {
-        handlers.delete(callback as (data: T[keyof T]) => void);
-        logger.debug(`取消事件订阅: ${String(event)}, 剩余订阅者数量: ${handlers.size.toString()}`);
-      }
-    };
-  }
-
-  /**
    * 分发事件
    * 
    * @param event - 事件名称（类型安全）
@@ -95,48 +58,10 @@ export class TypedEventEmitter<T extends Record<string, any>> {
   }
 
   /**
-   * 取消订阅（别名方法）
-   */
-  on<K extends keyof T>(event: K, callback: (data: T[K]) => void): () => void {
-    return this.subscribe(event, callback);
-  }
-
-  /**
-   * 触发事件（别名方法）
-   */
-  emit<K extends keyof T>(event: K, data: T[K]): void {
-    this.dispatch(event, data);
-  }
-
-  /**
-   * 移除特定的监听器
-   */
-  removeListener<K extends keyof T>(event: K, callback: (data: T[K]) => void): void {
-    const handlers = this.events.get(event);
-    if (handlers !== undefined) {
-      handlers.delete(callback as (data: T[keyof T]) => void);
-    }
-  }
-
-  /**
-   * 移除事件的所有监听器
-   */
-  removeAllListeners(event: keyof T): void {
-    this.events.delete(event);
-  }
-
-  /**
    * 清空所有事件监听器
    */
   clear(): void {
     this.events.clear();
-  }
-
-  /**
-   * 获取事件监听器数量
-   */
-  listenerCount(event: keyof T): number {
-    return this.events.get(event)?.size ?? 0;
   }
 }
 

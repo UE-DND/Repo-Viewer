@@ -402,7 +402,7 @@ const resolveBranchRef = async (repoPath: string, branch: string): Promise<strin
       await runCommandText("git", ["rev-parse", "--verify", candidate], repoPath);
       return candidate;
     } catch {
-      continue;
+
     }
   }
   return null;

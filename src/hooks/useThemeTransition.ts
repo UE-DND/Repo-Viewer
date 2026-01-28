@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 
 /**
  * 主题切换状态 Hook
  *
  * 监听主题切换事件，返回可读的状态引用。
  */
-export const useThemeTransitionFlag = (): React.RefObject<boolean> => {
+export const useThemeTransitionFlag = (): RefObject<boolean> => {
   const isThemeChangingRef = useRef(false);
 
   useEffect(() => {

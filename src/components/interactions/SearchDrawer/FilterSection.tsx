@@ -17,6 +17,7 @@ import {
 } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { useI18n } from "@/contexts/I18nContext";
+import React from "react";
 
 interface FilterSectionProps {
   expanded: boolean;

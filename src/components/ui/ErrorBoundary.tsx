@@ -149,11 +149,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   };
 
   // 延迟重置，给用户时间看到错误信息
-  autoResetAfterDelay = (delay = 5000): void => {
-    this.resetTimeoutId = window.setTimeout(() => {
-      this.resetError();
-    }, delay);
-  };
+
 
   toggleDetails = (): void => {
     this.setState(prevState => ({
@@ -423,4 +419,4 @@ export const FeatureErrorBoundary: React.FC<{
   </ErrorBoundary>
 );
 
-export default ErrorBoundary;
+

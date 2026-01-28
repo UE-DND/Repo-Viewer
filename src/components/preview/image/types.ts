@@ -174,7 +174,7 @@ export interface ImagePreviewContentProps {
   onPrevious?: (() => void) | undefined;
   /** 切换到下一张图片的回调 */
   onNext?: (() => void) | undefined;
-  /** 初始宽高比（用于占位与渐进过渡） */
+  /** 初始宽高比（用于占位和渐进式过渡） */
   initialAspectRatio?: number | null;
   /** 宽高比变更时回调 */
   onAspectRatioChange?: (aspectRatio: number) => void;

@@ -119,9 +119,6 @@ export function getRequestStrategy(): 'server-api' | 'direct-api' | 'hybrid' {
 }
 
 // 导出便捷别名函数
-export const getForceServerProxyAlias = (): boolean => getForceServerProxy();
-export const shouldUseServerAPIAlias = (): boolean => shouldUseServerAPI();
-export const getRequestStrategyAlias = (): 'server-api' | 'direct-api' | 'hybrid' => getRequestStrategy();
 export const refreshProxyConfig = (): void => {
   refreshConfig();
 };

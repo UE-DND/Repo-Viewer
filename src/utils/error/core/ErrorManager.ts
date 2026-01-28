@@ -2,11 +2,8 @@ import type {
   AppError,
   ErrorContext,
   ErrorHandlerConfig,
-  APIError,
-  NetworkError,
   GitHubError,
-  ComponentError,
-  FileOperationError
+  ComponentError
 } from '@/types/errors';
 import { ErrorLevel, ErrorCategory } from '@/types/errors';
 import { createScopedLogger } from '../../logging/logger';
@@ -95,19 +92,6 @@ class ErrorManagerClass {
   }
 
   /**
-   * 创建API错误
-   */
-  public createAPIError(
-    message: string,
-    statusCode: number,
-    endpoint: string,
-    method: string,
-    context?: Record<string, unknown>
-  ): APIError {
-    return this.factory.createAPIError(message, statusCode, endpoint, method, context);
-  }
-
-  /**
    * 创建GitHub特定错误
    */
   public createGitHubError(
@@ -122,19 +106,6 @@ class ErrorManagerClass {
   }
 
   /**
-   * 创建网络错误
-   */
-  public createNetworkError(
-    message: string,
-    url: string,
-    timeout = false,
-    retryCount = 0,
-    context?: Record<string, unknown>
-  ): NetworkError {
-    return this.factory.createNetworkError(message, url, timeout, retryCount, context);
-  }
-
-  /**
    * 创建组件错误
    */
   public createComponentError(
@@ -144,26 +115,6 @@ class ErrorManagerClass {
     context?: Record<string, unknown>
   ): ComponentError {
     return this.factory.createComponentError(componentName, message, props, context);
-  }
-
-  /**
-   * 创建文件操作错误
-   */
-  public createFileOperationError(
-    fileName: string,
-    operation: 'read' | 'write' | 'download' | 'compress' | 'parse',
-    message: string,
-    fileSize?: number,
-    context?: Record<string, unknown>
-  ): FileOperationError {
-    return this.factory.createFileOperationError(fileName, operation, message, fileSize, context);
-  }
-
-  /**
-   * 处理API错误响应
-   */
-  public handleAPIError(error: unknown, endpoint: string, method: string): APIError | GitHubError {
-    return this.factory.handleAPIError(error, endpoint, method);
   }
 
   // 检查是否为AppError
@@ -195,47 +146,6 @@ class ErrorManagerClass {
     }
   }
 
-  /**
-   * 获取错误历史
-   */
-  public getErrorHistory(category?: ErrorCategory, limit = 20): AppError[] {
-    return this.history.getErrorHistory(category, limit);
-  }
-
-  /**
-   * 清理错误历史
-   */
-  public clearErrorHistory(): void {
-    this.history.clearErrorHistory();
-  }
-
-  /**
-   * 获取错误统计
-   */
-  public getErrorStats(): Record<ErrorCategory, number> {
-    return this.history.getErrorStats();
-  }
-
-  /**
-   * 更新错误处理配置
-   */
-  public updateConfig(newConfig: Partial<ErrorHandlerConfig>): void {
-    this.config = { ...this.config, ...newConfig };
-
-    // 更新子模块配置
-    if (newConfig.enableConsoleLogging !== undefined) {
-      this.errorLogger.setLoggingEnabled(newConfig.enableConsoleLogging);
-    }
-  }
-
-  /**
-   * 重置错误会话
-   */
-  public resetSession(): void {
-    this.sessionId = this.generateSessionId();
-    this.factory.updateSessionId(this.sessionId);
-    this.history.clearErrorHistory();
-  }
 }
 
 /**

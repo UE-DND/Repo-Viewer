@@ -270,7 +270,7 @@ const ImagePreviewContent: React.FC<ImagePreviewContentProps> = ({
         >
           {({ zoomIn, zoomOut, resetTransform }) => (
             <>
-              {/* 图片内容 */}
+              {/* 图片展示 */}
               <TransformComponent
                 wrapperStyle={{
                   width: '100%',

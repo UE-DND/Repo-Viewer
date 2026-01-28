@@ -147,26 +147,6 @@ export class LRUCache<K extends string> {
   }
 
   /**
-   * 获取最少使用的 N 个条目
-   * 
-   * @param count - 要获取的条目数量
-   * @returns 最少使用的条目键数组
-   */
-  getLeastUsed(count: number): K[] {
-    const result: K[] = [];
-    let current = this.head;
-    let collected = 0;
-
-    while (current !== null && collected < count) {
-      result.push(current.key);
-      current = current.next;
-      collected++;
-    }
-
-    return result;
-  }
-
-  /**
    * 移动节点到尾部（标记为最近使用）
    * 
    * @param node - 要移动的节点
@@ -238,4 +218,3 @@ export class LRUCache<K extends string> {
     logger.debug(`LRU缓存已满，删除最久未使用的项: ${lruKey}`);
   }
 }
-

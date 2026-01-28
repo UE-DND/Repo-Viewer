@@ -1,11 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
-import type { ReactElement } from "react";
+import type { CSSProperties, ReactElement } from "react";
 import { motion } from "framer-motion";
 import type { MotionStyle } from "framer-motion";
 import type { RowComponentProps } from "react-window";
 
 import FileListItem from "./FileListItem";
-import { FILE_ITEM_CONFIG } from "./utils/fileListConfig";
 import { getDynamicItemVariants, optimizedAnimationStyle } from "./utils/fileListAnimations";
 import type { VirtualListItemData } from "./utils/types";
 
@@ -15,8 +13,6 @@ const RowComponent = ({
   style,
   ...rowData
 }: RowComponentProps<VirtualListItemData>): ReactElement => {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(true);
   const {
     contents,
     downloadingPath,
@@ -30,42 +26,15 @@ const RowComponent = ({
     isScrolling,
     scrollSpeed,
     highlightedIndex,
+    rowPaddingBottom,
   } = rowData;
 
   const item = contents[index];
 
-  useEffect(() => {
-    const element = rowRef.current;
-    if (element === null) {
-      return;
-    }
-
-    const scrollContainer = element.closest('.virtual-file-list');
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          setIsVisible(entry.isIntersecting);
-        });
-      },
-      {
-        root: scrollContainer ?? null,
-        rootMargin: "100px",
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   if (item === undefined) {
     return (
       <div
-        ref={rowRef}
         style={style}
         {...ariaAttributes}
         aria-hidden="true"
@@ -75,7 +44,7 @@ const RowComponent = ({
 
   const isHighlighted = highlightedIndex === index;
 
-  const adjustedStyle: React.CSSProperties = {
+  const adjustedStyle: CSSProperties = {
     ...style,
     boxSizing: "border-box",
     alignItems: "flex-start",
@@ -85,7 +54,7 @@ const RowComponent = ({
     height: "100%",
     width: "100%",
     paddingTop: 0,
-    paddingBottom: FILE_ITEM_CONFIG.spacing.marginBottom,
+    paddingBottom: rowPaddingBottom,
     paddingRight: "12px",
     boxSizing: "border-box",
     ...optimizedAnimationStyle,
@@ -95,11 +64,9 @@ const RowComponent = ({
 
   return (
     <div
-      ref={rowRef}
       style={adjustedStyle}
       className="file-list-item-container"
       {...ariaAttributes}
-      aria-hidden={!isVisible ? "true" : undefined}
       data-oid="_c:db-1"
     >
       <motion.div
@@ -122,7 +89,6 @@ const RowComponent = ({
           currentPath={currentPath}
           contents={contents}
           isHighlighted={isHighlighted}
-          isVisible={isVisible}
           data-oid="k4zj3qr"
         />
       </motion.div>
@@ -130,10 +96,4 @@ const RowComponent = ({
   );
 };
 
-const Row = React.memo(RowComponent);
-
-Row.displayName = "FileListRow";
-
 export { RowComponent };
-
-export default Row;

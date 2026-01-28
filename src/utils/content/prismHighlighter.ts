@@ -49,31 +49,6 @@ import 'prismjs/components/prism-git';
 import 'prismjs/components/prism-batch';
 
 /**
- * 使用 Prism.js 高亮代码内容
- *
- * @param code - 要高亮的代码内容
- * @param language - Prism 语言标识符，如果为 null 则只转义 HTML
- * @returns 高亮后的 HTML 字符串
- */
-export function highlightCode(code: string, language: string | null): string {
-  if (language === null || language === '' || Prism.languages[language] === undefined) {
-    // 如果没有支持的语言，使用 Prism 的转义函数避免 XSS
-    const encoded = Prism.util.encode(code);
-    return typeof encoded === 'string' ? encoded : code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  try {
-    const grammar = Prism.languages[language];
-    return Prism.highlight(code, grammar, language);
-  } catch (error) {
-    // 如果高亮失败，只转义 HTML
-    logger.warn('Prism highlight failed:', error);
-    const encoded = Prism.util.encode(code);
-    return typeof encoded === 'string' ? encoded : code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-}
-
-/**
  * 高亮文本文件的每一行
  *
  * 为了保持 HTML 标签的完整性并确保每行都能正确高亮，

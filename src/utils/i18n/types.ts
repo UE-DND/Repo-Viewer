@@ -34,6 +34,4 @@ export interface TranslatorOptions {
  */
 export interface ITranslator {
   translate(key: string, options?: InterpolationOptions): string;
-  getUninterpolatedString(key: string): string;
 }
-

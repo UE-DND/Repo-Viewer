@@ -231,34 +231,6 @@ export class RequestManager {
   }
 
   /**
-   * 检查指定的请求是否正在进行
-   * 
-   * @param key - 请求的唯一标识符
-   * @returns 如果请求正在进行返回 true
-   */
-  isPending(key: string): boolean {
-    return this.pendingRequests.has(key) || this.debounceTimers.has(key);
-  }
-
-  /**
-   * 获取进行中的请求数量
-   * 
-   * @returns 进行中的请求数量
-   */
-  getPendingCount(): number {
-    return this.pendingRequests.size;
-  }
-
-  /**
-   * 获取所有进行中的请求 key
-   * 
-   * @returns 请求 key 数组
-   */
-  getPendingKeys(): string[] {
-    return Array.from(this.pendingRequests.keys());
-  }
-
-  /**
    * 清理资源
    * 
    * 取消所有请求并清理定时器。

@@ -54,6 +54,7 @@ interface GetContentsOptions {
  *
  * @param path - 仓库内目录路径，空字符串表示根目录
  * @param signal - 可选中断信号，用于取消正在执行的请求
+ * @param options
  * @returns 解析后的 GitHub 内容数组
  *
  * @remarks
@@ -108,11 +109,16 @@ export async function getContents(
         apiUrl,
         async () => {
           logger.debug(`API请求: ${apiUrl}`);
-          const result = await fetch(apiUrl, {
+          const requestInit: RequestInit = {
             method: 'GET',
-            headers: getAuthHeaders(),
-            signal: signal ?? null
-          });
+            headers: getAuthHeaders()
+          };
+
+          if (signal !== undefined) {
+            requestInit.signal = signal;
+          }
+
+          const result = await fetch(apiUrl, requestInit);
 
           if (!result.ok) {
             throw new Error(`HTTP ${result.status.toString()}: ${result.statusText}`);

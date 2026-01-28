@@ -92,13 +92,13 @@ export function getApiUrl(path: string, branch?: string): string {
   const branchValue = branch ?? currentBranch;
   const activeBranch = branchValue.trim() !== '' ? branchValue.trim() : DEFAULT_BRANCH;
   const encodedBranch = encodeURIComponent(activeBranch);
-  const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${safePath}?ref=${encodedBranch}`;
+  const encodedPath = safePath.length > 0
+    ? safePath.split('/').map(segment => encodeURIComponent(segment)).join('/')
+    : '';
+  const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${encodedPath}?ref=${encodedBranch}`;
 
   // 开发环境使用本地代理
   if (isDevEnvironment) {
-    const encodedPath = safePath.length > 0
-      ? safePath.split('/').map(segment => encodeURIComponent(segment)).join('/')
-      : '';
     return `/github-api/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${encodedPath}?ref=${encodedBranch}`;
   }
 

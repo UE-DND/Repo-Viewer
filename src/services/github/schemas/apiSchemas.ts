@@ -1,17 +1,5 @@
 import { z } from 'zod';
 
-// GitHub API基础响应结构
-export const GitHubApiErrorSchema = z.object({
-  message: z.string(),
-  documentation_url: z.string().optional(),
-  errors: z.array(z.object({
-    resource: z.string().optional(),
-    field: z.string().optional(),
-    code: z.string().optional(),
-    message: z.string().optional(),
-  })).optional(),
-});
-
 // GitHub内容项链接结构
 export const GitHubLinksSchema = z.object({
   self: z.string(),
@@ -74,40 +62,11 @@ export const GitHubSearchResponseSchema = z.object({
   items: z.array(GitHubSearchCodeItemSchema),
 });
 
-// 配置信息响应结构
-export const ConfigResponseSchema = z.object({
-  status: z.literal('success'),
-  data: z.object({
-    repoOwner: z.string(),
-    repoName: z.string(),
-    repoBranch: z.string(),
-  }),
-});
-
-// Token状态响应结构
-export const TokenStatusResponseSchema = z.object({
-  status: z.literal('success'),
-  data: z.object({
-    hasTokens: z.boolean(),
-    count: z.number(),
-  }),
-});
-
-// API通用错误响应结构
-export const ApiErrorResponseSchema = z.object({
-  error: z.string(),
-  message: z.string().optional(),
-});
-
 // 导出所有Schema的类型
-export type GitHubApiError = z.infer<typeof GitHubApiErrorSchema>;
 export type GitHubContentItem = z.infer<typeof GitHubContentItemSchema>;
 export type GitHubContentsResponse = z.infer<typeof GitHubContentsResponseSchema>;
 export type GitHubSearchCodeItem = z.infer<typeof GitHubSearchCodeItemSchema>;
 export type GitHubSearchResponse = z.infer<typeof GitHubSearchResponseSchema>;
-export type ConfigResponse = z.infer<typeof ConfigResponseSchema>;
-export type TokenStatusResponse = z.infer<typeof TokenStatusResponseSchema>;
-export type ApiErrorResponse = z.infer<typeof ApiErrorResponseSchema>;
 
 /**
  * 验证GitHub内容响应
@@ -129,28 +88,6 @@ export function validateGitHubContentsResponse(data: unknown): GitHubContentsRes
  */
 export function validateGitHubSearchResponse(data: unknown): GitHubSearchResponse {
   return GitHubSearchResponseSchema.parse(data);
-}
-
-/**
- * 验证配置响应
- * 
- * @param data - 待验证的数据
- * @returns 验证后的ConfigResponse
- * @throws 当数据格式不符合schema时抛出错误
- */
-export function validateConfigResponse(data: unknown): ConfigResponse {
-  return ConfigResponseSchema.parse(data);
-}
-
-/**
- * 验证Token状态响应
- * 
- * @param data - 待验证的数据
- * @returns 验证后的TokenStatusResponse
- * @throws 当数据格式不符合schema时抛出错误
- */
-export function validateTokenStatusResponse(data: unknown): TokenStatusResponse {
-  return TokenStatusResponseSchema.parse(data);
 }
 
 /**

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { TouchEvent } from 'react';
 
 interface TouchStart {
   x: number;
@@ -21,8 +22,8 @@ interface UseTouchNavigationOptions {
 interface UseTouchNavigationReturn {
   dragOffset: number;
   isDragging: boolean;
-  handleTouchStart: (e: React.TouchEvent) => void;
-  handleTouchMove: (e: React.TouchEvent) => void;
+  handleTouchStart: (e: TouchEvent) => void;
+  handleTouchMove: (e: TouchEvent) => void;
   handleTouchEnd: () => void;
 }
 
@@ -59,7 +60,7 @@ export function useTouchNavigation({
     };
   }, [imageUrl]);
 
-  const handleTouchStart = (e: React.TouchEvent): void => {
+  const handleTouchStart = (e: TouchEvent): void => {
     // 只在移动端、未放大、且未加载错误时启用
     if (!isSmallScreen || currentScale !== 1 || hasError || loading) {
       return;
@@ -75,7 +76,7 @@ export function useTouchNavigation({
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent): void => {
+  const handleTouchMove = (e: TouchEvent): void => {
     if (touchStart === null || !isSmallScreen || currentScale !== 1 || hasError || loading) {
       return;
     }

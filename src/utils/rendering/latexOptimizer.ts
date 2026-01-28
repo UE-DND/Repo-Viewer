@@ -147,23 +147,6 @@ export const restoreLatexElements = (): void => {
  *
  * @returns void
  */
-export const hideLatexElements = (): void => {
-  // 使用更激进的方式完全移除元素
-  removeLatexElements();
-};
-
-/**
- * 显示所有LaTeX元素
- *
- * 后备方案，调用restoreLatexElements实现。
- *
- * @returns void
- */
-export const showLatexElements = (): void => {
-  // 使用批量恢复方法
-  restoreLatexElements();
-};
-
 /**
  * 防抖版的LaTeX元素恢复函数
  */

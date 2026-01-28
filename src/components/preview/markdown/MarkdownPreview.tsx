@@ -93,7 +93,7 @@ const MarkdownPreview = memo<ExtendedMarkdownPreviewProps>(
       if (!shouldRender || !hasReadmeContent || isThemeChanging) {
         return;
       }
-      const renderKey = `${previewPath}:${readmeContent ?? ""}`;
+      const renderKey = `${previewPath}:${readmeContent}`;
       if (renderCompleteRef.current === renderKey) {
         return;
       }

@@ -156,20 +156,6 @@ function buildUrl(path: string, preview?: string, branch?: string): UrlBuildResu
 }
 
 /**
- * 构建包含路径的URL
- *
- * 根据路径、预览参数和分支构建完整URL。
- *
- * @param path - 文件路径
- * @param preview - 预览文件路径（可选）
- * @param branch - 分支名称（可选）
- * @returns 构建的URL字符串（不包含域名）
- */
-export function buildUrlWithParams(path: string, preview?: string, branch?: string): string {
-  return buildUrl(path, preview, branch).url;
-}
-
-/**
  * 更新浏览器URL（不添加历史记录）
  *
  * 使用replaceState更新URL，不会在浏览器历史中创建新条目。
@@ -225,13 +211,4 @@ export function hasPreviewParam(): boolean {
     logger.error('检查 URL 预览参数失败:', error);
     return false;
   }
-}
-
-/**
- * 检查URL是否为有效的应用URL
- *
- * @returns 如果是有效的应用URL返回true
- */
-export function isValidAppUrl(): boolean {
-  return true; // 所有路径现在都是有效的应用 URL
 }

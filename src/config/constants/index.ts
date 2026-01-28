@@ -58,7 +58,7 @@ export const CONFIG_DEFAULTS = {
   SITE_OG_IMAGE: '/icon.svg',
 
   // GitHub仓库配置
-  GITHUB_REPO_OWNER: 'UE-DND',
+  GITHUB_REPO_OWNER: 'CQUT-OpenProject',
   GITHUB_REPO_NAME: 'Repo-Viewer',
   GITHUB_REPO_BRANCH: 'master',
 

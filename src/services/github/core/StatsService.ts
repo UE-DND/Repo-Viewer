@@ -1,6 +1,5 @@
 import { CacheManager } from '../cache';
-import { getProxyHealthStats } from '../proxy';
-import { resetFailedProxyServices } from './Auth';
+import { getProxyHealthStats, resetFailedProxyServices } from '../proxy';
 
 // GitHub统计服务，使用模块导出而非类
 
@@ -46,4 +45,3 @@ export async function getNetworkStats(): Promise<{
     cache: getCacheStats()
   };
 }
-

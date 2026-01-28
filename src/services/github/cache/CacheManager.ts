@@ -139,39 +139,6 @@ class CacheManagerImpl {
 
     this.contentCache.prefetch(keys);
   }
-
-  /**
-   * 预取文件
-   * 
-   * 预加载指定URL的文件到缓存中。
-   * 
-   * @param urls - 要预取的URL数组
-   * @returns void
-   */
-  public prefetchFiles(urls: string[]): void {
-    if (this.fileCache !== null) {
-      this.fileCache.prefetch(urls);
-    }
-  }
-
-  /**
-   * 销毁缓存管理器
-   * 
-   * 清理所有缓存资源并重置初始化状态。
-   * 
-   * @returns void
-   */
-  public destroy(): void {
-    if (this.contentCache !== null) {
-      this.contentCache.destroy();
-    }
-    if (this.fileCache !== null) {
-      this.fileCache.destroy();
-    }
-
-    this.initialized = false;
-    logger.info('缓存管理器已销毁');
-  }
 }
 
 /**

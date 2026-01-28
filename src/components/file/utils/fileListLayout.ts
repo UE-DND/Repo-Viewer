@@ -1,4 +1,5 @@
 import {
+  FILE_ITEM_CONFIG,
   LIST_HEIGHT_CONFIG,
   TOP_ELEMENTS_ESTIMATE,
   BOTTOM_RESERVED_SPACE,
@@ -14,6 +15,42 @@ interface LayoutMetricsParams {
   hoverExtraSpace: number;
   viewportHeight: number | null;
 }
+
+export const getRowMetrics = (isSmallScreen: boolean): {
+  rowHeight: number;
+  rowPaddingBottom: number;
+} => {
+  const baseHeight = isSmallScreen
+    ? FILE_ITEM_CONFIG.baseHeight.xs
+    : FILE_ITEM_CONFIG.baseHeight.sm;
+
+  const rowGap = FILE_ITEM_CONFIG.spacing.marginBottom;
+
+  return {
+    rowHeight: baseHeight + rowGap,
+    rowPaddingBottom: rowGap,
+  };
+};
+
+export const getListPadding = (needsScrolling: boolean, isSmallScreen: boolean): {
+  paddingTop: number;
+  paddingBottom: number;
+} => {
+  // 非滚动模式使用对称内边距，让短列表更居中
+  if (!needsScrolling) {
+    const padding = isSmallScreen ? 16 : 20;
+    return {
+      paddingTop: padding - 4,
+      paddingBottom: padding,
+    };
+  }
+
+  // 滚动模式收紧内边距，尽可能展示更多行
+  return {
+    paddingTop: 0,
+    paddingBottom: 8,
+  };
+};
 
 export const calculateLayoutMetrics = ({
   fileCount,
@@ -93,4 +130,3 @@ export const calculateLayoutMetrics = ({
     needsScrolling: true,
   };
 };
-
