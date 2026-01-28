@@ -13,7 +13,7 @@ import { ErrorLevel, ErrorCategory } from '@/types/errors';
  * 负责创建各种类型的结构化错误对象。
  */
 export class ErrorFactory {
-  private sessionId: string;
+  private readonly sessionId: string;
 
   constructor(sessionId: string) {
     this.sessionId = sessionId;

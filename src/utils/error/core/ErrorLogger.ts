@@ -8,7 +8,7 @@ import { createScopedLogger } from '../../logging/logger';
  * 负责将错误记录到控制台或其他日志系统。
  */
 export class ErrorLogger {
-  private enableLogging: boolean;
+  private readonly enableLogging: boolean;
   private readonly scopedLogger = createScopedLogger('ErrorManager');
 
   constructor(enableLogging = true) {

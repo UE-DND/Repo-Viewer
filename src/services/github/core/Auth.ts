@@ -132,20 +132,3 @@ export function handleApiError(error: Response, endpoint: string, method = 'GET'
 
   return gitHubError;
 }
-
-/**
- * 标记代理服务失败
- *
- * 将指定的代理服务标记为失败状态，触发代理服务切换。
- *
- * @param proxyUrl - 失败的代理服务URL
- * @returns void
- */
-/**
- * 获取 Token 管理器实例
- *
- * @returns TokenManager 实例
- */
-export function getTokenManager(): GitHubTokenManager {
-  return tokenManager;
-}

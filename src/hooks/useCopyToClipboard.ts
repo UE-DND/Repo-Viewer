@@ -43,7 +43,10 @@ export function useCopyToClipboard(
     async (text: string): Promise<boolean> => {
       try {
         if (typeof navigator === "undefined") {
-          throw new Error("navigator 未定义");
+          const error = new Error("navigator 未定义");
+          logger.error("复制失败:", error);
+          onError?.(error);
+          return false;
         }
 
         const clipboard = navigator.clipboard as Clipboard | undefined;

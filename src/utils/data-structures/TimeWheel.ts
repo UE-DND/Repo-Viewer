@@ -65,17 +65,6 @@ export class TimeWheel<T> {
   }
 
   /**
-   * 停止时间轮
-   */
-  stop(): void {
-    if (this.tickTimer !== null) {
-      clearInterval(this.tickTimer);
-      this.tickTimer = null;
-      logger.debug('时间轮已停止');
-    }
-  }
-
-  /**
    * 添加条目
    * 
    * @param key - 条目的唯一键

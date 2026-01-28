@@ -63,7 +63,7 @@ const TextPreviewContent: React.FC<TextPreviewContentProps> = memo(
 
     const charCount = useMemo(() => (typeof content === "string" ? content.length : 0), [content]);
 
-    // 计算实际字节大小（UTF-8编码）
+    // 计算实际字节大小（UTF-8 编码）
     const byteSize = useMemo(() => {
       if (typeof content !== "string") {
         return 0;

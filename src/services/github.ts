@@ -97,7 +97,6 @@ export const GitHub = {
     getAuthHeaders: AuthModule.getAuthHeaders,
     handleApiError: AuthModule.handleApiError,
     updateTokenRateLimitFromResponse: AuthModule.updateTokenRateLimitFromResponse,
-    getTokenManager: AuthModule.getTokenManager,
   },
 
   /** 代理服务 - 管理代理和图片转换 */

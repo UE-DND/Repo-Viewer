@@ -200,7 +200,7 @@ export const handleImageError = (
   const directSrc = tryDirectImageLoad(imgSrc);
   if (typeof directSrc === "string" && directSrc.length > 0) {
     logger.info("尝试使用直接URL加载:", directSrc);
-    // 设置新的超时计时器
+    // 设置新的超时定时器
     const newTimerId = window.setTimeout(() => {
       if (!imageState.loadedImages.has(directSrc)) {
         imageState.failedImages.add(imgSrc);

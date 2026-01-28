@@ -232,7 +232,7 @@ export const createMarkdownStyles = (theme: Theme, latexCount: number, isSmallSc
     fontFamily: MONO_FONT,
     fontSize: { xs: "0.8125rem", sm: "0.875rem" },
     lineHeight: 1.55,
-    backgroundColor: codeSurfaceColor, // 行间代码块背景色
+    backgroundColor: codeSurfaceColor, // 代码块背景色
     borderRadius: "inherit",
     border: `1px solid ${codeBorderColor}`,
     padding: theme.spacing(1.5, 1.75),

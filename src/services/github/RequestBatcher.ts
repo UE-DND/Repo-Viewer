@@ -36,7 +36,7 @@ interface RetryOptions {
  * 请求批处理器类
  * 
  * 管理和优化HTTP请求，提供请求合并、去重、优先级排序和重试机制。
- * 自动批处理相同的请求，减少网络开销并提升性能。
+ * 自动批处理重复请求，减少网络开销并提升性能。
  */
 export class RequestBatcher {
   private readonly batchedRequests = new Map<string, BatchedRequest[]>();
@@ -150,7 +150,7 @@ export class RequestBatcher {
       skipDeduplication = false
     } = options;
     
-    // 检查是否有相同的请求正在进行
+    // 检查是否有重复请求正在进行
     if (this.pendingRequests.has(key)) {
       logger.debug(`请求合并: ${key}`);
       return this.pendingRequests.get(key) as Promise<T>;
@@ -252,7 +252,7 @@ export class RequestBatcher {
       // 使用通用重试逻辑执行请求
       const result = await this.withRetry(executeRequest, retryOptions);
 
-      // 缓存成功的请求结果
+      // 缓存成功响应的结果
       if (!skipDeduplication) {
         this.fingerprintWheel.add(fingerprint, {
           result,
