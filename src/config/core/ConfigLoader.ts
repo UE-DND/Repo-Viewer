@@ -163,18 +163,6 @@ export class ConfigLoader {
   }
 
   /**
-   * 获取字符串类型的环境变量
-   */
-  public getEnvString(env: EnvSource, key: string): string | undefined {
-    const value = env[key];
-    if (typeof value !== 'string') {
-      return undefined;
-    }
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  }
-
-  /**
    * 获取布尔标志
    */
   public getBooleanFlag(env: EnvSource, key: string): boolean {

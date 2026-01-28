@@ -1,2 +1,7 @@
-export { default as ScrollToTopFab } from './ScrollToTopFab';
-export { default as SearchDrawer } from './SearchDrawer';
+/**
+ * 交互组件模块（预留）
+ *
+ * 该模块当前为预留，待添加交互相关组件。
+ */
+
+export {};

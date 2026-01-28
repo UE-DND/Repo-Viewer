@@ -1,3 +1,9 @@
+/**
+ * GitHub API Schema验证模块
+ *
+ * 提供GitHub API响应的Schema定义、验证函数和数据转换器。
+ */
+
 // API Schema验证
 export * from './apiSchemas';
 

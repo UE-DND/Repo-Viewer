@@ -17,7 +17,7 @@
 - **克隆仓库**
 
     ```bash
-    git clone https://github.com/UE-DND/Repo-Viewer.git
+    git clone https://github.com/CQUT-OpenProject/Repo-Viewer.git
     cd Repo-Viewer
     ```
 
@@ -91,7 +91,7 @@ npm run lint
 
 ### 代码格式化
 
-我们使用 `EditorConfig` 进行一致的格式化，请确保你的编辑器安装了相应插件以自动应用格式规则。
+我们使用 `EditorConfig` 进行统一格式化，请确保你的编辑器安装了相应插件以自动应用格式规则。
 
 ## 提交 issue
 
@@ -104,7 +104,7 @@ npm run lint
 
 ### [enhancement]
 
-- 清晰的增强描述，杜绝抽象概念
+- 清晰地描述增强点，杜绝抽象概念
 - 建议的实现逻辑
 
 ### [feature]
@@ -114,8 +114,6 @@ npm run lint
 - 建议的实现逻辑
 
 > 推荐保持与历史 issue 一致的标题格式
-
----
 
 ### 许可证
 

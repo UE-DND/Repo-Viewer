@@ -1,8 +1,14 @@
-import { CacheManager } from '../cache';
-import { getProxyHealthStats } from '../proxy';
-import { resetFailedProxyServices } from './Auth';
+/**
+ * GitHub 统计服务模块
+ *
+ * 提供缓存统计、网络统计等功能，支持清除缓存和重置网络状态。
+ * 使用模块导出方式而非类封装，便于直接使用函数。
+ *
+ * @module StatsService
+ */
 
-// GitHub统计服务，使用模块导出而非类
+import { CacheManager } from '../cache';
+import { getProxyHealthStats, resetFailedProxyServices } from '../proxy';
 
 /**
  * 清除所有缓存和重置网络状态
@@ -46,4 +52,3 @@ export async function getNetworkStats(): Promise<{
     cache: getCacheStats()
   };
 }
-

@@ -126,18 +126,14 @@ async function validateProxy(proxyUrl: string, timeout: number): Promise<void> {
       method: 'HEAD',
       signal: controller.signal
     });
-
-    window.clearTimeout(timeoutId);
-
     if (response.ok) {
       const responseTime = Date.now() - startTime;
       proxyHealthManager.recordSuccess(proxyUrl, responseTime);
-    } else {
-      throw new Error(`Proxy validation failed: ${response.status.toString()}`);
+      return;
     }
-  } catch (error) {
+    throw new Error(`Proxy validation failed: ${response.status.toString()}`);
+  } finally {
     window.clearTimeout(timeoutId);
-    throw error;
   }
 }
 

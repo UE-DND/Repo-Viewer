@@ -1,17 +1,29 @@
+/**
+ * @fileoverview 页面刷新 Hook
+ *
+ * 提供带动画效果的页面刷新功能，自动处理 LaTeX 元素的移除和恢复。
+ * 在刷新期间会添加 CSS 动画类，并确保最小动画持续时间以提升用户体验。
+ * 同时监听主题切换状态，避免在主题切换期间执行刷新。
+ *
+ * @module hooks/useRefresh
+ */
+
 import { useCallback, useRef, useEffect } from 'react';
 import { useContentContext } from '@/contexts/unified';
 import { removeLatexElements, restoreLatexElements } from '@/utils/rendering/latexOptimizer';
 import { logger } from '@/utils';
 import { useThemeTransitionFlag } from '@/hooks/useThemeTransition';
 
+/** 最小动画持续时间（毫秒） */
 const MIN_ANIMATION_DURATION = 600;
 
 /**
- * 页面刷新Hook
- * 
- * 提供带动画效果的页面刷新功能，自动处理LaTeX元素的移除和恢复。
- * 
- * @returns 刷新函数
+ * 页面刷新 Hook
+ *
+ * 提供带动画效果的页面刷新功能，自动处理 LaTeX 元素的移除和恢复。
+ * 刷新期间会添加 theme-transition 和 refreshing 类到 body 元素。
+ *
+ * @returns 刷新函数，调用后触发内容刷新和动画效果
  */
 export const useRefresh = (): (() => void) => {
   const { refresh, loading, currentPath } = useContentContext();

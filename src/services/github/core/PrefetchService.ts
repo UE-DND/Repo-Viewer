@@ -1,9 +1,16 @@
+/**
+ * GitHub 预取服务模块
+ *
+ * 提供智能内容预加载功能，包括目录预取、批量预加载和相关内容智能预加载。
+ * 使用延迟加载和优先级管理策略，确保预加载不影响用户主操作。
+ *
+ * @module PrefetchService
+ */
+
 import type { GitHubContent } from '@/types';
 import { logger } from '@/utils';
 import { CacheManager } from '../cache';
 import { prefetchFilesWithPriority, selectPriorityDirectories, selectPriorityFiles } from './prefetch';
-
-// GitHub预取服务
 
 /**
  * 智能预取目录内容

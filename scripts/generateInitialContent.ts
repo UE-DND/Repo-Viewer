@@ -78,7 +78,7 @@ const fetchJson = async <T>(url: string): Promise<T> => {
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status} ${response.statusText}`);
   }
-  return response.json() as Promise<T>;
+  return (await response.json()) as T;
 };
 
 const fetchText = async (url: string): Promise<string> => {
@@ -139,7 +139,9 @@ const run = async (): Promise<void> => {
     const contents = await fetchJson<unknown>(contentsUrl);
 
     if (!Array.isArray(contents)) {
-      throw new Error("Unexpected contents response");
+      console.warn("[hydration] Unexpected contents response, writing null payload.");
+      await writeOutput(null);
+      return;
     }
 
     const contentItems = contents.filter(isRecord);

@@ -1,4 +1,4 @@
-import { useContext, useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useContext, useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import {
   Box,
   IconButton,
@@ -84,9 +84,6 @@ const ToolbarButtons: React.FC<ToolbarButtonsProps> = ({
     currentBranch,
     defaultBranch,
     currentPath,
-    branches: _branches,
-    branchLoading: _branchLoading,
-    branchError: _branchError,
     setCurrentBranch,
     refreshBranches,
     setCurrentPath,

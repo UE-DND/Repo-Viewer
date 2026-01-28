@@ -1,5 +1,5 @@
 import type { GitHubContent } from '@/types';
-import type { SearchIndexResultItem } from '@/services/github/core/searchIndex';
+import type { SearchIndexErrorCode, SearchIndexResultItem } from '@/services/github/core/searchIndex';
 
 export type RepoSearchMode = 'search-index' | 'github-api';
 
@@ -37,7 +37,7 @@ export interface RepoSearchExecutionResult {
 
 export interface RepoSearchError {
   source: 'index' | 'search';
-  code?: string;
+  code?: SearchIndexErrorCode;
   message: string;
   details?: unknown;
   raw?: unknown;
@@ -88,4 +88,3 @@ export interface UseRepoSearchOptions {
   defaultBranch: string;
   branches: string[];
 }
-

@@ -1,3 +1,9 @@
+/**
+ * 回退对话框组件
+ *
+ * 当索引搜索无结果时，提示用户是否切换到API模式重新搜索。
+ */
+
 import {
   Button,
   Dialog,
@@ -6,10 +12,17 @@ import {
   DialogTitle,
   Typography
 } from "@mui/material";
+import React from "react";
 
+/**
+ * 回退对话框组件属性接口
+ */
 interface FallbackDialogProps {
+  /** 对话框是否打开 */
   open: boolean;
+  /** 关闭对话框回调 */
   onClose: () => void;
+  /** 确认切换到API模式回调 */
   onConfirm: () => void;
 }
 

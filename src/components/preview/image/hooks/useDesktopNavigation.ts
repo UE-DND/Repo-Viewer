@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { RefObject } from 'react';
+import type { MouseEvent, RefObject } from 'react';
 
 interface UseDesktopNavigationOptions {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -12,7 +12,7 @@ interface UseDesktopNavigationOptions {
 
 interface UseDesktopNavigationReturn {
   activeNavSide: 'left' | 'right' | null;
-  handleContainerMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
+  handleContainerMouseMove: (e: MouseEvent<HTMLDivElement>) => void;
   handleContainerMouseLeave: () => void;
 }
 
@@ -31,7 +31,7 @@ export function useDesktopNavigation({
 }: UseDesktopNavigationOptions): UseDesktopNavigationReturn {
   const [activeNavSide, setActiveNavSide] = useState<'left' | 'right' | null>(null);
 
-  const handleContainerMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
+  const handleContainerMouseMove = useCallback((e: MouseEvent<HTMLDivElement>): void => {
     if (isSmallScreen || hasError || loading) {
       setActiveNavSide(null);
       return;

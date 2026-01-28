@@ -1,7 +1,21 @@
+/**
+ * 搜索索引缓存模块
+ *
+ * 管理搜索索引 manifest 和 docfind 模块的内存缓存。
+ * 提供缓存的获取、设置和清除功能。
+ *
+ * @module searchIndex/cache
+ */
+
 import type { SearchIndexManifest } from '../../schemas';
 
+/**
+ * Manifest 缓存项接口
+ */
 interface ManifestCacheEntry {
+  /** Manifest 数据 */
   data: SearchIndexManifest;
+  /** 缓存获取时间戳 */
   fetchedAt: number;
 }
 

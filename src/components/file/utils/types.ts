@@ -14,10 +14,10 @@ export interface VirtualListItemData {
   isScrolling: boolean;
   scrollSpeed: number;
   highlightedIndex: number | null;
+  rowPaddingBottom: number;
 }
 
 export interface FileListLayoutMetrics {
   height: number;
   needsScrolling: boolean;
 }
-

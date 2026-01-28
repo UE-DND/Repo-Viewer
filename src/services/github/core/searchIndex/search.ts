@@ -1,27 +1,58 @@
+/**
+ * 搜索索引搜索模块
+ *
+ * 提供基于 docfind 搜索索引的全文搜索功能。
+ * 支持多分支搜索、扩展名过滤、路径前缀过滤等功能。
+ *
+ * @module searchIndex/search
+ */
+
 import { getGithubConfig, getSearchIndexConfig } from "@/config";
 
 import { createSearchIndexError, SearchIndexErrorCode } from "./errors";
 import { fetchManifest, getDocfindSearchHandler } from "./fetchers";
 
+/**
+ * 搜索选项接口
+ */
 export interface SearchIndexSearchOptions {
+  /** 搜索关键词 */
   keyword: string;
+  /** 要搜索的分支数组，默认为配置中的默认分支 */
   branches?: string[];
+  /** 路径前缀过滤 */
   pathPrefix?: string;
+  /** 文件扩展名过滤数组 */
   extensions?: string[];
+  /** 返回结果数量限制，默认为 100 */
   limit?: number;
+  /** 请求中断信号 */
   signal?: AbortSignal;
 }
 
+/**
+ * 搜索结果项接口
+ */
 export interface SearchIndexResultItem {
+  /** 匹配的分支 */
   branch: string;
+  /** 文件路径 */
   path: string;
+  /** 文件名称 */
   name: string;
+  /** 文件扩展名 */
   extension?: string;
+  /** 文件大小 */
   size?: number;
+  /** 是否为二进制文件 */
   binary?: boolean;
+  /** GitHub HTML 浏览链接 */
   htmlUrl?: string;
+  /** 原始内容下载链接 */
   downloadUrl?: string;
+  /** 匹配得分 */
   score: number;
+  /** 内容片段预览 */
   snippet?: string;
 }
 

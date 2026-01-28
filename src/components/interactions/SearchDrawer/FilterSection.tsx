@@ -1,3 +1,9 @@
+/**
+ * 搜索筛选区域组件
+ *
+ * 提供搜索结果的筛选功能，包括分支筛选、文件扩展名筛选和路径前缀筛选。
+ */
+
 import {
   Box,
   Chip,
@@ -17,25 +23,58 @@ import {
 } from "@mui/icons-material";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 import { useI18n } from "@/contexts/I18nContext";
+import React from "react";
 
+/**
+ * 筛选区域组件属性接口
+ */
 interface FilterSectionProps {
+  /** 筛选面板是否展开 */
   expanded: boolean;
+  /** 可用分支列表 */
   availableBranches: string[];
+  /** 当前选中的分支筛选 */
   branchFilter: string[];
+  /** 当前分支 */
   currentBranch: string;
+  /** 默认分支 */
   defaultBranch: string;
+  /** 切换分支筛选回调 */
   onBranchToggle: (branch: string) => void;
+  /** 清除分支筛选回调 */
   onClearBranches: () => void;
+  /** 扩展名输入值 */
   extensionInput: string;
+  /** 扩展名输入变化回调 */
   onExtensionInputChange: (value: string) => void;
+  /** 应用扩展名筛选回调 */
   onExtensionApply: () => void;
+  /** 清除扩展名筛选回调 */
   onExtensionClear: () => void;
+  /** 路径前缀值 */
   pathPrefix: string;
+  /** 路径前缀变化回调 */
   onPathPrefixChange: (value: string) => void;
+  /** 清除路径前缀回调 */
   onPathPrefixClear: () => void;
 }
 
-export const FilterToggleButton: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ expanded, onToggle }) => {
+/**
+ * 筛选切换按钮组件属性接口
+ */
+interface FilterToggleButtonProps {
+  /** 是否展开 */
+  expanded: boolean;
+  /** 切换回调 */
+  onToggle: () => void;
+}
+
+/**
+ * 筛选切换按钮组件
+ *
+ * 用于展开/收起筛选面板的按钮。
+ */
+export const FilterToggleButton: React.FC<FilterToggleButtonProps> = ({ expanded, onToggle }) => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const { t } = useI18n();
@@ -59,6 +98,11 @@ export const FilterToggleButton: React.FC<{ expanded: boolean; onToggle: () => v
   );
 };
 
+/**
+ * 筛选区域组件
+ *
+ * 渲染搜索筛选面板，包含分支选择、扩展名和路径筛选。
+ */
 export const FilterSection: React.FC<FilterSectionProps> = ({
   expanded,
   availableBranches,

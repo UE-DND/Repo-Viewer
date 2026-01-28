@@ -4,7 +4,6 @@
  * 将所有类型定义按功能域拆分到不同文件中，并在此统一导出。
  */
 
-import type { OptionsObject as NotistackOptionsObject } from 'notistack';
 
 // 导出错误相关类型
 export * from './errors';
@@ -15,8 +14,6 @@ export type * from './preview';
 // 导出下载相关类型
 export type * from './download';
 
-// 导出状态相关类型
-export type * from './state';
 
 /**
  * GitHub仓库内容项接口
@@ -46,22 +43,6 @@ export interface BreadcrumbSegment {
   name: string;
   /** 路径 */
   path: string;
-}
-
-/**
- * 通知组件扩展选项接口
- */
-export interface OptionsObject extends NotistackOptionsObject {
-  /** 是否隐藏关闭按钮 */
-  hideCloseButton?: boolean;
-}
-
-/**
- * 进度通知选项接口
- */
-export interface ProgressSnackbarOptions extends OptionsObject {
-  /** 进度百分比 */
-  progress?: number;
 }
 
 /**

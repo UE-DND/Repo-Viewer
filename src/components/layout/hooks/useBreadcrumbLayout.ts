@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import type { RefObject } from 'react';
 import type { BreadcrumbSegment } from '@/types';
 
 interface UseBreadcrumbLayoutOptions {
@@ -8,7 +9,7 @@ interface UseBreadcrumbLayoutOptions {
 
 interface UseBreadcrumbLayoutReturn {
   breadcrumbsMaxItems: number;
-  breadcrumbsContainerRef: React.RefObject<HTMLDivElement | null>;
+  breadcrumbsContainerRef: RefObject<HTMLDivElement | null>;
 }
 
 /**

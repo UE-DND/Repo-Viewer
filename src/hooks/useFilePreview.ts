@@ -1,12 +1,24 @@
+/**
+ * @fileoverview 文件预览 Hook
+ *
+ * 提供 GitHub 仓库文件的预览功能，支持 Markdown、文本、图片和 PDF 文件的预览。
+ * 集成 URL 参数管理和浏览器历史导航，支持后退按钮关闭预览。
+ *
+ * @module hooks/useFilePreview
+ */
+
 import { useReducer, useCallback, useRef, useState, useEffect } from 'react';
+import type { RefObject } from 'react';
 import { useTheme } from '@mui/material';
 import type { PreviewState, PreviewAction, GitHubContent } from '@/types';
 import { GitHub } from '@/services/github';
-import { file, logger, pdf } from '@/utils';
+import { logger, pdf } from '@/utils';
+import { isImageFile, isMarkdownFile, isPdfFile, isTextFile } from '@/utils/files/fileHelpers';
 import { getPreviewFromUrl, updateUrlWithHistory, hasPreviewParam } from '@/utils/routing/urlManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 import { useI18n } from '@/contexts/I18nContext';
 
+/** 预览状态初始值 */
 const initialPreviewState: PreviewState = {
   previewContent: null,
   previewingItem: null,
@@ -18,6 +30,16 @@ const initialPreviewState: PreviewState = {
   loadingImagePreview: false,
   imageError: null
 };
+
+/**
+ * 预览状态 Reducer
+ *
+ * 处理预览相关的所有状态变更，包括 Markdown/文本预览、图片预览和 PDF 预览。
+ *
+ * @param state - 当前预览状态
+ * @param action - 预览动作
+ * @returns 更新后的预览状态
+ */
 function previewReducer(state: PreviewState, action: PreviewAction): PreviewState {
   switch (action.type) {
     case 'RESET_PREVIEW':
@@ -97,7 +119,7 @@ export const useFilePreview = (
   closePreview: () => void;
   toggleImageFullscreen: () => void;
   handleImageError: (error: string) => void;
-  currentPreviewItemRef: React.RefObject<GitHubContent | null>;
+  currentPreviewItemRef: RefObject<GitHubContent | null>;
 } => {
   const [previewState, dispatch] = useReducer(previewReducer, initialPreviewState);
   const [useTokenMode, setUseTokenMode] = useState(true);
@@ -174,7 +196,7 @@ export const useFilePreview = (
       const fileNameLower = item.name.toLowerCase();
       const isCurrentTarget = (): boolean => currentPreviewItemRef.current?.path === targetPath;
 
-      if (file.isMarkdownFile(fileNameLower)) {
+      if (isMarkdownFile(fileNameLower)) {
         updateUrlWithHistory(dirPath, item.path);
         dispatch({ type: 'SET_PREVIEW_LOADING', loading: true });
 
@@ -192,7 +214,7 @@ export const useFilePreview = (
           dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
         }
       }
-      else if (file.isTextFile(item.name)) {
+      else if (isTextFile(item.name)) {
         updateUrlWithHistory(dirPath, item.path);
         dispatch({ type: 'SET_PREVIEW_LOADING', loading: true });
 
@@ -210,7 +232,7 @@ export const useFilePreview = (
           dispatch({ type: 'SET_PREVIEW_LOADING', loading: false });
         }
       }
-      else if (file.isPdfFile(fileNameLower)) {
+      else if (isPdfFile(fileNameLower)) {
         // 使用新的 PDF 预览工具函数
         try {
           await pdf.openPDFPreview({
@@ -237,7 +259,7 @@ export const useFilePreview = (
         }
         return;
       }
-      else if (file.isImageFile(fileNameLower)) {
+      else if (isImageFile(fileNameLower)) {
         // 图片预览
         dispatch({ type: 'SET_IMAGE_LOADING', loading: true });
         dispatch({ type: 'SET_IMAGE_ERROR', error: null });

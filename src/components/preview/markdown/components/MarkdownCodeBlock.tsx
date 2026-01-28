@@ -1,4 +1,11 @@
-import { useMemo, useState } from "react";
+/**
+ * Markdown代码块组件
+ *
+ * 渲染Markdown代码块，支持语法高亮和复制功能。
+ * 桌面端支持悬停显示复制按钮，移动端始终显示。
+ */
+
+import React, { useMemo, useState } from "react";
 import type { ClassAttributes, HTMLAttributes } from "react";
 import { Box, IconButton, Tooltip, useTheme, useMediaQuery } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -7,16 +14,30 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import { useI18n } from "@/contexts/I18nContext";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
+/** 代码元素属性类型 */
 type CodeElementProps = (HTMLAttributes<HTMLElement> & ClassAttributes<HTMLElement>) | undefined;
 
+/**
+ * Markdown代码块组件属性接口
+ */
 interface MarkdownCodeBlockProps {
+  /** CSS类名 */
   className?: string | undefined;
+  /** 代码语言 */
   language?: string | undefined;
+  /** 代码内容 */
   content: string;
+  /** 代码元素属性 */
   codeProps?: CodeElementProps;
+  /** 数据OID */
   dataOid?: string | undefined;
 }
 
+/**
+ * Markdown代码块组件
+ *
+ * 渲染代码块并添加复制按钮功能。
+ */
 export const MarkdownCodeBlock: React.FC<MarkdownCodeBlockProps> = ({
   className,
   language,

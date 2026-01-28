@@ -1,3 +1,9 @@
+/**
+ * 图片预览骨架屏组件
+ *
+ * 在图片加载时显示的占位骨架屏，支持自定义尺寸和长宽比。
+ */
+
 import React from "react";
 import {
   Box,
@@ -7,13 +13,23 @@ import {
 import { getSkeletonStyles, getContainerTransitionStyles, useSkeletonVisibility } from "./shared";
 import { g3BorderRadius, G3_PRESETS } from "@/theme/g3Curves";
 
+/**
+ * 图片预览骨架屏组件属性接口
+ */
 interface ImagePreviewSkeletonProps {
+  /** 是否小屏幕 */
   isSmallScreen?: boolean;
+  /** 是否可见 */
   visible?: boolean;
+  /** 退出动画完成回调 */
   onExited?: () => void;
+  /** 目标宽度 */
   targetWidth?: number;
+  /** 目标高度 */
   targetHeight?: number;
+  /** 长宽比 */
   aspectRatio?: number;
+  /** 数据OID */
   'data-oid'?: string;
 }
 

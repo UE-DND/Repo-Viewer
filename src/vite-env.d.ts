@@ -1,5 +1,21 @@
+/**
+ * Vite环境变量类型声明文件
+ *
+ * 定义了应用中使用的所有环境变量的TypeScript类型。
+ * 这些变量可以通过import.meta.env在代码中访问。
+ * 支持无前缀和VITE_前缀两种格式，以便于不同部署环境的使用。
+ *
+ * @file vite-env.d.ts
+ */
+
 /// <reference types="vite/client" />
 
+/**
+ * Vite环境变量接口
+ *
+ * 定义了所有可用的环境变量及其类型。
+ * 所有变量都是可选的（readonly），符合环境变量的特性。
+ */
 interface ImportMetaEnv {
   // 无前缀变量
   readonly SITE_TITLE?: string

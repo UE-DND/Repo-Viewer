@@ -1,3 +1,16 @@
+/**
+ * @fileoverview 仓库搜索 Hook
+ *
+ * 提供 GitHub 仓库内容的搜索功能，支持两种搜索模式：
+ * 1. 搜索索引模式（search-index）：使用本地构建的搜索索引，速度快
+ * 2. GitHub API 模式（github-api）：使用 GitHub Trees API，支持更大范围搜索
+ *
+ * 自动处理搜索模式降级（当索引不可用时自动切换到 API 模式），
+ * 支持多分支搜索、路径前缀过滤和文件扩展名过滤。
+ *
+ * @module hooks/github/useRepoSearch/useRepoSearch
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { GitHub } from '@/services/github';
@@ -24,6 +37,18 @@ import {
   sanitizeExtensions
 } from './utils';
 
+/**
+ * 仓库搜索 Hook
+ *
+ * 提供完整的仓库内容搜索功能，包括搜索索引管理、搜索执行和结果处理。
+ * 自动根据搜索索引状态选择合适的搜索模式。
+ *
+ * @param options - 搜索配置选项
+ * @param options.currentBranch - 当前分支名称
+ * @param options.defaultBranch - 默认分支名称
+ * @param options.branches - 可用分支列表
+ * @returns 搜索状态和操作函数
+ */
 export function useRepoSearch({ currentBranch, defaultBranch, branches }: UseRepoSearchOptions): RepoSearchState {
   const indexFeatureEnabled = GitHub.SearchIndex.isEnabled();
 

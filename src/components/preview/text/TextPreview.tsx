@@ -1,4 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+/**
+ * 文本文件预览组件模块
+ *
+ * 提供代码文件的预览功能，包括语法高亮、行号显示、自动换行、
+ * 虚拟滚动优化、复制到剪贴板等特性。支持大文件的性能优化渲染。
+ */
+
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Box,
   CircularProgress,
@@ -9,6 +16,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import { List as VirtualList, type RowComponentProps, useDynamicRowHeight } from "react-window";
 import { alpha } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
@@ -18,26 +26,41 @@ import TextRotationNoneIcon from "@mui/icons-material/TextRotationNone";
 import type { TextPreviewProps } from "./types";
 import { formatFileSize } from "@/utils/format/formatters";
 import { useI18n } from "@/contexts/I18nContext";
-import { highlightCodeByFilename } from "@/utils/content/prismHighlighter";
+import { highlightLines } from "@/utils/content/prismHighlighter";
+import { detectLanguage } from "@/utils/content/languageDetector";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+import { useContainerSize } from "@/components/preview/image/hooks";
 
+/** 等宽字体栈 */
 const MONO_FONT_STACK =
   "'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, 'Source Code Pro', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 
-const TextPreview: React.FC<TextPreviewProps> = memo(
-  ({ content, loading, isSmallScreen, previewingItem, onClose }) => {
+/**
+ * 文本预览内容组件属性接口
+ * 继承TextPreviewProps，但要求content为必填字符串
+ */
+interface TextPreviewContentProps extends Omit<TextPreviewProps, "content" | "loading"> {
+  /** 文件内容字符串 */
+  content: string;
+}
+
+/**
+ * 文本预览内容组件
+ *
+ * 渲染代码文件的内容，支持语法高亮、行号、虚拟滚动等功能。
+ * 使用memo优化，避免不必要的重新渲染。
+ */
+const TextPreviewContent: React.FC<TextPreviewContentProps> = memo(
+  ({ content, isSmallScreen, previewingItem, onClose }) => {
     const theme = useTheme();
     const { t } = useI18n();
     const [wrapText, setWrapText] = useState<boolean>(false);
-    const { copied, copy, reset } = useCopyToClipboard();
-    const [prevContent, setPrevContent] = useState(content);
-
-    // 当 content 变化时，重置 UI 状态
-    if (content !== prevContent) {
-      setPrevContent(content);
-      setWrapText(false);
-      reset();
-    }
+    const { copied, copy } = useCopyToClipboard();
+    // 小屏/桌面字号与控件尺寸统一管理，避免分散调整
+    const contentFontSize = isSmallScreen ? "0.78rem" : "0.9rem";
+    const lineNumberFontSize = isSmallScreen ? "0.7rem" : "0.9rem";
+    const controlButtonSize = isSmallScreen ? 26 : 32;
+    const controlIconSize = isSmallScreen ? 14 : 18;
 
     const normalizedLines = useMemo(() => {
       if (typeof content !== "string") {
@@ -47,27 +70,76 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
     }, [content]);
 
     const lineCount = normalizedLines.length === 0 ? 1 : normalizedLines.length;
-
-    // 大于500行的文件禁用代码高亮
-    const MAX_LINES_FOR_HIGHLIGHT = 500;
-    const shouldHighlight = lineCount <= MAX_LINES_FOR_HIGHLIGHT;
-
-    // 计算高亮后的代码行
-    const highlightedLines = useMemo(() => {
-      if (typeof content !== "string" || content.length === 0) {
-        return [];
+    const previewingName = previewingItem?.name ?? null;
+    const language = useMemo(() => {
+      if (previewingName === null || previewingName.length === 0) {
+        return null;
       }
-      // 如果行数超过限制，不进行高亮
-      if (!shouldHighlight) {
-        return [];
+      return detectLanguage(previewingName);
+    }, [previewingName]);
+
+    const [highlightedLines, setHighlightedLines] = useState<string[]>([]);
+
+    useEffect(() => {
+      let cancelled = false;
+
+      // 语法高亮计算开销较大，尽量在空闲时间执行以保证首屏响应
+      const runHighlight = (): void => {
+        if (normalizedLines.length === 0) {
+          if (!cancelled) {
+            setHighlightedLines([]);
+          }
+          return;
+        }
+        const result = highlightLines(normalizedLines, language);
+        if (!cancelled) {
+          setHighlightedLines(result);
+        }
+      };
+
+      if (typeof window !== "undefined") {
+        const idleCallback = window as Window & {
+          requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+          cancelIdleCallback?: (handle: number) => void;
+        };
+
+        if (typeof idleCallback.requestIdleCallback === "function") {
+          const handle = idleCallback.requestIdleCallback(() => {
+            runHighlight();
+          }, { timeout: 700 });
+
+          return () => {
+            cancelled = true;
+            if (typeof idleCallback.cancelIdleCallback === "function") {
+              idleCallback.cancelIdleCallback(handle);
+            }
+          };
+        }
       }
-      const filename = previewingItem?.name ?? undefined;
-      return highlightCodeByFilename(content, filename);
-    }, [content, previewingItem?.name, shouldHighlight]);
+
+      const timer = window.setTimeout(() => {
+        runHighlight();
+      }, 0);
+
+      return () => {
+        cancelled = true;
+        window.clearTimeout(timer);
+      };
+    }, [normalizedLines, language]);
+
+    // 预先转义文本，避免滚动过程中反复计算
+    const escapedLines = useMemo(() => {
+      return normalizedLines.map((line) => {
+        if (line.length === 0) {
+          return "\u00A0";
+        }
+        return line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      });
+    }, [normalizedLines]);
 
     const charCount = useMemo(() => (typeof content === "string" ? content.length : 0), [content]);
 
-    // 计算实际字节大小（UTF-8编码）
+    // 计算实际字节大小（UTF-8 编码）
     const byteSize = useMemo(() => {
       if (typeof content !== "string") {
         return 0;
@@ -87,6 +159,144 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
       const digitCount = Math.max(2, String(lineCount).length);
       return digitCount.toString() + "ch";
     }, [lineCount]);
+
+    const { containerRef, containerSize } = useContainerSize();
+
+    const baseRowHeight = useMemo(() => {
+      const fontSizePx = parseFloat(contentFontSize) * theme.typography.fontSize;
+      const verticalPaddingPx = parseFloat(theme.spacing(0.5));
+      return fontSizePx * 1.6 + verticalPaddingPx;
+    }, [contentFontSize, theme]);
+
+    const [viewportHeight, setViewportHeight] = useState<number | null>(() => {
+      if (typeof window === "undefined") {
+        return null;
+      }
+      return window.innerHeight;
+    });
+
+    useEffect(() => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      const handleResize = (): void => {
+        setViewportHeight(window.innerHeight);
+      };
+
+      window.addEventListener("resize", handleResize);
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }, []);
+
+    const maxContainerHeight = useMemo(() => {
+      const fallbackHeight = 640;
+      const windowHeight = viewportHeight ?? fallbackHeight;
+      const reservedSpace = isSmallScreen ? 220 : 280;
+      return Math.max(220, windowHeight - reservedSpace);
+    }, [isSmallScreen, viewportHeight]);
+
+    const listHeight = useMemo(() => {
+      const estimated = lineCount * baseRowHeight;
+      return Math.min(maxContainerHeight, estimated);
+    }, [baseRowHeight, lineCount, maxContainerHeight]);
+
+    const listWidth = useMemo(() => {
+      return containerSize.width > 0 ? containerSize.width : 1;
+    }, [containerSize.width]);
+
+    const rowHeightCacheKey = useMemo(() => {
+      return `${String(wrapText)}-${String(containerSize.width)}-${contentFontSize}-${lineNumberColumnWidth}-${String(normalizedLines.length)}`;
+    }, [wrapText, containerSize.width, contentFontSize, lineNumberColumnWidth, normalizedLines.length]);
+
+    // 自动换行时使用动态行高缓存，避免重新计算整表
+    const dynamicRowHeight = useDynamicRowHeight({
+      defaultRowHeight: baseRowHeight,
+      key: rowHeightCacheKey,
+    });
+    const rowHeight = wrapText ? dynamicRowHeight : baseRowHeight;
+    const emptyRowProps = useMemo(() => ({}), []);
+
+    const Row = ({ index, style, ariaAttributes }: RowComponentProps): React.ReactElement => {
+      const lineHtml =
+        index < highlightedLines.length
+          ? (highlightedLines[index] ?? "\u00A0")
+          : (escapedLines[index] ?? "\u00A0");
+
+      return (
+        <Box
+          style={{ ...style, width: "100%" }}
+          {...ariaAttributes}
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            minWidth: wrapText ? "100%" : "max-content",
+          }}
+        >
+          <Box
+            component="div"
+            sx={{
+              textAlign: "right",
+              userSelect: "none",
+              alignSelf: "flex-start",
+              padding: isSmallScreen
+                ? `${theme.spacing(0.25)} ${theme.spacing(0.75)}`
+                : `${theme.spacing(0.25)} ${theme.spacing(1)}`,
+              width: `calc(${lineNumberColumnWidth} + ${isSmallScreen ? theme.spacing(0.75) : theme.spacing(1)})`,
+              borderRight: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+              color: alpha(theme.palette.text.secondary, 0.9),
+              backgroundColor: alpha(theme.palette.background.default, 0.35),
+              position: "sticky",
+              left: 0,
+              fontSize: lineNumberFontSize,
+              flexShrink: 0,
+            }}
+          >
+            {index + 1}
+          </Box>
+          <Box
+            component="div"
+            sx={{
+              padding: isSmallScreen
+                ? `${theme.spacing(0.25)} ${theme.spacing(2)} ${theme.spacing(0.25)} ${theme.spacing(1.5)}`
+                : `${theme.spacing(0.25)} ${theme.spacing(3)} ${theme.spacing(0.25)} ${theme.spacing(2)}`,
+            }}
+          >
+            <Box
+              component="span"
+              sx={{
+                display: "block",
+                fontFamily: MONO_FONT_STACK,
+                fontSize: contentFontSize,
+                lineHeight: 1.6,
+                whiteSpace: wrapText ? "pre-wrap" : "pre",
+                wordBreak: wrapText ? "break-word" : "normal",
+                minWidth: wrapText ? "auto" : "max-content",
+                "& code": {
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                  background: "transparent",
+                  padding: 0,
+                  borderRadius: 0,
+                },
+                "& .token": {
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                },
+                "& span.token": {
+                  fontFamily: "inherit",
+                  fontSize: "inherit",
+                },
+              }}
+              dangerouslySetInnerHTML={{
+                __html: lineHtml,
+              }}
+            />
+          </Box>
+        </Box>
+      );
+    };
 
     const handleCopy = (): void => {
       if (typeof content === "string") {
@@ -132,8 +342,6 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
       };
     }, [theme.palette.mode, theme.palette.background.paper]);
 
-    const containerRef = useRef<HTMLDivElement>(null);
-
     const handleCloseOptimized = useCallback(() => {
       if (containerRef.current !== null) {
         const container = containerRef.current;
@@ -150,7 +358,7 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
           }
         }, 0);
       });
-    }, [onClose]);
+    }, [containerRef, onClose]);
 
     useEffect(() => {
       const container = containerRef.current;
@@ -173,29 +381,7 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
         // 更新文本颜色变量
         container.style.setProperty('--text-primary', theme.palette.text.primary);
       }
-    }, [prismTheme, theme.palette.text.primary]);
-
-    if (loading) {
-      return (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            minHeight: "220px",
-          }}
-          data-oid="text-preview-loading"
-        >
-          <CircularProgress size={28} />
-        </Box>
-      );
-    }
-
-    if (typeof content !== "string") {
-      return null;
-    }
+    }, [containerRef, prismTheme, theme.palette.text.primary]);
 
     return (
       <Box sx={{ position: "relative", width: "100%", height: "100%" }} data-oid="text-preview">
@@ -203,7 +389,7 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
           styles={{
             ".text-preview__code-table": {
               fontFamily: MONO_FONT_STACK,
-              fontSize: isSmallScreen ? "0.85rem" : "0.9rem",
+              fontSize: contentFontSize,
               lineHeight: 1.6,
               color: "var(--text-primary)",
             },
@@ -352,10 +538,11 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
           <Box
             sx={{
               display: "flex",
-              flexDirection: isSmallScreen ? "column" : "row",
-              alignItems: isSmallScreen ? "flex-start" : "center",
+              flexDirection: "row",
+              alignItems: { xs: "flex-start", sm: "center" },
               justifyContent: "space-between",
-              gap: 1.5,
+              gap: { xs: 1, sm: 1.5 },
+              flexWrap: "nowrap",
               px: { xs: 2, sm: 3 },
               py: { xs: 1.5, sm: 2 },
               bgcolor: headerBg,
@@ -364,7 +551,16 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
             }}
             data-oid="text-preview-header"
           >
-            <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 0.25, sm: 0.5 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: { xs: 0.25, sm: 0.5 },
+                flex: 1,
+                minWidth: 0,
+                pr: { xs: 0.5, sm: 1 },
+              }}
+            >
               <Typography
                 variant="subtitle1"
                 sx={{
@@ -392,14 +588,21 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
               </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.75, sm: 1 } }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: { xs: 0.75, sm: 1 },
+                flexShrink: 0,
+              }}
+            >
               <Tooltip title={wrapText ? t("ui.text.disableWrap") : t("ui.text.enableWrap")}>
                 <IconButton
                   size="small"
                   onClick={handleToggleWrap}
                   sx={{
-                    width: { xs: 28, sm: 32 },
-                    height: { xs: 28, sm: 32 },
+                    width: controlButtonSize,
+                    height: controlButtonSize,
                     borderRadius: 2,
                     border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
                     boxShadow: wrapText ? theme.shadows[2] : theme.shadows[0],
@@ -414,9 +617,9 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
                   data-oid="text-preview-wrap"
                 >
                   {wrapText ? (
-                    <TextRotationNoneIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                    <TextRotationNoneIcon sx={{ fontSize: controlIconSize }} />
                   ) : (
-                    <WrapTextIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                    <WrapTextIcon sx={{ fontSize: controlIconSize }} />
                   )}
                 </IconButton>
               </Tooltip>
@@ -426,8 +629,8 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
                   size="small"
                   onClick={handleCopy}
                   sx={{
-                    width: { xs: 28, sm: 32 },
-                    height: { xs: 28, sm: 32 },
+                    width: controlButtonSize,
+                    height: controlButtonSize,
                     borderRadius: 2,
                     border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
                     color: copied ? theme.palette.success.main : theme.palette.text.secondary,
@@ -443,7 +646,11 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
                   }}
                   data-oid="text-preview-copy"
                 >
-                  {copied ? <CheckRoundedIcon sx={{ fontSize: { xs: 16, sm: 18 } }} /> : <ContentCopyRoundedIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
+                  {copied ? (
+                    <CheckRoundedIcon sx={{ fontSize: controlIconSize }} />
+                  ) : (
+                    <ContentCopyRoundedIcon sx={{ fontSize: controlIconSize }} />
+                  )}
                 </IconButton>
               </Tooltip>
             </Box>
@@ -454,103 +661,75 @@ const TextPreview: React.FC<TextPreviewProps> = memo(
             className="text-preview__code-container"
             sx={{
               width: "100%",
-              maxHeight: isSmallScreen ? "calc(100vh - 220px)" : "calc(100vh - 280px)",
-              overflow: "auto",
+              height: listHeight,
+              maxHeight: maxContainerHeight,
+              overflow: "hidden",
               backgroundColor: prismTheme.background,
             }}
             data-oid="text-preview-content"
           >
-            <Box
-              component="div"
-              sx={{
-                display: "inline-block",
-                minWidth: wrapText ? "100%" : "max-content",
-                width: "100%",
+            {/* 行级虚拟化：仅渲染可见行，避免超大文件 DOM 爆炸 */}
+            <VirtualList
+              rowCount={normalizedLines.length}
+              rowHeight={rowHeight}
+              rowComponent={Row}
+              rowProps={emptyRowProps}
+              defaultHeight={listHeight}
+              overscanCount={6}
+              className="text-preview__code-table"
+              style={{
+                height: listHeight,
+                width: listWidth,
+                overflowX: wrapText ? "hidden" : "auto",
               }}
-            >
-              <Box
-                component="table"
-                className="text-preview__code-table"
-                sx={{
-                  borderCollapse: "separate",
-                  borderSpacing: 0,
-                  width: wrapText ? "100%" : "auto",
-                }}
-              >
-                <tbody>
-                  {normalizedLines.map((line, index) => (
-                    <tr key={`text-line-${String(index)}`}>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          userSelect: "none",
-                          verticalAlign: "top",
-                          padding: isSmallScreen
-                            ? `${theme.spacing(0.25)} ${theme.spacing(0.75)}`
-                            : `${theme.spacing(0.25)} ${theme.spacing(1)}`,
-                          width: `calc(${lineNumberColumnWidth} + ${isSmallScreen ? theme.spacing(0.75) : theme.spacing(1)})`,
-                          borderRight: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                          color: alpha(theme.palette.text.secondary, 0.9),
-                          backgroundColor: alpha(theme.palette.background.default, 0.35),
-                          position: "sticky",
-                          left: 0,
-                          fontSize: isSmallScreen ? "0.8rem" : "0.9rem",
-                        }}
-                      >
-                        {index + 1}
-                      </td>
-                      <td
-                        style={{
-                          padding: isSmallScreen
-                            ? `${theme.spacing(0.25)} ${theme.spacing(2)} ${theme.spacing(0.25)} ${theme.spacing(1.5)}`
-                            : `${theme.spacing(0.25)} ${theme.spacing(3)} ${theme.spacing(0.25)} ${theme.spacing(2)}`,
-                          verticalAlign: "top",
-                        }}
-                      >
-                        <Box
-                          component="span"
-                          sx={{
-                            display: "block",
-                            fontFamily: MONO_FONT_STACK,
-                            fontSize: { xs: "0.85rem", sm: "0.9rem" },
-                            lineHeight: 1.6,
-                            whiteSpace: wrapText ? "pre-wrap" : "pre",
-                            wordBreak: wrapText ? "break-word" : "normal",
-                            minWidth: wrapText ? "auto" : "max-content",
-                            "& code": {
-                              fontFamily: "inherit",
-                              fontSize: "inherit",
-                              background: "transparent",
-                              padding: 0,
-                              borderRadius: 0,
-                            },
-                            "& .token": {
-                              fontFamily: "inherit",
-                              fontSize: "inherit",
-                            },
-                            "& span.token": {
-                              fontFamily: "inherit",
-                              fontSize: "inherit",
-                            },
-                          }}
-                          dangerouslySetInnerHTML={{
-                            __html:
-                              index < highlightedLines.length
-                                ? (highlightedLines[index] ?? "\u00A0")
-                                : line.length > 0
-                                  ? line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                                  : "\u00A0",
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Box>
-            </Box>
+            />
           </Box>
         </Paper>
       </Box>
+    );
+  },
+);
+
+TextPreviewContent.displayName = "TextPreviewContent";
+
+const TextPreview: React.FC<TextPreviewProps> = memo(
+  ({ content, loading, isSmallScreen, previewingItem, onClose }) => {
+    const contentKey = useMemo(() => {
+      const safeContent = typeof content === "string" ? content : "";
+      const pathKey = previewingItem?.path ?? "";
+      return `${pathKey}::${safeContent}`;
+    }, [content, previewingItem?.path]);
+
+    if (loading) {
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            minHeight: "220px",
+          }}
+          data-oid="text-preview-loading"
+        >
+          <CircularProgress size={28} />
+        </Box>
+      );
+    }
+
+    if (typeof content !== "string") {
+      return null;
+    }
+
+    return (
+      <TextPreviewContent
+        key={contentKey}
+        content={content}
+        isSmallScreen={isSmallScreen}
+        previewingItem={previewingItem ?? null}
+        {...(onClose !== undefined ? { onClose } : {})}
+      />
     );
   },
 );

@@ -21,9 +21,6 @@ export class InMemoryLogRecorder implements LogRecorder {
     this.buffer.length = 0;
   }
 
-  snapshot(): readonly (LoggerArguments & { timestamp: number })[] {
-    return [...this.buffer];
-  }
 }
 
 class RecorderLogger implements Logger {
@@ -77,4 +74,3 @@ export class RecorderLoggerFactory implements LoggerFactory {
     return new RecorderLogger(name, this.recorder);
   }
 }
-

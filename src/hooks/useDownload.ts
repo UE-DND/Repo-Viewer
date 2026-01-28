@@ -1,3 +1,12 @@
+/**
+ * @fileoverview 下载管理 Hook
+ *
+ * 提供 GitHub 仓库文件和文件夹的下载功能，支持单文件下载和文件夹打包为 ZIP 下载。
+ * 支持下载进度追踪、取消操作，使用 AbortController 实现请求中止。
+ *
+ * @module hooks/useDownload
+ */
+
 import { useReducer, useCallback, useRef } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -12,7 +21,7 @@ import { requestManager } from '@/utils/request/requestManager';
 import { getForceServerProxy } from '@/services/github/config/ProxyForceManager';
 import { useI18n } from '@/contexts/I18nContext';
 
-// 下载状态初始值
+/** 下载状态初始值 */
 const initialDownloadState: DownloadState = {
   downloadingPath: null,
   downloadingFolderPath: null,
@@ -22,7 +31,15 @@ const initialDownloadState: DownloadState = {
   isCancelled: false
 };
 
-// 下载状态reducer
+/**
+ * 下载状态 Reducer
+ *
+ * 处理下载相关的所有状态变更，包括下载进度、处理文件数和取消状态。
+ *
+ * @param state - 当前下载状态
+ * @param action - 下载动作
+ * @returns 更新后的下载状态
+ */
 function downloadReducer(state: DownloadState, action: DownloadAction): DownloadState {
   switch (action.type) {
     case 'SET_DOWNLOADING_FILE':
@@ -146,18 +163,23 @@ export const useDownload = (onError: (message: string) => void): {
 
       // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {
-        throw new Error('下载已取消');
+        logger.info('文件下载已取消');
+        return;
       }
 
       if (!response.ok) {
-        throw new Error(`下载失败: ${String(response.status)} ${response.statusText}`);
+        const error = new Error(`下载失败: ${String(response.status)} ${response.statusText}`);
+        logger.error('下载文件失败:', error);
+        onError(t('error.file.downloadFailed', { message: error.message }));
+        return;
       }
 
       const blob = await response.blob();
 
       // 再次检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {
-        throw new Error('下载已取消');
+        logger.info('文件下载已取消');
+        return;
       }
 
       saveAs(blob, item.name);
@@ -194,7 +216,7 @@ export const useDownload = (onError: (message: string) => void): {
 
       // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {
-        throw new Error('Download cancelled');
+        return;
       }
 
       // 处理每个文件/文件夹
@@ -221,12 +243,15 @@ export const useDownload = (onError: (message: string) => void): {
         } else {
           // 递归处理子文件夹 (type === 'dir')
           await collectFilesInner(item.path, fileList, basePath, signal);
+          if (hasBeenCancelled()) {
+            return;
+          }
         }
       }
     } catch (e) {
       // 如果是取消导致的错误，抛出
       if (e instanceof Error && (e.name === 'AbortError' || hasBeenCancelled())) {
-        throw e;
+        return;
       }
       // 其他错误记录但继续处理
       logger.error(`获取文件夹内容失败: ${folderPath}`, e);
@@ -260,7 +285,8 @@ export const useDownload = (onError: (message: string) => void): {
 
       // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {
-        throw new Error('下载已取消');
+        logger.info('文件夹下载已取消');
+        return;
       }
 
       dispatch({ type: 'SET_TOTAL_FILES', count: allFiles.length });
@@ -272,13 +298,15 @@ export const useDownload = (onError: (message: string) => void): {
         try {
           // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
           if (hasBeenCancelled()) {
-            throw new Error('下载已取消');
+            logger.info('文件夹下载已取消');
+            return;
           }
 
           const response = await fetch(file.url, { signal });
 
           if (!response.ok) {
-            throw new Error(`下载失败: ${String(response.status)}`);
+            logger.error(`文件 ${file.path} 下载失败:`, new Error(`下载失败: ${String(response.status)}`));
+            continue;
           }
 
           const blob = await response.blob();
@@ -293,14 +321,16 @@ export const useDownload = (onError: (message: string) => void): {
         } catch (e) {
           // 检查是否是取消导致的错误
           if (e instanceof Error && (e.name === 'AbortError' || hasBeenCancelled())) {
-            throw e; // 重新抛出以中断循环
+            logger.info('文件夹下载已取消');
+            return;
           }
           logger.error(`文件 ${file.path} 下载失败:`, e);
         }
 
         // 检查是否已取消 (ref可在异步期间被cancelDownload修改)
         if (hasBeenCancelled()) {
-          throw new Error('下载已取消');
+          logger.info('文件夹下载已取消');
+          return;
         }
       }
 
@@ -317,7 +347,8 @@ export const useDownload = (onError: (message: string) => void): {
 
       // 最后一次检查是否已取消 (ref可在异步期间被cancelDownload修改)
       if (hasBeenCancelled()) {
-        throw new Error('下载已取消');
+        logger.info('文件夹下载已取消');
+        return;
       }
 
       saveAs(zipBlob, `${folderName}.zip`);

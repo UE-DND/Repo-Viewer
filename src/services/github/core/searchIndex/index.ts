@@ -1,3 +1,9 @@
+/**
+ * 搜索索引服务模块
+ *
+ * 提供搜索索引的查询、预取、缓存管理功能。
+ */
+
 export {
   searchIndex,
   getSearchIndexManifest,

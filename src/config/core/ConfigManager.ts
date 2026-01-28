@@ -43,26 +43,6 @@ export class ConfigManager {
   }
 
   /**
-   * 重置单例实例（用于测试）
-   *
-   * 在测试环境中重置单例实例，确保每个测试的独立性。
-   *
-   * @warning 仅在测试环境中使用，生产环境不应调用此方法
-   */
-  static resetInstance(): void {
-    ConfigManager.instance = null;
-  }
-
-  /**
-   * 检查是否已创建实例
-   *
-   * @returns 如果实例已创建返回 true
-   */
-  static hasInstance(): boolean {
-    return ConfigManager.instance !== null;
-  }
-
-  /**
    * 获取配置
    *
    * 获取当前加载的配置对象，如果未加载则自动加载。
@@ -144,41 +124,6 @@ export class ConfigManager {
       // eslint-disable-next-line no-console
       console.log('[ConfigManager] 配置热更新已启用。使用 window.dispatchEvent(new CustomEvent("config:reload")) 触发重载。');
     }
-  }
-
-  /**
-   * 禁用配置热更新
-   *
-   * 移除配置热更新监听器。
-   *
-   * @returns void
-   */
-  disableHotReload(): void {
-    if (!this.hotReloadEnabled || this.hotReloadHandler === null) {
-      return;
-    }
-
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('config:reload', this.hotReloadHandler);
-    }
-
-    this.hotReloadHandler = null;
-    this.hotReloadEnabled = false;
-
-    const config = this.getConfig();
-    if (config.developer.mode || config.developer.consoleLogging) {
-      // eslint-disable-next-line no-console
-      console.log('[ConfigManager] 配置热更新已禁用');
-    }
-  }
-
-  /**
-   * 检查是否启用了热更新
-   *
-   * @returns 如果热更新已启用返回 true
-   */
-  isHotReloadEnabled(): boolean {
-    return this.hotReloadEnabled;
   }
 
   // 通知配置变更

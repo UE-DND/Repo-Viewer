@@ -204,29 +204,6 @@ export class GitHubTokenManager {
   }
 
   /**
-   * 轮换到下一个Token
-   * 
-   * @returns 下一个可用的Token字符串
-   */
-  public rotateToNextToken(): string {
-    return this.getNextToken();
-  }
-
-  /**
-   * 标记当前Token失败
-   * 
-   * 将当前正在使用的token标记为失败状态。
-   * 
-   * @returns void
-   */
-  public markCurrentTokenFailed(): void {
-    const currentToken = this.getCurrentToken();
-    if (currentToken !== '') {
-      this.markTokenFailed(currentToken);
-    }
-  }
-
-  /**
    * 设置本地Token
    * 
    * 在localStorage中存储或删除GitHub PAT，并重新加载所有token。
@@ -431,32 +408,5 @@ export class GitHubTokenManager {
     }
   }
 
-  /**
-   * 获取 Token 状态统计
-   * 
-   * @returns Token 状态信息数组
-   */
-  public getTokenStats(): {
-    index: number;
-    hasState: boolean;
-    rateLimitRemaining: number;
-    failureCount: number;
-    inBackoff: boolean;
-  }[] {
-    const now = Date.now();
-    return this.tokens.map((token, index) => {
-      const state = this.tokenStates.get(token);
-      const inBackoff = state !== undefined && 
-                        state.failureCount > 0 && 
-                        (now - state.lastFailure) < GitHubTokenManager.BACKOFF_DURATION;
-      
-      return {
-        index,
-        hasState: state !== undefined,
-        rateLimitRemaining: state?.rateLimitRemaining ?? -1,
-        failureCount: state?.failureCount ?? 0,
-        inBackoff
-      };
-    });
-  }
+  
 }

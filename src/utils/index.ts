@@ -2,10 +2,6 @@
  * 工具函数模块
  */
 
-// 文件操作工具
-import * as fileHelpers from './files/fileHelpers';
-export const file = fileHelpers;
-
 // 格式化工具
 import * as formatHelpers from './format/formatters';
 export const format = formatHelpers;
@@ -25,9 +21,6 @@ export const network = {
 import * as tokenHelper from './auth/token-helper';
 export const auth = tokenHelper;
 
-// 事件处理工具
-import * as eventEmitter from './events/eventEmitter';
-export const events = eventEmitter;
 
 // 错误管理工具
 import { ErrorManager as ErrorManagerClass } from './error';
@@ -45,17 +38,7 @@ export const pdf = {
   ...pdfPreviewHelper
 };
 
-// 渲染优化工具
-import * as latexOptimizer from './rendering/latexOptimizer';
-export const rendering = latexOptimizer;
 
-// 路由工具
-import * as urlManager from './routing/urlManager';
-export const routing = urlManager;
-
-// 重试工具
-import * as retryUtils from './retry/retryUtils';
-export const retry = retryUtils;
 
 // 请求管理工具
 import { requestManager as requestManagerInstance } from './request/requestManager';
@@ -67,17 +50,11 @@ export const request = {
 import * as SmartCacheModule from './cache/SmartCache';
 export const cache = SmartCacheModule;
 
-// 加密和哈希工具
-import * as hashUtils from './crypto/hashUtils';
-export const crypto = hashUtils;
 
 // 内容处理工具
 import * as contentFilters from './content';
 export const content = contentFilters;
 
-// 排序工具
-import * as sortingUtils from './sorting/contentSorting';
-export const sorting = sortingUtils;
 
 // 滚动工具
 import * as scrollUtils from './scroll/scrollUtils';
@@ -119,34 +96,8 @@ export const performance = {
     };
   },
 
-  /**
-   * 节流函数
-   *
-   * 限制函数执行频率，在指定时间窗口内最多执行一次。
-   *
-   * @param func - 要节流的函数
-   * @param limit - 时间窗口（毫秒）
-   * @returns 节流后的函数
-   */
-  throttle: <F extends (...args: unknown[]) => unknown>(
-    func: F,
-    limit: number
-  ): ((...args: Parameters<F>) => void) => {
-    let inThrottle = false;
-
-    return (...args: Parameters<F>): void => {
-      if (!inThrottle) {
-        func(...args);
-        inThrottle = true;
-        setTimeout(() => {
-          inThrottle = false;
-        }, limit);
-      }
-    };
-  }
 };
 
-export type { RetryOptions } from './retry/retryUtils';
 export type { SmartCacheOptions } from './cache/SmartCache';
 export type { RequestOptions } from './request/requestManager';
 export type { ErrorHandlerOptions } from './error/errorHandler';

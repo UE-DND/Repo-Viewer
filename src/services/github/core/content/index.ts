@@ -1,3 +1,9 @@
+/**
+ * 内容获取模块
+ *
+ * 提供GitHub仓库内容（文件和目录）的获取、缓存和批量处理功能。
+ */
+
 export {
   getContents,
   getFileContent,

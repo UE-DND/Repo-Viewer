@@ -1,3 +1,12 @@
+/**
+ * GitHub API 搜索模块
+ *
+ * 通过 GitHub Search API 在代码库中搜索文件。
+ * 支持服务端代理和直连 GitHub API 两种模式，使用请求批处理器优化性能。
+ *
+ * @module search/githubApi
+ */
+
 import axios from 'axios';
 
 import type { GitHubContent } from '@/types';
@@ -17,8 +26,19 @@ import {
   GITHUB_REPO_OWNER
 } from '../Config';
 
+/** 请求批处理器实例 */
 const batcher = new RequestBatcher();
 
+/**
+ * 构建搜索查询字符串
+ *
+ * 根据搜索词、路径和文件类型构建 GitHub Search API 查询。
+ *
+ * @param searchTerm - 搜索关键词
+ * @param currentPath - 可选的当前路径过滤
+ * @param fileTypeFilter - 可选的文件类型过滤（扩展名）
+ * @returns 构建好的查询字符串
+ */
 function buildSearchQuery(searchTerm: string, currentPath?: string, fileTypeFilter?: string): string {
   const trimmedTerm = searchTerm.trim();
   const safeTerm = trimmedTerm.replace(/"/g, '');
@@ -37,12 +57,26 @@ function buildSearchQuery(searchTerm: string, currentPath?: string, fileTypeFilt
   return query;
 }
 
+/**
+ * 通过服务端 API 搜索
+ *
+ * @param query - 搜索查询字符串
+ * @returns Promise，解析为 API 原始响应数据
+ */
 async function searchViaServerApi(query: string): Promise<unknown> {
   const response = await axios.get(`/api/github?action=search&q=${encodeURIComponent(query)}`);
   logger.debug(`通过服务端API搜索: ${query}`);
   return response.data;
 }
 
+/**
+ * 直接请求 GitHub API 搜索
+ *
+ * 使用请求批处理器进行请求合并和重试。
+ *
+ * @param query - 搜索查询字符串
+ * @returns Promise，解析为 API 原始响应数据
+ */
 async function searchViaDirectApi(query: string): Promise<unknown> {
   const apiUrl = `${GITHUB_API_BASE}/search/code`;
   const urlWithParams = new URL(apiUrl);
@@ -72,6 +106,18 @@ async function searchViaDirectApi(query: string): Promise<unknown> {
   return result;
 }
 
+/**
+ * 使用 GitHub API 搜索文件
+ *
+ * 根据环境自动选择服务端代理或直接请求 GitHub API。
+ * 对响应进行验证、转换和过滤处理。
+ *
+ * @param searchTerm - 搜索关键词
+ * @param currentPath - 可选的当前路径过滤，默认为空
+ * @param fileTypeFilter - 可选的文件类型过滤
+ * @returns Promise，解析为标准化后的搜索结果数组
+ * @throws 当搜索失败或响应格式错误时抛出错误
+ */
 export async function searchWithGitHubApi(
   searchTerm: string,
   currentPath = '',

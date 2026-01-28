@@ -8,9 +8,9 @@ import type { ReadmeContentState } from './types';
 
 /**
  * README 内容管理 Hook
- * 
+ *
  * 管理 README 文件的加载和状态
- * 
+ *
  * @param contents - 当前目录的内容列表
  * @param currentPath - 当前路径
  * @param currentBranch - 当前分支
@@ -81,7 +81,7 @@ export function useReadmeContent(contents: GitHubContent[], currentPath: string,
         .split('/')
         .map(segment => encodeURIComponent(segment))
         .join('/');
-      const cacheTag = typeof readmeItem.sha === 'string' && readmeItem.sha.length > 0
+      const cacheTag = readmeItem.sha.length > 0
         ? readmeItem.sha
         : requestKey;
       const baseUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/${encodeURIComponent(currentBranchRef.current)}/${encodedPath}`;

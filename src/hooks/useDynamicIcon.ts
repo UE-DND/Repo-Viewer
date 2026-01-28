@@ -1,9 +1,20 @@
+/**
+ * @fileoverview 动态图标 Hook
+ *
+ * 根据当前主题自动切换网站图标(favicon)和提供主题对应的图标路径。
+ * 监听多种主题变化来源：DOM属性变化、localStorage变化、MutationObserver。
+ *
+ * @module hooks/useDynamicIcon
+ */
+
 import { useState, useEffect } from 'react';
 import { getCurrentThemeName } from '@/theme/index';
 import { logger } from '@/utils';
 
+/** 默认图标路径 */
 const DEFAULT_ICON = '/icons/icon-pink.svg';
 
+/** 主题名称到图标路径的映射表 */
 const themeIconMap: Readonly<Record<string, string>> = {
   '默认': DEFAULT_ICON,
   '蓝色': '/icons/icon-blue.svg',
@@ -14,6 +25,11 @@ const themeIconMap: Readonly<Record<string, string>> = {
   '青色': '/icons/icon-cyan.svg'
 };
 
+/**
+ * 获取当前主题的图标路径
+ *
+ * @returns 当前主题对应的图标路径，失败时返回默认图标
+ */
 const getThemeIconPath = (): string => {
   try {
     const currentTheme = getCurrentThemeName();
@@ -25,7 +41,7 @@ const getThemeIconPath = (): string => {
 };
 
 /**
- * 动态图标Hook返回值接口
+ * 动态图标 Hook 返回值接口
  */
 interface DynamicIconHook {
   /** 当前图标路径 */

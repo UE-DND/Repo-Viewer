@@ -1,3 +1,12 @@
+/**
+ * 搜索索引获取模块
+ *
+ * 负责从服务器获取搜索索引的 manifest 文件和 docfind 模块。
+ * 支持通过服务端 API 或静态资源方式加载搜索索引。
+ *
+ * @module searchIndex/fetchers
+ */
+
 import { getSearchIndexConfig } from "@/config";
 import { logger } from "@/utils";
 

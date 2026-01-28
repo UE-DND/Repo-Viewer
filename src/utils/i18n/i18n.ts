@@ -20,9 +20,7 @@ const formatOptions = (
  * 提供国际化翻译功能
  */
 export class I18N {
-  private readonly locale: Locale;
   private readonly translator: ITranslator;
-  private readonly keys: ILocaleJSON;
   private readonly alwaysShowScreamers: boolean;
 
   /**
@@ -39,7 +37,6 @@ export class I18N {
     alwaysShowScreamers = false,
     isLoading = false,
   ) {
-    this.locale = locale;
     // 使用闭包捕获 isLoading 状态
     const shouldWarn = !isLoading;
     this.translator = new Translator(locale, translation, {
@@ -57,33 +54,7 @@ export class I18N {
         }
       },
     });
-    this.keys = translation;
     this.alwaysShowScreamers = alwaysShowScreamers;
-  }
-
-  /**
-   * 获取当前语言代码
-   */
-  get currentLocale(): Locale {
-    return this.locale;
-  }
-
-  /**
-   * 获取当前翻译键
-   */
-  get currentKeys(): ILocaleJSON {
-    return this.keys;
-  }
-
-  /**
-   * 获取未插值的字符串
-   */
-  getUninterpolatedString(key: string): string {
-    if (this.alwaysShowScreamers) {
-      return key;
-    } else {
-      return this.translator.getUninterpolatedString(key);
-    }
   }
 
   /**
@@ -105,4 +76,3 @@ export class I18N {
 }
 
 export default I18N;
-

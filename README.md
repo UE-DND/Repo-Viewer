@@ -1,14 +1,16 @@
-<h1 align="center">
-  <em>Repo-Viewer</em>
-</h1>
+<div style="text-align: center;">
+  <h1><em>Repo-Viewer</em></h1>
+</div>
 
-<p align="center">
-  <strong>基于 Material Design 3设计风格的 GitHub仓库浏览应用</strong>
-  &nbsp;&nbsp;
-  <a href="https://deepwiki.com/UE-DND/Repo-Viewer">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
-  </a>
-</p>
+<div style="text-align: center;">
+  <p>
+    <strong>基于 Material Design 3设计风格的 GitHub仓库浏览应用</strong>
+    &nbsp;&nbsp;
+    <a href="https://deepwiki.com/CQUT-OpenProject/Repo-Viewer">
+      <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+    </a>
+  </p>
+</div>
 
 ![Preview Dark](docs/image/dark.png)
 
@@ -20,9 +22,17 @@
   <tr>
 </table>
 
+## 为 Repo Viewer 贡献代码
+
+此项目已进入稳定阶段，本人将不再花过多精力维护。若发现已知的问题，欢迎任何形式的贡献！无论是修复错误、改进功能，还是提升代码质量，我们都非常欢迎您的参与。
+
+> 此组织的所有成员均有管理员权限，若不想提交 Pull Request，直接推送代码是被允许的。
+> 
+> 但在提交贡献前，推荐阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 以了解建议的代码规范和提交流程。
+
 ## 主要功能
 
-- 📁 **仓库浏览**：直观的文件结构导航，同时提供首页文件和文件夹排除选项.
+- 📁 **仓库浏览**：直观的文件结构导航，同时提供首页文件与文件夹排除选项.
 - 🔎 **文件搜索**：支持基于自建索引和 Github API 的快速文件搜索，可按分支、路径前缀和扩展名过滤.
 - 📄 **文件预览**：多种文件格式预览，目前支持 `Markdown`、 `PDF` 和 `图片`.
 - ⬇️ **文件下载**：可下载单个文件或整个文件夹.
@@ -76,8 +86,8 @@ Repo-Viewer 使用 docfind 生成静态索引并随站点发布。构建时运�
 
 ## 贡献者
 
-[![Contributors](https://contrib.rocks/image?repo=UE-DND/Repo-Viewer)](https://github.com/UE-DND/Repo-Viewer/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=CQUT-OpenProject/Repo-Viewer)](https://github.com/CQUT-OpenProject/Repo-Viewer/graphs/contributors)
 
 ## Stars
 
-![Star History](https://api.star-history.com/svg?repos=UE-DND/Repo-Viewer&type=Date)
+![Star History](https://api.star-history.com/svg?repos=CQUT-OpenProject/Repo-Viewer&type=Date)

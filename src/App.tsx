@@ -88,6 +88,7 @@ const App = React.memo(() => {
       `GitHub Token状态: ${hasTokenFlag ? "已配置" : "未配置"}, Token数量: ${tokenCount.toString()}`,
     );
 
+    // 此日志仅供本地开发环境使用，部署至平台后无法检测环境变量
     if (!hasTokenFlag) {
       logger.warn(
         "未检测到GitHub Token，API搜索功能可能受限。请考虑配置Token以获取更好的搜索体验。",
@@ -181,7 +182,7 @@ const App = React.memo(() => {
                     {SITE_TITLE}
                   </Typography>
 
-                  {/* 面包屑在顶部栏的容器 */}
+                  {/* 面包屑导航（顶部栏）的容器 */}
                   <Collapse
                     in={showBreadcrumbInToolbar}
                     orientation="horizontal"
@@ -226,7 +227,7 @@ const App = React.memo(() => {
   );
 });
 
-// 添加显示名称以便调试
+// DevTools 显示名称
 App.displayName = "App";
 
 export default App;

@@ -22,8 +22,9 @@ export const parseExtensionInput = (value: string): string[] => {
  * 高亮文本中的关键字
  */
 export const highlightKeyword = (
-  text: string, 
-  keyword: string
+  text: string,
+  keyword: string,
+  lowerKeywordOverride?: string
 ): { text: string; highlight: boolean }[] => {
   if (keyword.trim().length === 0) {
     return [{ text, highlight: false }];
@@ -31,7 +32,7 @@ export const highlightKeyword = (
   
   const parts: { text: string; highlight: boolean }[] = [];
   const lowerText = text.toLowerCase();
-  const lowerKeyword = keyword.toLowerCase();
+  const lowerKeyword = lowerKeywordOverride ?? keyword.toLowerCase();
   let lastIndex = 0;
   let index = lowerText.indexOf(lowerKeyword);
 
@@ -59,20 +60,18 @@ export const highlightKeyword = (
 const escapeRegExp = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/**
- * 高亮文本中的多个关键字
- */
-export const highlightKeywords = (
-  text: string,
-  keyword: string
-): { text: string; highlight: boolean }[] => {
+const HIGHLIGHT_REGEX_CACHE_LIMIT = 50;
+// 关键词高亮正则缓存，减少重复编译
+const highlightRegexCache = new Map<string, RegExp>();
+
+export const getHighlightRegex = (keyword: string): RegExp | null => {
   const tokens = keyword
     .split(/\s+/)
     .map((token) => token.trim())
     .filter((token) => token.length > 0);
 
   if (tokens.length === 0) {
-    return [{ text, highlight: false }];
+    return null;
   }
 
   const uniqueTokens = Array.from(new Set(tokens))
@@ -81,10 +80,42 @@ export const highlightKeywords = (
 
   const pattern = uniqueTokens.join("|");
   if (pattern.length === 0) {
-    return [{ text, highlight: false }];
+    return null;
+  }
+
+  const cached = highlightRegexCache.get(pattern);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const regex = new RegExp(`(${pattern})`, "gi");
+  highlightRegexCache.set(pattern, regex);
+
+  if (highlightRegexCache.size > HIGHLIGHT_REGEX_CACHE_LIMIT) {
+    // 简单淘汰最早插入项，避免缓存无限增长
+    const firstKey = highlightRegexCache.keys().next().value;
+    if (typeof firstKey === "string") {
+      highlightRegexCache.delete(firstKey);
+    }
+  }
+
+  return regex;
+};
+
+/**
+ * 高亮文本中的多个关键字
+ */
+export const highlightKeywords = (
+  text: string,
+  keyword: string,
+  regexOverride?: RegExp | null
+): { text: string; highlight: boolean }[] => {
+  const regex = regexOverride ?? getHighlightRegex(keyword);
+  if (regex === null) {
+    return [{ text, highlight: false }];
+  }
+
+  regex.lastIndex = 0;
   const parts: { text: string; highlight: boolean }[] = [];
   let lastIndex = 0;
   let match = regex.exec(text);

@@ -1,6 +1,18 @@
+/**
+ * 主题调色板配置模块
+ *
+ * 提供基于主题配色方案生成MUI调色板配置的功能，
+ * 包括浅色模式和深色模式的完整调色板定义。
+ */
+
 import { alpha } from '@mui/material/styles';
 import type { ThemeColorConfig } from './themeColors';
 
+/**
+ * 调色板配置接口
+ *
+ * 定义MUI主题所需的完整调色板结构，包括主色、次色、错误色、背景和文字颜色。
+ */
 export interface PaletteConfig {
   primary: {
     main: string;

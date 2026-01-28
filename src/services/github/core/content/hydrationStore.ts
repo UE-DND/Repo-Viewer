@@ -1,3 +1,5 @@
+// noinspection HttpUrlsUsage
+
 import type {
   GitHubContent,
   InitialContentDirectoryEntry,

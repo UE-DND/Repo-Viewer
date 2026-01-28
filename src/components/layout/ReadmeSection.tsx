@@ -8,14 +8,25 @@ import { useI18n } from '@/contexts/I18nContext';
 import { useContentContext, usePreviewContext } from '@/contexts/unified';
 import { scroll, logger } from '@/utils';
 
+/**
+ * README预览区域组件属性接口
+ */
 interface ReadmeSectionProps {
+  /** 是否存在README文件 */
   hasReadmeFile: boolean;
+  /** README文件内容 */
   readmeContent: string | null;
+  /** 是否正在加载README */
   loadingReadme: boolean;
+  /** README是否已加载完成 */
   readmeLoaded: boolean;
+  /** 是否为小屏幕设备 */
   isSmallScreen: boolean;
+  /** 当前分支名称 */
   currentBranch: string;
+  /** README文件项对象 */
   readmeFileItem: GitHubContent | null;
+  /** 是否正在过渡动画中 */
   isTransitioning?: boolean;
 }
 
@@ -97,7 +108,22 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
   const handleInternalLinkClick = useCallback(
     (relativePath: string) => {
       // 解析相对路径
-      let targetPath = relativePath;
+      let targetPath = relativePath.trim();
+      if (targetPath.length === 0) {
+        return;
+      }
+
+      const hashIndex = targetPath.indexOf('#');
+      if (hashIndex >= 0) {
+        targetPath = targetPath.slice(0, hashIndex);
+      }
+
+      const queryIndex = targetPath.indexOf('?');
+      if (queryIndex >= 0) {
+        targetPath = targetPath.slice(0, queryIndex);
+      }
+
+      const isAbsolutePath = targetPath.startsWith('/');
 
       // 移除开头的 ./
       if (targetPath.startsWith('./')) {
@@ -105,7 +131,14 @@ const ReadmeSection: React.FC<ReadmeSectionProps> = ({
       }
 
       // 处理 ../ 路径
-      const baseParts = currentReadmeDir.length > 0 ? currentReadmeDir.split('/') : [];
+      const baseParts = isAbsolutePath
+        ? []
+        : currentReadmeDir.length > 0
+          ? currentReadmeDir.split('/')
+          : [];
+      if (isAbsolutePath) {
+        targetPath = targetPath.substring(1);
+      }
       const targetParts = targetPath.split('/');
 
       const resolvedParts = [...baseParts];

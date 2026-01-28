@@ -17,7 +17,8 @@ import {
   Download as DownloadIcon,
   Cancel as CancelIcon,
 } from "@mui/icons-material";
-import { file, logger, theme as themeUtils } from "@/utils";
+import { logger, theme as themeUtils } from "@/utils";
+import { fileExtensionIcons } from "@/utils/files/fileHelpers";
 import type { GitHubContent } from "@/types";
 import { getFeaturesConfig } from "@/config";
 import { useI18n } from "@/contexts/I18nContext";
@@ -143,7 +144,7 @@ const FileListItem = memo<FileListItemProps>(
 
       const extension = item.name.split('.').pop()?.toLowerCase();
       if (typeof extension === "string" && extension.length > 0) {
-        const icon = file.fileExtensionIcons[extension];
+        const icon = fileExtensionIcons[extension];
         if (icon !== undefined) {
           return icon;
         }

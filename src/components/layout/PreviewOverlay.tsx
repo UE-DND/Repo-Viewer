@@ -4,25 +4,36 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LazyMarkdownPreview, LazyImagePreview } from '@/utils/lazy-loading';
 import type { GitHubContent } from '@/types';
 
+/**
+ * 预览覆盖层组件属性接口
+ */
 interface PreviewOverlayProps {
-  // Markdown 预览
+  /** Markdown预览项 */
   previewingItem: GitHubContent | null;
+  /** Markdown预览内容 */
   previewContent: string | null;
+  /** 是否正在加载预览内容 */
   loadingPreview: boolean;
 
-  // 图片预览
+  /** 图片预览项 */
   previewingImageItem: GitHubContent | null;
+  /** 图片预览URL */
   imagePreviewUrl: string | null;
 
-  // 图片导航
+  /** 是否有上一张图片 */
   hasPreviousImage: boolean;
+  /** 是否有下一张图片 */
   hasNextImage: boolean;
+  /** 切换到上一张图片的回调 */
   onPreviousImage: () => void;
+  /** 切换到下一张图片的回调 */
   onNextImage: () => void;
 
-  // 通用
+  /** 是否为小屏幕设备 */
   isSmallScreen: boolean;
+  /** 当前分支名称 */
   currentBranch: string;
+  /** 关闭预览的回调 */
   onClose: () => void;
 }
 

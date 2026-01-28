@@ -1,3 +1,14 @@
+/**
+ * 国际化(I18n)提供者模块
+ *
+ * 提供应用的多语言支持功能，包括：
+ * - 动态加载翻译文件
+ * - 浏览器语言自动检测
+ * - 翻译资源管理和缓存
+ * - HTML lang/dir属性设置
+ * - 降级策略（加载失败时回退到默认语言）
+ */
+
 import React, { useEffect, useState, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import I18N from '@/utils/i18n/i18n';
@@ -7,7 +18,7 @@ import { I18nContext, type I18nContextValue } from './context';
 import { logger } from '@/utils';
 
 /**
- * I18n Provider 组件属性
+ * I18n Provider 组件属性接口
  */
 interface I18nProviderProps {
   children: ReactNode;
@@ -42,7 +53,17 @@ async function loadTranslations(locale: Locale): Promise<ILocaleJSON> {
 }
 
 /**
- * I18n Provider
+ * I18n Provider组件
+ *
+ * 国际化上下文提供者，负责：
+ * - 初始化和管理当前语言设置
+ * - 异步加载对应语言的翻译资源
+ * - 创建I18N实例并注入到上下文中
+ * - 设置HTML文档的语言和方向属性
+ * - 处理翻译加载失败时的降级逻辑
+ *
+ * @param props - 组件属性
+ * @returns 包裹了I18nContext.Provider的React元素
  */
 export function I18nProvider({ children, initialLocale }: I18nProviderProps): React.ReactElement {
   const [locale] = useState<Locale>(() => {

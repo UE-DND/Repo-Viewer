@@ -1,5 +1,4 @@
-import { logger, retry } from '@/utils';
-import type { RetryOptions } from '@/utils';
+import { logger } from '@/utils';
 import { createTimeWheel } from '@/utils/data-structures/TimeWheel';
 import type { TimeWheel } from '@/utils/data-structures/TimeWheel';
 
@@ -23,10 +22,21 @@ interface FingerprintData {
 }
 
 /**
+ * 重试选项
+ */
+interface RetryOptions {
+  maxRetries: number;
+  backoff: (attempt: number) => number;
+  shouldRetry?: (error: unknown) => boolean;
+  onRetry?: (attempt: number, error: unknown) => void;
+  silent?: boolean;
+}
+
+/**
  * 请求批处理器类
  * 
  * 管理和优化HTTP请求，提供请求合并、去重、优先级排序和重试机制。
- * 自动批处理相同的请求，减少网络开销并提升性能。
+ * 自动批处理重复请求，减少网络开销并提升性能。
  */
 export class RequestBatcher {
   private readonly batchedRequests = new Map<string, BatchedRequest[]>();
@@ -61,21 +71,53 @@ export class RequestBatcher {
   }
 
   /**
-   * 销毁批处理器
-   * 
-   * 清理所有定时器和缓存，释放资源。
-   * 
-   * @returns void
+   * 重试选项
    */
-  public destroy(): void {
-    if (this.batchTimeout !== null && this.batchTimeout !== 0 && !isNaN(this.batchTimeout)) {
-      clearTimeout(this.batchTimeout);
+  private withRetry = async <T>(
+    fn: () => Promise<T>,
+    options: RetryOptions
+  ): Promise<T> => {
+    const {
+      maxRetries,
+      backoff,
+      shouldRetry = () => true,
+      onRetry,
+      silent = false
+    } = options;
+
+    let lastError: unknown = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await fn();
+        if (attempt > 0) {
+          logger.debug(`操作在第 ${(attempt + 1).toString()} 次尝试后成功`);
+        }
+        return result;
+      } catch (error: unknown) {
+        lastError = error;
+
+        if (attempt < maxRetries && shouldRetry(error)) {
+          const delay = backoff(attempt);
+
+          if (onRetry !== undefined) {
+            onRetry(attempt, error);
+          }
+
+          if (!silent) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.debug(`重试操作 (尝试 ${(attempt + 1).toString()}/${(maxRetries + 1).toString()})，延迟 ${delay.toString()}ms: ${errorMessage}`);
+          }
+
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          break;
+        }
+      }
     }
-    this.batchedRequests.clear();
-    this.pendingRequests.clear();
-    this.fingerprintWheel.destroy();
-    logger.debug('RequestBatcher 已销毁');
-  }
+
+    throw lastError;
+  };
 
   /**
    * 将请求加入批处理队列
@@ -108,7 +150,7 @@ export class RequestBatcher {
       skipDeduplication = false
     } = options;
     
-    // 检查是否有相同的请求正在进行
+    // 检查是否有重复请求正在进行
     if (this.pendingRequests.has(key)) {
       logger.debug(`请求合并: ${key}`);
       return this.pendingRequests.get(key) as Promise<T>;
@@ -208,9 +250,9 @@ export class RequestBatcher {
 
     try {
       // 使用通用重试逻辑执行请求
-      const result = await retry.withRetry(executeRequest, retryOptions);
+      const result = await this.withRetry(executeRequest, retryOptions);
 
-      // 缓存成功的请求结果
+      // 缓存成功响应的结果
       if (!skipDeduplication) {
         this.fingerprintWheel.add(fingerprint, {
           result,
@@ -278,21 +320,4 @@ export class RequestBatcher {
     logger.debug('已清除请求指纹缓存');
   }
 
-  /**
-   * 强制取消所有等待的请求
-   * 
-   * 取消所有在队列中等待的请求，清空批处理队列。
-   * 
-   * @returns void
-   */
-  public cancelAllRequests(): void {
-    for (const [, queue] of this.batchedRequests.entries()) {
-      queue.forEach(request => {
-        request.reject(new Error('请求被取消'));
-      });
-    }
-    this.batchedRequests.clear();
-    this.pendingRequests.clear();
-    logger.debug('已取消所有等待的请求');
-  }
 }
