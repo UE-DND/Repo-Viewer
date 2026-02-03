@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "docfind-1",
+  "generatedAt": "2026-02-03T02:33:31.574Z",
+  "branches": {
+    "master": {
+      "docfindPath": "/search-index/master/docfind.js",
+      "hash": "ae362be58991cd1b09470a58dbc60ff6575974b0df8d2fbe0029de2ffe875fba",
+      "fileCount": 294,
+      "generatedAt": "2026-02-03T02:33:32.919Z"
+    }
+  }
+}
